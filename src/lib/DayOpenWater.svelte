@@ -1,0 +1,36 @@
+<table style="width: 100vh; height: 100vh">
+    <tr>
+        <th/>
+        <th>Buoy A</th>
+        <th>Buoy B</th>
+        <th>Buoy C</th>
+        <th>Buoy D</th>
+    </tr>
+    <tr>
+        <th>AM</th>
+         <td/>
+        <td/>
+        <td/>
+        <td/>
+   </tr>
+    <tr>
+        <th>PM</th>
+        <td/>
+        <td/>
+        <td/>
+        <td/>
+   </tr>
+</table>
+<style type="text/css" media="screen">
+    table {
+        border-collapse:collapse;
+    }
+    table td {
+        border:1px solid #00FF00;
+    }
+    td {
+        vertical-align: top;
+        text-align: center;
+    }
+</style>
+
