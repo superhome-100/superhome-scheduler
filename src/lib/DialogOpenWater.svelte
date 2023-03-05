@@ -1,19 +1,16 @@
 <script>
     import { canSubmit } from './stores.js';
 
-
+    let auto_or_course;
     let am_or_pm;
-    let buoy='any';
     let maxDepth = null;
-    let instructor = false;
     let nStudents=1;
     let comments = '';
 
     export const data = () => ({
         time: am_or_pm,
-        buoy: buoy,
+        typ: auto_or_course,
         maxDepth: maxDepth,
-        instructor: instructor,
         nStudents: nStudents,
         comments: comments
     });
@@ -28,7 +25,7 @@
 <div> 
     <label>
         Time
-        <select bind:value={am_or_pm} name="am_or_pm" id="am_or_pm">
+        <select bind:value={am_or_pm} name="am_or_pm">
             <option value='AM'>AM</option>
             <option value='PM'>PM</option>
         </select>
@@ -36,14 +33,25 @@
 </div>
 <div>
     <label>
-        Buoy
-        <select bind:value={buoy} name="buoy" id="buoy">
-            {#each ['any', 'A', 'B', 'C', 'D'] as b}
-                <option value={b}>{b}</option>
+        Type
+        <select bind:value={auto_or_course} name="auto_or_course">
+            <option value='autonomous'>Autonomous</option>
+            <option value='course'>Course</option>
+        </select>
+    </label>
+</div>
+{#if auto_or_course == 'course'}
+<div>
+    <label>
+        # Students
+        <select bind:value={nStudents} name="nStudents">
+            {#each [...Array(10).keys()] as n}
+                <option value={n+1}>{n+1}</option>
             {/each}
         </select>
     </label>
 </div>
+{/if}
 <div>
     <label>
         Max Depth
@@ -54,22 +62,6 @@
             bind:value={maxDepth} 
             on:change={checkSubmit}
         >
-    </label>
-</div>
-<div>
-    <label>
-        Instructor
-        <input type="checkbox" bind:checked={instructor} name="instructor" id="instructor">
-    </label>
-</div>
-<div>
-    <label>
-        # Students
-        <select bind:value={nStudents} name="nStudents" id="nStudents" disabled={!instructor}>
-            {#each [1,2,3,4,5,6,7,8,9,10] as n}
-                <option value={n}>{n}</option>
-            {/each}
-        </select>
     </label>
 </div>
 <div>

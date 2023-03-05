@@ -6,14 +6,16 @@
 
     let chosenStart = startTimes[0];
     let chosenEnd;
-    let chosenLane;
-    let buddies = '';
+    let auto_or_course;
+    let nStudents = 1;
+    let comments = '';
 
     export const data = () => ({
         start: chosenStart,
         end: chosenEnd,
-        lane: chosenLane,
-        buddies: buddies
+        typ: auto_or_course,
+        nStudents: nStudents,
+        comments: comments
     });
 
 </script>
@@ -21,7 +23,7 @@
 <div> 
     <label>
         Start Time
-        <select bind:value={chosenStart} name="start_time" id="start_time">
+        <select bind:value={chosenStart} name="start_time">
             {#each startTimes as t}
                 <option value={t}>{t}</option>
             {/each}
@@ -31,7 +33,7 @@
 <div>
     <label>
         End Time
-        <select bind:value={chosenEnd} name="end_time" id="end_time">
+        <select bind:value={chosenEnd} name="end_time">
             {#each endTimes as t}
                 {#if timeStrToMin(chosenStart) < timeStrToMin(t)}
                     <option value={t}>{t}</option>
@@ -42,18 +44,29 @@
 </div>
 <div>
     <label>
-        Lane
-        <select bind:value={chosenLane} name="lane" id="lane">
-            {#each ['any',1,2,3,4] as lane}
-                <option value={lane}>{lane}</option>
+        Type
+        <select bind:value={auto_or_course} name="auto_or_course">
+            <option value='autonomous'>Autonomous</option>
+            <option value='course'>Course</option>
+        </select>
+    </label>
+</div>
+{#if auto_or_course == 'course'}
+<div>
+    <label>
+        # Students
+        <select bind:value={nStudents} name="nStudents">
+            {#each [...Array(10).keys()] as n}
+                <option value={n+1}>{n+1}</option>
             {/each}
         </select>
     </label>
 </div>
+{/if}
 <div>
     <label>
-        Buddies
-        <input type="text" bind:value={buddies} id="buddies">
+        Comments
+        <input type="text" bind:value={comments}>
     </label>
 </div>
 

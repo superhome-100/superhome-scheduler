@@ -1,19 +1,19 @@
 <script>
     import { startTimes } from './ReservationTimes.js';
+    let nLanes = 4;
 </script>
 
 <table class="day">
     <tr>
         <th/>
-        <th>Lane 1</th>
-        <th>Lane 2</th>
-        <th>Lane 3</th>
-        <th>Lane 4</th>
+        {#each [...Array(nLanes).keys()] as lane}
+            <th>Lane {lane}</th>
+        {/each}
     </tr>
     {#each startTimes as t}
         <tr>
             <th>{t}</th>
-            {#each [...Array(4).keys()] as lane}
+            {#each [...Array(nLanes).keys()] as lane}
                 <td class="schedule_cell pool_lane"></td>
             {/each}
         </tr>
