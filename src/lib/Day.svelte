@@ -42,7 +42,7 @@
     };
 </script>
 
-<button style="display: flex; align-items: left" on:click={back}>Back</button>
+<button style="float: left" on:click={back}>Back</button>
 
 {#if validReservationDate(date)}
 <Modal show={$modal}>
