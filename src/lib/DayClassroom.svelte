@@ -2,7 +2,7 @@
     import { startTimes } from './ReservationTimes.js';
 </script>
 
-<table style="width: 100vh; height: 100vh">
+<table class="day">
     <tr>
         <th/>
         <th>Classroom 1</th>
@@ -12,9 +12,9 @@
     {#each startTimes as t}
         <tr>
             <th>{t}</th>
-            <td/>
-            <td/>
-            <td/>
+            {#each [...Array(3).keys()] as room}
+                <td class="schedule_cell classroom"></td>
+            {/each}
         </tr>
     {/each}
 </table>

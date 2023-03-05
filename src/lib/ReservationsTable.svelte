@@ -37,7 +37,7 @@
 </script>
 
 <br/>
-<table style="width: 75vh; height: 50vh">
+<table style="width: 100%">
     <thead>
         <tr>
             <th>Date</th>

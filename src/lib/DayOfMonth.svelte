@@ -14,7 +14,7 @@
 
 </script>
 
-<div style="width: 100%; height: 100%" on:click={handleClick} on:keypress={handleClick}>
+<div style="height:100%" on:click={handleClick} on:keypress={handleClick}>
     <p style="margin: auto; width: 25px; text-align: center" id={id_internal}>{date}</p>
 </div>
 

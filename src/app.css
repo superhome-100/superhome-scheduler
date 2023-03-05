@@ -29,15 +29,28 @@ h1 {
 }
 
 .card {
+  height: 100vh;
   padding: 2em;
   margin: 0;
 }
 
 #app {
-  max-width: 1280px;
+    width: 100%;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+}
+
+.calendar {
+    width: 100%;
+}
+
+.calendar_cell {
+    height: 100px;
+}
+
+.day {
+    width: 100%;
 }
 
 button {

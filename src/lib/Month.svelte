@@ -99,7 +99,7 @@
 <h1>{idx2month[month]}</h1>
 <i on:click={nextMonth} on:keypress={nextMonth} class="arrow right"></i>
 <h2>{year}</h2>
-<table class={category} id="month" style="width:100vh;height:100vh">
+<table class="{category} calendar" id="month">
 <thead>
     <tr>
         <th>S</th>
@@ -116,7 +116,7 @@
         <tr>
             {#each week as day}
                 {#if day}
-                    <td class="{category} {relativeToToday(year, month, day)}">
+                    <td class="calendar_cell {category} {relativeToToday(year, month, day)}">
                         <DayOfMonth 
                             id={isToday(year,month,day)}
                             date={day} 

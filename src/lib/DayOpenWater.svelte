@@ -1,4 +1,4 @@
-<table style="width: 100vh; height: 100vh">
+<table class="day">
     <tr>
         <th/>
         <th>Buoy A</th>
@@ -8,17 +8,15 @@
     </tr>
     <tr>
         <th>AM</th>
-         <td/>
-        <td/>
-        <td/>
-        <td/>
-   </tr>
+         {#each [...Array(4).keys()] as buoy}
+            <td class="schedule_cell buoy"></td>
+        {/each}
+    </tr>
     <tr>
         <th>PM</th>
-        <td/>
-        <td/>
-        <td/>
-        <td/>
+        {#each [...Array(4).keys()] as buoy}
+            <td class="schedule_cell buoy"></td>
+        {/each}
    </tr>
 </table>
 <style type="text/css" media="screen">
