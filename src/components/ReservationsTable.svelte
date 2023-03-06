@@ -1,5 +1,5 @@
 <script>
-    import { dateStrInNDays } from './ReservationTimes.js';
+    import { dateStrInNDays } from '../libs/ReservationTimes.js';
     export let resType; /* past or upcoming */
 
     function dummyReservations(resType) {
