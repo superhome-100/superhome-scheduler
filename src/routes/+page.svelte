@@ -41,20 +41,21 @@
 
 </script>
 
-<div id="category_buttons">
-    <button on:click={showMyReservations}>My Reservations</button>
-    <button on:click={selectPool}>Pool</button>
-    <button on:click={selectOpenWater}>Open Water</button>
-    <button on:click={selectClassroom}>Classroom</button>
-</div>
+<div id="app">
+    <div id="category_buttons">
+        <button on:click={showMyReservations}>My Reservations</button>
+        <button on:click={selectPool}>Pool</button>
+        <button on:click={selectOpenWater}>Open Water</button>
+        <button on:click={selectClassroom}>Classroom</button>
+    </div>
 
-{#if view === 'myreservations'}
-    <MyReservations/>
-{:else if category != null}
-    {#if view == 'month'}
-        <Month on:selectDay={handleSelectDay} category={category}/>
-    {:else if view == 'day'}
-        <Day on:back={handleBack} date={selectedDate} category={category}/>
+    {#if view === 'myreservations'}
+        <MyReservations/>
+    {:else if category != null}
+        {#if view == 'month'}
+            <Month on:selectDay={handleSelectDay} category={category}/>
+        {:else if view == 'day'}
+            <Day on:back={handleBack} date={selectedDate} category={category}/>
+        {/if}
     {/if}
-{/if}
-
+</div>
