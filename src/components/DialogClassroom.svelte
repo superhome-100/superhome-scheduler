@@ -1,6 +1,6 @@
 <script>
-    import { startTimes, endTimes, timeStrToMin } from './ReservationTimes.js';
-    import { canSubmit } from './stores.js';
+    import { startTimes, endTimes, timeStrToMin } from '../libs/ReservationTimes.js';
+    import { canSubmit } from '../libs/stores.js';
 
     $canSubmit = true;
 

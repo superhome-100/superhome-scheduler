@@ -3,8 +3,8 @@
     import DialogPool from './DialogPool.svelte';
     import DialogClassroom from './DialogClassroom.svelte';
     import DialogOpenWater from './DialogOpenWater.svelte';
-    import { toDateStr, minValidDateStr } from './ReservationTimes.js';
-    import { canSubmit } from './stores.js';
+    import { toDateStr, minValidDateStr } from '../libs/ReservationTimes.js';
+    import { canSubmit } from '../libs/stores.js';
     
     export let category;
     export let date;

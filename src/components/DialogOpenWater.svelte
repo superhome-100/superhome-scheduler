@@ -1,5 +1,5 @@
 <script>
-    import { canSubmit } from './stores.js';
+    import { canSubmit } from '../libs/stores.js';
 
     let auto_or_course;
     let am_or_pm;
