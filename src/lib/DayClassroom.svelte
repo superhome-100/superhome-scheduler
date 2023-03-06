@@ -5,9 +5,9 @@
 <table class="day">
     <tr>
         <th/>
-        <th>Classroom 1</th>
-        <th>Classroom 2</th>
-        <th>Classroom 3</th>
+        <th>Room 1</th>
+        <th>Room 2</th>
+        <th>Room 3</th>
     </tr>
     {#each startTimes as t}
         <tr>
