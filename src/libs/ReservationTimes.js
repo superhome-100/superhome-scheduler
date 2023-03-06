@@ -8,6 +8,17 @@ if ((inc < 60 && 60 % inc !== 0) || (inc > 60 && inc % 60 !== 0)) {
 
 export let reservationCutoffHour = 18;
 
+export function validReservationDate(date) {
+    let today = new Date();
+    return today.getFullYear() <= date.year
+        && today.getMonth() <= month2idx[date.month]
+        && (today.getDate() < date.day-1
+            || (today.getDate() == date.day-1
+            && today.getHours() < reservationCutoffHour
+            )
+        );
+}
+
 export const month2idx = {
     'January':0,
     'February':1,

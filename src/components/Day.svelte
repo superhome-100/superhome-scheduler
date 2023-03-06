@@ -4,7 +4,7 @@
     import DayOpenWater from './DayOpenWater.svelte';
     import DayClassroom from './DayClassroom.svelte';
     import ReservationDialog from './ReservationDialog.svelte';
-    import { month2idx, idx2month } from '../libs/ReservationTimes.js';
+    import { month2idx, idx2month, validReservationDate } from '../libs/ReservationTimes.js';
     import Modal from './Modal.svelte';
     import { modal } from '../libs/stores.js';
 
@@ -27,19 +27,7 @@
         let next = new Date(date.year, month2idx[date.month], date.day+1);
         date = {year: next.getFullYear(), month: idx2month[next.getMonth()], day: next.getDate()};
     }
-
-    export let reservationCutoffTime = 18;
-    
-    function validReservationDate(date) { 
-        let today = new Date();
-        return today.getFullYear() <= date.year 
-            && today.getMonth() <= month2idx[date.month] 
-            && (today.getDate() < date.day-1 
-                || (today.getDate() == date.day-1 
-                    && today.getHours() < reservationCutoffTime
-                )
-            )
-    };
+ 
 </script>
 
 <button style="float: left" on:click={back}>Back</button>
