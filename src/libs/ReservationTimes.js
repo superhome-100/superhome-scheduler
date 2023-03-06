@@ -3,7 +3,7 @@ export let closingHour = 20;
 export let inc = 30;
 
 if ((inc < 60 && 60 % inc !== 0) || (inc > 60 && inc % 60 !== 0)) {
-    throw "reservation time increment must evenly divide one hour (60 minutes)";
+    throw "reservation time increment must evenly divide, or be a multiple of, 60 minutes";
 }
 
 export let reservationCutoffHour = 18;
