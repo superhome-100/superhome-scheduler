@@ -1,5 +1,5 @@
 <script>
-    import { startTimes } from '../libs/ReservationTimes.js';
+    import { startTimes } from '../lib/ReservationTimes.js';
     let nLanes = 4;
 </script>
 

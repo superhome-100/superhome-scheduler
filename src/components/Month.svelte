@@ -2,9 +2,9 @@
     import { createEventDispatcher } from 'svelte';
     import DayOfMonth from './DayOfMonth.svelte';
     import ReservationDialog from './ReservationDialog.svelte';
-    import { idx2month, minValidDateObj } from '../libs/ReservationTimes.js';
+    import { idx2month, minValidDateObj } from '../lib/ReservationTimes.js';
     import Modal from './Modal.svelte';
-    import { modal } from '../libs/stores.js';
+    import { modal } from '../lib/stores.js';
 
     const dispatch = createEventDispatcher();
 
