@@ -1,30 +1,31 @@
 <script>
-    import { startTimes } from '../lib/ReservationTimes.js';
+    import { startTimes } from '$lib/ReservationTimes.js';
+    let nLanes = 4;
 </script>
 
 <table class="day">
     <tr>
         <th/>
-        <th>Room 1</th>
-        <th>Room 2</th>
-        <th>Room 3</th>
+        {#each [...Array(nLanes).keys()] as lane}
+            <th>Lane {lane}</th>
+        {/each}
     </tr>
     {#each startTimes as t}
         <tr>
             <th>{t}</th>
-            {#each [...Array(3).keys()] as room}
-                <td class="schedule_cell classroom"></td>
+            {#each [...Array(nLanes).keys()] as lane}
+                <td class="schedule_cell pool_lane"></td>
             {/each}
         </tr>
     {/each}
 </table>
-
+ 
 <style type="text/css" media="screen">
     table {
         border-collapse:collapse;
     }
     table td {
-        border:1px solid #FFFF00;
+        border:1px solid #0000FF;
     }
     td {
         vertical-align: top;

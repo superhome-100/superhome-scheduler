@@ -4,9 +4,9 @@
     import DayOpenWater from './DayOpenWater.svelte';
     import DayClassroom from './DayClassroom.svelte';
     import ReservationDialog from './ReservationDialog.svelte';
-    import { month2idx, idx2month, validReservationDate } from '../lib/ReservationTimes.js';
+    import { month2idx, idx2month, validReservationDate } from '$lib/ReservationTimes.js';
     import Modal from './Modal.svelte';
-    import { modal } from '../lib/stores.js';
+    import { modal } from '$lib/stores.js';
 
     export let date;
     export let category;
