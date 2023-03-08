@@ -1,33 +1,44 @@
 <script>
-    import { canSubmit } from '../lib/stores.js';
+    import { startTimes, endTimes, timeStrToMin } from '$lib/ReservationTimes.js';
+    import { canSubmit } from '$lib/stores.js';
 
+    $canSubmit = true;
+
+    let chosenStart = startTimes[0];
+    let chosenEnd;
     let auto_or_course;
-    let am_or_pm;
-    let maxDepth = null;
-    let nStudents=1;
+    let nStudents = 1;
     let comments = '';
 
     export const data = () => ({
-        time: am_or_pm,
+        start: chosenStart,
+        end: chosenEnd,
         typ: auto_or_course,
-        maxDepth: maxDepth,
         nStudents: nStudents,
         comments: comments
     });
-
-    function checkSubmit() {
-        $canSubmit = maxDepth > 0;
-    }
-    checkSubmit();
 
 </script>
 
 <div> 
     <label>
-        Time
-        <select bind:value={am_or_pm} name="am_or_pm">
-            <option value='AM'>AM</option>
-            <option value='PM'>PM</option>
+        Start Time
+        <select bind:value={chosenStart} name="start_time">
+            {#each startTimes as t}
+                <option value={t}>{t}</option>
+            {/each}
+        </select>
+    </label>
+</div>
+<div>
+    <label>
+        End Time
+        <select bind:value={chosenEnd} name="end_time">
+            {#each endTimes as t}
+                {#if timeStrToMin(chosenStart) < timeStrToMin(t)}
+                    <option value={t}>{t}</option>
+                {/if}
+            {/each}
         </select>
     </label>
 </div>
@@ -54,20 +65,10 @@
 {/if}
 <div>
     <label>
-        Max Depth
-        <input 
-            type=number 
-            min=1 
-            style="width:40px" 
-            bind:value={maxDepth} 
-            on:change={checkSubmit}
-        >
-    </label>
-</div>
-<div>
-    <label>
         Comments
-        <input type="text" name="comments" id="comments" size="30" bind:value={comments}>
+        <input type="text" bind:value={comments}>
     </label>
 </div>
+
+
 

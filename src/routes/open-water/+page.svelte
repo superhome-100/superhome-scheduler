@@ -1,6 +1,6 @@
 <script>
-  import Month from '../../components/Month.svelte';
-  import Day from '../../components/Day.svelte';
+  import Month from '$lib/components/Month.svelte';
+  import Day from '$lib/components/Day.svelte';
 
   let view = 'month';
   let selectedDate = null;
