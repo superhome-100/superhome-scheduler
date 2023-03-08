@@ -1,16 +1,17 @@
 <script>
+    import { userId } from '$lib/stores.js';
     import ReservationsTable from './ReservationsTable.svelte';
-
-    export let userId;
+    
+    export let name;
     export let reservations;
 
     let view = 'upcoming';
 
     async function fetchReservations(view) {
-        const response = await fetch(`/${userId}`, {
+        const response = await fetch(`/${name}`, {
             method: 'POST',
             headers: {'Content-type': 'application/json'},
-            body: JSON.stringify({ userId: userId, view: view })
+            body: JSON.stringify({ userId: $userId, view: view })
         });
         const rsvs = await response.json();
         return rsvs;

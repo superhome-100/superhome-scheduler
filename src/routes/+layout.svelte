@@ -2,13 +2,15 @@
     import '../styles.css';
     import FacebookAuth from '$lib/components/FacebookAuth.svelte'
     import { PUBLIC_FACEBOOK_APP_ID } from "$env/static/public";
+    import { userId } from '$lib/stores.js';
     let user;
 
-    async function authenticateUser(userId, userName) {
+    async function authenticateUser(facebookId, userName) {
+        $userId = facebookId;
         const response = await fetch('/', {
             method: 'POST',
             headers: {'Content-type': 'application/json'},
-            body: JSON.stringify({ userId: userId, userName: userName })
+            body: JSON.stringify({ userId: facebookId, userName: userName })
         });
         const result = await response.json();
         if (result === 'active') {
