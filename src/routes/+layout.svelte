@@ -15,9 +15,13 @@
         const result = await response.json();
         if (result === 'active') {
             user = userName.toLowerCase().replace(/ /g,'');
+        } else {
+            alert(
+                'User ' + userName + ' does not have permission ' + 
+                'to access this app; please contact the admin for help'
+            );
         }
     }
-
 </script>
 
 <div id="app">
@@ -37,13 +41,12 @@
             </a>
         </div>
     {:else}
-        <div>
-            <FacebookAuth 
-                appId={PUBLIC_FACEBOOK_APP_ID} 
-                on:auth-success={e => authenticateUser(e.detail.userId, e.detail.userName)} 
-                on:auth-failure={e => console.log(e.detail.error)}
-            />
-        </div>
+        <FacebookAuth 
+            appId={PUBLIC_FACEBOOK_APP_ID} 
+            on:auth-success={e => authenticateUser(e.detail.userId, e.detail.userName)} 
+            on:auth-failure={e => alert(e.detail.error)}
+        />
     {/if}
     <slot />
 </div>
+
