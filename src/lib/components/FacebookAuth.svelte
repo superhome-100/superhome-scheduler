@@ -1,14 +1,14 @@
 <script>
     import { createEventDispatcher } from 'svelte'
-    export let appId
-    export let text = 'Sign in with Facebook'
+    export let appId;
+    let hidden = true;
     const dispatch = createEventDispatcher()
     const version = 'v3.2'
-    let disabled = true
+
     function action () {
         const script = document.createElement('script')
         script.async = true
-        script.src = '//connect.facebook.net/en_GB/sdk.js'
+        script.src = '//connect.facebook.net/en_US/sdk.js'
         script.onload = initialise
         document.head.appendChild(script)
         return {
@@ -17,34 +17,46 @@
             }
         }
     }
+    
+    function dispatchAuthorized(response) {
+        const userId = response.userID
+        const accessToken = response.accessToken
+        FB.api('/' + userId, function(response) {
+            const userName = response.name;
+            dispatch('auth-success', {
+                accessToken,
+                userId,
+                userName
+            })
+        });
+    }
+
     function initialise () {
         const FB = window['FB']
         if (!appId) {
-            console.error('Missing Facebook AppId')
+            console.error('Missing Facebook App ID');
         }
         FB.init({
             appId      : appId,
             cookie     : true,
             xfbml      : false,
             version    : version
-        })
-        disabled = false
+        });
+        FB.getLoginStatus(function(response) {
+            if (response.status === "connected") {
+                hidden = true;
+                dispatchAuthorized(response.authResponse);
+            } else {
+                hidden = false;
+            }    
+        });
     }
+
     function login () {
         const FB = window['FB']
         FB.login(function (response) {
             if (response.status === 'connected') {
-                const authResponse = response.authResponse
-                const userId = authResponse.userID
-                const accessToken = authResponse.accessToken
-                FB.api('/' + userId, function(response) {
-                    const userName = response.name;
-                    dispatch('auth-success', {
-                        accessToken,
-                        userId,
-                        userName
-                    })
-                });
+                dispatchAuthorized(response.authResponse);
             } else {
                 dispatch('auth-info', { response })
             }
@@ -52,5 +64,5 @@
     }
 </script>
 
-<button on:click={login} {disabled} use:action>Log In with Facebook</button>
+<button on:click={login} hidden={hidden} use:action>Log In with Facebook</button>
 

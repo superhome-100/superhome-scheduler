@@ -35,6 +35,21 @@ h1 {
     text-align: center;
 }
 
+#category_buttons {
+    position: absolute;
+    top: 0;
+    width: 100%;
+}
+
+#myreservations_tabs {
+    height: 500px;
+}
+
+#myreservations_table {
+    width: 100%;
+    margin: 0 auto;
+}
+
 .calendar {
     width: 100%;
 }
@@ -79,7 +94,7 @@ button:focus-visible {
 }
 
 #today {
-        border-radius: 2em;
+    border-radius: 2em;
 }
 .pool #today {
     background: #0000FF;

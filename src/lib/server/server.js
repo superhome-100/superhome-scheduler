@@ -1,22 +1,15 @@
-import { xata } from '$lib/xata';
+import { getXataClient } from '$lib/server/xata';
+
+const xata = getXataClient();
 
 export async function getReservations(params) {
-    const { userId, view } = params;
-    let today = new Date();
-    let reservations = {};
-    for (let tbl of ['OpenWaterReservations']) {
-        if (view === 'upcoming') {
-            reservations[tbl] = await xata.db.OpenWaterReservations.filter({
-                date: {$ge: today.toISOString()},
-                "user.facebook_id": userId,
-            }).getAll();
-        } else if (view === 'past') {
-            reservations[tbl] = await xata.db.OpenWaterReservations.filter({
-                date: {$lt: today.toISOString()},
-                "user.facebook_id": userId,
-            }).getAll();
-        }
-    }
+    const { userId } = params;
+    let reservations = await xata.db.Reservations
+        .filter({
+            "user.facebook_id": userId})
+        .sort("date", "asc")
+        .getAll();
+
     return { reservations };
 }
 

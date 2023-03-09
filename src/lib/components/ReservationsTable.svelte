@@ -1,53 +1,65 @@
 <script>
-    import { dateStrInNDays } from '$lib/ReservationTimes.js';
     export let resType; /* past or upcoming */
     export let reservations;
+    
+    function modifyReservation(event) {
+
+    }
 
     function deleteRsv(event) {
         let rexp = /(.+)_(.+)/
         let m = rexp.exec(event.target.id);
         let cat = m[1];
         let date = m[2];
-        var i = reservations[cat].length;
+        var i = reservations.length;
         while (i--) {
-            if (date === reservations[cat][i].date) {
-                reservations[cat].splice(i,1);
+            if (date === reservations[i].date
+                && cat === reservations[i].category) {
+                
+                reservations.splice(i,1);
                 break;
             }
         }
-        reservations = {...reservations};
+        reservations = [...reservations];
     }
 </script>
 
-<table style="width: 100%">
+<table id="myreservations_table">
     <thead>
         <tr>
             <th>Date</th>
             <th>Category</th>
+            <th>Details</th>
             <th>Status</th>
             {#if resType == 'upcoming'}
+                <th>Modify</th>
                 <th>Cancel</th>
             {/if}
         </tr>
     </thead>
     <tbody>
-        {#each Object.entries(reservations) as [cat, rsvs]}
-            {#each rsvs as rsv}
-                <tr>
-                    <td>{rsv.date}</td>
-                    <td>{cat}</td>
-                    <td>{rsv.status}</td>
-                    {#if resType == 'upcoming'}
-                        <td>
-                            <button 
-                                id={`${cat}_${rsv.date}`} 
-                                on:click={deleteRsv}
-                            >X
-                            </button>
-                        </td>
-                    {/if}
-                </tr>
-            {/each}
+        {#each reservations as rsv, i}
+            <tr>
+                <td>{rsv.date}</td>
+                <td>{rsv.category}</td>
+                <td>tbc</td>
+                <td>{rsv.status}</td>
+                {#if resType == 'upcoming'}
+                    <td>
+                        <button
+                            id={`${rsv.category}_${rsv.date}`}
+                            on:click={modifyReservation}
+                        >/
+                        </button>
+                    <td>
+                        <button 
+                            id={`${rsv.category}_${rsv.date}`} 
+                            on:click={deleteRsv}
+                        >X
+                        </button>
+                    </td>
+                {/if}
+            </tr>
         {/each}
     </tbody>
 </table>
