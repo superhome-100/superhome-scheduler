@@ -4,7 +4,7 @@
     import DayOfMonth from '$lib/components/DayOfMonth.svelte';
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
     import Modal from '$lib/components/Modal.svelte';
-    import { idx2month, minValidDateObj } from '$lib/ReservationTimes.js';
+    import { idx2month, minValidDate } from '$lib/ReservationTimes.js';
     import { modal, view, viewedDate, reservations } from '$lib/stores.js';
 
     export let data;
@@ -75,7 +75,7 @@
 
 
 <Modal show={$modal}>
-    <ReservationDialog category={gCategory} date={minValidDateObj()}/>
+    <ReservationDialog category={gCategory} date={minValidDate()}/>
 </Modal>
 
 <i on:click={prevMonth} on:keypress={prevMonth} class="arrow left"></i>
