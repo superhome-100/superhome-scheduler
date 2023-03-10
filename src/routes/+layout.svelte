@@ -1,12 +1,19 @@
 <script lang="js">
+    import { goto } from '$app/navigation';
     import '../styles.css';
     import FacebookAuth from '$lib/components/FacebookAuth.svelte'
     import { PUBLIC_FACEBOOK_APP_ID } from "$env/static/public";
-    import { userId } from '$lib/stores.js';
-    let user;
+    import { userId, view, reservations } from '$lib/stores.js';
+    
+    export let data;
+
+    $reservations = data.reservations;
+
+    function goToRoot() {
+        goto('/');
+    }
 
     async function authenticateUser(facebookId, userName) {
-        $userId = facebookId;
         const response = await fetch('/', {
             method: 'POST',
             headers: {'Content-type': 'application/json'},
@@ -14,7 +21,8 @@
         });
         const result = await response.json();
         if (result === 'active') {
-            user = userName.toLowerCase().replace(/ /g,'');
+            $userId = facebookId; 
+            userName = userName.toLowerCase().replace(/ /g,'');
         } else {
             alert(
                 'User ' + userName + ' does not have permission ' + 
@@ -25,18 +33,18 @@
 </script>
 
 <div id="app">
-    {#if user}
+    {#if $userId}
         <div id="category_buttons">
-            <a href="/{user}">
+            <a href="/{$userId}">
                 <button>My Reservations</button>
             </a>
-            <a href="/pool">
+            <a href="/{$view}/pool">
                 <button>Pool</button>
             </a>
-            <a href="/open-water">
+            <a href="/{$view}/openwater">
                 <button>Open Water</button>
             </a>
-            <a href="/classroom">
+            <a href="/{$view}/classroom">
                 <button>Classroom</button>
             </a>
         </div>
@@ -45,6 +53,7 @@
             appId={PUBLIC_FACEBOOK_APP_ID} 
             on:auth-success={e => authenticateUser(e.detail.userId, e.detail.userName)} 
             on:auth-failure={e => alert(e.detail.error)}
+            on:no-login={goToRoot}
         />
     {/if}
     <slot />

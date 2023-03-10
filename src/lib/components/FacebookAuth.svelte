@@ -48,6 +48,7 @@
                 dispatchAuthorized(response.authResponse);
             } else {
                 hidden = false;
+                dispatch('no-login');
             }    
         });
     }
