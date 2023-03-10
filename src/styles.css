@@ -62,6 +62,29 @@ h1 {
     width: 100%;
 }
 
+p.rsv {
+    border-radius: 2em;
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: hidden;
+    margin: auto;
+    width: max-content;
+    padding-inline: 1em;
+}
+
+.pool p.rsv{
+    background: #0000FF;
+}
+
+.openwater p.rsv {
+    background: #00FF00;
+}
+
+.classroom p.rsv {
+    background: #FFFF00;
+}
+
 button {
   border-radius: 8px;
   border: 1px solid transparent;

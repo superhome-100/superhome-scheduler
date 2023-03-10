@@ -1,16 +1,57 @@
 import { getXataClient } from '$lib/server/xata';
+import { datetimeParseDate, datetimeToDateStr } from '$lib/ReservationTimes.js';
 
 const xata = getXataClient();
 
-export async function getReservations(params) {
-    const { userId } = params;
-    let reservations = await xata.db.Reservations
+export async function getFutureReservations() {
+    let today = new Date().toISOString();
+    let rsvs = await xata.db.Reservations
+        .filter({ date: { $ge: today }})
+        .sort("date", "asc")
+        .getAll();
+
+    let users = await xata.db.Users.getAll();
+
+    let reservations = {'pool': [], 'openwater': [], 'classroom': []};
+    for (let rsv of rsvs) {
+        for (let user of users) {
+            if (user.id == rsv.user.id) {
+                let iso = rsv.date.toISOString();
+                let newRsv = {
+                    ...rsv,
+                    name: user.name,
+                    facebook_id: user.facebook_id,
+                    dateISO: iso,
+                    dateStr: datetimeToDateStr(iso),
+                    date: datetimeParseDate(iso)
+                };
+                reservations[rsv.category].push(newRsv);
+                break;
+            }
+        }
+    }
+    return reservations;
+}
+
+export async function getUserReservations(userId) {
+    let rsvs = await xata.db.Reservations
         .filter({
             "user.facebook_id": userId})
         .sort("date", "asc")
         .getAll();
 
-    return { reservations };
+    let reservations = [];
+    for (let rsv of rsvs) {
+        let iso = rsv.date.toISOString();
+        let newRsv = {
+            ...rsv,
+            dateISO: iso,
+            dateStr: datetimeToDateStr(iso),
+            date: datetimeParseDate(iso)
+        };
+        reservations.push(newRsv);
+    }
+    return reservations;
 }
 
 export async function addUser(params) {
@@ -23,15 +64,14 @@ export async function addUser(params) {
     return status;
 }
 
-export async function authenticateUser(params) {
+export async function authenticateUser(userId, userName) {
     let status;
-    const { userId } = params;
     let records = await xata.db.Users
         .filter({ "facebook_id" : userId })
         .getMany({pagination: {size: 1}});
     if (records.length == 0) {
         /* user does not exist yet */
-        status = await addUser(params);
+        status = await addUser(userId, userName);
     } else {
         status = records[0].status;
     }
