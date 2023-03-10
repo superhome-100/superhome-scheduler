@@ -16,14 +16,13 @@ export async function getFutureReservations() {
     for (let rsv of rsvs) {
         for (let user of users) {
             if (user.id == rsv.user.id) {
-                let iso = rsv.date.toISOString();
                 let newRsv = {
                     ...rsv,
                     name: user.name,
                     facebook_id: user.facebook_id,
-                    dateISO: iso,
-                    dateStr: datetimeToDateStr(iso),
-                    date: datetimeParseDate(iso)
+                    dateISO: rsv.date.toISOString(),
+                    dateStr: datetimeToDateStr(rsv.date),
+                    date: datetimeParseDate(rsv.date)
                 };
                 reservations[rsv.category].push(newRsv);
                 break;
@@ -42,12 +41,11 @@ export async function getUserReservations(userId) {
 
     let reservations = [];
     for (let rsv of rsvs) {
-        let iso = rsv.date.toISOString();
         let newRsv = {
             ...rsv,
-            dateISO: iso,
-            dateStr: datetimeToDateStr(iso),
-            date: datetimeParseDate(iso)
+            dateISO: rsv.date.toISOString(),
+            dateStr: datetimeToDateStr(rsv.date),
+            date: datetimeParseDate(rsv.date)
         };
         reservations.push(newRsv);
     }

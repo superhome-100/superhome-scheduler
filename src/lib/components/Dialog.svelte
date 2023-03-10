@@ -3,14 +3,14 @@
     import DialogPool from './DialogPool.svelte';
     import DialogClassroom from './DialogClassroom.svelte';
     import DialogOpenWater from './DialogOpenWater.svelte';
-    import { toDateStr, minValidDateStr } from '$lib/ReservationTimes.js';
+    import { datetimeToDateStr, minValidDateStr } from '$lib/ReservationTimes.js';
     import { canSubmit } from '$lib/stores.js';
     
     export let category;
     export let date;
     let chosenDate;
 
-    onMount(() => chosenDate = toDateStr(date));
+    onMount(() => chosenDate = datetimeToDateStr(date));
 
 	export let hasForm = false;
 	export let onCancel = () => {};
@@ -43,22 +43,6 @@
 	}
 	
 </style>
-
-<!--
-{#if show}
-<section>
-    <slot/>
-    <button on:click={onClose}/>
-</section>
-{/if}
-    <style>
-        section {
-            z-index: 100;
-
-        }
-        </style>
-<Modal show={bool} onClose={() => do stuff }/>
--->
 
 {#if hasForm}
     <h2>{category} reservation</h2>

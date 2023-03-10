@@ -1,4 +1,7 @@
 :root {
+  --blue: #0000FF;
+  --green: #00FF00;
+  --yellow: #FFFF00;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -72,17 +75,49 @@ p.rsv {
     width: max-content;
     padding-inline: 1em;
 }
+.pool p.rsv {
+    color: white;
+}
+.openwater p.rsv {
+    color: black;
+}
+.classroom p.rsv {
+    color: black;
+}
+table.calendar {
+    table-layout: fixed;
+    width: 100%;
+    border-collapse:collapse;
+}
+
+table.pool td.pool {
+    border:1px solid var(--blue);
+}
+
+table.openwater td.openwater {
+    border:1px solid var(--green);
+}
+
+table.classroom td.classroom {
+    border:1px solid var(--yellow);
+}
+
+td.calendar_cell {
+    vertical-align: top;
+    text-align: center;
+    width: 14%;
+}
 
 .pool p.rsv{
-    background: #0000FF;
+    background: var(--blue);
 }
 
 .openwater p.rsv {
-    background: #00FF00;
+    background: var(--green);
 }
 
 .classroom p.rsv {
-    background: #FFFF00;
+    background: var(--yellow);
 }
 
 button {
@@ -96,9 +131,11 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -110,7 +147,7 @@ button:focus-visible {
     background-color: #ffffff;
     height: 100vh;
     width: 100vw;
-}
+  }
   button {
     background-color: #f9f9f9;
   }
@@ -119,14 +156,20 @@ button:focus-visible {
 #today {
     border-radius: 2em;
 }
+
 .pool #today {
-    background: #0000FF;
+    color: white;
+    background: var(--blue);
 }
+
 .openwater #today {
-    background: #00FF00;
+    background: var(--green);
+    color: black;
 }
+
 .classroom #today {
-    background: #FFFF00;
+    background: var(--yellow);
+    color: black;
 }
 
 .arrow {
