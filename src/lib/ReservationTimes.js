@@ -87,7 +87,7 @@ export const endTimes = Array(nRes)
     .fill()
     .map((v,i) => minToTimeStr(openingHour*60 + (i+1)*inc));
 
-function minValidDate() {
+export function minValidDate() {
     let today = new Date();
     let d = new Date();
     if (today.getHours() < reservationCutoffHour) {
