@@ -1,0 +1,60 @@
+<script>
+    import { createEventDispatcher } from 'svelte';
+    import DayPool from '$lib/components/DayPool.svelte';
+    import DayOpenWater from '$lib/components/DayOpenWater.svelte';
+    import DayClassroom from '$lib/components/DayClassroom.svelte';
+    import ReservationDialog from '$lib/components/ReservationDialog.svelte';
+    import { month2idx, idx2month, validReservationDate } from '$lib/ReservationTimes.js';
+    import Modal from '$lib/components/Modal.svelte';
+    import { modal, view, viewedDate } from '$lib/stores.js';
+
+    export let data;
+    $: category = data.category;
+    
+    const dispatch = createEventDispatcher();
+
+    function back() {
+        $view = 'multi-day';
+    }
+
+    function prevDay() {
+        let prev = new Date()
+        prev.setDate($viewedDate.getDate() - 1);
+        $viewedDate = prev;
+    }
+    function nextDay() {
+        let next = new Date()
+        next.setDate($viewedDate.getDate() + 1);
+        $viewedDate = next;
+    }
+ 
+</script>
+
+<a href="/multi-day/{category}">
+<button style="float: left" on:click={back}>Back</button>
+</a>
+
+{#if validReservationDate($viewedDate)}
+<Modal show={$modal}>
+    <ReservationDialog category={category} date={$viewedDate}/>
+</Modal>
+{/if}
+
+<i on:click={prevDay} on:keypress={prevDay} class="arrow left"></i>
+<h2 class="day">{idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}</h2>
+<i on:click={nextDay} on:keypress={nextDay} class="arrow right"></i>
+<div>
+    {#if category == 'pool'}
+        <DayPool/>
+    {:else if category == 'openwater'}
+        <DayOpenWater/>
+    {:else if category == 'classroom'}
+        <DayClassroom/>
+    {/if}
+</div>
+
+<style>
+    h2.day {
+        display: inline;
+    }
+</style>

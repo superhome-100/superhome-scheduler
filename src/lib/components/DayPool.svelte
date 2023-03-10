@@ -7,7 +7,7 @@
     <tr>
         <th/>
         {#each [...Array(nLanes).keys()] as lane}
-            <th>Lane {lane}</th>
+            <th>Lane {lane+1}</th>
         {/each}
     </tr>
     {#each startTimes as t}

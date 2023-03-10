@@ -5,7 +5,7 @@
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
     import Modal from '$lib/components/Modal.svelte';
     import { idx2month, minValidDateObj } from '$lib/ReservationTimes.js';
-    import { modal, viewedDate, reservations } from '$lib/stores.js';
+    import { modal, view, viewedDate, reservations } from '$lib/stores.js';
 
     export let data;
 
@@ -17,20 +17,6 @@
     function handleDateChange() {
         $viewedDate = new Date(gYear, gMonth, 1); 
     }
-
-    function handleBack(event) {
-    }
-
-    function handleSelectDay(event) {
-        dispatch('selectDay', {
-            date: {
-                day: event.detail.date,
-                month: idx2month[gMonth],
-                year: gYear
-            }
-        });
-    }
-
 
     function prevMonth() {
         if (gMonth == 0) {
@@ -116,9 +102,9 @@
                         <td class="calendar_cell {gCategory} {relativeToToday(gYear, gMonth, params.day)}">
                             <DayOfMonth 
                                 id={isToday(gYear, gMonth, params.day)}
-                                date={params.day} 
+                                date={new Date(gYear, gMonth, params.day)} 
+                                category={gCategory}
                                 rsv={params.rsv}
-                                on:selectDay={handleSelectDay}
                             />
                         </td>
                     {:else}
@@ -130,25 +116,3 @@
     </tbody>
 </table>
 
-<style type="text/css" media="screen">
-
-    table {
-        table-layout: fixed;
-        width: 100%;
-        border-collapse:collapse;
-    }
-    table.pool td.pool {
-        border:1px solid #0000FF;
-    }
-    table.openwater td.openwater {
-        border:1px solid #00FF00;
-    }
-    table.classroom td.classroom {
-        border:1px solid #FFFF00;
-    }
-   td {
-        vertical-align: top;
-        text-align: center;
-        width: 14%;
-    }
-</style>
