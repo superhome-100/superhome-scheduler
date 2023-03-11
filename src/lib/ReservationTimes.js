@@ -18,10 +18,10 @@ export function datetimeParseDate(datetime) {
     };
 }
 
-export function datetimeToDateStr(datetime) {
-    let rexp = /(.*)T.*/
-    let m = rexp.exec(datetime.toISOString());
-    return m[1];
+export function datetimeToLocalDateStr(datetime) {
+    let rexp = /([0-9]+)\/([0-9]+)\/([0-9]+).*/
+    let m = rexp.exec(datetime.toLocaleDateString());
+    return m[3] + "-" + m[1].padStart(2,'0') + "-" + m[2].padStart(2,'0');
 }
 
 export function validReservationDate(date) {

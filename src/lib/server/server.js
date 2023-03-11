@@ -1,5 +1,5 @@
 import { getXataClient } from '$lib/server/xata';
-import { datetimeParseDate, datetimeToDateStr } from '$lib/ReservationTimes.js';
+import { datetimeParseDate, datetimeToLocalDateStr } from '$lib/ReservationTimes.js';
 
 const xata = getXataClient();
 
@@ -21,7 +21,7 @@ export async function getFutureReservations() {
                     name: user.name,
                     facebook_id: user.facebook_id,
                     dateISO: rsv.date.toISOString(),
-                    dateStr: datetimeToDateStr(rsv.date),
+                    dateStr: datetimeToLocalDateStr(rsv.date),
                     date: datetimeParseDate(rsv.date)
                 };
                 reservations[rsv.category].push(newRsv);
@@ -44,7 +44,7 @@ export async function getUserReservations(userId) {
         let newRsv = {
             ...rsv,
             dateISO: rsv.date.toISOString(),
-            dateStr: datetimeToDateStr(rsv.date),
+            dateStr: datetimeToLocalDateStr(rsv.date),
             date: datetimeParseDate(rsv.date)
         };
         reservations.push(newRsv);
