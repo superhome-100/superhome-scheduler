@@ -3,14 +3,14 @@
     import DialogPool from './DialogPool.svelte';
     import DialogClassroom from './DialogClassroom.svelte';
     import DialogOpenWater from './DialogOpenWater.svelte';
-    import { datetimeToDateStr, minValidDateStr } from '$lib/ReservationTimes.js';
+    import { datetimeToLocalDateStr, minValidDateStr } from '$lib/ReservationTimes.js';
     import { canSubmit } from '$lib/stores.js';
     
     export let category;
     export let date;
     let chosenDate;
 
-    onMount(() => chosenDate = datetimeToDateStr(date));
+    onMount(() => chosenDate = datetimeToLocalDateStr(date));
 
 	export let hasForm = false;
 	export let onCancel = () => {};
