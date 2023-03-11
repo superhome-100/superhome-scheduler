@@ -1,69 +1,67 @@
 <script>
-    import { getContext, onMount } from 'svelte';
+    import { getContext } from 'svelte';
+    import { enhance } from '$app/forms';
     import DialogPool from './DialogPool.svelte';
     import DialogClassroom from './DialogClassroom.svelte';
     import DialogOpenWater from './DialogOpenWater.svelte';
-    import { datetimeToLocalDateStr, minValidDateStr } from '$lib/ReservationTimes.js';
     import { canSubmit } from '$lib/stores.js';
-    
+    import { minValidDateStr, datetimeToLocalDateStr } from '$lib/ReservationTimes.js';
+
     export let category;
     export let date;
-    let chosenDate;
-
-    onMount(() => chosenDate = datetimeToLocalDateStr(date));
-
-	export let hasForm = false;
-	export let onCancel = () => {};
-	export let onOkay = () => {};
+    export let hasForm = false;
+    export let onCancel = () => {};
+    export let onOkay = () => {};
 
     const { close } = getContext('simple-modal');
 
     function _onCancel() {
 		onCancel();
 		close();
-	}
-
-    let data;
-    function _onSubmit() {
-        onOkay({...data(), date:chosenDate});
-		close();
     }
 
-    </script>
+    const submitReservation = ({ form, data, action, cancel }) => {
+        let dataObj = Object.fromEntries(data);
+        return async ({ result, update }) => {
+            switch(result.type) {
+                case 'success':
+                    onOkay(dataObj);
+                    break;
+                default:
+                    break;
+            }
+            close();
+        };
+    };
 
-<style>
-    h2 {
-		font-size: 2rem;
-		text-align: center;
-	}
-	
-	.buttons {
-		display: flex;
-		justify-content: space-between;
-	}
-	
-</style>
+</script>
 
 {#if hasForm}
-    <h2>{category} reservation</h2>
-    <label>
-        Date
-        <input type="date" min={minValidDateStr()} bind:value={chosenDate}>
-    </label>
-    {#if category == 'pool'}
-        <DialogPool bind:data={data}/>
-    {:else if category === 'classroom'}
-        <DialogClassroom bind:data={data}/>
-    {:else if category === 'openwater'}
-        <DialogOpenWater bind:data={data}/>
-    {/if}
+    <h2 class="dialog">Reservation Request</h2>
+    <form method="POST" action="/?/submitReservation" use:enhance={submitReservation}>
+        <div><label>
+            Date
+            <input type="date" name="date" min={minValidDateStr()} value={datetimeToLocalDateStr(date)}>
+        </label></div>
+        <div><label>
+            Category
+            <select name="category" bind:value={category}>
+                <option value="pool">Pool</option>
+                <option value="openwater">Open Water</option>
+                <option value="classroom">Classroom</option>
+            </select>
+        </label></div>
+        {#if category === 'pool'}
+            <DialogPool/>
+        {:else if category === 'openwater'}
+            <DialogOpenWater/>
+        {:else if category === 'classroom'}
+            <DialogClassroom/>
+        {/if}
+        <div class="dialog_button">
+            <button on:click={_onCancel}>Cancel</button>
+            <input type="submit" value="Submit" disabled={!$canSubmit}>
+        </div>
+    </form>
 {/if}
 
-<div class="buttons">
-	<button on:click={_onCancel}>
-		Cancel
-	</button>
-	<button on:click={_onSubmit} disabled={!$canSubmit}>
-	    Submit
-	</button>
-</div>

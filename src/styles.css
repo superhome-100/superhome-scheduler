@@ -31,6 +31,16 @@ h1 {
   display: inline;
 }
 
+h2.dialog {
+	font-size: 2rem;
+	text-align: center;
+}
+	
+.dialog_button {
+	display: flex;
+	justify-content: space-between;
+}	
+
 #app {
     width: 100%;
     margin: 0 auto;
@@ -120,7 +130,19 @@ td.calendar_cell {
     background: var(--yellow);
 }
 
-button {
+button.tab_button {
+	background: none;
+	border: none;
+	border-radius: 0;
+	margin: 0;
+	color: gray;
+}
+	
+.tab_button.selected {
+	color: white;
+}
+
+button, input[type=submit] {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
@@ -132,12 +154,12 @@ button {
   transition: border-color 0.25s;
 }
 
-button:hover {
+button:hover, input[type=submit]:hover {
   border-color: #646cff;
 }
 
-button:focus,
-button:focus-visible {
+button:focus, input[type=submit]:focus
+button:focus-visible, input[type=submit]:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
@@ -148,8 +170,11 @@ button:focus-visible {
     height: 100vh;
     width: 100vw;
   }
-  button {
+  button, input[type=submit] {
     background-color: #f9f9f9;
+  }
+  .tab_button.selected {
+      color: black;
   }
 }
 
