@@ -76,3 +76,7 @@ export async function authenticateUser(userId, userName) {
 
     return status;
 }
+
+export function submitReservation(data) {
+    console.log(data);
+}

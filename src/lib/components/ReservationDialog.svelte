@@ -2,26 +2,21 @@
     import { getContext } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import Dialog from './Dialog.svelte';
+    import { toast, Toaster } from 'svelte-french-toast';
 
     export let category;
     export let date;
 
     const { open } = getContext('simple-modal');
 
-    let status = 0;
-
 	const onCancel = (text) => {
-		status = -1;
-	}
+    
+    }
 
 	const onOkay = (data) => {
-        status = 1;
-        let str = '';
-        for (const [key, value] of Object.entries(data)) {
-            str += `${key}: ${value}\n`;   
-        }
-        alert(str); 
+        toast.success(`${data.category} reservation submitted!`); 
     }
+
     export const showDialog = () => {
 		open(
 			Dialog,
@@ -42,6 +37,8 @@
 </script>
 
 <div class="button_plus" on:click={showDialog} on:keypress={showDialog}></div>
+
+<Toaster/>
 
 <style>
     .button_plus {
