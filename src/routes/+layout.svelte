@@ -3,12 +3,11 @@
     import '../styles.css';
     import FacebookAuth from '$lib/components/FacebookAuth.svelte'
     import { PUBLIC_FACEBOOK_APP_ID } from "$env/static/public";
-    import { user, view, reservations, myReservations } from '$lib/stores.js';
-    import { sortByCategory, sortUserReservations } from '$lib/utils.js';
+    import { user, view, reservations } from '$lib/stores.js';
     export let data;
 
 
-    $reservations = sortByCategory(data.reservations);
+    $reservations = data.reservations;
     
     function goToRoot() {
         $user = null;
@@ -41,13 +40,14 @@
                 'dbId': record.id,
                 'toString': () => name.toLowerCase().replace(/ /g, '')
             };
-            $myReservations = sortUserReservations(data.reservations, record.id);
-        } else {
+        } else if (record.status === 'disabled') {
             alert(
                 'User ' + name + ' does not have permission ' + 
                 'to access this app; please contact the admin for help'
             );
             goToRoot();
+        } else {
+            alert('Unexpected login error; Please try again');
         }
     }
 </script>

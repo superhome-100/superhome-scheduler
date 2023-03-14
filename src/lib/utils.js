@@ -42,14 +42,6 @@ export function sortUserReservations(newRsvs, dbId, sorted={'past': [], 'upcomin
     return sorted;
 }
 
-export function sortByCategory(rsvs) {
-    let sorted = {'pool': [], 'openwater': [], 'classroom': []}
-    for (let rsv of rsvs) {
-        sorted[rsv.category].push(rsv);
-    }
-    return sorted;
-}
-
 export function augmentRsv(rsv, fbId=null, name=null) {
     let newRsv = {
         ...rsv,
