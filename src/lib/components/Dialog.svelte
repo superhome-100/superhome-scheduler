@@ -12,7 +12,7 @@
     import { minValidDateStr, datetimeToLocalDateStr } from '$lib/ReservationTimes.js';
     import { augmentRsv } from '$lib/utils.js';
 
-    export let category;
+    export let category = 'openwater';
     export let date;
     export let hasForm = false;
     export let onCancel = () => {};
@@ -50,7 +50,7 @@
             action="/?/submitReservation" 
             use:enhance={submitReservation}
         >
-            <input type="hidden" name="user" value={$user.dbId}>
+            <input type="hidden" name="user" value={$user.id}>
             <div><label>
                 Date
                 <input 

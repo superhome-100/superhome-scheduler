@@ -27,12 +27,7 @@
 				onCancel,
 				onOkay
 			},
-			{
-				closeButton: true,
-    		    closeOnEsc: true,
-    		    closeOnOuterClick: true,
-			}
-	  );
+		);
 	};
 </script>
 

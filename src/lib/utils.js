@@ -31,10 +31,10 @@ export function monthArr(year, month, reservations) {
     return month_a;
 };
 
-export function sortUserReservations(newRsvs, dbId, sorted={'past': [], 'upcoming': []}) {
+export function sortUserReservations(newRsvs, id, sorted={'past': [], 'upcoming': []}) {
     let now = datetimeToLocalDateStr(new Date());
     for (let rsv of newRsvs) {
-        if (rsv.user.id === dbId) {
+        if (rsv.user.id === id) {
             let view = rsv.date >= now ? 'upcoming' : 'past';
             sorted[view].push(rsv);
         }

@@ -12,7 +12,7 @@
     $: gCategory = data.category;
     $: gMonth = $viewedDate.getMonth();
     $: gYear = $viewedDate.getFullYear();
-    $: gMonthArr = monthArr(
+    $: gMonthArr = () => monthArr(
         gYear, 
         gMonth, 
         $reservations.filter((rsv) => rsv.category === gCategory)
@@ -30,7 +30,6 @@
             gMonth = gMonth-1;
         }
         handleDateChange();
-        gMonthArr = monthArr(gYear, gMonth, $reservations[gCategory]);
     }
 
     function nextMonth() {
@@ -41,7 +40,6 @@
             gMonth = gMonth+1;
         }
         handleDateChange();
-        gMonthArr = monthArr(gYear, gMonth, $reservations[gCategory]);
     }
 
     let today = new Date();
@@ -101,7 +99,7 @@
         </tr>
     </thead>
     <tbody>
-        {#each gMonthArr as week}
+        {#each gMonthArr() as week}
             <tr>
                 {#each week as params}
                     {#if params}
