@@ -1,52 +1,50 @@
 import { getXataClient } from '$lib/server/xata';
-import { datetimeParseDate, datetimeToLocalDateStr } from '$lib/ReservationTimes.js';
+import { augmentRsv } from '$lib/utils.js';
+import { redirect } from '@sveltejs/kit';
 
 const xata = getXataClient();
 
-export async function getFutureReservations() {
-    let today = new Date().toISOString();
-    let rsvs = await xata.db.Reservations
-        .filter({ date: { $ge: today }})
+export async function getSession(id) {
+    let records = await xata.db.Sessions
+        .select(['*', 'user.facebookId', 'user.name'])
+        .filter({id: id})
+        .getMany();
+    return records[0];
+}
+
+export async function deleteSession(id) {
+    return await xata.db.Sessions.delete(id);
+}
+
+export async function createSession(user) {
+    return await xata.db.Sessions.create({
+        'user': user.id,
+    });
+}
+
+export async function getUser(id) {
+    return await xata.db.Users.read(id);
+}
+
+export async function getReservationsSince(minDateStr) {
+    let reservations = await xata.db.Reservations
+        .select(["*", "user.facebookId", "user.name"])
+        .filter({ date: { $ge: minDateStr }})
         .sort("date", "asc")
         .getAll();
-
-    let users = await xata.db.Users.getAll();
-
-    let reservations = {'pool': [], 'openwater': [], 'classroom': []};
-    for (let rsv of rsvs) {
-        for (let user of users) {
-            if (user.id == rsv.user.id) {
-                let newRsv = {
-                    ...rsv,
-                    name: user.name,
-                    facebook_id: user.facebook_id,
-                    dateISO: rsv.date.toISOString(),
-                    dateStr: datetimeToLocalDateStr(rsv.date),
-                    date: datetimeParseDate(rsv.date)
-                };
-                reservations[rsv.category].push(newRsv);
-                break;
-            }
-        }
-    }
-    return reservations;
+    return reservations.map((r) => augmentRsv(r));
 }
 
 export async function getUserReservations(userId) {
     let rsvs = await xata.db.Reservations
         .filter({
-            "user.facebook_id": userId})
+            "user.facebookId": userId})
         .sort("date", "asc")
         .getAll();
 
     let reservations = [];
     for (let rsv of rsvs) {
-        let newRsv = {
-            ...rsv,
-            dateISO: rsv.date.toISOString(),
-            dateStr: datetimeToLocalDateStr(rsv.date),
-            date: datetimeParseDate(rsv.date)
-        };
+        let newRsv = augmentRsv(rsv);
         reservations.push(newRsv);
     }
     return reservations;
@@ -54,29 +52,43 @@ export async function getUserReservations(userId) {
 
 export async function addUser(params) {
     const { userId, userName } = params;
-    const { status  } = await xata.db.Users.create({
-        "facebook_id": userId,
+    const record = await xata.db.Users.create({
+        "facebookId": userId,
         "name": userName,
         "status": "active"
     });
-    return status;
+    return record;
 }
 
 export async function authenticateUser(userId, userName) {
-    let status;
+    let record;
     let records = await xata.db.Users
-        .filter({ "facebook_id" : userId })
+        .filter({ "facebookId" : userId })
         .getMany({pagination: {size: 1}});
     if (records.length == 0) {
         /* user does not exist yet */
-        status = await addUser(userId, userName);
+        record = await addUser(userId, userName);
     } else {
-        status = records[0].status;
+        record = records[0];
     }
-
-    return status;
+    return record;
 }
 
-export function submitReservation(data) {
-    console.log(data);
+export async function submitReservation(formData) {
+    let data = Object.fromEntries(formData);
+    const record = await xata.db.Reservations.create({
+        ...data,
+        maxDepth: 'maxDepth' in data ? parseInt(data.maxDepth) : null,
+        numStudents: data.numStudents == null ? null : parseInt(data.numStudents),
+    });
+    return record;
+}
+
+export function checkSessionActive(route, cookies) {
+    let session = cookies.get('sessionid');
+    if (session === undefined) {
+        if (route.id !== '/') {
+            throw redirect(307, '/');
+        }
+    }
 }

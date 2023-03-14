@@ -1,10 +1,15 @@
 <script>
     import { createEventDispatcher } from 'svelte'
     export let appId;
-    let hidden = true;
+    let loggedIn = false;
     const dispatch = createEventDispatcher()
     const version = 'v3.2'
+    
+    $: text = loggedIn ? 'Log out' : 'Log in with Facebook';
+    $: buttonClass = loggedIn ? 'fb_loggedin' : 'fb_loggedout';
 
+    const onClickAction = () => loggedIn ? logout() : login();
+    
     function action () {
         const script = document.createElement('script')
         script.async = true
@@ -19,6 +24,7 @@
     }
     
     function dispatchAuthorized(response) {
+        loggedIn = true;
         const userId = response.userID
         const accessToken = response.accessToken
         FB.api('/' + userId, function(response) {
@@ -44,10 +50,8 @@
         });
         FB.getLoginStatus(function(response) {
             if (response.status === "connected") {
-                hidden = true;
                 dispatchAuthorized(response.authResponse);
             } else {
-                hidden = false;
                 dispatch('no-login');
             }    
         });
@@ -63,7 +67,15 @@
             }
         }, { scope: 'email,public_profile' })
     }
+
+    function logout() {
+        const FB = window['FB']
+        FB.logout();
+        loggedIn = false;
+        dispatch('logout');
+    }
+
 </script>
 
-<button on:click={login} hidden={hidden} use:action>Log In with Facebook</button>
+<button on:click={onClickAction} class={buttonClass} use:action>{text}</button>
 

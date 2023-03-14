@@ -18,7 +18,7 @@
     <div style="height:100%" on:click={handleClick} on:keypress={handleClick}>
         <p style="margin: auto; width: 25px; text-align: center" id={id_internal}>{date.getDate()}</p>
         {#if rsv}
-            <p class="rsv">{rsv.name}</p>
+            <p class="rsv">{rsv.user.name}</p>
         {/if}
     </div>
 </a>
