@@ -1,12 +1,12 @@
 <script lang="js">
     import ReservationsTable from '$lib/components/ReservationsTable.svelte';
-    import { userId, myReservations } from '$lib/stores.js';
+    import { user, reservations, myReservations } from '$lib/stores.js';
     import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs.js';
     import { sortUserReservations } from '$lib/utils.js';
 
     export let data;
 
-    $myReservations = sortUserReservations(data.reservations);
+    let sorted = sortUserReservations(data.reservations, data.user.id);
 
 </script>
 
@@ -22,17 +22,16 @@
         <TabPanel>
             <ReservationsTable 
                 resType='upcoming' 
-                reservations={$myReservations.upcoming}
+                reservations={sorted.upcoming}
             />
         </TabPanel>
         <TabPanel>
             <ReservationsTable 
                 resType='past' 
-                reservations={$myReservations.past}
+                reservations={sorted.past}
             />
         </TabPanel>
     
     </Tabs>
 </div>
 <br/>
-

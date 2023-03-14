@@ -28,9 +28,9 @@
 				onOkay
 			},
 			{
-				closeButton: false,
-    		    closeOnEsc: false,
-    		    closeOnOuterClick: false,
+				closeButton: true,
+    		    closeOnEsc: true,
+    		    closeOnOuterClick: true,
 			}
 	  );
 	};

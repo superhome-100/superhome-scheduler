@@ -1,3 +1,5 @@
+import { dateStrParseDate, datetimeToLocalDateStr } from '$lib/ReservationTimes.js';
+
 export function monthArr(year, month, reservations) {
     let daysInMonth = new Date(year, month+1, 0).getDate();
     let firstDay = new Date(year, month, 1).getDay();
@@ -12,9 +14,9 @@ export function monthArr(year, month, reservations) {
                     let day = 1 + idx - firstDay;
                     let thisRsv = null;
                     for (let rsv of reservations) {
-                        if (rsv.date.year == year
-                            && rsv.date.month == month
-                            && rsv.date.day == day)
+                        if (rsv.dateObj.year == year
+                            && rsv.dateObj.month == month
+                            && rsv.dateObj.day == day)
                         {
                             thisRsv = rsv;
                             break;
@@ -29,13 +31,31 @@ export function monthArr(year, month, reservations) {
     return month_a;
 };
 
-export function sortUserReservations(reservations) {
-    let rsvs = {'past': [], 'upcoming': []};
-    let now = new Date().toISOString();
-    let i = 0;
-    for (let rsv of reservations) {
-        let view = rsv.dateISO >= now ? 'upcoming' : 'past';
-        rsvs[view].push({...rsv, svelteId: i++});
+export function sortUserReservations(newRsvs, dbId, sorted={'past': [], 'upcoming': []}) {
+    let now = datetimeToLocalDateStr(new Date());
+    for (let rsv of newRsvs) {
+        if (rsv.user.id === dbId) {
+            let view = rsv.date >= now ? 'upcoming' : 'past';
+            sorted[view].push(rsv);
+        }
     }
-    return rsvs;
+    return sorted;
+}
+
+export function sortByCategory(rsvs) {
+    let sorted = {'pool': [], 'openwater': [], 'classroom': []}
+    for (let rsv of rsvs) {
+        sorted[rsv.category].push(rsv);
+    }
+    return sorted;
+}
+
+export function augmentRsv(rsv, fbId=null, name=null) {
+    let newRsv = {
+        ...rsv,
+        dateObj: dateStrParseDate(rsv.date)
+    };
+    if (fbId) { newRsv.user['facebookId'] = fbId }
+    if (name) { newRsv.user['name'] = name }
+    return newRsv;
 }

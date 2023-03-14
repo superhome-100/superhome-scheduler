@@ -13,7 +13,7 @@
     $: gMonth = $viewedDate.getMonth();
     $: gYear = $viewedDate.getFullYear();
     $: gMonthArr = monthArr(gYear, gMonth, $reservations[gCategory]);
-
+    
     function handleDateChange() {
         $viewedDate = new Date(gYear, gMonth, 1); 
     }
@@ -78,10 +78,12 @@
     <ReservationDialog category={gCategory} date={minValidDate()}/>
 </Modal>
 
+<div class="date_nav">
 <i on:click={prevMonth} on:keypress={prevMonth} class="arrow left"></i>
 <h1>{idx2month[gMonth]}</h1>
 <i on:click={nextMonth} on:keypress={nextMonth} class="arrow right"></i>
 <h2>{gYear}</h2>
+</div>
 <table class="{gCategory} calendar" id="month">
     <thead>
         <tr>

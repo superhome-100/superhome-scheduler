@@ -8,7 +8,7 @@
 
     let chosenStart = startTimes[0];
     let autoOrCourse = 'autonomous';
-    let nStudents = 1;
+    let numStudents = 1;
 
     $canSubmit = true;
 </script>
@@ -33,7 +33,7 @@
 </label></div>
 <div><label>
     Type
-    <select bind:value={autoOrCourse} name="autoOrCourse">
+    <select bind:value={autoOrCourse} name="resType">
         <option value='autonomous'>Autonomous</option>
         <option value='course'>Course</option>
     </select>
@@ -41,7 +41,7 @@
 {#if autoOrCourse == 'course'}
     <div><label>
         # Students
-        <select value={nStudents} name="nStudents">
+        <select value={numStudents} name="numStudents">
             {#each [...Array(10).keys()] as n}
                 <option value={n+1}>{n+1}</option>
             {/each}

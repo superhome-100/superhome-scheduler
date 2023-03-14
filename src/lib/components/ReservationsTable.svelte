@@ -13,7 +13,7 @@
         let date = m[2];
         var i = reservations.length;
         while (i--) {
-            if (date === reservations[i].dateStr
+            if (date === reservations[i].date
                 && cat === reservations[i].category) {
                 
                 reservations.splice(i,1);
@@ -40,20 +40,20 @@
     <tbody>
         {#each reservations as rsv, i}
             <tr>
-                <td>{rsv.dateStr}</td>
+                <td>{rsv.date}</td>
                 <td>{rsv.category}</td>
                 <td>tbc</td>
                 <td>{rsv.status}</td>
                 {#if resType == 'upcoming'}
                     <td>
                         <button
-                            id={`${rsv.category}_${rsv.dateStr}`}
+                            id={`${rsv.category}_${rsv.date}`}
                             on:click={modifyReservation}
                         >/
                         </button>
                     <td>
                         <button 
-                            id={`${rsv.category}_${rsv.dateStr}`} 
+                            id={`${rsv.category}_${rsv.date}`} 
                             on:click={deleteRsv}
                         >X
                         </button>

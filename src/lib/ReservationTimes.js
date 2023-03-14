@@ -8,9 +8,9 @@ if ((inc < 60 && 60 % inc !== 0) || (inc > 60 && inc % 60 !== 0)) {
 }
 
 
-export function datetimeParseDate(datetime) {
-    let rexp = /([0-9]+)-([0-9]+)-([0-9]+)T.*/;
-    let m = rexp.exec(datetime.toISOString());
+export function dateStrParseDate(dateStr) {
+    let rexp = /([0-9]+)-([0-9]+)-([0-9]+)/;
+    let m = rexp.exec(dateStr);
     return {
         year: parseInt(m[1]),
         month: parseInt(m[2])-1, /* use JS Date() indexing for month [0-11] */

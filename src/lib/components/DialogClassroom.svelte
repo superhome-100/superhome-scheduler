@@ -5,7 +5,7 @@
     $canSubmit = true;
 
     let chosenStart = startTimes[0];
-    let nStudents=1;
+    let numStudents=1;
 
 </script>
 
@@ -34,7 +34,7 @@
 <div>
     <label>
         # Students
-        <select value={nStudents} name="nStudents">
+        <select value={numStudents} name="numStudents">
             {#each [...Array(10).keys()] as n}
                 <option value={n+1}>{n+1}</option>
             {/each}
@@ -47,5 +47,5 @@
         <input type="text" name="comments">
     </label>
 </div>
-
+<input type="hidden" name="resType" value="course">
 

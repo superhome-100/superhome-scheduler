@@ -3,39 +3,66 @@
     import '../styles.css';
     import FacebookAuth from '$lib/components/FacebookAuth.svelte'
     import { PUBLIC_FACEBOOK_APP_ID } from "$env/static/public";
-    import { userId, view, reservations } from '$lib/stores.js';
-    
+    import { user, view, reservations, myReservations } from '$lib/stores.js';
+    import { sortByCategory, sortUserReservations } from '$lib/utils.js';
     export let data;
 
-    $reservations = data.reservations;
 
+    $reservations = sortByCategory(data.reservations);
+    
     function goToRoot() {
+        $user = null;
         goto('/');
     }
 
-    async function authenticateUser(facebookId, userName) {
-        const response = await fetch('/', {
+    function logout() {
+        deleteSession($user.dbId);
+        goToRoot();
+    }
+
+    async function deleteSession(userId) {
+        const response = await fetch('/api/logout', {
             method: 'POST',
             headers: {'Content-type': 'application/json'},
-            body: JSON.stringify({ userId: facebookId, userName: userName })
         });
-        const result = await response.json();
-        if (result === 'active') {
-            $userId = facebookId; 
-            userName = userName.toLowerCase().replace(/ /g,'');
+    }
+
+    async function authenticateUser(facebookId, name) {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {'Content-type': 'application/json'},
+            body: JSON.stringify({ userId: facebookId, userName: name })
+        });
+        const record = await response.json();
+        if (record.status === 'active') {
+            $user = {
+                'name': name,
+                'facebookId': facebookId,
+                'dbId': record.id,
+                'toString': () => name.toLowerCase().replace(/ /g, '')
+            };
+            $myReservations = sortUserReservations(data.reservations, record.id);
         } else {
             alert(
-                'User ' + userName + ' does not have permission ' + 
+                'User ' + name + ' does not have permission ' + 
                 'to access this app; please contact the admin for help'
             );
+            goToRoot();
         }
     }
 </script>
 
 <div id="app">
-    {#if $userId}
+    <FacebookAuth 
+        appId={PUBLIC_FACEBOOK_APP_ID} 
+        on:auth-success={e => authenticateUser(e.detail.userId, e.detail.userName)} 
+        on:auth-failure={e => alert(e.detail.error)}
+        on:no-login={goToRoot}
+        on:logout={logout}
+    />
+    {#if $user}
         <div id="category_buttons">
-            <a href="/{$userId}">
+            <a href="/{$user.facebookId}">
                 <button>My Reservations</button>
             </a>
             <a href="/{$view}/pool">
@@ -48,13 +75,6 @@
                 <button>Classroom</button>
             </a>
         </div>
-    {:else}
-        <FacebookAuth 
-            appId={PUBLIC_FACEBOOK_APP_ID} 
-            on:auth-success={e => authenticateUser(e.detail.userId, e.detail.userName)} 
-            on:auth-failure={e => alert(e.detail.error)}
-            on:no-login={goToRoot}
-        />
     {/if}
     <slot />
 </div>

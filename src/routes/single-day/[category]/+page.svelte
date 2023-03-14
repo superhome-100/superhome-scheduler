@@ -40,9 +40,11 @@
 </Modal>
 {/if}
 
-<i on:click={prevDay} on:keypress={prevDay} class="arrow left"></i>
-<h2 class="day">{idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}</h2>
-<i on:click={nextDay} on:keypress={nextDay} class="arrow right"></i>
+<div class="date_nav">
+    <i on:click={prevDay} on:keypress={prevDay} class="arrow left"></i>
+    <h2 class="day">{idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}</h2>
+    <i on:click={nextDay} on:keypress={nextDay} class="arrow right"></i>
+</div>
 <div>
     {#if category == 'pool'}
         <DayPool/>
