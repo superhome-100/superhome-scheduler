@@ -4,8 +4,9 @@
     import FacebookAuth from '$lib/components/FacebookAuth.svelte'
     import { PUBLIC_FACEBOOK_APP_ID } from "$env/static/public";
     import { user, view, reservations } from '$lib/stores.js';
+    import { page } from '$app/stores';
+    
     export let data;
-
 
     $reservations = data.reservations;
     
@@ -15,7 +16,7 @@
     }
 
     function logout() {
-        deleteSession($user.dbId);
+        deleteSession($user.id);
         goToRoot();
     }
 
@@ -37,9 +38,12 @@
             $user = {
                 'name': name,
                 'facebookId': facebookId,
-                'dbId': record.id,
+                'id': record.id,
                 'toString': () => name.toLowerCase().replace(/ /g, '')
             };
+            if ($page.route.id === '/') {
+                goto('/' + $user.facebookId);
+            }
         } else if (record.status === 'disabled') {
             alert(
                 'User ' + name + ' does not have permission ' + 

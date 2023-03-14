@@ -1,8 +1,10 @@
 <script lang="js">
+    import Modal from '$lib/components/Modal.svelte';
+    import ReservationDialog from '$lib/components/ReservationDialog.svelte';
     import ReservationsTable from '$lib/components/ReservationsTable.svelte';
-    import { user, reservations } from '$lib/stores.js';
+    import { user, reservations, modal } from '$lib/stores.js';
     import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs.js';
-    import { datetimeToLocalDateStr } from '$lib/ReservationTimes.js';
+    import { datetimeToLocalDateStr, minValidDate } from '$lib/ReservationTimes.js';
 
     export let data;
 
@@ -42,6 +44,10 @@
     }
 
 </script>
+
+<Modal show={$modal}>
+    <ReservationDialog date={minValidDate()}/>
+</Modal>
 
 <br/>
 <div>
