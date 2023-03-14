@@ -8,7 +8,6 @@
         canSubmit, 
         user,
         reservations, 
-        myReservations 
     } from '$lib/stores.js';
     import { minValidDateStr, datetimeToLocalDateStr } from '$lib/ReservationTimes.js';
     import { augmentRsv } from '$lib/utils.js';
@@ -31,6 +30,8 @@
         return async ({ result, update }) => {
             switch(result.type) {
                 case 'success':
+                    let rsv = augmentRsv(result.data, $user.facebookId, $user.name);
+                    $reservations.push(rsv);
                     onOkay(result.data);
                     break;
                 default:

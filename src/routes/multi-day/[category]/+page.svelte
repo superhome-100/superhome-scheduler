@@ -12,7 +12,11 @@
     $: gCategory = data.category;
     $: gMonth = $viewedDate.getMonth();
     $: gYear = $viewedDate.getFullYear();
-    $: gMonthArr = monthArr(gYear, gMonth, $reservations[gCategory]);
+    $: gMonthArr = monthArr(
+        gYear, 
+        gMonth, 
+        $reservations.filter((rsv) => rsv.category === gCategory)
+    );
     
     function handleDateChange() {
         $viewedDate = new Date(gYear, gMonth, 1); 

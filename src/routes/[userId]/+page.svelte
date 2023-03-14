@@ -1,12 +1,45 @@
 <script lang="js">
     import ReservationsTable from '$lib/components/ReservationsTable.svelte';
-    import { user, reservations, myReservations } from '$lib/stores.js';
+    import { user, reservations } from '$lib/stores.js';
     import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs.js';
-    import { sortUserReservations } from '$lib/utils.js';
+    import { datetimeToLocalDateStr } from '$lib/ReservationTimes.js';
 
     export let data;
 
-    let sorted = sortUserReservations(data.reservations, data.user.id);
+    $: userRsvs = sortByNow(
+        $reservations.filter((rsv) => rsv.user.id === data.user.id)
+    );
+
+    function sortByNow(rsvs) {
+        let now = new Date();
+        let today = datetimeToLocalDateStr(now);
+        let minute = now.getHours()*60 + now.getMinutes();
+        let rsvMin;
+        let view;
+        
+        let sorted = {'upcoming': [], 'past': []}
+        
+        for (let rsv of rsvs) {
+            if (rsv.date > today) {
+                view = 'upcoming';
+            } else if (rsv.date < today) {
+                view = 'past'
+            } else {
+                if (rsv.category in ['pool', 'classroom']) {
+                    rsvMin = timeStrToMin(rsv.endTime);
+                } else if (rsv.category === 'openwater') {
+                    if (rsv.owTime === 'AM') {
+                        rsvMin = 11*60; // 11am end time
+                    } else if (rsv.owTime === 'PM') {
+                        rsvMin = 16*60; // 4pm end time
+                    }
+                }
+                view = rsvMin >= minute ? 'upcoming' : 'past';
+            }
+            sorted[view].push(rsv);
+        }
+        return sorted;
+    }
 
 </script>
 
@@ -22,13 +55,13 @@
         <TabPanel>
             <ReservationsTable 
                 resType='upcoming' 
-                reservations={sorted.upcoming}
+                reservations={userRsvs.upcoming}
             />
         </TabPanel>
         <TabPanel>
             <ReservationsTable 
                 resType='past' 
-                reservations={sorted.past}
+                reservations={userRsvs.past}
             />
         </TabPanel>
     
