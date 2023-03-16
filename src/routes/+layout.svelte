@@ -21,14 +21,16 @@
         loadFB();
         $reservations = await loadReservations();
         $user = await getSession();
-        if ($user != null) {
+        if ($user == null) {
+            goto('/');
+        } else {
             goto('/' + $user.facebookId);
         }
     }
 
     async function getSession() {
         const response = await fetch('/api/getSession');
-        const user = await response.json();
+        const { user } = await response.json();
         return user;
     }
 
