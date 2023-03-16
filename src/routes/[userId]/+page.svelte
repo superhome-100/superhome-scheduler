@@ -6,11 +6,13 @@
     import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs.js';
     import { datetimeToLocalDateStr, minValidDate } from '$lib/ReservationTimes.js';
 
-    export let data;
-
-    $: userRsvs = sortByNow(
-        $reservations.filter((rsv) => rsv.user.id === data.user.id)
-    );
+    let userRsvs = {'upcoming': [], 'past': []};
+    
+    $: if ($user != null) {
+            userRsvs = sortByNow(
+                $reservations.filter((rsv) => rsv.user.id === $user.id)
+            );
+    }
 
     function sortByNow(rsvs) {
         let now = new Date();
