@@ -1,6 +1,14 @@
 <script>
-    import { startTimes } from '$lib/ReservationTimes.js';
-    let nLanes = 4;
+    import { startTimes, timeGE, timeLT, datetimeToLocalDateStr, validReservationDate } from '$lib/ReservationTimes.js';
+    import { viewedDate, reservations } from '$lib/stores.js';
+    import { getDaySchedule } from '$lib/utils.js';
+    import ReservationDialog from '$lib/components/ReservationDialog.svelte';
+    import Modal from '$lib/components/Modal.svelte';
+
+    const nLanes = 4;
+
+    $: schedule = getDaySchedule(startTimes, $reservations, $viewedDate, 'pool', nLanes);
+
 </script>
 
 <table class="day">
@@ -10,11 +18,15 @@
             <th>Lane {lane+1}</th>
         {/each}
     </tr>
-    {#each startTimes as t}
+    {#each schedule as s}
         <tr>
-            <th>{t}</th>
+            <th>{s.start}</th>
             {#each [...Array(nLanes).keys()] as lane}
-                <td class="schedule_cell pool_lane"></td>
+                <td class="schedule_cell pool_lane" style="width: max-content">
+                    {#each s.rsvs[lane] as msg}
+                        {msg}
+                    {/each}
+                </td>
             {/each}
         </tr>
     {/each}

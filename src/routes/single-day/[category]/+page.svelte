@@ -9,11 +9,13 @@
     import { modal, view, viewedDate } from '$lib/stores.js';
 
     export let data;
+
+    $view = 'single-day';
     $: category = data.category;
     
     const dispatch = createEventDispatcher();
 
-    function back() {
+    function multiDayView() {
         $view = 'multi-day';
     }
 
@@ -31,7 +33,7 @@
 </script>
 
 <a href="/multi-day/{category}">
-<button style="float: left" on:click={back}>Back</button>
+    <button style="float: left" on:click={multiDayView}>&lt;&lt; Month</button>
 </a>
 
 {#if validReservationDate($viewedDate)}
@@ -40,12 +42,13 @@
 </Modal>
 {/if}
 
+<br/>
 <div class="date_nav">
     <i on:click={prevDay} on:keypress={prevDay} class="arrow left"></i>
     <h2 class="day">{idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}</h2>
     <i on:click={nextDay} on:keypress={nextDay} class="arrow right"></i>
 </div>
-<div>
+<div style="margin: 10px">
     {#if category == 'pool'}
         <DayPool/>
     {:else if category == 'openwater'}

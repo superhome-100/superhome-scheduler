@@ -9,6 +9,8 @@
 
     export let data;
 
+    $view = 'multi-day';
+
     $: gCategory = data.category;
     $: gMonth = $viewedDate.getMonth();
     $: gYear = $viewedDate.getFullYear();
