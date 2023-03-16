@@ -12,6 +12,9 @@ export async function load({ route, cookies })  {
     } else {
         let record = await getSession(session);
         user = record.user;
+        if (route.id === '/') {
+            throw redirect(307, '/' + user.facebookId);
+        }
     }
 
     const oneWeekAgo = () => {
