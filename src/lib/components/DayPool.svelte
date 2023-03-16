@@ -2,8 +2,6 @@
     import { startTimes, timeGE, timeLT, datetimeToLocalDateStr, validReservationDate } from '$lib/ReservationTimes.js';
     import { viewedDate, reservations } from '$lib/stores.js';
     import { getDaySchedule } from '$lib/utils.js';
-    import ReservationDialog from '$lib/components/ReservationDialog.svelte';
-    import Modal from '$lib/components/Modal.svelte';
 
     const nLanes = 4;
 

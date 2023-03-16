@@ -46,7 +46,7 @@
 </script>
 
 <Modal show={$modal}>
-    <ReservationDialog date={minValidDate()}/>
+    <ReservationDialog date={minValidDate()} category="openwater"/>
 </Modal>
 
 <br/>
