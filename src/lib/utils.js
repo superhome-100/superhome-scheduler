@@ -1,4 +1,4 @@
-import { dateStrParseDate, datetimeToLocalDateStr } from '$lib/ReservationTimes.js';
+import { dateStrParseDate, datetimeToLocalDateStr, timeGE, timeLT } from '$lib/ReservationTimes.js';
 
 export function monthArr(year, month, reservations) {
     let daysInMonth = new Date(year, month+1, 0).getDate();
@@ -51,3 +51,30 @@ export function augmentRsv(rsv, fbId=null, name=null) {
     if (name) { newRsv.user['name'] = name }
     return newRsv;
 }
+
+export function getDaySchedule(startTimes, rsvs, datetime, category, nResource) {
+    let schedule = [];
+    let today = datetimeToLocalDateStr(datetime);
+    rsvs = rsvs.filter((v) => v.category === category && v.date === today);
+
+    for (let t of startTimes) {
+        let timeRsvs = Array(nResource).fill().map(() => []);
+        let resource = 0;
+        for (let rsv of rsvs) {
+            if (timeGE(t, rsv.startTime)
+                && timeLT(t, rsv.endTime))
+            {
+                let msg = rsv.user.name;
+                if (rsv.resType === 'course') {
+                    msg = `${msg} + ${rsv.numStudents}`;
+                }
+                timeRsvs[resource].push(msg);
+                resource = (resource + 1) % nResource;
+            }
+        }
+        schedule.push({start: t, rsvs: timeRsvs});
+    }
+    return schedule;
+}
+
+

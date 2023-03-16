@@ -70,13 +70,31 @@ let nResPerHour = Math.floor(60/inc)
 let nRes = nResPerHour*(closingHour-openingHour);
 
 const minToTimeStr = (min) => `${Math.floor(min/60)}:` + `${(min % 60)}`.padStart(2,'0');
-const rexp = /([0-9]*[0-9]):([0-9][0-9])/
-
-export function timeStrToMin(timeStr) {
-    let m = rexp.exec(timeStr);
+const timeStrRE = /([0-9]*[0-9]):([0-9][0-9])/
+const parseHM = (timeStr) => {
+    let m = timeStrRE.exec(timeStr);
     let hour = parseInt(m[1]);
     let min = parseInt(m[2]);
-    return 60*hour + min;
+    return { hour, min }
+};
+
+export function timeStrToMin(timeStr) {
+    let p = parseHM(timeStr);
+    return 60*p.hour + p.min;
+}
+
+export function timeGE(timeA, timeB) {
+    let pA = parseHM(timeA);
+    let pB = parseHM(timeB);
+    if (pA.hour == pB.hour) {
+        return pA.min >= pB.min;
+    } else {
+        return pA.hour > pB.hour;
+    }
+}
+
+export function timeLT(timeA, timeB) {
+    return !timeGE(timeA, timeB);
 }
 
 export const startTimes = Array(nRes)
