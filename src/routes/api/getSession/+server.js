@@ -1,16 +1,12 @@
 import { getSession } from '$lib/server/server.js';
-import { redirect, json } from '@sveltejs/kit';
+import { json } from '@sveltejs/kit';
 
-export async function GET({ route, cookies })  {
+export async function GET({ cookies })  {
     let user;
     let session = cookies.get('sessionid');
-    if (session === undefined) {
-        if (route.id !== '/') {
-            throw redirect(307, '/');
-        }
-    } else {
+    if (session !== undefined) {
         let record = await getSession(session);
         user = record.user;
     }
-    return json(user);
+    return json({user});
 }
