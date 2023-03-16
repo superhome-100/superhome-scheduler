@@ -110,7 +110,7 @@
                                 id={isToday(gYear, gMonth, params.day)}
                                 date={new Date(gYear, gMonth, params.day)} 
                                 category={gCategory}
-                                rsv={params.rsv}
+                                rsvs={params.rsvs}
                             />
                         </td>
                     {:else}

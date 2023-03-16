@@ -12,17 +12,16 @@ export function monthArr(year, month, reservations) {
                 let idx = w_i*7 + d_i;
                 if (idx >= firstDay && idx - firstDay < daysInMonth) {
                     let day = 1 + idx - firstDay;
-                    let thisRsv = null;
+                    let dayRsvs = [];
                     for (let rsv of reservations) {
                         if (rsv.dateObj.year == year
                             && rsv.dateObj.month == month
                             && rsv.dateObj.day == day)
                         {
-                            thisRsv = rsv;
-                            break;
+                            dayRsvs.push(rsv);
                         }
                     }
-                    return { day: day, rsv: thisRsv };
+                    return { day: day, rsvs: dayRsvs };
                 } else {
                     return null;
                 }
