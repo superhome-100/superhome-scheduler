@@ -50,8 +50,7 @@ export async function getUserReservations(userId) {
     return reservations;
 }
 
-export async function addUser(params) {
-    const { userId, userName } = params;
+export async function addUser(userId, userName) {
     const record = await xata.db.Users.create({
         "facebookId": userId,
         "name": userName,

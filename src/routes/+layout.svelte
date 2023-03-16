@@ -5,22 +5,43 @@
     import { user, view, reservations } from '$lib/stores.js';
     import { page } from '$app/stores';
     import { onMount } from 'svelte';
-
-    export let data;
+    import { toast, Toaster } from 'svelte-french-toast';
 
     $: buttonText = loggedIn ? 'Log out' : 'Log in with Facebook';
     $: buttonClass = loggedIn ? 'fb_loggedin' : 'fb_loggedout';
     
     const loginOnClick = () => loggedIn ? logout() : login();
 
-    $reservations = data.reservations;
-    $user = data.user;
+    let loggedIn = $user != null;
+    let hideLogin = loggedIn;
+    
+    onMount(async () => initApp());
 
-    let loggedIn = data.user != null;
+    async function initApp() {
+        loadFB();
+        $reservations = await loadReservations();
+        $user = await getSession();
+        if ($user != null) {
+            goto('/' + $user.facebookId);
+        }
+    }
 
-    onMount(async () => loadFB());
+    async function getSession() {
+        const response = await fetch('/api/getSession');
+        const user = await response.json();
+        return user;
+    }
 
-    async function loadFB () {
+    async function loadReservations() {
+        const response = await fetch('/api/getReservations', {
+            method: 'POST',
+            headers: {'Content-type': 'application/json'},
+        });
+        const reservations = await response.json();
+        return reservations;
+    }
+
+    function loadFB () {
         const script = document.createElement('script')
         script.async = true
         script.src = '//connect.facebook.net/en_US/sdk.js'
@@ -33,7 +54,7 @@
         }
     }   
 
-    async function initFB () {
+    function initFB () {
         const FB = window['FB']
         FB.init({
             appId      : PUBLIC_FACEBOOK_APP_ID,
@@ -48,16 +69,29 @@
         });
     }
 
-    function login () {
+    async function login () {
+        hideLogin = true;
         const FB = window['FB']
         FB.login(function (response) {
             if (response.status === 'connected') {
                 let aR = response.authResponse;
-                /*await */ authenticateUser(aR.userID, aR.name);
+                let userID = aR.userID;
+                FB.api('/' + userID, function(response) {
+                    let name = response.name;
+                });
+                toast.promise(
+                    authenticateUser(userID, name), 
+                    {
+                        loading: 'Logging in...',
+                        success: 'Success!',
+                        error: 'Login error!'
+                    }
+                );
             } else {
                 alert(response);
             }
-        }, { scope: 'email,public_profile' })
+        }, { scope: 'email,public_profile' });
+        hideLogin = false;
     }
     
     async function authenticateUser(facebookId, name) {
@@ -79,7 +113,7 @@
             if ($page.route.id === '/') {
                 goto('/' + $user.facebookId);
             }
-
+            
         } else {
 
             if (record.status === 'disabled') {
@@ -90,6 +124,7 @@
             } else {
                 alert('Unexpected login error; Please try again');
             }
+            hideLogin = false;
             $user = null;
             if ($page.route.id !== '/') {
                 goto('/');
@@ -104,12 +139,12 @@
                 FB.logout();
             }
         });
-        loggedIn = false;
         $user = null;
-        await deleteSession();
         if ($page.route.id !== '/') {
             goto('/');
         }
+        await deleteSession();
+        loggedIn = false;
     }
 
     async function deleteSession() {
@@ -123,7 +158,7 @@
 </script>
 
 <div id="app">
-    <button on:click={loginOnClick} class={buttonClass}>{buttonText}</button>
+    <button on:click={loginOnClick} class={buttonClass} hidden={hideLogin}>{buttonText}</button>
    {#if $user}
         <div id="category_buttons">
             <a href="/{$user.facebookId}">
@@ -142,4 +177,6 @@
     {/if}
     <slot />
 </div>
+
+<Toaster/>
 
