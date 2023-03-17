@@ -2,7 +2,7 @@
     import { goto } from '$app/navigation';
     import '../styles.css';
     import { PUBLIC_FACEBOOK_APP_ID } from "$env/static/public";
-    import { user, view, reservations } from '$lib/stores.js';
+    import { settings, user, view, reservations } from '$lib/stores.js';
     import { page } from '$app/stores';
     import { onMount } from 'svelte';
     import { toast, Toaster } from 'svelte-french-toast';
@@ -15,6 +15,7 @@
 
     async function initApp() {
         loadFB();
+        $settings = await getSettings();
         $reservations = await loadReservations();
         $user = await getSession();
         if ($user == null) {
@@ -22,6 +23,12 @@
         } else {
             goto('/' + $user.facebookId);
         }
+    }
+
+    async function getSettings() {
+        const response = await fetch('/api/getSettings');
+        const { settings } = await response.json();
+        return settings;
     }
 
     async function getSession() {

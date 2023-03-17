@@ -4,14 +4,15 @@
     import ReservationsTable from '$lib/components/ReservationsTable.svelte';
     import { user, reservations, modal } from '$lib/stores.js';
     import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs.js';
-    import { datetimeToLocalDateStr, minValidDate } from '$lib/ReservationTimes.js';
+    import { minValidDate } from '$lib/ReservationTimes.js';
+    import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
 
     let userRsvs = {'upcoming': [], 'past': []};
     
     $: if ($user != null) {
-            userRsvs = sortByNow(
-                $reservations.filter((rsv) => rsv.user.id === $user.id)
-            );
+        userRsvs = sortByNow(
+            $reservations.filter((rsv) => rsv.user.id === $user.id)
+        );
     }
 
     function sortByNow(rsvs) {

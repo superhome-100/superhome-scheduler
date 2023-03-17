@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { getReservationsSince } from '$lib/server/server.js';
-import { datetimeToLocalDateStr } from '$lib/ReservationTimes.js';
+import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
 
 export async function POST() {
     const oneWeekAgo = () => {

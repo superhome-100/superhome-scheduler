@@ -1,10 +1,11 @@
 <script>
-    import { startTimes, endTimes, timeStrToMin } from '$lib/ReservationTimes.js';
+    import { startTimes, endTimes } from '$lib/ReservationTimes.js';
+    import { timeStrToMin } from '$lib/datetimeUtils.js';
     import { canSubmit } from '$lib/stores.js';
 
     $canSubmit = true;
 
-    let chosenStart = startTimes[0];
+    let chosenStart = startTimes()[0];
     let numStudents=1;
 
 </script>
@@ -13,7 +14,7 @@
     <label>
         Start Time
         <select bind:value={chosenStart} name="startTime">
-            {#each startTimes as t}
+            {#each startTimes() as t}
                 <option value={t}>{t}</option>
             {/each}
         </select>
@@ -23,7 +24,7 @@
     <label>
         End Time
         <select name="endTime">
-            {#each endTimes as t}
+            {#each endTimes() as t}
                 {#if timeStrToMin(chosenStart) < timeStrToMin(t)}
                     <option value={t}>{t}</option>
                 {/if}

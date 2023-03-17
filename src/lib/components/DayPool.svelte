@@ -1,11 +1,12 @@
 <script>
-    import { startTimes, timeGE, timeLT, datetimeToLocalDateStr, validReservationDate } from '$lib/ReservationTimes.js';
+    import { startTimes, validReservationDate } from '$lib/ReservationTimes.js';
+    import { timeGE, timeLT, datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { viewedDate, reservations } from '$lib/stores.js';
     import { getDaySchedule } from '$lib/utils.js';
 
     const nLanes = 4;
 
-    $: schedule = getDaySchedule(startTimes, $reservations, $viewedDate, 'pool', nLanes);
+    $: schedule = getDaySchedule(startTimes(), $reservations, $viewedDate, 'pool', nLanes);
 
 </script>
 

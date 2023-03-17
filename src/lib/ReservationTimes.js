@@ -1,114 +1,44 @@
-export let openingHour = 8;
-export let closingHour = 20;
-export let inc = 30;
-export let reservationCutoffHour = 18;
+import { Settings } from './settings.js';
+import * as dtu from './datetimeUtils.js';
 
+export let minStart = () => dtu.timeStrToMin(Settings('minStartTime'));
+export let maxEnd = () => dtu.timeStrToMin(Settings('maxEndTime'));
+export let resCutoff = () => dtu.timeStrToMin(Settings('reservationCutOffTime'));
+export let inc = () => dtu.timeStrToMin(Settings('reservationIncrement'));
+
+/*
 if ((inc < 60 && 60 % inc !== 0) || (inc > 60 && inc % 60 !== 0)) {
     throw "reservation time increment must evenly divide, or be a multiple of, 60 minutes";
 }
+*/
 
-
-export function dateStrParseDate(dateStr) {
-    let rexp = /([0-9]+)-([0-9]+)-([0-9]+)/;
-    let m = rexp.exec(dateStr);
-    return {
-        year: parseInt(m[1]),
-        month: parseInt(m[2])-1, /* use JS Date() indexing for month [0-11] */
-        day: parseInt(m[3]),
-    };
-}
-
-export function datetimeToLocalDateStr(datetime) {
-    let rexp = /([0-9]+)\/([0-9]+)\/([0-9]+).*/
-    let m = rexp.exec(datetime.toLocaleDateString());
-    return m[3] + "-" + m[1].padStart(2,'0') + "-" + m[2].padStart(2,'0');
-}
+const minuteOfDay = (date) => date.getHours()*60 + date.getMinutes();
 
 export function validReservationDate(date) {
-
     let today = new Date();
     return today.getFullYear() <= date.getFullYear()
         && today.getMonth() <= date.getMonth()
         && (today.getDate() < date.getDate()-1
             || (today.getDate() == date.getDate()-1
-            && today.getHours() < reservationCutoffHour
+            && minuteOfDay(today) < resCutoff()
             )
         );
 }
 
-export const month2idx = {
-    'January':0,
-    'February':1,
-    'March':2,
-    'April':3,
-    'May':4,
-    'June':5,
-    'July':6,
-    'August':7,
-    'September':8,
-    'October':9,
-    'November':10,
-    'December':11
-};
+let nRes = () => Math.floor((maxEnd() - minStart()) / inc())
 
-export const idx2month = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December'
-];
-
-let nResPerHour = Math.floor(60/inc)
-let nRes = nResPerHour*(closingHour-openingHour);
-
-const minToTimeStr = (min) => `${Math.floor(min/60)}:` + `${(min % 60)}`.padStart(2,'0');
-const timeStrRE = /([0-9]*[0-9]):([0-9][0-9])/
-const parseHM = (timeStr) => {
-    let m = timeStrRE.exec(timeStr);
-    let hour = parseInt(m[1]);
-    let min = parseInt(m[2]);
-    return { hour, min }
-};
-
-export function timeStrToMin(timeStr) {
-    let p = parseHM(timeStr);
-    return 60*p.hour + p.min;
-}
-
-export function timeGE(timeA, timeB) {
-    let pA = parseHM(timeA);
-    let pB = parseHM(timeB);
-    if (pA.hour == pB.hour) {
-        return pA.min >= pB.min;
-    } else {
-        return pA.hour > pB.hour;
-    }
-}
-
-export function timeLT(timeA, timeB) {
-    return !timeGE(timeA, timeB);
-}
-
-export const startTimes = Array(nRes)
+export const startTimes = () => Array(nRes())
     .fill()
-    .map((v,i) => minToTimeStr(openingHour*60 + i*inc));
+    .map((v,i) => dtu.minToTimeStr(minStart() + i*inc()));
 
-export const endTimes = Array(nRes)
+export const endTimes = () => Array(nRes())
     .fill()
-    .map((v,i) => minToTimeStr(openingHour*60 + (i+1)*inc));
+    .map((v,i) => dtu.minToTimeStr(minStart() + (i+1)*inc()));
 
 export function minValidDate() {
     let today = new Date();
     let d = new Date();
-    if (today.getHours() < reservationCutoffHour) {
+    if (minuteOfDay(today) < resCutoff()) {
         d.setDate(today.getDate()+1);
     } else {
         d.setDate(today.getDate()+2);
@@ -116,12 +46,11 @@ export function minValidDate() {
     return d;
 }
 
-
 export function minValidDateObj() {
     let d = minValidDate();
     return {
         year: d.getFullYear(),
-        month: idx2month[d.getMonth()],
+        month: dtu.idx2month[d.getMonth()],
         day: d.getDate()
     };
 }
@@ -133,14 +62,4 @@ export function minValidDateStr() {
         + `${d.getDate()}`.padStart(2,'0');
 }
 
-export function toDateStr(date) {
-    return `${date.year}-`
-        + `${month2idx[date.month]+1}-`.padStart(3,'0')
-        + `${date.day}`.padStart(2,'0');
-}
 
-export function dateStrInNDays(nDays) {
-    let d = minValidDate();
-    d.setDate(d.getDate() + nDays);
-    return toDateStr({year: d.getFullYear(), month: idx2month[d.getMonth()], day: d.getDate()});
-}
