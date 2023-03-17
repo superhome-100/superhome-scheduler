@@ -58,6 +58,13 @@ const tables = [
       { name: "user", type: "link", link: { table: "Users" } },
     ],
   },
+  {
+    name: "Settings",
+    columns: [
+      { name: "name", type: "string" },
+      { name: "value", type: "string" },
+    ],
+  },
 ];
 /** @type { import('../../client/src').ClientConstructor<{}> } */
 const DatabaseClient = buildClient();

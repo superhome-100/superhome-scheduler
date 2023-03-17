@@ -4,12 +4,9 @@
     import DialogPool from './DialogPool.svelte';
     import DialogClassroom from './DialogClassroom.svelte';
     import DialogOpenWater from './DialogOpenWater.svelte';
-    import { 
-        canSubmit, 
-        user,
-        reservations, 
-    } from '$lib/stores.js';
-    import { minValidDateStr, datetimeToLocalDateStr } from '$lib/ReservationTimes.js';
+    import { canSubmit, user, reservations } from '$lib/stores.js';
+    import { minValidDateStr } from '$lib/ReservationTimes.js';
+    import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { augmentRsv } from '$lib/utils.js';
 
     export let category = 'openwater';

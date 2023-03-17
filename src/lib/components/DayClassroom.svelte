@@ -4,7 +4,7 @@
     import { getDaySchedule } from '$lib/utils.js';
     
     const nRooms = 3;
-    $: schedule = getDaySchedule(startTimes, $reservations, $viewedDate, 'classroom', nRooms);
+    $: schedule = getDaySchedule(startTimes(), $reservations, $viewedDate, 'classroom', nRooms);
 
 </script>
 

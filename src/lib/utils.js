@@ -1,4 +1,9 @@
-import { dateStrParseDate, datetimeToLocalDateStr, timeGE, timeLT } from '$lib/ReservationTimes.js';
+import {
+    dateStrParseDate,
+    datetimeToLocalDateStr,
+    timeGE,
+    timeLT
+} from '$lib/datetimeUtils.js';
 
 export function monthArr(year, month, reservations) {
     let daysInMonth = new Date(year, month+1, 0).getDate();

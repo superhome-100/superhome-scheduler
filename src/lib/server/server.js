@@ -4,6 +4,11 @@ import { redirect } from '@sveltejs/kit';
 
 const xata = getXataClient();
 
+export async function getSettings() {
+    let settings = await xata.db.Settings.getAll();
+    return settings;
+}
+
 export async function getSession(id) {
     let records = await xata.db.Sessions
         .select(['*', 'user.facebookId', 'user.name'])

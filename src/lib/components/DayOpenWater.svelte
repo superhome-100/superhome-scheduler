@@ -1,6 +1,6 @@
 <script>
     import { viewedDate, reservations } from '$lib/stores.js';
-    import { datetimeToLocalDateStr } from '$lib/ReservationTimes.js';
+    import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
 
     const buoys = ['A', 'B', 'C', 'D'];
 
