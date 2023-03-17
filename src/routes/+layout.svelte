@@ -21,6 +21,7 @@
         if ($user == null) {
             goto('/');
         } else {
+            loginState = 'in';
             goto('/' + $user.facebookId);
         }
     }
@@ -59,6 +60,18 @@
         }
     }   
 
+    function loadProfilePic(userID) {
+        const FB = window['FB'];
+        FB.api(
+            '/' + userID + '/picture',
+            'GET',
+            {redirect: false},
+            function(response) {
+                profileSrc = response.data.url;
+            }
+        );
+    }
+
     function initFB () {
         const FB = window['FB']
         FB.init({
@@ -92,15 +105,7 @@
                         }
                     );
                 });
-                FB.api(
-                    '/' + userID + '/picture',
-                    'GET',
-                    {redirect: false},
-                    function(response) {
-                        profileSrc = response.data.url;
-                    }
-                );
-           } else {
+            } else {
                 alert(response);
             }
         }, { scope: 'email,public_profile' });
@@ -181,6 +186,7 @@
 <div id="app">
     {#if loginState === 'in'}
         <button on:click={logout} class="fb_loggedin">Log out</button>
+        <div id="currentUser">Logged in as: <b>{$user.name}</b></div>
     {:else if loginState === 'out'}
         <button on:click={login} class="fb_loggedout">Log in with Facebook</button>
     {/if}
