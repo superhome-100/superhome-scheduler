@@ -180,6 +180,12 @@ button.fb_loggedout {
     transform: translate(-50%, -50%);
 }
 
+#currentUser {
+    float: right;
+    margin: 10px;
+    font-size: 10px;
+}
+
 #profilePicture {
    float: right;
    border-radius: 50%;
