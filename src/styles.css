@@ -180,6 +180,12 @@ button.fb_loggedout {
     transform: translate(-50%, -50%);
 }
 
+#profilePicture {
+   float: right;
+   border-radius: 50%;
+   margin: 10px;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;

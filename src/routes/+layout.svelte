@@ -7,14 +7,10 @@
     import { onMount } from 'svelte';
     import { toast, Toaster } from 'svelte-french-toast';
 
-    $: buttonText = loggedIn ? 'Log out' : 'Log in with Facebook';
-    $: buttonClass = loggedIn ? 'fb_loggedin' : 'fb_loggedout';
-    
-    const loginOnClick = () => loggedIn ? logout() : login();
 
-    let loggedIn = $user != null;
-    let hideLogin = loggedIn;
-    
+    let loginState = $user != null ? 'in' : 'out';
+    let profileSrc;
+
     onMount(async () => initApp());
 
     async function initApp() {
@@ -66,13 +62,13 @@
         });
         FB.getLoginStatus(function(response) {
             if (response.status === 'connected') {
-                loggedIn = true;
+                loginState = 'in';
             }
         });
     }
 
     async function login () {
-        hideLogin = true;
+        loginState = 'pending';
         const FB = window['FB']
         FB.login(function (response) {
             if (response.status === 'connected') {
@@ -80,20 +76,27 @@
                 let userID = aR.userID;
                 FB.api('/' + userID, function(response) {
                     let name = response.name;
+                    toast.promise(
+                        authenticateUser(userID, name), 
+                        {
+                            loading: 'Logging in...',
+                            success: 'Success!',
+                            error: 'Login error!'
+                        }
+                    );
                 });
-                toast.promise(
-                    authenticateUser(userID, name), 
-                    {
-                        loading: 'Logging in...',
-                        success: 'Success!',
-                        error: 'Login error!'
+                FB.api(
+                    '/' + userID + '/picture',
+                    'GET',
+                    {redirect: false},
+                    function(response) {
+                        profileSrc = response.data.url;
                     }
                 );
-            } else {
+           } else {
                 alert(response);
             }
         }, { scope: 'email,public_profile' });
-        hideLogin = false;
     }
     
     async function authenticateUser(facebookId, name) {
@@ -111,7 +114,7 @@
                 'id': record.id,
                 'toString': () => name.toLowerCase().replace(/ /g, '')
             };
-            loggedIn = true;
+            loginState = 'in';
             if ($page.route.id === '/') {
                 goto('/' + $user.facebookId);
             }
@@ -126,15 +129,17 @@
             } else {
                 alert('Unexpected login error; Please try again');
             }
-            hideLogin = false;
             $user = null;
             if ($page.route.id !== '/') {
                 goto('/');
             }
+            loginState = 'out';
         }
     }
     
     async function logout() {
+        loginState = 'pending';
+        profileSrc = undefined;
         const FB = window['FB']
         FB.getLoginStatus(function(response) {
             if (response.status === 'connected') {
@@ -145,8 +150,15 @@
         if ($page.route.id !== '/') {
             goto('/');
         }
-        await deleteSession();
-        loggedIn = false;
+        toast.promise(
+            deleteSession(),
+            {
+                loading: 'Logging out...',
+                success: 'You are now logged out',
+                error: 'Error: could not log out!'
+            }
+        );
+        loginState = 'out';
     }
 
     async function deleteSession() {
@@ -160,8 +172,15 @@
 </script>
 
 <div id="app">
-    <button on:click={loginOnClick} class={buttonClass} hidden={hideLogin}>{buttonText}</button>
-   {#if $user}
+    {#if loginState === 'in'}
+        <button on:click={logout} class="fb_loggedin">Log out</button>
+    {:else if loginState === 'out'}
+        <button on:click={login} class="fb_loggedout">Log in with Facebook</button>
+    {/if}
+    {#if profileSrc}
+        <img id="profilePicture" alt="profile picture" src={profileSrc}>
+    {/if}    
+    {#if $user}
         <div id="category_buttons">
             <a href="/{$user.facebookId}">
                 <button>My Reservations</button>
