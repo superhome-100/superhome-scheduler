@@ -106,12 +106,15 @@
                     );
                 });
             } else {
+                console.log(response.status);
+                console.log(response);
                 alert(response);
             }
         }, { scope: 'email,public_profile' });
     }
     
     async function authenticateUser(facebookId, name) {
+        let result;
         const response = await fetch('/api/login', {
             method: 'POST',
             headers: {'Content-type': 'application/json'},
@@ -130,7 +133,7 @@
             if ($page.route.id === '/') {
                 goto('/' + $user.facebookId);
             }
-            
+            result = 'success';
         } else {
 
             if (record.status === 'disabled') {
@@ -146,7 +149,9 @@
                 goto('/');
             }
             loginState = 'out';
+            result = 'error';
         }
+        return result;
     }
     
     async function logout() {
