@@ -40,11 +40,11 @@ h2.dialog {
     text-align: center;
 }
 	
-.dialog_button {
+.submitButton {
     text-align: right;
 }	
 
-.submitDialog {
+.submitForm {
     text-align: center;
 }
 
@@ -183,7 +183,7 @@ button.fb_loggedout {
 #currentUser {
     float: right;
     margin: 10px;
-    font-size: 10px;
+    font-size: 1px;
 }
 
 #profilePicture {

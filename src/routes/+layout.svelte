@@ -163,14 +163,13 @@
             goto('/');
         }
         toast.promise(
-            deleteSession(),
+            deleteSession().then(() => loginState = 'out'),
             {
                 loading: 'Logging out...',
                 success: 'You are now logged out',
                 error: 'Error: could not log out!'
             }
         );
-        loginState = 'out';
     }
 
     async function deleteSession() {
@@ -184,7 +183,7 @@
 </script>
 
 <div id="app">
-    {#if loginState === 'in'}
+    {#if $user && loginState === 'in'}
         <button on:click={logout} class="fb_loggedin">Log out</button>
         <div id="currentUser">Logged in as: <b>{$user.name}</b></div>
     {:else if loginState === 'out'}

@@ -12,7 +12,7 @@ if ((inc < 60 && 60 % inc !== 0) || (inc > 60 && inc % 60 !== 0)) {
 }
 */
 
-const minuteOfDay = (date) => date.getHours()*60 + date.getMinutes();
+export const minuteOfDay = (date) => date.getHours()*60 + date.getMinutes();
 
 export function validReservationDate(date) {
     let today = new Date();
@@ -23,6 +23,21 @@ export function validReservationDate(date) {
             && minuteOfDay(today) < resCutoff()
             )
         );
+}
+
+export function beforeCutoff(dateStr) {
+    let now = new Date();
+    let tomorrow = new Date();
+    tomorrow.setDate(now.getDate() + 1);
+    let tomStr = dtu.datetimeToLocalDateStr(tomorrow);
+
+    if (dateStr > tomStr) {
+        return true;
+    } else if (dateStr == tomStr && minuteOfDay(now) <= resCutoff()) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 let nRes = () => Math.floor((maxEnd() - minStart()) / inc())
