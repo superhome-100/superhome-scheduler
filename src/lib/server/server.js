@@ -88,6 +88,12 @@ export async function submitReservation(formData) {
     return record;
 }
 
+export async function cancelReservation(formData) {
+    let data = Object.fromEntries(formData);
+    const record = await xata.db.Reservations.delete(data.id);
+    return record;
+}
+
 export function checkSessionActive(route, cookies) {
     let session = cookies.get('sessionid');
     if (session === undefined) {

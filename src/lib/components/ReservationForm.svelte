@@ -1,9 +1,9 @@
 <script>
     import { getContext } from 'svelte';
     import { enhance } from '$app/forms';
-    import DialogPool from './DialogPool.svelte';
-    import DialogClassroom from './DialogClassroom.svelte';
-    import DialogOpenWater from './DialogOpenWater.svelte';
+    import ResFormPool from './ResFormPool.svelte';
+    import ResFormClassroom from './ResFormClassroom.svelte';
+    import ResFormOpenWater from './ResFormOpenWater.svelte';
     import { canSubmit, user, reservations } from '$lib/stores.js';
     import { minValidDateStr } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
@@ -40,7 +40,7 @@
 </script>
 
 {#if hasForm}
-    <div class="submitDialog">
+    <div class="submitForm">
         <h2>Reservation Request</h2>
         <form 
             method="POST" 
@@ -66,13 +66,13 @@
                 </select>
             </label></div>
             {#if category === 'pool'}
-                <DialogPool/>
+                <ResFormPool/>
             {:else if category === 'openwater'}
-                <DialogOpenWater/>
+                <ResFormOpenWater/>
             {:else if category === 'classroom'}
-                <DialogClassroom/>
+                <ResFormClassroom/>
             {/if}
-            <div class="dialog_button">
+            <div class="submitButton">
                 <button type="submit" disabled={!$canSubmit}>Submit</button>
             </div>
         </form>
