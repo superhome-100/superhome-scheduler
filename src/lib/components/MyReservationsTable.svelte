@@ -1,6 +1,7 @@
 <script>
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { minuteOfDay, beforeCutoff } from '$lib/ReservationTimes.js';
+    import { timeStrToMin } from '$lib/datetimeUtils.js';
     import { user, reservations } from '$lib/stores.js';
     import Modal from './Modal.svelte';
     import CancelDialog from './CancelDialog.svelte';
@@ -18,7 +19,7 @@
             view = 'past'
         } else {
             let rsvMin;
-            if (rsv.category in ['pool', 'classroom']) {
+            if (['pool', 'classroom'].includes(rsv.category)) {
                 rsvMin = timeStrToMin(rsv.endTime);
             } else if (rsv.category === 'openwater') {
                 if (rsv.owTime === 'AM') {
