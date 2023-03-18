@@ -106,9 +106,7 @@
                     );
                 });
             } else {
-                console.log(response.status);
-                console.log(response);
-                alert(response);
+                alert('Facebook login returned status "' + response.status + '"');
             }
         }, { scope: 'email,public_profile' });
     }
@@ -132,6 +130,7 @@
             if ($page.route.id === '/') {
                 goto('/' + $user.facebookId);
             }
+            return Promise.resolve();
         } else {
 
             if (record.status === 'disabled') {
@@ -140,7 +139,6 @@
                     'to access this app; please contact the admin for help'
                 );
             } else {
-                console.log(record);
                 alert('Unexpected login error; Please try again');
             }
             $user = null;
@@ -148,7 +146,7 @@
                 goto('/');
             }
             loginState = 'out';
-            return Promise.reject('login error');
+            return Promise.reject();
         }
     }
     

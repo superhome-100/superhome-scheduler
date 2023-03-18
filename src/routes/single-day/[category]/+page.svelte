@@ -39,7 +39,7 @@
 
 {#if validReservationDate($viewedDate)}
 <Modal show={$modal}>
-    <ReservationDialog category={category} date={$viewedDate}/>
+    <ReservationDialog category={category} dateFn={() => $viewedDate}/>
 </Modal>
 {/if}
 

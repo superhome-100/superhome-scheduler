@@ -183,7 +183,7 @@ button.fb_loggedout {
 #currentUser {
     float: right;
     margin: 10px;
-    font-size: 1px;
+    font-size: 10px;
 }
 
 #profilePicture {

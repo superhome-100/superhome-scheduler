@@ -3,6 +3,7 @@
     import { enhance } from '$app/forms';
     import { user, reservations } from '$lib/stores.js';
     import { beforeCutoff } from '$lib/ReservationTimes.js';
+    import { toast, Toaster } from 'svelte-french-toast';
 
     export let rsv;
     export let hasForm = false;
@@ -10,22 +11,30 @@
     export let onOkay = () => {};
 
     const { close } = getContext('simple-modal');
-
-    function _onCancel() {
-		onCancel();
-		close();
-    }
-
-    const cancelReservation = ({ form, data, action, cancel }) => {
+    
+    const cancelReservation = async ({ form, data, action, cancel }) => {
         let { date }  = Object.fromEntries(data);
         if (!beforeCutoff(date)) {
             alert(
-                `Reservation cancelation window has expired; 
+                `The cancelation window for this reservation has expired; 
                 reservation can no longer be canceled`
             );
             cancel();
-        } 
-        close();
+        } else { 
+            close();
+        }
+    };
+    
+    const cancelPromise = ({ form, data, action, cancel }) => {
+        let { category, date }  = Object.fromEntries(data);
+        toast.promise(
+            cancelReservation({ form, data, action, cancel }),
+            {
+                loading: 'Cancelling...',
+                success: `${category} reservation on ${date} has been canceled`,
+                error: 'Could not cancel reservation!'
+            }
+        );
         return async ({ result, update }) => {
             switch(result.type) {
                 case 'success':
@@ -35,7 +44,7 @@
                     break;
             }
         };
-    };
+    }
 
 </script>
 
@@ -44,10 +53,11 @@
         <form 
             method="POST" 
             action="/?/cancelReservation" 
-            use:enhance={cancelReservation}
+            use:enhance={cancelPromise}
         >
             <input type="hidden" name="id" value={rsv.id}>
             <input type="hidden" name="date" value={rsv.date}>
+            <input type="hidden" name="category" value={rsv.category}>
             <label>
                 Really cancel {rsv.category} reservation on {rsv.date}?
                 <button type="submit">Confirm</button>
@@ -56,3 +66,4 @@
     </div>
 {/if}
 
+<Toaster/>
