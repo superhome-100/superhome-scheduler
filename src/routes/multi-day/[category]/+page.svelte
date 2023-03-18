@@ -6,7 +6,7 @@
     import Modal from '$lib/components/Modal.svelte';
     import { minValidDate } from '$lib/ReservationTimes.js';
     import { idx2month } from '$lib/datetimeUtils.js';
-    import { modal, view, viewedDate, reservations } from '$lib/stores.js';
+    import { view, viewedDate, reservations } from '$lib/stores.js';
 
     export let data;
 
@@ -78,8 +78,7 @@
 
 </script>
 
-
-<Modal show={$modal}>
+<Modal>
     <ReservationDialog category={gCategory} date={minValidDate()}/>
 </Modal>
 

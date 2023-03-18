@@ -1,9 +1,9 @@
 <script>
     import { getContext } from 'svelte';
-	import ReservationForm from './ReservationForm.svelte';
+	import Dialog from './Dialog.svelte';
     import { toast, Toaster } from 'svelte-french-toast';
 
-    export let category='openwater';
+    export let category;
     export let date;
 
     const { open } = getContext('simple-modal');
@@ -18,7 +18,7 @@
 
     export const showDialog = () => {
 		open(
-			ReservationForm,
+			Dialog,
 			{
                 category: category,
 				date: date,
