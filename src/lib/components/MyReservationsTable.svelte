@@ -35,6 +35,7 @@
     function modifyReservation(event) {
 
     }
+
 </script>
 
 {#if $user}

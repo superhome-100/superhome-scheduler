@@ -13,32 +13,23 @@
     export let category = 'openwater';
     export let date;
     export let hasForm = false;
-    export let onCancel = () => {};
-    export let onOkay = () => {};
 
     const { close } = getContext('simple-modal');
 
     const submitReservation = async ({ form, data, action, cancel }) => {
         close();
-    };
-
-    const submitPromise = ({ form, data, action, cancel }) => {
-        toast.promise(
-            submitReservation({ form, data, action, cancel }),
-            {
-                loading: 'Submitting...',
-                success: 'Reservation submitted!',
-                error: 'Could not submit reservation!'
-            }
-        );
         return async ({ result, update }) => {
             switch(result.type) {
                 case 'success':
                     let rsv = augmentRsv(result.data, $user.facebookId, $user.name);
-                    onOkay(rsv);
-                    return Promise.resolve();
+                    $reservations.push(rsv);
+                    $reservations = [...$reservations];
+                    toast.success('Reservation submitted!');
+                    break;
                 default:
-                    return Promise.reject();
+                    console.error(result);
+                    toast.error('Submission failed with unknown error!');
+                    break;
             }
         };
     };
@@ -51,7 +42,7 @@
         <form 
             method="POST" 
             action="/?/submitReservation" 
-            use:enhance={submitPromise}
+            use:enhance={submitReservation}
         >
             <input type="hidden" name="user" value={$user.id}>
             <div><label>

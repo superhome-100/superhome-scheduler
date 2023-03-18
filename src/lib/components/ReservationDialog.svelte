@@ -8,10 +8,6 @@
 
     const { open } = getContext('simple-modal');
 
-    const onOkay = (rsv) => {
-        $reservations.push(rsv);
-    }
-
     export const showDialog = () => {
 		open(
 			ReservationForm,
@@ -19,7 +15,6 @@
                 category: category,
 				date: dateFn(),
                 hasForm: true,
-                onOkay: onOkay,
 			}
 		);
 	};

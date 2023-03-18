@@ -12,9 +12,19 @@
 
     const { close } = getContext('simple-modal');
     
+    function removeRsv(rsv) {
+        for (let i=0; i < $reservations.length; i++) {
+            if (rsv.id === $reservations[i].id) { 
+                $reservations.splice(i,1);
+                $reservations = [...$reservations];
+                break;
+            }
+        }
+    }
+
     const cancelReservation = async ({ form, data, action, cancel }) => {
-        let { date }  = Object.fromEntries(data);
-        if (!beforeCutoff(date)) {
+        let rsv = Object.fromEntries(data);
+        if (!beforeCutoff(rsv.date)) {
             alert(
                 `The cancelation window for this reservation has expired; 
                 reservation can no longer be canceled`
@@ -23,24 +33,16 @@
         } else { 
             close();
         }
-    };
     
-    const cancelPromise = ({ form, data, action, cancel }) => {
-        let { category, date }  = Object.fromEntries(data);
-        toast.promise(
-            cancelReservation({ form, data, action, cancel }),
-            {
-                loading: 'Cancelling...',
-                success: `${category} reservation on ${date} has been canceled`,
-                error: 'Could not cancel reservation!'
-            }
-        );
         return async ({ result, update }) => {
             switch(result.type) {
                 case 'success':
-                    onOkay(result.data);
+                    removeRsv(rsv);
+                    toast.success(`${rsv.category} reservation on ${rsv.date} has been canceled`);
                     break;
                 default:
+                    console.error(result);
+                    toast.error('Could not cancel reservation!');
                     break;
             }
         };
@@ -53,7 +55,7 @@
         <form 
             method="POST" 
             action="/?/cancelReservation" 
-            use:enhance={cancelPromise}
+            use:enhance={cancelReservation}
         >
             <input type="hidden" name="id" value={rsv.id}>
             <input type="hidden" name="date" value={rsv.date}>
