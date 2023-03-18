@@ -5,21 +5,7 @@
 
     export let rsv;
 
-    function removeRsv(rsv) {
-        var i = $reservations.length;
-        while (i--) {
-            if (rsv.id === $reservations[i].id) { 
-                $reservations.splice(i,1);
-                break;
-            }
-        }
-    }
-
     const { open } = getContext('simple-modal');
-
-	const onOkay = (data) => {
-        removeRsv(data);    
-    }
 
     export const showDialog = () => {
 		open(
@@ -27,7 +13,6 @@
             {
                 rsv: rsv, 
                 hasForm: true,
-				onOkay
             },
             {
                 closeButton: false
