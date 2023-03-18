@@ -114,7 +114,6 @@
     }
     
     async function authenticateUser(facebookId, name) {
-        let result;
         const response = await fetch('/api/login', {
             method: 'POST',
             headers: {'Content-type': 'application/json'},
@@ -133,7 +132,6 @@
             if ($page.route.id === '/') {
                 goto('/' + $user.facebookId);
             }
-            result = 'success';
         } else {
 
             if (record.status === 'disabled') {
@@ -142,6 +140,7 @@
                     'to access this app; please contact the admin for help'
                 );
             } else {
+                console.log(record);
                 alert('Unexpected login error; Please try again');
             }
             $user = null;
@@ -149,9 +148,8 @@
                 goto('/');
             }
             loginState = 'out';
-            result = 'error';
+            return Promise.reject('login error');
         }
-        return result;
     }
     
     async function logout() {
