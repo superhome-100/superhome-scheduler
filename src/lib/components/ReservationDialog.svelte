@@ -1,19 +1,15 @@
 <script>
     import { getContext } from 'svelte';
 	import ReservationForm from './ReservationForm.svelte';
-    import { toast, Toaster } from 'svelte-french-toast';
+    import { reservations } from '$lib/stores.js';
 
     export let category='openwater';
-    export let date;
+    export let dateFn;
 
     const { open } = getContext('simple-modal');
 
-	const onCancel = (text) => {
-    
-    }
-
-	const onOkay = (data) => {
-        toast.success(`${data.category} reservation submitted!`); 
+    const onOkay = (rsv) => {
+        $reservations.push(rsv);
     }
 
     export const showDialog = () => {
@@ -21,18 +17,16 @@
 			ReservationForm,
 			{
                 category: category,
-				date: date,
+				date: dateFn(),
                 hasForm: true,
-				onCancel,
-				onOkay
-			},
+                onOkay: onOkay,
+			}
 		);
 	};
 </script>
 
 <div class="button_plus" on:click={showDialog} on:keypress={showDialog}></div>
 
-<Toaster/>
 
 <style>
     .button_plus {

@@ -7,7 +7,7 @@
 </script>
 
 <Modal>
-    <ReservationDialog date={minValidDate()}/>
+    <ReservationDialog dateFn={minValidDate}/>
 </Modal>
 
 <br/>

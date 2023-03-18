@@ -1,5 +1,6 @@
 <script>
     import { getContext } from 'svelte';
+    import { toast, Toaster } from 'svelte-french-toast';
     import { enhance } from '$app/forms';
     import ResFormPool from './ResFormPool.svelte';
     import ResFormClassroom from './ResFormClassroom.svelte';
@@ -17,22 +18,27 @@
 
     const { close } = getContext('simple-modal');
 
-    function _onCancel() {
-		onCancel();
-		close();
-    }
-
-    const submitReservation = ({ form, data, action, cancel }) => {
+    const submitReservation = async ({ form, data, action, cancel }) => {
         close();
+    };
+
+    const submitPromise = ({ form, data, action, cancel }) => {
+        toast.promise(
+            submitReservation({ form, data, action, cancel }),
+            {
+                loading: 'Submitting...',
+                success: 'Reservation submitted!',
+                error: 'Could not submit reservation!'
+            }
+        );
         return async ({ result, update }) => {
             switch(result.type) {
                 case 'success':
                     let rsv = augmentRsv(result.data, $user.facebookId, $user.name);
-                    $reservations.push(rsv);
-                    onOkay(result.data);
-                    break;
+                    onOkay(rsv);
+                    return Promise.resolve();
                 default:
-                    break;
+                    return Promise.reject();
             }
         };
     };
@@ -45,7 +51,7 @@
         <form 
             method="POST" 
             action="/?/submitReservation" 
-            use:enhance={submitReservation}
+            use:enhance={submitPromise}
         >
             <input type="hidden" name="user" value={$user.id}>
             <div><label>
@@ -79,3 +85,4 @@
     </div>
 {/if}
 
+<Toaster/>

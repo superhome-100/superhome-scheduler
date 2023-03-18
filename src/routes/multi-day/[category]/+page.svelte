@@ -79,7 +79,7 @@
 </script>
 
 <Modal>
-    <ReservationDialog category={gCategory} date={minValidDate()}/>
+    <ReservationDialog category={gCategory} dateFn={minValidDate}/>
 </Modal>
 
 <div class="date_nav">
