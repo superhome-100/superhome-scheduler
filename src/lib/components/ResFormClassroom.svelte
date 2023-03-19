@@ -5,9 +5,11 @@
 
     $canSubmit = true;
 
-    let chosenStart = startTimes()[0];
-    let numStudents=1;
-
+    export let rsv = null;
+    let chosenStart = rsv == null || rsv.startTime == null ? startTimes()[0] : rsv.startTime;
+    let chosenEnd = rsv == null ? endTimes()[0] : rsv.endTime;
+    let numStudents = rsv == null || rsv.numStudents == null ? 1 : rsv.numStudents;
+    let comments = rsv == null ? null : rsv.comments; 
 </script>
 
 <div> 
@@ -23,7 +25,7 @@
 <div>
     <label>
         End Time
-        <select name="endTime">
+        <select name="endTime" value={chosenEnd}>
             {#each endTimes() as t}
                 {#if timeStrToMin(chosenStart) < timeStrToMin(t)}
                     <option value={t}>{t}</option>
@@ -45,7 +47,7 @@
 <div>
     <label>
         Comments
-        <input type="text" name="comments">
+        <input type="text" name="comments" value={comments}>
     </label>
 </div>
 <input type="hidden" name="resType" value="course">

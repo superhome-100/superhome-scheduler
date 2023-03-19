@@ -1,8 +1,12 @@
 <script>
     import { canSubmit } from '$lib/stores.js';
 
-    let autoOrCourse;
-    let maxDepth = null;
+    export let rsv = null;
+    let autoOrCourse = rsv == null ? 'autonomous' : rsv.resType;
+    let maxDepth = rsv == null || rsv.maxDepth == null ? null : rsv.maxDepth;
+    let owTime = rsv == null ? 'AM' : rsv.owTime;
+    let comments = rsv == null ? null : rsv.comments;
+    let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
 
     function checkSubmit() {
         $canSubmit = maxDepth > 0;
@@ -14,7 +18,7 @@
 <div> 
     <label>
         Time
-        <select name="owTime">
+        <select name="owTime" value={owTime}>
             <option value='AM'>AM</option>
             <option value='PM'>PM</option>
         </select>
@@ -33,7 +37,7 @@
 <div>
     <label>
         # Students
-        <select name="numStudents">
+        <select name="numStudents" value={numStudents}>
             {#each [...Array(10).keys()] as n}
                 <option value={n+1}>{n+1}</option>
             {/each}
@@ -57,7 +61,7 @@
 <div>
     <label>
         Comments
-        <input type="text" name="comments" size="30">
+        <input type="text" name="comments" size="30" value={comments}>
     </label>
 </div>
 
