@@ -97,6 +97,7 @@ table.calendar {
     table-layout: fixed;
     border-collapse:collapse;
     margin: 5px auto;
+    width: calc(100% - 10px);
 }
 
 table.pool td.pool {
