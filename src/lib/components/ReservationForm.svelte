@@ -38,7 +38,7 @@
 
 {#if hasForm}
     <div class="submitForm">
-        <h2>Reservation Request</h2>
+        <h2>reservation request</h2>
         <form 
             method="POST" 
             action="/?/submitReservation" 

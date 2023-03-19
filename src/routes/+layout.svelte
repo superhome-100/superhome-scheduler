@@ -83,6 +83,7 @@
         FB.getLoginStatus(function(response) {
             if (response.status === 'connected') {
                 loginState = 'in';
+                loadProfilePic($user.facebookId);
             }
         });
     }
@@ -127,6 +128,7 @@
                 'toString': () => name.toLowerCase().replace(/ /g, '')
             };
             loginState = 'in';
+            loadProfilePic($user.facebookId);
             if ($page.route.id === '/') {
                 goto('/' + $user.facebookId);
             }
@@ -186,13 +188,15 @@
 <div id="app">
     {#if $user && loginState === 'in'}
         <button on:click={logout} class="fb_loggedin">Log out</button>
-        <div id="currentUser">Logged in as: <b>{$user.name}</b></div>
+        {#if profileSrc}
+            <img id="profilePicture" alt="profile picture" src={profileSrc}>
+        {:else}
+            <div id="currentUser">Logged in as: <b>{$user.name}</b></div>
+        {/if}
     {:else if loginState === 'out'}
         <button on:click={login} class="fb_loggedout">Log in with Facebook</button>
     {/if}
-    {#if profileSrc}
-        <img id="profilePicture" alt="profile picture" src={profileSrc}>
-    {/if}    
+        
     {#if $user}
         <div id="category_buttons">
             <a href="/{$user.facebookId}">

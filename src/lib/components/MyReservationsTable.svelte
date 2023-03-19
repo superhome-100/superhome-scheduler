@@ -41,7 +41,6 @@
             <tr>
                 <th>Date</th>
                 <th>Category</th>
-                <th>Details</th>
                 <th>Status</th>
                 {#if resType === 'upcoming'}
                     <th>Modify</th>
@@ -55,7 +54,6 @@
                     <tr>
                         <td>{rsv.date}</td>
                         <td>{rsv.category}</td>
-                        <td>tbc</td>
                         <td>{rsv.status}</td>
                         {#if beforeResCutoff(rsv.date)}
                             <td>
