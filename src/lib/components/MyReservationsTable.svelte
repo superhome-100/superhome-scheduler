@@ -1,10 +1,10 @@
 <script>
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
-    import { minuteOfDay, beforeCutoff } from '$lib/ReservationTimes.js';
+    import { minuteOfDay, beforeCancelCutoff, beforeResCutoff } from '$lib/ReservationTimes.js';
     import { timeStrToMin } from '$lib/datetimeUtils.js';
     import { user, reservations } from '$lib/stores.js';
     import Modal from './Modal.svelte';
-    import CancelDialog from './CancelDialog.svelte';
+    import Dialog from './Dialog.svelte';
 
     export let resType; /* past or upcoming */
 
@@ -33,10 +33,6 @@
         return view;
     }
 
-    function modifyReservation(event) {
-
-    }
-
 </script>
 
 {#if $user}
@@ -61,17 +57,17 @@
                         <td>{rsv.category}</td>
                         <td>tbc</td>
                         <td>{rsv.status}</td>
-                        {#if beforeCutoff(rsv.date)}
-                            <td>
-                                <button
-                                    id={`${rsv.category}_${rsv.date}`}
-                                    on:click={modifyReservation}
-                                >/
-                                </button>
-                            </td>
+                        {#if beforeResCutoff(rsv.date)}
                             <td>
                                 <Modal>
-                                    <CancelDialog rsv={rsv}/>
+                                    <Dialog dialogType='modify' rsv={rsv}/>
+                                </Modal>
+                            </td>
+                        {/if}
+                        {#if beforeCancelCutoff(rsv.date)}
+                            <td>
+                                <Modal>
+                                    <Dialog dialogType='cancel' rsv={rsv}/>
                                 </Modal>
                             </td>
                         {/if}
