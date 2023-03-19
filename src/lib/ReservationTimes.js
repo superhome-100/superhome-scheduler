@@ -4,6 +4,7 @@ import * as dtu from './datetimeUtils.js';
 export let minStart = () => dtu.timeStrToMin(Settings('minStartTime'));
 export let maxEnd = () => dtu.timeStrToMin(Settings('maxEndTime'));
 export let resCutoff = () => dtu.timeStrToMin(Settings('reservationCutOffTime'));
+export let cancelCutoff = () => dtu.timeStrToMin(Settings('cancelationCutOffTime'));
 export let inc = () => dtu.timeStrToMin(Settings('reservationIncrement'));
 
 /*
@@ -25,7 +26,7 @@ export function validReservationDate(date) {
         );
 }
 
-export function beforeCutoff(dateStr) {
+export function beforeResCutoff(dateStr) {
     let now = new Date();
     let tomorrow = new Date();
     tomorrow.setDate(now.getDate() + 1);
@@ -34,6 +35,19 @@ export function beforeCutoff(dateStr) {
     if (dateStr > tomStr) {
         return true;
     } else if (dateStr == tomStr && minuteOfDay(now) <= resCutoff()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+export function beforeCancelCutoff(dateStr) {
+    let now = new Date();
+    let today = dtu.datetimeToLocalDateStr(now);
+
+    if (dateStr > today) {
+        return true;
+    } else if (dateStr == today && minuteOfDay(now) <= cancelCutoff()) {
         return true;
     } else {
         return false;
