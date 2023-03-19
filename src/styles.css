@@ -84,9 +84,6 @@ h2.dialog {
 p.rsv {
     border-radius: 2em;
     font-size: 10px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: hidden;
     margin: auto;
     width: max-content;
     padding-inline: 1em;
@@ -122,6 +119,8 @@ td.calendar_cell {
     vertical-align: top;
     text-align: center;
     width: 14%;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .pool p.rsv{
