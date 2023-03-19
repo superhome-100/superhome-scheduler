@@ -69,10 +69,6 @@ h2.dialog {
     margin: 0 auto;
 }
 
-.calendar {
-    width: 100%;
-}
-
 .calendar_cell {
     height: 100px;
 }
@@ -99,8 +95,8 @@ p.rsv {
 }
 table.calendar {
     table-layout: fixed;
-    width: 100%;
     border-collapse:collapse;
+    margin: 5px auto;
 }
 
 table.pool td.pool {
