@@ -2,7 +2,7 @@
     import { getContext } from 'svelte';
     import { enhance } from '$app/forms';
     import { user, reservations } from '$lib/stores.js';
-    import { beforeCutoff } from '$lib/ReservationTimes.js';
+    import { beforeCancelCutoff } from '$lib/ReservationTimes.js';
     import { toast, Toaster } from 'svelte-french-toast';
 
     export let rsv;
@@ -24,7 +24,7 @@
 
     const cancelReservation = async ({ form, data, action, cancel }) => {
         let rsv = Object.fromEntries(data);
-        if (!beforeCutoff(rsv.date)) {
+        if (!beforeCancelCutoff(rsv.date)) {
             alert(
                 `The cancelation window for this reservation has expired; 
                 reservation can no longer be canceled`

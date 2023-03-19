@@ -88,6 +88,17 @@ export async function submitReservation(formData) {
     return record;
 }
 
+export async function updateReservation(formData) {
+    let {id, ...rsv} = Object.fromEntries(formData);
+    const record = xata.db.Reservations.createOrReplace(id, {
+        ...rsv,
+        maxDepth: 'maxDepth' in rsv ? parseInt(rsv.maxDepth) : null,
+        numStudents: rsv.numStudents == null ? null: parseInt(rsv.numStudents),
+    });
+    return record;
+}
+
+
 export async function cancelReservation(formData) {
     let data = Object.fromEntries(formData);
     const record = await xata.db.Reservations.delete(data.id);
