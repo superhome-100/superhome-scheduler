@@ -40,7 +40,7 @@ export function dateStrParseDate(dateStr) {
 
 export function datetimeToLocalDateStr(datetime) {
     let rexp = /([0-9]+)\/([0-9]+)\/([0-9]+).*/
-    let m = rexp.exec(datetime.toLocaleDateString());
+    let m = rexp.exec(datetime.toLocaleDateString('en-US'));
     return m[3] + "-" + m[1].padStart(2,'0') + "-" + m[2].padStart(2,'0');
 }
 

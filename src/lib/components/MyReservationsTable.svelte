@@ -55,20 +55,20 @@
                         <td>{rsv.date}</td>
                         <td>{rsv.category}</td>
                         <td>{rsv.status}</td>
+                        <td>
                         {#if beforeResCutoff(rsv.date)}
-                            <td>
-                                <Modal>
-                                    <Dialog dialogType='modify' rsv={rsv}/>
-                                </Modal>
-                            </td>
+                            <Modal>
+                                <Dialog dialogType='modify' rsv={rsv}/>
+                            </Modal>
                         {/if}
+                        </td>
+                        <td>
                         {#if beforeCancelCutoff(rsv.date)}
-                            <td>
-                                <Modal>
-                                    <Dialog dialogType='cancel' rsv={rsv}/>
-                                </Modal>
-                            </td>
+                            <Modal>
+                                <Dialog dialogType='cancel' rsv={rsv}/>
+                            </Modal>
                         {/if}
+                        </td>
                     </tr>
                 {/if}
             {/each}
