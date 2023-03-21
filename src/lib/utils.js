@@ -74,6 +74,14 @@ export function augmentRsv(rsv, fbId=null, name=null) {
     return newRsv;
 }
 
+export const displayTag = (rsv) => {
+    let tag = rsv.user.name;
+    if (rsv.resType === 'course') {
+        tag += ' +' + rsv.numStudents;
+    }
+    return tag;
+};
+
 export function getDaySchedule(startTimes, rsvs, datetime, category, nResource) {
     let schedule = [];
     let today = datetimeToLocalDateStr(datetime);
@@ -86,11 +94,7 @@ export function getDaySchedule(startTimes, rsvs, datetime, category, nResource) 
             if (timeGE(t, rsv.startTime)
                 && timeLT(t, rsv.endTime))
             {
-                let msg = rsv.user.name;
-                if (rsv.resType === 'course') {
-                    msg = `${msg} + ${rsv.numStudents}`;
-                }
-                timeRsvs[resource].push(msg);
+                timeRsvs[resource].push(displayTag(rsv));
                 resource = (resource + 1) % nResource;
             }
         }

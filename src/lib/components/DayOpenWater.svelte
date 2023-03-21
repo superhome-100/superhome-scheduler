@@ -1,6 +1,7 @@
 <script>
     import { viewedDate, reservations } from '$lib/stores.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
+    import { displayTag } from '$lib/utils.js';
 
     const buoys = ['A', 'B', 'C', 'D'];
 
@@ -32,26 +33,18 @@
             <th>Buoy {buoy}</th>
         {/each}
     </tr>
-    <tr>
-        <th>AM</th>
-         {#each schedule.AM as rsvs}
-             <td class="schedule_cell buoy">
-                {#each rsvs as rsv}
-                    {rsv.user.name}
-                {/each}
-             </td>
-        {/each}
-    </tr>
-    <tr>
-        <th>PM</th>
-        {#each schedule.PM as rsvs}
-            <td class="schedule_cell buoy">
-                {#each rsvs as rsv}
-                    {rsv.user.name}
-                {/each}
-            </td>
-        {/each}
-   </tr>
+    {#each ['AM', 'PM'] as time}
+        <tr>
+            <th>{time}</th>
+            {#each schedule[time] as rsvs}
+                <td class="dayCell buoy">
+                    {#each rsvs as rsv}
+                        <p>{displayTag(rsv)}</p>
+                    {/each}
+                </td>
+            {/each}
+        </tr>
+    {/each}
 </table>
 <style type="text/css" media="screen">
     table {
