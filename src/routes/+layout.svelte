@@ -60,10 +60,10 @@
         }
     }   
 
-    function loadProfilePic(userID) {
+    function loadProfilePic() {
         const FB = window['FB'];
         FB.api(
-            '/' + userID + '/picture',
+            '/me/picture',
             'GET',
             {redirect: false},
             function(response) {
@@ -83,7 +83,7 @@
         FB.getLoginStatus(function(response) {
             if (response.status === 'connected') {
                 loginState = 'in';
-                loadProfilePic($user.facebookId);
+                loadProfilePic();
             }
         });
     }
@@ -128,7 +128,7 @@
                 'toString': () => name.toLowerCase().replace(/ /g, '')
             };
             loginState = 'in';
-            loadProfilePic($user.facebookId);
+            loadProfilePic();
             if ($page.route.id === '/') {
                 goto('/' + $user.facebookId);
             }
@@ -189,7 +189,7 @@
     {#if $user && loginState === 'in'}
         <button on:click={logout} class="fb_loggedin">Log out</button>
         {#if profileSrc}
-            <img id="profilePicture" alt="profile picture" src={profileSrc}>
+            <img id="profilePicture" alt="profilePicture" src={profileSrc}>
         {:else}
             <div id="currentUser">Logged in as: <b>{$user.name}</b></div>
         {/if}
