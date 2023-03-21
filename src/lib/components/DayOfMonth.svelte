@@ -14,14 +14,16 @@
 
 </script>
 
-<a href="/single-day/{category}" style="text-decoration: none">
-    <div style="height:100%" on:click={handleClick} on:keypress={handleClick}>
-        <p 
-            style="margin: auto; width: 25px; text-align: center" 
-            id={id_internal}>{date.getDate()}
-        </p>
-        {#each rsvs as rsv}
-            <p class="rsv">{rsv.user.name}</p>
-        {/each}
-    </div>
-</a>
+<div style="height: 100%">
+    <a href="/single-day/{category}" style="text-decoration: none">
+        <div style="height:100%" on:click={handleClick} on:keypress={handleClick}>
+            <p 
+                style="margin: auto; width: 25px; text-align: center" 
+                id={id_internal}>{date.getDate()}
+            </p>
+            {#each rsvs as rsv}
+                <p class="rsv">{rsv.user.name}</p>
+            {/each}
+        </div>
+    </a>
+</div>
