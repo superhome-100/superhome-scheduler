@@ -6,6 +6,8 @@
     $canSubmit = true;
 
     export let rsv = null;
+    export let disabled = false;
+
     let chosenStart = rsv == null || rsv.startTime == null ? startTimes()[0] : rsv.startTime;
     let chosenEnd = rsv == null ? endTimes()[0] : rsv.endTime;
     let numStudents = rsv == null || rsv.numStudents == null ? 1 : rsv.numStudents;
@@ -15,7 +17,7 @@
 <div> 
     <label>
         Start Time
-        <select bind:value={chosenStart} name="startTime">
+        <select disabled={disabled} bind:value={chosenStart} name="startTime">
             {#each startTimes() as t}
                 <option value={t}>{t}</option>
             {/each}
@@ -25,7 +27,7 @@
 <div>
     <label>
         End Time
-        <select name="endTime" value={chosenEnd}>
+        <select disabled={disabled} name="endTime" value={chosenEnd}>
             {#each endTimes() as t}
                 {#if timeStrToMin(chosenStart) < timeStrToMin(t)}
                     <option value={t}>{t}</option>
@@ -37,7 +39,7 @@
 <div>
     <label>
         # Students
-        <select value={numStudents} name="numStudents">
+        <select disabled={disabled} value={numStudents} name="numStudents">
             {#each [...Array(10).keys()] as n}
                 <option value={n+1}>{n+1}</option>
             {/each}
@@ -47,7 +49,7 @@
 <div>
     <label>
         Comments
-        <input type="text" name="comments" value={comments}>
+        <input disabled={disabled} type="text" name="comments" value={comments}>
     </label>
 </div>
 <input type="hidden" name="resType" value="course">

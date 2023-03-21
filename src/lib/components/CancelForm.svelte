@@ -4,6 +4,7 @@
     import { user, reservations } from '$lib/stores.js';
     import { beforeCancelCutoff } from '$lib/ReservationTimes.js';
     import { toast, Toaster } from 'svelte-french-toast';
+    import { removeRsv } from '$lib/utils.js';
 
     export let rsv;
     export let hasForm = false;
@@ -12,33 +13,22 @@
 
     const { close } = getContext('simple-modal');
     
-    function removeRsv(rsv) {
-        for (let i=0; i < $reservations.length; i++) {
-            if (rsv.id === $reservations[i].id) { 
-                $reservations.splice(i,1);
-                $reservations = [...$reservations];
-                break;
-            }
-        }
-    }
-
     const cancelReservation = async ({ form, data, action, cancel }) => {
         let rsv = Object.fromEntries(data);
         if (!beforeCancelCutoff(rsv.date)) {
             alert(
                 `The cancelation window for this reservation has expired; 
-                reservation can no longer be canceled`
+                this reservation can no longer be canceled`
             );
             cancel();
-        } else { 
-            close();
-        }
-    
+        } 
+        close();
+
         return async ({ result, update }) => {
             switch(result.type) {
                 case 'success':
                     removeRsv(rsv);
-                    toast.success(`${rsv.category} reservation on ${rsv.date} has been canceled`);
+                    toast.success('Reservation canceled');
                     break;
                 default:
                     console.error(result);

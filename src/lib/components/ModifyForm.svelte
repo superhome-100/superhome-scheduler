@@ -8,33 +8,24 @@
     import { canSubmit, user, reservations } from '$lib/stores.js';
     import { minValidDateStr, beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
-    import { augmentRsv } from '$lib/utils.js';
+    import { augmentRsv, removeRsv } from '$lib/utils.js';
 
     export let hasForm = false;
     export let rsv;
 
     const { close } = getContext('simple-modal');
-  
-    function removeRsv(rsv) {
-        for (let i=0; i < $reservations.length; i++) {
-            if (rsv.id === $reservations[i].id) { 
-                $reservations.splice(i,1);
-                $reservations = [...$reservations];
-                break;
-            }
-        }
-    }
+
+    $canSubmit = beforeResCutoff(rsv.date);
 
     const updateReservation = async ({ form, data, action, cancel }) => {
         let rsv = Object.fromEntries(data);
         if (!beforeResCutoff(rsv.date)) {
             alert(`The modification window for this reservation has expired; 
-                reservation can no longer be modified`
+                this reservation can no longer be modified`
             );
             cancel();
-        } else {
-            close();
         }
+        close();
 
         return async ({ result, update }) => {
             switch(result.type) {
@@ -68,14 +59,14 @@
             <input type="hidden" name="category" value={rsv.category}>
             <input type="hidden" name="date" value={rsv.date}>
             {#if rsv.category === 'pool'}
-                <ResFormPool rsv={rsv}/>
+                <ResFormPool disabled={!beforeResCutoff(rsv.date)} rsv={rsv}/>
             {:else if rsv.category === 'openwater'}
-                <ResFormOpenWater rsv={rsv}/>
+                <ResFormOpenWater disabled={!beforeResCutoff(rsv.date)} rsv={rsv}/>
             {:else if rsv.category === 'classroom'}
-                <ResFormClassroom rsv={rsv}/>
+                <ResFormClassroom disabled={!beforeResCutoff(rsv.date)} rsv={rsv}/>
             {/if}
             <div class="submitButton">
-                <button type="submit" disabled={!$canSubmit}>Submit</button>
+                <button type="submit" disabled={!$canSubmit || !beforeResCutoff(rsv.date)}>Submit</button>
             </div>
         </form>
     </div>

@@ -4,6 +4,8 @@
     import { canSubmit } from '$lib/stores.js';
 
     export let rsv = null;
+    export let disabled = false;
+
     let chosenStart = rsv == null ? startTimes()[0] : rsv.startTime;
     let chosenEnd = rsv == null ? endTimes()[0] : rsv.endTime;
     let autoOrCourse = rsv == null ? 'autonomous' : rsv.resType;
@@ -15,7 +17,7 @@
 
 <div><label>
     Start Time
-    <select bind:value={chosenStart} name="startTime">
+    <select disabled={disabled} bind:value={chosenStart} name="startTime">
         {#each startTimes() as t}
             <option value={t}>{t}</option>
         {/each}
@@ -23,7 +25,7 @@
 </label></div>
 <div><label>
     End Time
-    <select name="endTime" value={chosenEnd}>
+    <select disabled={disabled} name="endTime" value={chosenEnd}>
         {#each endTimes() as t}
             {#if timeStrToMin(chosenStart) < timeStrToMin(t)}
                 <option value={t}>{t}</option>
@@ -33,7 +35,7 @@
 </label></div>
 <div><label>
     Type
-    <select bind:value={autoOrCourse} name="resType">
+    <select disabled={disabled} bind:value={autoOrCourse} name="resType">
         <option value='autonomous'>Autonomous</option>
         <option value='course'>Course</option>
     </select>
@@ -41,7 +43,7 @@
 {#if autoOrCourse == 'course'}
     <div><label>
         # Students
-        <select value={numStudents} name="numStudents">
+        <select disabled={disabled} value={numStudents} name="numStudents">
             {#each [...Array(10).keys()] as n}
                 <option value={n+1}>{n+1}</option>
             {/each}
@@ -50,7 +52,7 @@
 {/if}
 <div><label>
     Comments
-    <input type="text" name="comments" value={comments}>
+    <input disabled={disabled} type="text" name="comments" value={comments}>
 </label></div>
 
 

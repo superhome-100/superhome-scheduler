@@ -32,7 +32,7 @@
         }
         return view;
     }
-
+    
 </script>
 
 {#if $user}
@@ -43,7 +43,7 @@
                 <th>Category</th>
                 <th>Status</th>
                 {#if resType === 'upcoming'}
-                    <th>Modify</th>
+                    <th>View/Modify</th>
                     <th>Cancel</th>
                 {/if}
             </tr>
@@ -56,18 +56,16 @@
                         <td>{rsv.category}</td>
                         <td>{rsv.status}</td>
                         <td>
-                        {#if beforeResCutoff(rsv.date)}
                             <Modal>
                                 <Dialog dialogType='modify' rsv={rsv}/>
                             </Modal>
-                        {/if}
                         </td>
                         <td>
-                        {#if beforeCancelCutoff(rsv.date)}
-                            <Modal>
-                                <Dialog dialogType='cancel' rsv={rsv}/>
-                            </Modal>
-                        {/if}
+                            {#if beforeCancelCutoff(rsv.date)}
+                                <Modal>
+                                    <Dialog dialogType='cancel' rsv={rsv}/>
+                                </Modal>
+                            {/if}
                         </td>
                     </tr>
                 {/if}
