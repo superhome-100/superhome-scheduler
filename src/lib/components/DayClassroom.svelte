@@ -19,9 +19,9 @@
         <tr>
             <th>{s.start}</th>
             {#each [...Array(nRooms).keys()] as room}
-                <td class="schedule_cell classroom">
+                <td class="dayCell classroom">
                     {#each s.rsvs[room] as msg}
-                        {msg}
+                        <p>{msg}</p>
                     {/each}
                 </td>
             {/each}

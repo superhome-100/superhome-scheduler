@@ -125,6 +125,14 @@ td.calendar_cell {
     height: 100px;
 }
 
+.dayCell {
+    width: 200px;
+}
+
+.dayCell p {
+    margin: 0;
+}
+
 .pool p.rsv{
     background: var(--blue);
 }

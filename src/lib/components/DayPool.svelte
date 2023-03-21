@@ -21,9 +21,9 @@
         <tr>
             <th>{s.start}</th>
             {#each [...Array(nLanes).keys()] as lane}
-                <td class="schedule_cell pool_lane" style="width: max-content">
+                <td class="dayCell lane">
                     {#each s.rsvs[lane] as msg}
-                        {msg}
+                        <p>{msg}</p>
                     {/each}
                 </td>
             {/each}
