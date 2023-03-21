@@ -13,11 +13,14 @@
     let comments = rsv == null ? null : rsv.comments;
 
     $canSubmit = true;
+
+    let noModify = rsv != null;
+
 </script>
 
 <div><label>
     Start Time
-    <select disabled={disabled} bind:value={chosenStart} name="startTime">
+    <select disabled={disabled || noModify} bind:value={chosenStart} name="startTime">
         {#each startTimes() as t}
             <option value={t}>{t}</option>
         {/each}
@@ -25,7 +28,7 @@
 </label></div>
 <div><label>
     End Time
-    <select disabled={disabled} name="endTime" value={chosenEnd}>
+    <select disabled={disabled || noModify} name="endTime" value={chosenEnd}>
         {#each endTimes() as t}
             {#if timeStrToMin(chosenStart) < timeStrToMin(t)}
                 <option value={t}>{t}</option>
@@ -52,7 +55,7 @@
 {/if}
 <div><label>
     Comments
-    <input disabled={disabled} type="text" name="comments" value={comments}>
+    <input disabled={disabled || noModify} type="text" name="comments" value={comments}>
 </label></div>
 
 

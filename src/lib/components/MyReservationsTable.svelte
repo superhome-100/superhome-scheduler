@@ -45,6 +45,8 @@
                 {#if resType === 'upcoming'}
                     <th>View/Modify</th>
                     <th>Cancel</th>
+                {:else if resType === 'past'}
+                    <th>View</th>
                 {/if}
             </tr>
         </thead>
@@ -61,7 +63,7 @@
                             </Modal>
                         </td>
                         <td>
-                            {#if beforeCancelCutoff(rsv.date)}
+                            {#if beforeCancelCutoff(rsv.date, rsv.startTime)}
                                 <Modal>
                                     <Dialog dialogType='cancel' rsv={rsv}/>
                                 </Modal>

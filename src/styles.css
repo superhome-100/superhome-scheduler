@@ -120,6 +120,11 @@ td.calendar_cell {
     white-space: nowrap;
 }
 
+.dayOfMonth {
+    overflow-y: scroll;
+    height: 100px;
+}
+
 .pool p.rsv{
     background: var(--blue);
 }

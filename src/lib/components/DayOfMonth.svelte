@@ -14,7 +14,7 @@
 
 </script>
 
-<div style="height: 100%">
+<div style="height: 100%" class="dayOfMonth">
     <a href="/single-day/{category}" style="text-decoration: none">
         <div style="height:100%" on:click={handleClick} on:keypress={handleClick}>
             <p 

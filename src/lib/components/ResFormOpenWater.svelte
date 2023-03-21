@@ -15,12 +15,14 @@
     }
     checkSubmit();
 
+    let noModify = rsv != null;
+
 </script>
 
 <div> 
     <label>
         Time
-        <select disabled={disabled} name="owTime" value={owTime}>
+        <select disabled={disabled || noModify} name="owTime" value={owTime}>
             <option value='AM'>AM</option>
             <option value='PM'>PM</option>
         </select>
@@ -51,7 +53,7 @@
     <label>
         Max Depth
         <input 
-            disabled={disabled}
+            disabled={disabled || noModify}
             type=number 
             min=1 
             style="width:40px" 
@@ -64,7 +66,13 @@
 <div>
     <label>
         Comments
-        <input disabled={disabled} type="text" name="comments" size="30" value={comments}>
+        <input 
+            disabled={disabled || noModify} 
+            type="text" 
+            name="comments" 
+            size="30" 
+            value={comments}
+        >
     </label>
 </div>
 
