@@ -12,12 +12,14 @@
     let chosenEnd = rsv == null ? endTimes()[0] : rsv.endTime;
     let numStudents = rsv == null || rsv.numStudents == null ? 1 : rsv.numStudents;
     let comments = rsv == null ? null : rsv.comments; 
+    let noModify = rsv != null;
+
 </script>
 
 <div> 
     <label>
         Start Time
-        <select disabled={disabled} bind:value={chosenStart} name="startTime">
+        <select disabled={disabled || noModify} bind:value={chosenStart} name="startTime">
             {#each startTimes() as t}
                 <option value={t}>{t}</option>
             {/each}
@@ -27,7 +29,7 @@
 <div>
     <label>
         End Time
-        <select disabled={disabled} name="endTime" value={chosenEnd}>
+        <select disabled={disabled || noModify} name="endTime" value={chosenEnd}>
             {#each endTimes() as t}
                 {#if timeStrToMin(chosenStart) < timeStrToMin(t)}
                     <option value={t}>{t}</option>
@@ -49,7 +51,7 @@
 <div>
     <label>
         Comments
-        <input disabled={disabled} type="text" name="comments" value={comments}>
+        <input disabled={disabled || noModify} type="text" name="comments" value={comments}>
     </label>
 </div>
 <input type="hidden" name="resType" value="course">

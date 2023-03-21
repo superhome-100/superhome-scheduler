@@ -8,14 +8,12 @@
 
     export let rsv;
     export let hasForm = false;
-    export let onCancel = () => {};
-    export let onOkay = () => {};
 
     const { close } = getContext('simple-modal');
     
     const cancelReservation = async ({ form, data, action, cancel }) => {
         let rsv = Object.fromEntries(data);
-        if (!beforeCancelCutoff(rsv.date)) {
+        if (!beforeCancelCutoff(rsv.date, rsv.startTime)) {
             alert(
                 `The cancelation window for this reservation has expired; 
                 this reservation can no longer be canceled`

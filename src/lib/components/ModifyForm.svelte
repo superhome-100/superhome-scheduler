@@ -6,7 +6,7 @@
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
     import { canSubmit, user, reservations } from '$lib/stores.js';
-    import { minValidDateStr, beforeResCutoff } from '$lib/ReservationTimes.js';
+    import { minValidDateStr, beforeCancelCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { augmentRsv, removeRsv } from '$lib/utils.js';
 
@@ -15,11 +15,9 @@
 
     const { close } = getContext('simple-modal');
 
-    $canSubmit = beforeResCutoff(rsv.date);
-
     const updateReservation = async ({ form, data, action, cancel }) => {
         let rsv = Object.fromEntries(data);
-        if (!beforeResCutoff(rsv.date)) {
+        if (!beforeCancelCutoff(rsv.date, rsv.startTime)) {
             alert(`The modification window for this reservation has expired; 
                 this reservation can no longer be modified`
             );
@@ -43,12 +41,13 @@
             }
         };
     };
-
+    let disabled = !beforeCancelCutoff(rsv.date, rsv.startTime);
+    let prompt = disabled ? '' : 'modify';
 </script>
 
 {#if hasForm}
     <div class="submitForm">
-        <h2>modify {rsv.category} reservation</h2>
+        <h2>{prompt} {rsv.category} reservation</h2>
         <form 
             method="POST" 
             action="/?/updateReservation" 
@@ -56,17 +55,31 @@
         >
             <input type="hidden" name="user" value={$user.id}>
             <input type="hidden" name="id" value={rsv.id}>
-            <input type="hidden" name="category" value={rsv.category}>
-            <input type="hidden" name="date" value={rsv.date}>
+            <div><label>
+                Date
+                <input type="date" name="date" disabled value={rsv.date}>
+            </label></div>
+            <div><label>
+                Category
+                <select name="category" disabled value={rsv.category}>
+                    <option value="pool">Pool</option>
+                    <option value="openwater">Open Water</option>
+                    <option value="classroom">Classroom</option>
+                </select>
+            </label></div>
             {#if rsv.category === 'pool'}
-                <ResFormPool disabled={!beforeResCutoff(rsv.date)} rsv={rsv}/>
+                <ResFormPool disabled={disabled} rsv={rsv}/>
             {:else if rsv.category === 'openwater'}
-                <ResFormOpenWater disabled={!beforeResCutoff(rsv.date)} rsv={rsv}/>
+                <ResFormOpenWater disabled={disabled} rsv={rsv}/>
             {:else if rsv.category === 'classroom'}
-                <ResFormClassroom disabled={!beforeResCutoff(rsv.date)} rsv={rsv}/>
+                <ResFormClassroom disabled={disabled} rsv={rsv}/>
             {/if}
             <div class="submitButton">
-                <button type="submit" disabled={!$canSubmit || !beforeResCutoff(rsv.date)}>Submit</button>
+                <button 
+                    type="submit" 
+                    disabled={!$canSubmit || disabled}
+                >Submit
+                </button>
             </div>
         </form>
     </div>

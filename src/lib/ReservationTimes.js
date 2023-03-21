@@ -41,13 +41,16 @@ export function beforeResCutoff(dateStr) {
     }
 }
 
-export function beforeCancelCutoff(dateStr) {
+export function beforeCancelCutoff(dateStr, startTime) {
     let now = new Date();
     let today = dtu.datetimeToLocalDateStr(now);
 
     if (dateStr > today) {
         return true;
-    } else if (dateStr == today && minuteOfDay(now) <= cancelCutoff()) {
+    } else if (
+        dateStr === today
+        && (dtu.timeStrToMin(startTime) - minuteOfDay(now)) > cancelCutoff()
+    ) {
         return true;
     } else {
         return false;
