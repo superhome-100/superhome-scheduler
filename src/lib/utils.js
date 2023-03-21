@@ -4,6 +4,8 @@ import {
     timeGE,
     timeLT
 } from '$lib/datetimeUtils.js';
+import { reservations } from '$lib/stores.js'
+import { get } from 'svelte/store';
 
 export function monthArr(year, month, reservations) {
     let daysInMonth = new Date(year, month+1, 0).getDate();
@@ -79,6 +81,17 @@ export function getDaySchedule(startTimes, rsvs, datetime, category, nResource) 
         schedule.push({start: t, rsvs: timeRsvs});
     }
     return schedule;
+}
+
+export function removeRsv(rsv) {
+    let rsvs = get(reservations);
+    for (let i=0; i < rsvs.length; i++) {
+        if (rsv.id === rsvs[i].id) {
+            rsvs.splice(i,1);
+            reservations.set(rsvs);
+            break;
+        }
+    }
 }
 
 

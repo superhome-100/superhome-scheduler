@@ -2,6 +2,8 @@
     import { canSubmit } from '$lib/stores.js';
 
     export let rsv = null;
+    export let disabled = false;
+
     let autoOrCourse = rsv == null ? 'autonomous' : rsv.resType;
     let maxDepth = rsv == null || rsv.maxDepth == null ? null : rsv.maxDepth;
     let owTime = rsv == null ? 'AM' : rsv.owTime;
@@ -18,7 +20,7 @@
 <div> 
     <label>
         Time
-        <select name="owTime" value={owTime}>
+        <select disabled={disabled} name="owTime" value={owTime}>
             <option value='AM'>AM</option>
             <option value='PM'>PM</option>
         </select>
@@ -27,7 +29,7 @@
 <div>
     <label>
         Type
-        <select bind:value={autoOrCourse} name="resType">
+        <select disabled={disabled} bind:value={autoOrCourse} name="resType">
             <option value='autonomous'>Autonomous</option>
             <option value='course'>Course</option>
         </select>
@@ -37,7 +39,7 @@
 <div>
     <label>
         # Students
-        <select name="numStudents" value={numStudents}>
+        <select disabled={disabled} name="numStudents" value={numStudents}>
             {#each [...Array(10).keys()] as n}
                 <option value={n+1}>{n+1}</option>
             {/each}
@@ -49,6 +51,7 @@
     <label>
         Max Depth
         <input 
+            disabled={disabled}
             type=number 
             min=1 
             style="width:40px" 
@@ -61,7 +64,7 @@
 <div>
     <label>
         Comments
-        <input type="text" name="comments" size="30" value={comments}>
+        <input disabled={disabled} type="text" name="comments" size="30" value={comments}>
     </label>
 </div>
 
