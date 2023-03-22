@@ -81,7 +81,7 @@
     <tbody>
         {#each gMonthArr() as week}
             <tr>
-                {#each week as { date, rsvs }
+                {#each week as { date, rsvs }}
                     <td>
                         <DayOfMonth 
                             id={isToday(date)}
