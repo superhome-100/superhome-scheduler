@@ -25,34 +25,34 @@ body {
   min-height: 100vh;
 }
 
+#app {
+    width: 100%;
+    height: 100vh;
+    margin: 0 auto;
+    position: relative;
+}
+
 h1 {
     font-size: 3.2em;
     line-height: 1.1;
     display: inline;
 }
 
-.date_nav {
-    text-align: center;
-}
-
 h2.dialog {
 	font-size: 2rem;
     text-align: center;
 }
-	
+
+.dateNav {
+    text-align: center; 
+}
+
 .submitButton {
     text-align: right;
 }	
 
 .submitForm {
     text-align: center;
-}
-
-#app {
-    width: 100%;
-    height: 100vh;
-    margin: 0 auto;
-    position: relative;
 }
 
 #category_buttons {
@@ -64,17 +64,12 @@ h2.dialog {
     height: 500px;
 }
 
-#myreservations_table {
-    width: 100%;
+#myReservationsTable {
     margin: 0 auto;
 }
 
-.calendar_cell {
-    height: 100px;
-}
-
-.day {
-    width: 100%;
+#myReservationsTable td {
+    width: 100px;
 }
 
 p.rsv {
@@ -95,42 +90,54 @@ p.rsv {
 }
 table.calendar {
     table-layout: fixed;
-    border-collapse:collapse;
+    border-collapse: collapse;
     margin: 5px auto;
     width: calc(100% - 10px);
 }
 
-table.pool td.pool {
+table.pool td {
     border:1px solid var(--blue);
 }
 
-table.openwater td.openwater {
+table.openwater td {
     border:1px solid var(--green);
 }
 
-table.classroom td.classroom {
+table.classroom td {
     border:1px solid var(--yellow);
 }
 
-td.calendar_cell {
+table.calendar td {
     vertical-align: top;
     text-align: center;
     width: 14%;
     overflow: hidden;
     white-space: nowrap;
-}
-
-.dayOfMonth {
-    overflow-y: scroll;
     height: 100px;
 }
 
-.dayCell {
+.dayOfMonth {
+    overflow: hidden;
+    height: 100%;
+}
+
+.dayOfMonth .date {
+    margin: auto;
+    width: 25px;
+    text-align: center;
+}
+
+.day {
+    margin: 10px auto;
+}
+
+.day td, .day th {
     width: 200px;
 }
 
-.dayCell p {
+.day td p {
     margin: 0;
+    white-space: nowrap;
 }
 
 .pool p.rsv{

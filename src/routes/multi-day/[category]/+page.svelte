@@ -47,34 +47,11 @@
 
     let today = new Date();
 
-    const isToday = (year, month, day) => 
-        year == today.getFullYear() 
-        && month == today.getMonth() 
-        && day == today.getDate() 
+    const isToday = (date) => 
+        date.getFullYear() == today.getFullYear() 
+        && date.getMonth() == today.getMonth() 
+        && date.getDate() == today.getDate() 
         ? 'today' : null;
-
-    function relativeToToday(year, month, day) {
-        if (year < today.getFullYear()) {
-            return 'before';
-        } else if (year > today.getFullYear()) {
-            return 'after';
-        } else {
-            if (month < today.getMonth()) {
-                return 'before';
-            } else if (month > today.getMonth()) {
-                return 'after';
-            } else {
-
-                if (day < today.getDate()) {
-                    return 'before';
-                } else if (day > today.getDate()) {
-                    return 'after';
-                } else {
-                    return 'today';
-                }
-            }
-        }               
-    }
 
 </script>
 
@@ -82,13 +59,14 @@
     <ReservationDialog category={gCategory} dateFn={minValidDate}/>
 </Modal>
 
-<div class="date_nav">
-<i on:click={prevMonth} on:keypress={prevMonth} class="arrow left"></i>
-<h1>{idx2month[gMonth]}</h1>
-<i on:click={nextMonth} on:keypress={nextMonth} class="arrow right"></i>
+<div class="dateNav">
+    <i on:click={prevMonth} on:keypress={prevMonth} class="arrow left"></i>
+    <h1>{idx2month[gMonth]}</h1>
+    <i on:click={nextMonth} on:keypress={nextMonth} class="arrow right"></i>
 <h2>{gYear}</h2>
 </div>
-<table class="{gCategory} calendar" id="month">
+
+<table class="{gCategory} calendar">
     <thead>
         <tr>
             <th>S</th>
@@ -103,19 +81,15 @@
     <tbody>
         {#each gMonthArr() as week}
             <tr>
-                {#each week as params}
-                    {#if params}
-                        <td class="calendar_cell {gCategory} {relativeToToday(gYear, gMonth, params.day)}">
-                            <DayOfMonth 
-                                id={isToday(gYear, gMonth, params.day)}
-                                date={new Date(gYear, gMonth, params.day)} 
-                                category={gCategory}
-                                rsvs={params.rsvs}
-                            />
-                        </td>
-                    {:else}
-                        <td/>
-                    {/if}
+                {#each week as { date, rsvs }
+                    <td>
+                        <DayOfMonth 
+                            id={isToday(date)}
+                            date={date} 
+                            category={gCategory}
+                            rsvs={rsvs}
+                        />
+                    </td>
                 {/each}
             <tr/>
         {/each}

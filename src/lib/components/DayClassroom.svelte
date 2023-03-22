@@ -19,7 +19,7 @@
         <tr>
             <th>{s.start}</th>
             {#each [...Array(nRooms).keys()] as room}
-                <td class="dayCell classroom">
+                <td>
                     {#each s.rsvs[room] as msg}
                         <p>{msg}</p>
                     {/each}

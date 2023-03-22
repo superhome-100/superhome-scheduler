@@ -21,7 +21,7 @@
         <tr>
             <th>{s.start}</th>
             {#each [...Array(nLanes).keys()] as lane}
-                <td class="dayCell lane">
+                <td>
                     {#each s.rsvs[lane] as msg}
                         <p>{msg}</p>
                     {/each}
