@@ -1,9 +1,9 @@
 <script lang="js">
     import { goto } from '$app/navigation';
+    import { page } from '$app/stores';
     import '../styles.css';
     import { PUBLIC_FACEBOOK_APP_ID } from "$env/static/public";
     import { settings, user, view, reservations } from '$lib/stores.js';
-    import { page } from '$app/stores';
     import { onMount } from 'svelte';
     import { toast, Toaster } from 'svelte-french-toast';
 
@@ -18,11 +18,8 @@
         $settings = await getSettings();
         $reservations = await loadReservations();
         $user = await getSession();
-        if ($user == null) {
-            goto('/');
-        } else {
+        if ($user != null) {
             loginState = 'in';
-            goto('/' + $user.facebookId);
         }
     }
 
@@ -129,9 +126,6 @@
             };
             loginState = 'in';
             loadProfilePic();
-            if ($page.route.id === '/') {
-                goto('/' + $user.facebookId);
-            }
             return Promise.resolve();
         } else {
 
@@ -199,7 +193,7 @@
         
     {#if $user}
         <div id="category_buttons">
-            <a href="/{$user.facebookId}">
+            <a href="/">
                 <button>My Reservations</button>
             </a>
             <a href="/{$view}/pool">
