@@ -37,7 +37,7 @@
         <tr>
             <th>{time}</th>
             {#each schedule[time] as rsvs}
-                <td class="dayCell buoy">
+                <td>
                     {#each rsvs as rsv}
                         <p>{displayTag(rsv)}</p>
                     {/each}

@@ -34,7 +34,7 @@
 </script>
 
 <a href="/multi-day/{category}">
-    <button style="float: left" on:click={multiDayView}>&lt;&lt; Month</button>
+    <button on:click={multiDayView}>&lt;&lt; Month</button>
 </a>
 
 {#if validReservationDate($viewedDate)}
@@ -44,7 +44,7 @@
 {/if}
 
 <br/>
-<div class="date_nav">
+<div class="dateNav">
     <i on:click={prevDay} on:keypress={prevDay} class="arrow left"></i>
     <h2 class="day">{idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}</h2>
     <i on:click={nextDay} on:keypress={nextDay} class="arrow right"></i>

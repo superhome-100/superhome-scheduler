@@ -9,29 +9,24 @@ import { get } from 'svelte/store';
 
 export function monthArr(year, month, reservations) {
     let daysInMonth = new Date(year, month+1, 0).getDate();
-    let firstDay = new Date(year, month, 1).getDay();
-    let rows = Math.ceil((firstDay + daysInMonth)/7);
+    let firstDay = new Date(year, month, 1);
+    let startDay = 1 - firstDay.getDay()
+    let rows = Math.ceil((firstDay.getDay() + daysInMonth)/7);
     let month_a = Array(rows)
         .fill()
         .map((w,w_i) => Array(7)
             .fill()
             .map(function(d,d_i) {
                 let idx = w_i*7 + d_i;
-                if (idx >= firstDay && idx - firstDay < daysInMonth) {
-                    let day = 1 + idx - firstDay;
-                    let dayRsvs = [];
-                    for (let rsv of reservations) {
-                        if (rsv.dateObj.year == year
-                            && rsv.dateObj.month == month
-                            && rsv.dateObj.day == day)
-                        {
-                            dayRsvs.push(rsv);
-                        }
+                let date = new Date(year, month, startDay + idx);
+                let dateStr = datetimeToLocalDateStr(date);
+                let dayRsvs = [];
+                for (let rsv of reservations) {
+                    if (rsv.date === dateStr) {
+                        dayRsvs.push(rsv);
                     }
-                    return { day: day, rsvs: dayRsvs };
-                } else {
-                    return null;
                 }
+                return { date, rsvs: dayRsvs };
             })
         );
     return month_a;

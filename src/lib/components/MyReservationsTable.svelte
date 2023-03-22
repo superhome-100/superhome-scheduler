@@ -33,10 +33,16 @@
         return view;
     }
     
+    const chopYear = (dateStr) => {
+        let re = /[0-9]+-0*(.+)/;
+        let m = re.exec(dateStr);
+        return m[1];
+    };
+
 </script>
 
 {#if $user}
-    <table id="myreservations_table">
+    <table id="myReservationsTable">
         <thead>
             <tr>
                 <th>Date</th>
@@ -54,7 +60,7 @@
             {#each $reservations as rsv}
                 {#if rsv.user.id === $user.id && getResType(rsv) === resType} 
                     <tr>
-                        <td>{rsv.date}</td>
+                        <td>{chopYear(rsv.date)}</td>
                         <td>{rsv.category}</td>
                         <td>{rsv.status}</td>
                         <td>
