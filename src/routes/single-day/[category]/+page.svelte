@@ -4,7 +4,7 @@
     import DayOpenWater from '$lib/components/DayOpenWater.svelte';
     import DayClassroom from '$lib/components/DayClassroom.svelte';
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
-    import { validReservationDate } from '$lib/ReservationTimes.js';
+    import { validReservationDate, minValidDate } from '$lib/ReservationTimes.js';
     import { month2idx, idx2month } from '$lib/datetimeUtils.js';
     import Modal from '$lib/components/Modal.svelte';
     import { modal, view, viewedDate } from '$lib/stores.js';
@@ -30,18 +30,24 @@
         next.setDate($viewedDate.getDate() + 1);
         $viewedDate = next;
     }
- 
+
+    const resDate = () => {
+        if (validReservationDate($viewedDate)) {
+            return $viewedDate;
+        } else {
+            return minValidDate();
+        }
+    };
+
 </script>
 
 <a href="/multi-day/{category}">
     <button on:click={multiDayView}>&lt;&lt; Month</button>
 </a>
 
-{#if validReservationDate($viewedDate)}
 <Modal show={$modal}>
-    <ReservationDialog category={category} dateFn={() => $viewedDate}/>
+    <ReservationDialog category={category} dateFn={resDate}/>
 </Modal>
-{/if}
 
 <br/>
 <div class="dateNav">
