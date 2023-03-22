@@ -40,6 +40,13 @@ export async function getReservationsSince(minDateStr) {
     return reservations.map((r) => augmentRsv(r));
 }
 
+export async function getActiveUsers() {
+    let users = await xata.db.Users
+        .filter({ status: "active" })
+        .getAll();
+    return users;
+}
+
 export async function getUserReservations(userId) {
     let rsvs = await xata.db.Reservations
         .filter({
@@ -80,8 +87,19 @@ export async function authenticateUser(userId, userName) {
 
 export async function submitReservation(formData) {
     let data = Object.fromEntries(formData);
+
+    let buddies = {'name': [], 'id': []};
+    for (let i=0; i < data.numBuddies; i++) {
+        buddies.name.push(data['buddy' + i]),
+        buddies.id.push(data['buddy' + i + '_id']),
+        delete data['buddy' + i];
+        delete data['buddy' + i + '_id'];
+    }
+    delete data.numBuddies;
+
     const record = await xata.db.Reservations.create({
         ...data,
+        buddies,
         maxDepth: 'maxDepth' in data ? parseInt(data.maxDepth) : null,
         numStudents: data.numStudents == null ? null : parseInt(data.numStudents),
     });

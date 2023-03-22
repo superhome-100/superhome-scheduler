@@ -55,6 +55,10 @@ h2.dialog {
     text-align: center;
 }
 
+button.buddy {
+    padding: 1px 5px;
+}
+
 #category_buttons {
     width: 100%;
     text-align: center
