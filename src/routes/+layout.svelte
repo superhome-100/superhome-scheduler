@@ -3,7 +3,7 @@
     import { page } from '$app/stores';
     import '../styles.css';
     import { PUBLIC_FACEBOOK_APP_ID } from "$env/static/public";
-    import { settings, user, view, reservations } from '$lib/stores.js';
+    import { settings, user, users, view, reservations } from '$lib/stores.js';
     import { onMount } from 'svelte';
     import { toast, Toaster } from 'svelte-french-toast';
 
@@ -21,7 +21,9 @@
             loginState = 'out';
         } else {
             loginState = 'in';
-            $reservations = await loadReservations();
+            let data = await loadAppData();
+            $reservations = data.reservations;
+            $users = data.users;
         }
     }
 
@@ -37,8 +39,8 @@
         return user;
     }
 
-    async function loadReservations() {
-        const response = await fetch('/api/getReservations', {
+    async function loadAppData() {
+        const response = await fetch('/api/getAppData', {
             method: 'POST',
             headers: {'Content-type': 'application/json'},
         });

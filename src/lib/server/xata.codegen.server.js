@@ -31,6 +31,14 @@ const tables = [
         defaultValue: "now",
       },
       { name: "date", type: "string" },
+      {
+        name: "buddies",
+        type: "object",
+        columns: [
+          { name: "name", type: "multiple" },
+          { name: "id", type: "multiple" },
+        ],
+      },
     ],
   },
   {

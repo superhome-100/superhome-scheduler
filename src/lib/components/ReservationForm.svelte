@@ -5,7 +5,7 @@
     import ResFormPool from './ResFormPool.svelte';
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
-    import { canSubmit, user, reservations } from '$lib/stores.js';
+    import { canSubmit, user, users, reservations } from '$lib/stores.js';
     import { minValidDateStr, beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { augmentRsv } from '$lib/utils.js';
@@ -43,6 +43,43 @@
         };
     };
 
+    $: buddyFields = [];
+
+    const addBuddyField = () => {
+        buddyFields = [...buddyFields, { name: '', matches: [], id: buddyFields.length }];
+    }
+
+    const removeBuddyField = (bf) => {
+        for (let i=0; i < buddyFields.length; i++) {
+            if (bf.id === buddyFields[i].id) {
+                buddyFields.splice(i,1);
+                buddyFields = [...buddyFields];
+                break;
+            }
+        }
+    }
+    
+    function matchUser(bf) {
+        bf.matches = [];
+        if (bf.name.length > 0) {
+            let buddyName = bf.name.toLowerCase();
+            for (let record of $users) {
+                let rec = record.name.slice(0, buddyName.length).toLowerCase(); 
+                if (buddyName === rec) {
+                    bf.matches.push(record);
+                }
+            }
+        }
+        buddyFields = [...buddyFields];
+    }
+
+    function selectBuddy(bf, match) {
+        bf.name = match.name;
+        bf['userId'] = match.id;
+        bf.matches = [];
+        buddyFields = [...buddyFields];
+    }
+
 </script>
 
 {#if hasForm}
@@ -77,7 +114,27 @@
                 <ResFormOpenWater/>
             {:else if category === 'classroom'}
                 <ResFormClassroom/>
-            {/if}
+            {/if} 
+            <label>Add buddies
+                <button class="buddy" type="button" on:click={addBuddyField}>+</button>
+            </label>
+            {#each buddyFields as bf (bf.id)}
+                <div><label>{bf.id+1}.
+                        <input 
+                            type="text" 
+                            autocomplete="off"
+                            name="buddy{bf.id}" 
+                            bind:value={bf.name} 
+                            on:input={matchUser(bf)}
+                        >
+                        <input type="hidden" value={bf.userId} name="buddy{bf.id}_id">
+                    <button class="buddy" type="button" on:click={removeBuddyField(bf)}>x</button>
+                    {#each bf.matches as m}
+                        <div class="buddy autofill" on:click={selectBuddy(bf, m)}>{m.name}</div>
+                    {/each}
+                </label></div>
+            {/each}
+            <input type="hidden" name="numBuddies" value={buddyFields.length}>
             <div class="submitButton">
                 <button type="submit" disabled={!$canSubmit}>Submit</button>
             </div>

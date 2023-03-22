@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getReservationsSince } from '$lib/server/server.js';
+import { getReservationsSince, getActiveUsers } from '$lib/server/server.js';
 import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
 
 export async function POST() {
@@ -10,5 +10,6 @@ export async function POST() {
         return datetimeToLocalDateStr(d);
     }
     const reservations = await getReservationsSince(oneWeekAgo());
-    return json(reservations);
+    const users = await getActiveUsers();
+    return json({ reservations, users });
 }
