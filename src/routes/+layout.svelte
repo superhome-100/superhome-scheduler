@@ -8,18 +8,20 @@
     import { toast, Toaster } from 'svelte-french-toast';
 
 
-    let loginState = $user != null ? 'in' : 'out';
+    let loginState = 'pending';
     let profileSrc;
 
-    onMount(async () => initApp());
+    onMount(initApp);
 
     async function initApp() {
         loadFB();
         $settings = await getSettings();
-        $reservations = await loadReservations();
         $user = await getSession();
-        if ($user != null) {
+        if ($user == null) {
+            loginState = 'out';
+        } else {
             loginState = 'in';
+            $reservations = await loadReservations();
         }
     }
 
