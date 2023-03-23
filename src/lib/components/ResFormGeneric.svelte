@@ -2,6 +2,7 @@
     import { canSubmit, user, users } from '$lib/stores.js';
     import { minValidDateStr } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
+    import BuddyMatch from '$lib/components/BuddyMatch.svelte';
 
     export let rsv = null;
     export let date;
@@ -10,6 +11,7 @@
     let comments = rsv == null ? null : rsv.comments;
     
     $: buddyFields = [];
+    $: currentBF = { name: '', matches: [] };
 
     const addBuddyField = () => {
         buddyFields = [...buddyFields, { name: '', matches: [], id: buddyFields.length }];
@@ -25,35 +27,62 @@
         }
     }
     
-    function matchUser(bf) {
-        bf.matches = [];
-        if (bf.name.length > 0) {
-            let buddyName = bf.name.toLowerCase();
+    function matchUser() {
+        currentBF.matches = [];
+        if (currentBF.name.length > 0) {
+            let buddyName = currentBF.name.toLowerCase();
             for (let record of $users) {
                 let rec = record.name.slice(0, buddyName.length).toLowerCase(); 
                 if (buddyName === rec) {
-                    bf.matches.push(record);
+                    currentBF.matches.push(record);
                 }
             }
         }
         buddyFields = [...buddyFields];
     }
-
-    function selectBuddy(bf, match) {
-        bf.name = match.name;
-        bf['userId'] = match.id;
-        bf.matches = [];
-        buddyFields = [...buddyFields];
-    }
     
     const focus = (el) => el.focus();
 
-    function handleKeydown(event) {
-        console.log(event.key + ' ' + event.code);
-
+    /* HANDLING THE INPUT */
+    let searchInput; // use with bind:this to focus element
+ 
+    $: if (!currentBF.name) {
+        currentBF.matches = [];
+        hiLiteIndex = null;
     }
 
+    const clearInput = () => {
+        currentBF.name = "";	
+        searchInput.focus();
+    }
+    
+    const setInputVal = (match) => {
+        currentBF.name = match.name;
+        currentBF.userId = match.id;
+        currentBF.matches = [];
+        buddyFields = [...buddyFields];
+        hiLiteIndex = null;
+        document.querySelector('#buddy' + currentBF.id + '-input').focus();
+    }
+    
+    /* NAVIGATING OVER THE LIST OF COUNTRIES W HIGHLIGHTING */	
+    let hiLiteIndex = null;
+    $: hiLitedBuddy = currentBF.matches[hiLiteIndex]; 	
+        
+    const navigateList = (e) => {
+        if (e.key === "ArrowDown" && hiLiteIndex <= currentBF.matches.length-1) {
+            hiLiteIndex === null ? hiLiteIndex = 0 : hiLiteIndex += 1
+        } else if (e.key === "ArrowUp" && hiLiteIndex !== null) {
+            hiLiteIndex === 0 ? hiLiteIndex = currentBF.matches.length-1 : hiLiteIndex -= 1
+        } else if (e.key === "Enter") {
+            setInputVal(currentBF.matches[hiLiteIndex]);
+        } else {
+            return;
+        }
+    } 
 </script>
+
+<svelte:window on:keydown={navigateList} />
 
 <div class="row">
     <div class="column labels">
@@ -88,25 +117,31 @@
             value={comments}
         ></div>
         {#each buddyFields as bf (bf.id)}
-            <div><input 
+            <div class="autocomplete"><input 
+                    id={"buddy" + bf.id + "-input"}
                     type="text" 
                     autocomplete="off"
                     name="buddy{bf.id}" 
+                    bind:this={searchInput}
                     bind:value={bf.name} 
-                    on:input={matchUser(bf)}
-                    on:keydown={handleKeydown}
+                    on:input={matchUser}
+                    on:focus={() => currentBF = bf}
                     use:focus
                 >
                 <input type="hidden" value={bf.userId} name="buddy{bf.id}_id">
                 <button class="buddy" type="button" on:click={removeBuddyField(bf)}>x</button> 
             </div>
-            {#each bf.matches as m}
-                <div 
-                    class="buddy autofill" 
-                    on:click={selectBuddy(bf, m)}
-                    on:keypress={selectBuddy(bf, m)}
-                >{m.name}</div>
-            {/each}
+            {#if bf.matches.length > 0}
+                <ul id="autocomplete-items-list">
+                    {#each bf.matches as m, i}
+                        <BuddyMatch 
+                            itemLabel={m.name} 
+                            highlighted={i === hiLiteIndex} 
+                            on:click={() => setInputVal(m)}
+                        /> 
+                    {/each}
+                </ul>
+            {/if}
         {/each}
     </div>
 </div>
