@@ -51,10 +51,30 @@ h2.dialog {
     text-align: right;
 }	
 
-.submitForm {
+.submitForm h2 {
     text-align: center;
 }
 
+.submitForm .labels {
+    text-align: right;
+}
+
+.submitForm .inputs {
+    text-align: left;
+}
+
+form .column {
+    float: left;
+    margin: 5px;
+    width: calc(50% - 10px);
+}
+
+form .row:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+    
 button.buddy {
     padding: 1px 5px;
 }
