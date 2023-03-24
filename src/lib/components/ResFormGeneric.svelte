@@ -7,10 +7,29 @@
     export let rsv = null;
     export let date;
     export let category;
+    export let disabled = false;
 
     let comments = rsv == null ? null : rsv.comments;
-    
-    $: buddyFields = [];
+    let noModify = rsv != null;
+    date = rsv == null ? datetimeToLocalDateStr(date) : rsv.date;
+    category = rsv == null ? category : rsv.category;
+
+    const initBF = () => {
+        let buddyFields = [];
+        if (rsv != null) {
+            for (let i=0; i < rsv.buddies.name.length; i++) {
+                buddyFields.push({
+                    'name': rsv.buddies.name[i],
+                    'id': i,
+                    'matches': []
+                });
+            }
+        }
+        return buddyFields;
+    };
+
+    $: buddyFields = initBF();
+
     $: currentBF = { name: '', matches: [] };
 
     const addBuddyField = () => {
@@ -95,7 +114,12 @@
         <slot name="categoryLabels"/>
         <div><label for="formComments">Comments</label></div>
         <div><label>Add buddy
-                <button class="buddy" type="button" on:click={addBuddyField}>+</button>
+                <button 
+                    class="buddy" 
+                    type="button" 
+                    on:click={addBuddyField}
+                    disabled={disabled || noModify}
+                >+</button>
         </label></div>
     </div>
 
@@ -107,9 +131,15 @@
             name="date" 
             id="formDate"
             min={minValidDateStr()} 
-            value={datetimeToLocalDateStr(date)}
+            value={date}
+            disabled={disabled || noModify}
         ></div>
-        <div><select name="category" id="formCategory" bind:value={category}>
+        <div><select 
+                name="category" 
+                id="formCategory" 
+                bind:value={category}
+                disabled={disabled || noModify}
+            >
             <option value="pool">Pool</option>
             <option value="openwater">Open Water</option>
             <option value="classroom">Classroom</option>
@@ -120,6 +150,7 @@
             type="text" 
             name="comments" 
             value={comments}
+            disabled={disabled || noModify}
         ></div>
         {#each buddyFields as bf (bf.id)}
             <div class="autocomplete"><input 
@@ -132,6 +163,7 @@
                     on:input={matchUser}
                     on:focus={() => currentBF = bf}
                     use:focus
+                    disabled={disabled || noModify}
                 >
                 <input type="hidden" value={bf.userId} name="buddy{bf.id}_id">
                 <button class="buddy" type="button" on:click={removeBuddyField(bf)}>x</button> 
@@ -153,6 +185,6 @@
 
 <input type="hidden" name="numBuddies" value={buddyFields.length}>
 <div class="submitButton">
-    <button type="submit" disabled={!$canSubmit}>Submit</button>
+    <button type="submit" disabled={!$canSubmit || disabled}>Submit</button>
 </div>
 

@@ -22,7 +22,7 @@
 
 </script>
 
-<ResFormGeneric date={date} bind:category={category} rsv={rsv}>
+<ResFormGeneric disabled={disabled} date={date} bind:category={category} rsv={rsv}>
     <div slot="categoryLabels">
         <div><label for="formOwTime">Time</label></div>
         <div><label for="formResType">Type</label></div>
