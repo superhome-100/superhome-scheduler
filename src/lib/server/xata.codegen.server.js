@@ -36,9 +36,10 @@ const tables = [
         type: "object",
         columns: [
           { name: "name", type: "multiple" },
-          { name: "id", type: "multiple" },
+          { name: "resId", type: "multiple" },
         ],
       },
+      { name: "owner", type: "bool", defaultValue: "true" },
     ],
   },
   {

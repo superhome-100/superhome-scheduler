@@ -18,6 +18,16 @@
 
     const submitReservation = async ({ form, data, action, cancel }) => {
         let rsv = Object.fromEntries(data);
+        let userNames = $users.map((r) => r.name);
+        for (let i=0; i < rsv.numBuddies; i++) {
+            let buddy = rsv['buddy' + i];
+            if (!userNames.includes(buddy)) {
+                alert(`Unknown user: ${buddy}`);
+                cancel();
+                return;
+            }
+        }
+
         if (!beforeResCutoff(rsv.date)) {
             alert(
                 `The submission window for this reservation has expired; 
