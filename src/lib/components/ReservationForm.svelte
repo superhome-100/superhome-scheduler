@@ -5,7 +5,7 @@
     import ResFormPool from './ResFormPool.svelte';
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
-    import { canSubmit, user, reservations } from '$lib/stores.js';
+    import { canSubmit, user, users, reservations } from '$lib/stores.js';
     import { minValidDateStr, beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { augmentRsv } from '$lib/utils.js';
@@ -53,35 +53,14 @@
             action="/?/submitReservation" 
             use:enhance={submitReservation}
         >
-            <input type="hidden" name="user" value={$user.id}>
-            <div><label>
-                Date
-                <input 
-                    type="date" 
-                    name="date" 
-                    min={minValidDateStr()} 
-                    value={datetimeToLocalDateStr(date)}
-                >
-            </label></div>
-            <div><label>
-                Category
-                <select name="category" bind:value={category}>
-                    <option value="pool">Pool</option>
-                    <option value="openwater">Open Water</option>
-                    <option value="classroom">Classroom</option>
-                </select>
-            </label></div>
             {#if category === 'pool'}
-                <ResFormPool/>
+                <ResFormPool date={date} bind:category={category}/>
             {:else if category === 'openwater'}
-                <ResFormOpenWater/>
+                <ResFormOpenWater date={date} bind:category={category}/>
             {:else if category === 'classroom'}
-                <ResFormClassroom/>
+                <ResFormClassroom date={date} bind:category={category}/>
             {/if}
-            <div class="submitButton">
-                <button type="submit" disabled={!$canSubmit}>Submit</button>
-            </div>
-        </form>
+       </form>
     </div>
 {/if}
 

@@ -51,8 +51,60 @@ h2.dialog {
     text-align: right;
 }	
 
-.submitForm {
+.submitForm h2 {
     text-align: center;
+}
+
+.submitForm .labels {
+    text-align: right;
+}
+
+.submitForm .inputs {
+    text-align: left;
+}
+
+form .column {
+    float: left;
+    margin: 5px;
+    width: calc(50% - 10px);
+}
+
+form .row:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+    
+button.buddy {
+    padding: 1px 5px;
+}
+
+div.autocomplete {
+  /*the container must be positioned relative:*/
+  position: relative;
+  display: inline-block;
+}
+
+.autocomplete input {
+  border: 1px solid transparent;
+  margin: 0;
+}
+
+.autocomplete input[type=text] {
+}
+
+input[type=submit] {
+  background-color: DodgerBlue;
+  color: #fff;
+}
+	
+#autocomplete-items-list {
+	position: relative;
+	margin: 0;
+	padding: 0;
+	top: 0;
+	border: 1px solid #ddd;
+	background-color: #ddd;
 }
 
 #category_buttons {

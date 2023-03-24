@@ -40,6 +40,13 @@ export async function getReservationsSince(minDateStr) {
     return reservations.map((r) => augmentRsv(r));
 }
 
+export async function getActiveUsers() {
+    let users = await xata.db.Users
+        .filter({ status: "active" })
+        .getAll();
+    return users;
+}
+
 export async function getUserReservations(userId) {
     let rsvs = await xata.db.Reservations
         .filter({
@@ -80,11 +87,44 @@ export async function authenticateUser(userId, userName) {
 
 export async function submitReservation(formData) {
     let data = Object.fromEntries(formData);
+
+    let buddies = {'name': [], 'id': []};
+    let numBuddies = data.numBuddies;
+    let owner = data.name;
+    delete data.name;
+    for (let i=0; i < numBuddies; i++) {
+        buddies.name.push(data['buddy' + i]),
+        buddies.id.push(data['buddy' + i + '_id']),
+        delete data['buddy' + i];
+        delete data['buddy' + i + '_id'];
+    }
+    delete data.numBuddies;
+    let { user, ...common } = data;
+    common = {
+        ...common,
+        maxDepth: 'maxDepth' in common ? parseInt(common.maxDepth) : null,
+        numStudents: common.numStudents == null ? null : parseInt(common.numStudents)
+    };
+
     const record = await xata.db.Reservations.create({
-        ...data,
-        maxDepth: 'maxDepth' in data ? parseInt(data.maxDepth) : null,
-        numStudents: data.numStudents == null ? null : parseInt(data.numStudents),
+        ...common,
+        user,
+        buddies,
     });
+
+    for (let i=0; i < numBuddies; i++) {
+        let buddyGrp = {
+            'name': [owner, ...buddies.name.slice(0,i).concat(buddies.name.slice(i+1))],
+            'id': [user, ...buddies.id.slice(0,i).concat(buddies.id.slice(i+1))]
+        };
+        console.log(buddyGrp);
+        await xata.db.Reservations.create({
+            ...common,
+            user: buddies.id[i],
+            buddies: buddyGrp,
+        });
+    }
+
     return record;
 }
 
