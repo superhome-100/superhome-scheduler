@@ -14,14 +14,14 @@
     let chosenEnd = rsv == null ? endTimes()[0] : rsv.endTime;
     let autoOrCourse = rsv == null ? (resType == null ? 'autonomous' : resType) : rsv.resType;
     let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
-
+    console.log(autoOrCourse);
     $canSubmit = true;
 
     let noModify = rsv != null;
 
 </script>
 
-<ResFormGeneric date={date} bind:category={category} rsv={rsv}>
+<ResFormGeneric disabled={disabled} date={date} bind:category={category} rsv={rsv}>
     <div slot="categoryLabels">
         <div><label for="formStart">Start Time</label></div>
         <div><label for="formEnd">End Time</label></div>
@@ -56,6 +56,9 @@
             <option value='autonomous'>Autonomous</option>
             <option value='course'>Course</option>
         </select></div>
+        {#if resType != null}
+            <input type="hidden" name="resType" value={resType}>
+        {/if}
         {#if autoOrCourse === 'course'}
             <div><select disabled={disabled} value={numStudents} name="numStudents">
                 {#each [...Array(10).keys()] as n}

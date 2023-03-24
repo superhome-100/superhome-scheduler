@@ -53,20 +53,7 @@
             action="/?/updateReservation" 
             use:enhance={updateReservation}
         >
-            <input type="hidden" name="user" value={$user.id}>
             <input type="hidden" name="id" value={rsv.id}>
-            <div><label>
-                Date
-                <input type="date" name="date" disabled value={rsv.date}>
-            </label></div>
-            <div><label>
-                Category
-                <select name="category" disabled value={rsv.category}>
-                    <option value="pool">Pool</option>
-                    <option value="openwater">Open Water</option>
-                    <option value="classroom">Classroom</option>
-                </select>
-            </label></div>
             {#if rsv.category === 'pool'}
                 <ResFormPool disabled={disabled} rsv={rsv}/>
             {:else if rsv.category === 'openwater'}
@@ -74,13 +61,6 @@
             {:else if rsv.category === 'classroom'}
                 <ResFormClassroom disabled={disabled} rsv={rsv}/>
             {/if}
-            <div class="submitButton">
-                <button 
-                    type="submit" 
-                    disabled={!$canSubmit || disabled}
-                >Submit
-                </button>
-            </div>
         </form>
     </div>
 {/if}

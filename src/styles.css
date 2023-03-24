@@ -86,11 +86,7 @@ div.autocomplete {
 }
 
 .autocomplete input {
-  border: 1px solid transparent;
   margin: 0;
-}
-
-.autocomplete input[type=text] {
 }
 
 input[type=submit] {
