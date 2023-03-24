@@ -64,16 +64,9 @@
     
     const focus = (el) => el.focus();
 
-    let searchInput; 
- 
     $: if (!currentBF.name) {
         currentBF.matches = [];
         hiLiteIndex = null;
-    }
-
-    const clearInput = () => {
-        currentBF.name = "";	
-        searchInput.focus();
     }
     
     const setInputVal = (match) => {
@@ -86,8 +79,7 @@
     }
     
     let hiLiteIndex = null;
-    $: hiLitedBuddy = currentBF.matches[hiLiteIndex]; 	
-        
+  
     const navigateList = (e) => {
         if (currentBF && currentBF.matches.length > 0) {
             if (e.key === "ArrowDown" && hiLiteIndex <= currentBF.matches.length-1) {
@@ -158,7 +150,6 @@
                     type="text" 
                     autocomplete="off"
                     name="buddy{bf.id}" 
-                    bind:this={searchInput}
                     bind:value={bf.name} 
                     on:input={matchUser}
                     on:focus={() => currentBF = bf}
@@ -166,7 +157,12 @@
                     disabled={disabled || noModify}
                 >
                 <input type="hidden" value={bf.userId} name="buddy{bf.id}_id">
-                <button class="buddy" type="button" on:click={removeBuddyField(bf)}>x</button> 
+                <button 
+                    class="buddy" 
+                    type="button" 
+                    on:click={removeBuddyField(bf)}
+                    disabled={disabled || noModify}
+                >x</button> 
             </div>
             {#if bf.matches.length > 0}
                 <ul id="autocomplete-items-list">
