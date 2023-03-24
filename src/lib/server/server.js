@@ -89,20 +89,42 @@ export async function submitReservation(formData) {
     let data = Object.fromEntries(formData);
 
     let buddies = {'name': [], 'id': []};
-    for (let i=0; i < data.numBuddies; i++) {
+    let numBuddies = data.numBuddies;
+    let owner = data.name;
+    delete data.name;
+    for (let i=0; i < numBuddies; i++) {
         buddies.name.push(data['buddy' + i]),
         buddies.id.push(data['buddy' + i + '_id']),
         delete data['buddy' + i];
         delete data['buddy' + i + '_id'];
     }
     delete data.numBuddies;
+    let { user, ...common } = data;
+    common = {
+        ...common,
+        maxDepth: 'maxDepth' in common ? parseInt(common.maxDepth) : null,
+        numStudents: common.numStudents == null ? null : parseInt(common.numStudents)
+    };
 
     const record = await xata.db.Reservations.create({
-        ...data,
+        ...common,
+        user,
         buddies,
-        maxDepth: 'maxDepth' in data ? parseInt(data.maxDepth) : null,
-        numStudents: data.numStudents == null ? null : parseInt(data.numStudents),
     });
+
+    for (let i=0; i < numBuddies; i++) {
+        let buddyGrp = {
+            'name': [owner, ...buddies.name.slice(0,i).concat(buddies.name.slice(i+1))],
+            'id': [user, ...buddies.id.slice(0,i).concat(buddies.id.slice(i+1))]
+        };
+        console.log(buddyGrp);
+        await xata.db.Reservations.create({
+            ...common,
+            user: buddies.id[i],
+            buddies: buddyGrp,
+        });
+    }
+
     return record;
 }
 

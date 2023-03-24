@@ -32,9 +32,11 @@
         if (currentBF.name.length > 0) {
             let buddyName = currentBF.name.toLowerCase();
             for (let record of $users) {
-                let rec = record.name.slice(0, buddyName.length).toLowerCase(); 
-                if (buddyName === rec) {
-                    currentBF.matches.push(record);
+                if (record.id != $user.id) {
+                    let rec = record.name.slice(0, buddyName.length).toLowerCase(); 
+                    if (buddyName === rec) {
+                        currentBF.matches.push(record);
+                    }
                 }
             }
         }
@@ -43,8 +45,7 @@
     
     const focus = (el) => el.focus();
 
-    /* HANDLING THE INPUT */
-    let searchInput; // use with bind:this to focus element
+    let searchInput; 
  
     $: if (!currentBF.name) {
         currentBF.matches = [];
@@ -65,21 +66,24 @@
         document.querySelector('#buddy' + currentBF.id + '-input').focus();
     }
     
-    /* NAVIGATING OVER THE LIST OF COUNTRIES W HIGHLIGHTING */	
     let hiLiteIndex = null;
     $: hiLitedBuddy = currentBF.matches[hiLiteIndex]; 	
         
     const navigateList = (e) => {
-        if (e.key === "ArrowDown" && hiLiteIndex <= currentBF.matches.length-1) {
-            hiLiteIndex === null ? hiLiteIndex = 0 : hiLiteIndex += 1
-        } else if (e.key === "ArrowUp" && hiLiteIndex !== null) {
-            hiLiteIndex === 0 ? hiLiteIndex = currentBF.matches.length-1 : hiLiteIndex -= 1
-        } else if (e.key === "Enter") {
-            setInputVal(currentBF.matches[hiLiteIndex]);
-        } else {
-            return;
+        if (currentBF && currentBF.matches.length > 0) {
+            if (e.key === "ArrowDown" && hiLiteIndex <= currentBF.matches.length-1) {
+                hiLiteIndex === null ? hiLiteIndex = 0 : hiLiteIndex += 1
+            } else if (e.key === "ArrowUp" && hiLiteIndex !== null) {
+                hiLiteIndex === 0 ? hiLiteIndex = currentBF.matches.length-1 : hiLiteIndex -= 1
+            } else if (e.key === "Enter") {
+                e.preventDefault();
+                setInputVal(currentBF.matches[hiLiteIndex]);
+            } else {
+                return;
+            }
         }
-    } 
+    }
+
 </script>
 
 <svelte:window on:keydown={navigateList} />
@@ -97,6 +101,7 @@
 
     <div class="column inputs">
         <div><input type="hidden" name="user" value={$user.id}></div>
+        <div><input type="hidden" name="name" value={$user.name}></div>
         <div><input 
             type="date" 
             name="date" 
