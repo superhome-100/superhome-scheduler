@@ -85,24 +85,27 @@ export async function authenticateUser(userId, userName) {
     return record;
 }
 
-function separateBuddyDetails(data) {
-    let numBuddies = parseInt(data.numBuddies);
-    delete data.numBuddies;
-    let name = data.name;
-    delete data.name;
-
-    let buddies = {'name': [], 'resId': []};
-    let buddyIds = [];
-    for (let i=0; i < numBuddies; i++) {
-        buddies.name.push(data['buddy' + i]),
-        buddyIds.push(data['buddy' + i + '_id']),
-        delete data['buddy' + i];
-        delete data['buddy' + i + '_id'];
+function convertReservationTypes(data) {
+    if ('maxDepth' in data) {
+        data.maxDepth = parseInt(data.maxDepth);
     }
-    return { name, numBuddies, buddies, buddyIds, data }
+    if ('numStudents' in data) {
+        data.numStudents = parseInt(data.numStudents);
+    }
+    if ('buddies' in data) {
+        data.buddies = JSON.parse(data.buddies);
+    }
+    return data;
 }
 
 export async function submitReservation(formData) {
+    let rsv = convertReservationTypes(Object.fromEntries(formData));
+    let record = await xata.db.Reservations.create(rsv);
+    return record;
+}
+
+/*
+export async function submitReservationPerBuddy(formData) {
 
     let { name, numBuddies, buddies, buddyIds, data } = separateBuddyDetails(Object.fromEntries(formData));
     let { user, ...common } = data;
@@ -112,7 +115,7 @@ export async function submitReservation(formData) {
         numStudents: common.numStudents == null ? null : parseInt(common.numStudents)
     };
 
-    /* first create each buddy's record to get the reservation IDs */
+    // first create each buddy's record to get the reservation IDs
     let entries = [{...common, user, buddies}];
     for (let i=0; i < numBuddies; i++) {
         let buddyGrp = {
@@ -129,7 +132,7 @@ export async function submitReservation(formData) {
     buddies.resIds = initRecs.map((r) => r.id);
 
     let ownerRec;
-    /* then update the records with the other buddies' IDs */
+    // then update the records with the other buddies' IDs
     if (numBuddies > 0) {
         entries = []
         for (let i=0; i < numBuddies+1; i++) {
@@ -145,17 +148,12 @@ export async function submitReservation(formData) {
     }
     return ownerRec;
 }
+*/
 
 export async function updateReservation(formData) {
-    let { buddies, data } = separateBuddyDetails(Object.fromEntries(formData));
-    let {id, user, ...common} = data;
-    common = {
-        ...common,
-        maxDepth: 'maxDepth' in common ? parseInt(common.maxDepth) : null,
-        numStudents: common.numStudents == null ? null : parseInt(common.numStudents)
-    };
-
-    const record = xata.db.Reservations.createOrReplace(id, {user, buddies, ...common});
+    let {id, ...rest} = Object.fromEntries(formData);
+    rest = convertReservationTypes(rest);
+    const record = xata.db.Reservations.update(id, rest);
     return record;
 }
 

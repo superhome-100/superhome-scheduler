@@ -20,6 +20,7 @@
             for (let i=0; i < rsv.buddies.name.length; i++) {
                 buddyFields.push({
                     'name': rsv.buddies.name[i],
+                    'userId': rsv.buddies.id[i],
                     'id': i,
                     'matches': []
                 });
@@ -47,11 +48,12 @@
     }
     
     function matchUser() {
+        let currentBuddies = buddyFields.map((bf) => bf.name);
         currentBF.matches = [];
         if (currentBF.name.length > 0) {
             let buddyName = currentBF.name.toLowerCase();
             for (let record of $users) {
-                if (record.id != $user.id) {
+                if (record.id != $user.id && !currentBuddies.includes(record.name)) {
                     let rec = record.name.slice(0, buddyName.length).toLowerCase(); 
                     if (buddyName === rec) {
                         currentBF.matches.push(record);
@@ -110,14 +112,14 @@
                     class="buddy" 
                     type="button" 
                     on:click={addBuddyField}
-                    disabled={disabled || noModify}
+                    disabled={disabled}
+                    tabindex="1"
                 >+</button>
         </label></div>
     </div>
 
     <div class="column inputs">
         <div><input type="hidden" name="user" value={$user.id}></div>
-        <div><input type="hidden" name="name" value={$user.name}></div>
         <div><input 
             type="date" 
             name="date" 
@@ -154,14 +156,14 @@
                     on:input={matchUser}
                     on:focus={() => currentBF = bf}
                     use:focus
-                    disabled={disabled || noModify}
+                    disabled={disabled}
                 >
                 <input type="hidden" value={bf.userId} name="buddy{bf.id}_id">
                 <button 
                     class="buddy" 
                     type="button" 
                     on:click={removeBuddyField(bf)}
-                    disabled={disabled || noModify}
+                    disabled={disabled}
                 >x</button> 
             </div>
             {#if bf.matches.length > 0}
@@ -181,6 +183,6 @@
 
 <input type="hidden" name="numBuddies" value={buddyFields.length}>
 <div class="submitButton">
-    <button type="submit" disabled={!$canSubmit || disabled}>Submit</button>
+    <button type="submit" tabindex="2" disabled={!$canSubmit || disabled}>Submit</button>
 </div>
 

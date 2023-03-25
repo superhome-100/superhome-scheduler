@@ -10,6 +10,8 @@
     export let date;
     export let resType = null;
 
+    category = rsv == null ? category : rsv.category;
+    date = rsv == null ? date : rsv.date;
     let chosenStart = rsv == null ? startTimes()[0] : rsv.startTime;
     let chosenEnd = rsv == null ? endTimes()[0] : rsv.endTime;
     let autoOrCourse = rsv == null ? (resType == null ? 'autonomous' : resType) : rsv.resType;
