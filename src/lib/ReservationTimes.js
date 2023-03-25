@@ -44,7 +44,6 @@ export function beforeResCutoff(dateStr) {
 export function beforeCancelCutoff(dateStr, startTime) {
     let now = new Date();
     let today = dtu.datetimeToLocalDateStr(now);
-
     if (dateStr > today) {
         return true;
     } else if (

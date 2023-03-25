@@ -8,7 +8,7 @@
     import { canSubmit, user, reservations } from '$lib/stores.js';
     import { minValidDateStr, beforeCancelCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
-    import { augmentRsv, removeRsv } from '$lib/utils.js';
+    import { augmentRsv, removeRsv, validateBuddies, updateReservationFormData } from '$lib/utils.js';
 
     export let hasForm = false;
     export let rsv;
@@ -16,7 +16,13 @@
     const { close } = getContext('simple-modal');
 
     const updateReservation = async ({ form, data, action, cancel }) => {
-        let rsv = Object.fromEntries(data);
+        updateReservationFormData(data);
+        let result = validateBuddies(data);
+        if (result.status == 'error') {
+            alert(result.msg);
+            cancel();
+            return;
+        }
         if (!beforeCancelCutoff(rsv.date, rsv.startTime)) {
             alert(`The modification window for this reservation has expired; 
                 this reservation can no longer be modified`

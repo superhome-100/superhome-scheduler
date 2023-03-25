@@ -5,10 +5,10 @@
     import ResFormPool from './ResFormPool.svelte';
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
-    import { canSubmit, user, users, reservations } from '$lib/stores.js';
+    import { canSubmit, user, reservations } from '$lib/stores.js';
     import { minValidDateStr, beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
-    import { augmentRsv } from '$lib/utils.js';
+    import { augmentRsv, updateReservationFormData, validateBuddies } from '$lib/utils.js';
 
     export let category = 'openwater';
     export let date;
@@ -17,18 +17,15 @@
     const { close } = getContext('simple-modal');
 
     const submitReservation = async ({ form, data, action, cancel }) => {
-        let rsv = Object.fromEntries(data);
-        let userNames = $users.map((r) => r.name);
-        for (let i=0; i < rsv.numBuddies; i++) {
-            let buddy = rsv['buddy' + i];
-            if (!userNames.includes(buddy)) {
-                alert(`Unknown user: ${buddy}`);
-                cancel();
-                return;
-            }
+        updateReservationFormData(data);
+        let result = validateBuddies(data);
+        if (result.status === 'error') {
+            alert(result.msg);
+            cancel();
+            return;
         }
 
-        if (!beforeResCutoff(rsv.date)) {
+        if (!beforeResCutoff(data.get('date'))) {
             alert(
                 `The submission window for this reservation has expired; 
                 please choose a later date`

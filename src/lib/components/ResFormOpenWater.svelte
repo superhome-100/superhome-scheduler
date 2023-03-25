@@ -7,6 +7,8 @@
     export let date;
     export let category;
 
+    category = rsv == null ? category : rsv.category;
+    date = rsv == null ? date : rsv.date;
     let autoOrCourse = rsv == null ? 'autonomous' : rsv.resType;
     let maxDepth = rsv == null || rsv.maxDepth == null ? null : rsv.maxDepth;
     let owTime = rsv == null ? 'AM' : rsv.owTime;

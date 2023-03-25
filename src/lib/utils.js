@@ -4,7 +4,7 @@ import {
     timeGE,
     timeLT
 } from '$lib/datetimeUtils.js';
-import { reservations } from '$lib/stores.js'
+import { reservations, users } from '$lib/stores.js'
 import { get } from 'svelte/store';
 
 export function monthArr(year, month, reservations) {
@@ -67,6 +67,35 @@ export function augmentRsv(rsv, fbId=null, name=null) {
     if (name) { newRsv.user['name'] = name }
 
     return newRsv;
+}
+
+export function validateBuddies(formData) {
+    let userNames = get(users).map((r) => r.name);
+    let buddies = JSON.parse(formData.get('buddies')).name;
+    let validBuddies = [];
+    for (let buddy of buddies) {
+        if (!userNames.includes(buddy)) {
+            return {status: 'error', msg: `Unknown user: ${buddy}`};
+        }
+        if (validBuddies.includes(buddy)) {
+            return {status: 'error', msg: `Duplicate buddies not allowed (${buddy})`};
+        }
+        validBuddies.push(buddy);
+    }
+    return {status: 'success'};
+}
+
+export function updateReservationFormData(formData) {
+    let numBuddies = parseInt(formData.get('numBuddies'));
+    formData.delete('numBuddies');
+    let buddies = {'name': [], 'id': []};
+    for (let i=0; i < numBuddies; i++) {
+        buddies.name.push(formData.get('buddy' + i));
+        buddies.id.push(formData.get('buddy' + i + '_id'));
+        formData.delete('buddy' + i);
+        formData.delete('buddy' + i + '_id');
+    }
+    formData.set('buddies', JSON.stringify(buddies));
 }
 
 export const displayTag = (rsv) => {
