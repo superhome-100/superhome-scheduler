@@ -53,7 +53,7 @@
 
 {#if hasForm}
     <div class="submitForm">
-        <h2>{prompt} {rsv.category} reservation</h2>
+        <h2>{prompt} reservation</h2>
         <form 
             method="POST" 
             action="/?/updateReservation" 
