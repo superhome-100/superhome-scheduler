@@ -14,18 +14,41 @@
     onMount(initApp);
 
     async function initApp() {
-        loadFB();
-        $settings = await getSettings();
-        $user = await getSession();
-        if ($user == null) {
-            loginState = 'out';
-        } else {
-            loginState = 'in';
-            let data = await loadAppData();
-            $reservations = data.reservations;
-            $users = data.users;
+        let cmd = async () => {
+            try {
+                loadFB();
+                $settings = await getSettings();
+                $user = await getSession();
+                if ($user == null) {
+                    loginState = 'out';
+                } else {
+                    loginState = 'in';
+                    let data = await loadAppData();
+                    $reservations = data.reservations;
+                    $users = data.users;
+                }
+                return true;
+            } catch (error) {
+                console.log(error);
+                if ('status' in error) {
+                    console.log(error.status);
+                    console.log(error.errors);
+                }
+                return false;
+            }
+        };
+
+        for (let i=0; i < 3; i++) {
+            let success = await cmd();
+            if (success) {
+                return;
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
         }
-    }
+        alert('System error: please try again later');
+
+    }   
 
     async function getSettings() {
         const response = await fetch('/api/getSettings');
@@ -44,8 +67,8 @@
             method: 'POST',
             headers: {'Content-type': 'application/json'},
         });
-        const reservations = await response.json();
-        return reservations;
+        const data = await response.json();
+        return data;
     }
 
     function loadFB () {
