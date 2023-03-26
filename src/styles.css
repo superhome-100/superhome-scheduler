@@ -49,6 +49,7 @@ h2.dialog {
 
 .submitButton {
     text-align: right;
+    padding: 5px;   
 }	
 
 .submitForm h2 {
@@ -66,7 +67,7 @@ h2.dialog {
 form .column {
     float: left;
     margin: 5px;
-    width: calc(50% - 10px);
+    width: calc(33% - 10px);
 }
 
 form .row:after {
@@ -74,19 +75,23 @@ form .row:after {
     display: table;
     clear: both;
 }
-    
+
 button.buddy {
-    padding: 1px 5px;
+    padding: 0 4px 0px 4px;
 }
 
 div.autocomplete {
   /*the container must be positioned relative:*/
   position: relative;
-  display: inline-block;
+  display: table;
+}
+
+.autocomplete > div {
+    display: table-cell;
 }
 
 .autocomplete input {
-  margin: 0;
+    margin: 0 5px 0 0;
 }
 
 input[type=submit] {

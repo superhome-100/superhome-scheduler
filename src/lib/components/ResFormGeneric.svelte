@@ -147,7 +147,8 @@
             disabled={disabled || noModify}
         ></div>
         {#each buddyFields as bf (bf.id)}
-            <div class="autocomplete"><input 
+            <div class="autocomplete">
+                <div><input 
                     id={"buddy" + bf.id + "-input"}
                     type="text" 
                     autocomplete="off"
@@ -157,7 +158,7 @@
                     on:focus={() => currentBF = bf}
                     use:focus
                     disabled={disabled}
-                >
+                ></div>
                 <input type="hidden" value={bf.userId} name="buddy{bf.id}_id">
                 <button 
                     class="buddy" 
