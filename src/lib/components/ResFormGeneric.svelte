@@ -41,7 +41,7 @@
         for (let i=0; i < buddyFields.length; i++) {
             if (bf.id === buddyFields[i].id) {
                 buddyFields.splice(i,1);
-                buddyFields = [...buddyFields];
+                buddyFields = buddyFields.map((v,i) => v.id = i);
                 break;
             }
         }
