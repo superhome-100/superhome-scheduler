@@ -13,6 +13,13 @@
 
     onMount(initApp);
 
+    async function refreshAppState() {
+        console.log('refreshing...');
+        let data = await loadAppData();
+        $reservations = data.reservations;
+        $users = data.users;
+    }
+
     async function initApp() {
         let cmd = async () => {
             try {
@@ -26,6 +33,7 @@
                     let data = await loadAppData();
                     $reservations = data.reservations;
                     $users = data.users;
+                    setInterval(refreshAppState, $settings.refreshInterval);
                 }
                 return true;
             } catch (error) {
