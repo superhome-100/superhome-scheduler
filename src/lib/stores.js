@@ -7,4 +7,4 @@ export const users = writable([]);
 export const viewedDate = writable(new Date());
 export const view = writable('multi-day');
 export const reservations = writable([]);
-export const settings = writable(null);
+export const settings = writable({});
