@@ -46,8 +46,7 @@
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
-        alert('System error: please try again later');
-
+        goto('/error');
     }   
 
     async function getSettings() {
