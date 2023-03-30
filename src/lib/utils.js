@@ -103,6 +103,9 @@ export const displayTag = (rsv) => {
     if (rsv.resType === 'course') {
         tag += ' +' + rsv.numStudents;
     }
+    if (rsv.category === 'openwater') {
+        tag += ' - ' + rsv.maxDepth + 'm';
+    }
     return tag;
 };
 
@@ -137,5 +140,4 @@ export function removeRsv(rsv) {
         }
     }
 }
-
 

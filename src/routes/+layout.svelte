@@ -3,7 +3,7 @@
     import { page } from '$app/stores';
     import '../styles.css';
     import { PUBLIC_FACEBOOK_APP_ID } from "$env/static/public";
-    import { settings, user, users, view, reservations } from '$lib/stores.js';
+    import { settings, buoys, user, users, view, reservations } from '$lib/stores.js';
     import { onMount } from 'svelte';
     import { toast, Toaster } from 'svelte-french-toast';
 
@@ -24,7 +24,9 @@
         let cmd = async () => {
             try {
                 loadFB();
-                $settings = await getSettings();
+                let data = await getSettings();
+                $settings = data.settings;
+                $buoys = data.buoys;
                 $user = await getSession();
                 if ($user == null) {
                     loginState = 'out';
@@ -59,8 +61,8 @@
 
     async function getSettings() {
         const response = await fetch('/api/getSettings');
-        const { settings } = await response.json();
-        return settings;
+        const data = await response.json();
+        return data;
     }
 
     async function getSession() {

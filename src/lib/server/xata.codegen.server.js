@@ -74,6 +74,14 @@ const tables = [
       { name: "value", type: "string" },
     ],
   },
+  {
+    name: "Buoys",
+    columns: [
+      { name: "name", type: "string" },
+      { name: "maxDepth", type: "int" },
+      { name: "maxCapacity", type: "int" },
+    ],
+  },
 ];
 /** @type { import('../../client/src').ClientConstructor<{}> } */
 const DatabaseClient = buildClient();
