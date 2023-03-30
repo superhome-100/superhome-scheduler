@@ -2,10 +2,10 @@ import { getSettings } from '$lib/server/server.js';
 import { json } from '@sveltejs/kit';
 
 export async function GET() {
-    let response = await getSettings();
+    let { settingsTbl, buoys } = await getSettings();
     let settings = {}
 
-    for (let s of response) {
+    for (let s of settingsTbl) {
         let name = s.name;
         let v = s.value;
         if (['refreshIntervalSeconds'].includes(name)) {
@@ -20,5 +20,5 @@ export async function GET() {
         settings[name] = v;
     }
 
-    return json({ settings });
+    return json({ settings, buoys });
 }
