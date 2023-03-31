@@ -1,17 +1,95 @@
-import { assignRsvsToBuoys } from './autoAssign.js';
+import { assignRsvsToBuoys } from '../src/lib/autoAssign.js';
+import fs from 'fs';
+
+function readTestData() {
+    let data = fs.readFileSync('autoAssign-tests.json');
+    let { users, rsvs, buoys } = JSON.parse(data);
+    return { users, rsvs, buoys };
+}
+
+function runTests(aDate, aOwTime) {
+    const { rsvs, buoys } = readTestData();
+
+    let dates, owTimes;
+    if (aDate) {
+        dates = [aDate];
+    } else {
+        dates = new Set(rsvs.map((rsv) => rsv.date));
+    }
+    if (aOwTime) {
+        owTimes = [aOwTime];
+    } else {
+        owTimes = ['AM', 'PM'];
+    }
+
+    let failures = [];
+    for (let date of dates) {
+        for (let owTime of owTimes) {
+            console.log('**** ' + date + '    ' + owTime + ' ****');
+            let testRsvs = rsvs.filter((rsv) => {
+                return rsv.date === date
+                    && rsv.category === 'openwater'
+                    && rsv.owTime == owTime
+            });
+            if (runTest(buoys, testRsvs)) {
+                failures.push({ date, owTime });
+            }
+        }
+    }
+}
+
+function checkMultiples(assignments) {
+    let rsvArr = [];
+    for (let buoy in assignments) {
+        rsvArr.push(...assignments[buoy].map((rsv) => rsv.id));
+    }
+    let rsvSet = new Set(rsvArr);
+    if (rsvArr.length > rsvSet.size) {
+        console.log('ERROR: Multiple assignment');
+        for (let buoy in assignments) {
+            console.log(buoy + ': ' + assignments[buoy].map((rsv) => rsv.maxDepth));
+        }
+        return 1;
+    }
+    return 0;
+}
+
+function checkResTypeMix(assignments) {
+    for (let buoy in assignments) {
+        let course = false;
+        let auto = false;
+        for (let rsv of assignments[buoy]) {
+            if (rsv.resType === 'course') {
+                course = true;
+            } else if (rsv.resType === 'autonomous') {
+                auto = true;
+            }
+        }
+        if (course && auto) {
+            console.log('WARNING: course/auto mix');
+            for (let b in assignments) {
+                console.log('buoy ' + b);
+                for (let rsv of assignments[b]) {
+                    console.log(rsv.resType + ': ' + rsv.maxDepth);
+                }
+            }
+        }
+    }
+}
 
 function runTest(buoys, rsvs) {
     let result = assignRsvsToBuoys(buoys, rsvs);
     console.log(result.status);
+    checkMultiples(result.assignments);
+    checkResTypeMix(result.assignments);
     if (result.status === 'error') {
         console.log(result.message);
-        console.log(result.detail);
+        return 1;
     } else if (result.status === 'success') {
-        for (let buoy in result.assignments) {
-            console.log(buoy + ': ' + result.assignments[buoy].map((rsv) => rsv.maxDepth));
-        }
+        return 0;
     } else {
         console.log('unknown result form');
+        return 1;
     }
 }
 
@@ -87,11 +165,25 @@ function test3() {
     runTest(buoys, rsvs);
 }
 
-test1();
-test2();
-test3();
+//test1();
+//test2();
+//test3();
 
+let daterx = /date=([0-9]+-[0-9]+-[0-9]+)/;
+let owrx = /owTime=([APM]+)/;
 
+let date, owTime;
+for (let arg of process.argv) {
+    let m = daterx.exec(arg);
+    if (m) {
+        date = m[1];
+    }
+    m = owrx.exec(arg);
+    if (m) {
+        owTime = m[1];
+    }
+}
 
+runTests(date, owTime);
 
 
