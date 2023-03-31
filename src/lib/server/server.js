@@ -5,8 +5,9 @@ import { redirect } from '@sveltejs/kit';
 const xata = getXataClient();
 
 export async function getSettings() {
-    let settings = await xata.db.Settings.getAll();
-    return settings;
+    let settingsTbl = await xata.db.Settings.getAll();
+    let buoys = await xata.db.Buoys.getAll();
+    return { settingsTbl, buoys };
 }
 
 export async function getSession(id) {

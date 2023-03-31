@@ -1,23 +1,21 @@
 <script>
-    import { viewedDate, reservations } from '$lib/stores.js';
+    import { viewedDate, reservations, buoys } from '$lib/stores.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { displayTag } from '$lib/utils.js';
+    import { assignRsvsToBuoys } from '$lib/autoAssign.js';
 
-    const buoys = ['A', 'B', 'C', 'D'];
-
+    
     function getOpenWaterSchedule(rsvs, datetime) {
-        let schedule = {
-            'AM': Array(buoys.length).fill().map(() => []), 
-            'PM': Array(buoys.length).fill().map(() => []), 
-        };
+        let schedule = {};
         let today = datetimeToLocalDateStr(datetime);
         rsvs = rsvs.filter((v) => v.category === 'openwater' && v.date === today);
-
-        let buoy = {'AM': 0, 'PM': 0}
-        for (let rsv of rsvs) {
-            rsv.buoy = buoy[rsv.owTime];
-            schedule[rsv.owTime][rsv.buoy].push(rsv);
-            buoy[rsv.owTime] = (buoy[rsv.owTime] + 1) % buoys.length;
+        
+        for (let owTime of ['AM', 'PM']) {
+            let result = assignRsvsToBuoys(
+                $buoys, 
+                rsvs.filter((rsv) => rsv.owTime === owTime)
+            ); 
+            schedule[owTime] = result.assignments;
         }
         return schedule;
     }
@@ -29,18 +27,20 @@
 <table class="day">
     <tr>
         <th/>
-        {#each buoys as buoy}
-            <th>Buoy {buoy}</th>
+        {#each $buoys as buoy}
+            <th>{buoy.name} </th>
         {/each}
     </tr>
     {#each ['AM', 'PM'] as time}
         <tr>
             <th>{time}</th>
-            {#each schedule[time] as rsvs}
+            {#each $buoys as buoy}
                 <td>
-                    {#each rsvs as rsv}
-                        <p>{displayTag(rsv)}</p>
-                    {/each}
+                    {#if schedule[time][buoy.name] != undefined}
+                        {#each schedule[time][buoy.name] as rsv}
+                            <p>{displayTag(rsv)}</p>
+                        {/each}
+                    {/if}
                 </td>
             {/each}
         </tr>
