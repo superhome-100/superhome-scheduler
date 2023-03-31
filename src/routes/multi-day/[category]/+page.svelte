@@ -6,15 +6,15 @@
     import Modal from '$lib/components/Modal.svelte';
     import { minValidDate } from '$lib/ReservationTimes.js';
     import { idx2month } from '$lib/datetimeUtils.js';
-    import { view, viewedDate, reservations } from '$lib/stores.js';
+    import { view, viewedMonth, reservations } from '$lib/stores.js';
 
     export let data;
 
     $view = 'multi-day';
 
     $: gCategory = data.category;
-    $: gMonth = $viewedDate.getMonth();
-    $: gYear = $viewedDate.getFullYear();
+    $: gMonth = $viewedMonth.getMonth();
+    $: gYear = $viewedMonth.getFullYear();
     $: gMonthArr = () => monthArr(
         gYear, 
         gMonth, 
@@ -22,7 +22,7 @@
     );
     
     function handleDateChange() {
-        $viewedDate = new Date(gYear, gMonth, 1); 
+        $viewedMonth = new Date(gYear, gMonth, 1); 
     }
 
     function prevMonth() {
