@@ -180,8 +180,9 @@ table.calendar td {
     text-align: center;
 }
 
-.day {
-    margin: 10px auto;
+div.day {
+    overflow-x: auto;
+    margin: 10px;
 }
 
 .day td, .day th {
@@ -189,7 +190,7 @@ table.calendar td {
 }
 
 .day td p {
-    margin: 0;
+    margin: 5px;
     white-space: nowrap;
 }
 

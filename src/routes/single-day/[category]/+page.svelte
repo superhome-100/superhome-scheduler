@@ -53,7 +53,7 @@
     <h2 class="day">{idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}</h2>
     <i on:click={nextDay} on:keypress={nextDay} class="arrow right"></i>
 </div>
-<div style="margin: 10px">
+<div class='day'>
     {#if category == 'pool'}
         <DayPool/>
     {:else if category == 'openwater'}
