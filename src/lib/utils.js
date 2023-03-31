@@ -3,8 +3,8 @@ import {
     datetimeToLocalDateStr,
     timeGE,
     timeLT
-} from '$lib/datetimeUtils.js';
-import { reservations, users } from '$lib/stores.js'
+} from './datetimeUtils.js';
+import { reservations, users } from './stores.js'
 import { get } from 'svelte/store';
 
 export function monthArr(year, month, reservations) {
@@ -141,3 +141,22 @@ export function removeRsv(rsv) {
     }
 }
 
+export function parseSettingsTbl(settingsTbl) {
+    let settings = {}
+
+    for (let s of settingsTbl) {
+        let name = s.name;
+        let v = s.value;
+        if (['refreshIntervalSeconds'].includes(name)) {
+            v = parseInt(v);
+        } else if (['poolLanes', 'classrooms'].includes(name)) {
+            v = v.split(';');
+        }
+        if (name === 'refreshIntervalSeconds') {
+            name = 'refreshInterval'
+            v = v*1000;
+        }
+        settings[name] = v;
+    }
+    return settings;
+}

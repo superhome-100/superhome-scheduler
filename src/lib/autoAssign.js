@@ -10,21 +10,22 @@ function groupByBuddy(rsvs) {
                 }
             }
         }
-        let createNew = true;
-        for (const bg of grps) {
+        // check if a group with one or more of these buddies
+        // already exists and add buddies from that group to this one if so
+        for (let i = grps.length-1; i >= 0; i--) {
+            const bg = grps[i];
             if (Array.from(bg).filter((v) => thisBg.has(v)).length > 0) {
-                for (const id of thisBg) {
-                    bg.add(id);
+                for (const id of bg) {
+                    thisBg.add(id);
                 }
-                createNew = false;
-                break;
+                grps.splice(i,1);
             }
         }
-        if (createNew) {
-            grps.push(thisBg);
-        }
+        grps.push(thisBg);
     }
 
+    // replace rsv ids with copies of rsv objects
+    // and convert sets to arrays
     const rsvById = rsvs.reduce((obj,rsv) => {
         obj[rsv.id] = rsv;
         return obj;
@@ -123,6 +124,7 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
                     buoyGrps.push(buoy2);
                 }
                 added = true;
+                break;
             }
         }
         if (!added) {
@@ -190,6 +192,12 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
     };
 
     while(buddyGrps.length > 0) {
+        /*
+        console.log('buddyGrps:');
+        console.log(buddyGrps.map((bg)=> bg.map((rsv)=>rsv.maxDepth)));
+        console.log('buoyGrps:');
+        console.log(buoyGrps.map((bg)=> bg.map((rsv)=>rsv.maxDepth)));
+        */
         const bg = buddyGrps[0];
         if (bg[0].resType === 'course') {
             update([bg], [0]);
@@ -197,7 +205,12 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
             matchOne(buddyGrps[0], 1, maxDepthDiff);
         }
     }
-
+    /*
+    console.log('buddyGrps:');
+    console.log(buddyGrps.map((bg)=> bg.map((rsv)=>rsv.maxDepth)));
+    console.log('buoyGrps:');
+    console.log(buoyGrps.map((bg)=> bg.map((rsv)=>rsv.maxDepth)));
+    */
     return buoyGrps;
 }
 
@@ -222,7 +235,7 @@ function assignBuoyGroupsToBuoys(buoys, grps) {
             return {
                 status: 'error',
                 message: 'Ran out of buoys',
-                detail: assignments
+                assignments
             }
         }
     }
@@ -235,10 +248,6 @@ export function assignRsvsToBuoys(buoys, rsvs) {
 
     const maxDepthDiff = 15;
     let buoyGrps = createBuoyGroups(buddyGrps, maxDepthDiff);
-
-    if (buoyGrps.length > buoys.length) {
-        return { status: 'error', message: 'not enough buoys', detail: buoyGrps };
-    }
 
     let result = assignBuoyGroupsToBuoys([...buoys], buoyGrps);
 
