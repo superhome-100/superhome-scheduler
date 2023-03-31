@@ -1,24 +1,10 @@
 import { getSettings } from '$lib/server/server.js';
+import { parseSettingsTbl } from '$lib/utils.js';
 import { json } from '@sveltejs/kit';
 
 export async function GET() {
-    let response = await getSettings();
-    let settings = {}
+    let { settingsTbl, buoys } = await getSettings();
+    let settings = parseSettingsTbl(settingsTbl);
 
-    for (let s of response) {
-        let name = s.name;
-        let v = s.value;
-        if (['refreshIntervalSeconds'].includes(name)) {
-            v = parseInt(v);
-        } else if (['poolLanes', 'classrooms'].includes(name)) {
-            v = v.split(';');
-        }
-        if (name === 'refreshIntervalSeconds') {
-            name = 'refreshInterval'
-            v = v*1000;
-        }
-        settings[name] = v;
-    }
-
-    return json({ settings });
+    return json({ settings, buoys });
 }
