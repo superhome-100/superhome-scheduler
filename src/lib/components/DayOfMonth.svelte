@@ -1,4 +1,5 @@
 <script>
+    import { goto } from '$app/navigation';
     import { view, viewedDate } from '$lib/stores.js';
     
     export let date;
@@ -11,7 +12,7 @@
 
     function handleClick() {
         $viewedDate = date;
-        $view = 'single-day';
+        goto('/single-day/{category}');
     }
 
     function getDisplayTags(rsvs) {

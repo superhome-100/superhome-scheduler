@@ -1,5 +1,5 @@
 <script>
-    import { createEventDispatcher } from 'svelte';
+    import { goto } from '$app/navigation';
     import DayPool from '$lib/components/DayPool.svelte';
     import DayOpenWater from '$lib/components/DayOpenWater.svelte';
     import DayClassroom from '$lib/components/DayClassroom.svelte';
@@ -14,19 +14,17 @@
     $view = 'single-day';
     $: category = data.category;
     
-    const dispatch = createEventDispatcher();
-
     function multiDayView() {
-        $view = 'multi-day';
+        goto('/multi-day/{category}');
     }
 
     function prevDay() {
-        let prev = new Date()
+        let prev = new Date($viewedDate);
         prev.setDate($viewedDate.getDate() - 1);
         $viewedDate = prev;
     }
     function nextDay() {
-        let next = new Date()
+        let next = new Date($viewedDate);
         next.setDate($viewedDate.getDate() + 1);
         $viewedDate = next;
     }
