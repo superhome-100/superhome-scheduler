@@ -2,10 +2,12 @@ import {
     dateStrParseDate,
     datetimeToLocalDateStr,
     timeGE,
-    timeLT
+    timeLT,
+    timeStrToMin
 } from './datetimeUtils.js';
-import { reservations, users } from './stores.js'
+import { reservations, users, buoys } from './stores.js'
 import { get } from 'svelte/store';
+import { assignRsvsToBuoys } from './autoAssign.js';
 
 export function monthArr(year, month, reservations) {
     let daysInMonth = new Date(year, month+1, 0).getDate();
@@ -69,12 +71,104 @@ export function augmentRsv(rsv, fbId=null, name=null) {
     return newRsv;
 }
 
+export function convertReservationTypes(data) {
+    if ('maxDepth' in data) {
+        data.maxDepth = parseInt(data.maxDepth);
+    }
+    if ('numStudents' in data) {
+        data.numStudents = parseInt(data.numStudents);
+    }
+    if ('buddies' in data) {
+        data.buddies = JSON.parse(data.buddies);
+    }
+    return data;
+}
+
+function getExistingRsvs(thisRsv) {
+    if (thisRsv.category === 'openwater') {
+        return get(reservations).filter((rsv) => {
+            if (rsv.category === 'openwater'
+                && rsv.date === thisRsv.date
+                && rsv.owTime === thisRsv.owTime) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+    } else if (['pool', 'classroom'].includes(thisRsv.category)) {
+        const thisStart = timeStrToMin(thisRsv.startTime);
+        const thisEnd = timeStrToMin(thisRsv.endTime);
+        const overlap = (rsv) => {
+            let start = timeStrToMin(rsv.startTime);
+            let end = timeStrToMin(rsv.endTime);
+            return ((thisStart >= start && thisStart < end)
+                || (thisEnd <= end && thisEnd > start)
+                || (thisStart < start && thisEnd > end));
+        };
+        return get(reservations).filter((rsv) => {
+            if (rsv.category === thisRsv.category
+                && rsv.date === thisRsv.date
+                && overlap(rsv)) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+    }
+}
+
+export function checkDuplicateRsv(thisRsv) {
+    let existingRsvs = getExistingRsvs(thisRsv);
+    return existingRsvs.filter((rsv) => thisRsv.user === rsv.user.id).length > 0;
+}
+
+export function checkSpaceAvailable(thisRsv) {
+    let existingRsvs = getExistingRsvs(thisRsv);
+    if (thisRsv.category === 'openwater') {
+        let result = assignRsvsToBuoys(get(buoys), [...existingRsvs, thisRsv]);
+        if (result.status === 'error') {
+            return {
+                status: 'error',
+                message: 'All buoys are fully booked at this time.  ' +
+                         'Please either check back later or try a different date/time'
+            };
+        } else {
+            return result;
+        }
+    } else if (thisRsv.category === 'pool') {
+        // to do: implement the actual pool rules
+        if (existingRsvs.length >= 6) {
+            return {
+                status: 'error',
+                message: 'All pool lanes are booked at this time.  ' +
+                         'Please either check back later or try a different date/time'
+            };
+        } else {
+            return { status: 'success' };
+        }
+    } else if (thisRsv.category === 'classroom') {
+        if (existingRsvs.length >= 3) {
+            return {
+                status: 'error',
+                message: 'All classrooms are booked at this time.  ' +
+                         'Please either check back later or try a different date/time'
+            };
+        } else {
+            return { status: 'success' };
+        }
+    }
+}
+
 export function validateBuddies(formData) {
-    let userNames = get(users).map((r) => r.name);
-    let buddies = JSON.parse(formData.get('buddies')).name;
+    let user = formData.get('user')
+    let userIds = get(users).map((r) => r.id);
+    let buddies = JSON.parse(formData.get('buddies')).id;
     let validBuddies = [];
     for (let buddy of buddies) {
-        if (!userNames.includes(buddy)) {
+        if (user === buddy) {
+            return {status: 'error', msg: 'Cannot add yourself as a buddy'};
+        }
+        if (!userIds.includes(buddy)) {
             return {status: 'error', msg: `Unknown user: ${buddy}`};
         }
         if (validBuddies.includes(buddy)) {

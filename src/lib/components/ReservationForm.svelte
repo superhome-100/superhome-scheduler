@@ -8,7 +8,14 @@
     import { canSubmit, user, reservations } from '$lib/stores.js';
     import { minValidDateStr, beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
-    import { augmentRsv, updateReservationFormData, validateBuddies } from '$lib/utils.js';
+    import { 
+        augmentRsv, 
+        updateReservationFormData, 
+        validateBuddies, 
+        checkSpaceAvailable,
+        checkDuplicateRsv,
+        convertReservationTypes
+    } from '$lib/utils.js';
 
     export let category = 'openwater';
     export let date;
@@ -17,21 +24,42 @@
     const { close } = getContext('simple-modal');
 
     const submitReservation = async ({ form, data, action, cancel }) => {
+        
         updateReservationFormData(data);
-        let result = validateBuddies(data);
+        let thisRsv = convertReservationTypes(Object.fromEntries(data));
+        
+        if (!beforeResCutoff(thisRsv.date)) {
+            alert(
+                'The submission window for this reservation has expired; ' + 
+                'please choose a later date'
+            );
+            cancel();
+            return;
+        }
+
+        if (checkDuplicateRsv(thisRsv)) {
+            alert(
+                'You have an existing reservation that overlaps with this date/time; ' +
+                'please either cancel that reservation, or choose a different date/time'
+            );
+            cancel();
+            return;
+        }
+
+        let result = checkSpaceAvailable(thisRsv); 
+        if (result.status === 'error') {
+            alert(result.message);
+            cancel();
+            return;
+        }
+        
+        result = validateBuddies(data);
         if (result.status === 'error') {
             alert(result.msg);
             cancel();
             return;
         }
 
-        if (!beforeResCutoff(data.get('date'))) {
-            alert(
-                `The submission window for this reservation has expired; 
-                please choose a later date`
-            );
-            cancel();
-        }
         close();
         
         return async ({ result, update }) => {
