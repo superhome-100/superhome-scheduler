@@ -1,5 +1,5 @@
 import { getXataClient } from '$lib/server/xata.js';
-import { augmentRsv } from '$lib/utils.js';
+import { augmentRsv, convertReservationTypes } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
 
 const xata = getXataClient();
@@ -84,19 +84,6 @@ export async function authenticateUser(userId, userName) {
         record = records[0];
     }
     return record;
-}
-
-function convertReservationTypes(data) {
-    if ('maxDepth' in data) {
-        data.maxDepth = parseInt(data.maxDepth);
-    }
-    if ('numStudents' in data) {
-        data.numStudents = parseInt(data.numStudents);
-    }
-    if ('buddies' in data) {
-        data.buddies = JSON.parse(data.buddies);
-    }
-    return data;
 }
 
 export async function submitReservation(formData) {

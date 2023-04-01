@@ -35,7 +35,7 @@ async function addRandomUsers(N) {
 const randomInt = (max) => Math.floor(Math.random() * max);
 const rSelect = (arr) => arr[randomInt(arr.length)];
 
-function createRandomRsv(buddyPool, rsv) {
+function createRandomRsv(buddyPool, buddyDepth, rsv) {
     let buddies = {
         id: [],
         name: []
@@ -53,10 +53,11 @@ function createRandomRsv(buddyPool, rsv) {
         buddies.id = Array.from(id);
         buddies.name = Array.from(name);
     }
+    const rSign = () => Math.random() > 0.5 ? 1 : -1;
     return {
         ...rsv,
         numStudents: rsv.resType === 'course' ? 1 + randomInt(4) : null,
-        maxDepth: rsv.category === 'openwater' ? 20 + randomInt(90) : null,
+        maxDepth: rsv.category === 'openwater' ? buddyDepth + rSign()*randomInt(15) : null,
         comments: faker.lorem.lines(1),
         status: 'pending',
         owner: true,
@@ -69,16 +70,23 @@ function createRandomBuddyGroup(users, date) {
     let startTime, endTime, owTime;
     if (['pool', 'classroom'].includes(category)) {
         let startIdx = randomInt(startTimes().length);
-        let endIdx = startIdx + 1 + randomInt(endTimes().length - startIdx - 1);
+        let endIdx = startIdx + randomInt(endTimes().length - startIdx);
         startTime = startTimes()[startIdx];
         endTime = endTimes()[endIdx];
     } else {
         owTime = rSelect(['AM', 'AM', 'PM']);
     }
 
-    let resType = rSelect(['autonomous', 'autonomous', 'autonomous', 'course']);
+    let resType;
+    if (category === 'classroom') {
+        resType = 'course';
+    } else {
+        resType = rSelect(['autonomous', 'autonomous', 'autonomous', 'autonomous', 'course']);
+    }
+
     let nBuddies = 1;
-    if (resType === 'autonomous') {
+    // buddies disabled at the moment...
+    if (resType === 'autonomous' && Math.random() > 1) {
         nBuddies += randomInt(4);
     }
     let buddyPool = [...Array(nBuddies).keys()].map(() => rSelect(users));
@@ -92,9 +100,11 @@ function createRandomBuddyGroup(users, date) {
         }
     }
     let rsvs = [];
+    let buddyDepth = 20 + randomInt(70);
     for (let buddy of buddyPool) {
         let rsv = createRandomRsv(
             buddyPool,
+            buddyDepth,
             { user: buddy.id, date, resType, category, startTime, endTime, owTime }
         );
         rsvs.push(rsv);
@@ -122,31 +132,31 @@ export function createRandomRsvs(numPerDay, settings, users, daysRange) {
 }
 
 export async function generateTestData() {
-    let nPerDay = 20;
+    let nPerDay = 40;
     let daysRange = 10;
     let settingsTbl = await xata.db.Settings.getAll();
     settings.set(parseSettingsTbl(settingsTbl));
 
     let buoys = await xata.db.Buoys.getAll();
+
     /*
-    let nUser = 20;
-    let users = createRandomUsers(nUser);
-    users = users.map((r) => {
-        r.id = faker.datatype.uuid();
-        return r;
-    });
+    let nUser = 30;
+    let newUsers = createRandomUsers(nUser);
+    await xata.db.Users.create(newUsers);
     */
     let users = await xata.db.Users.getAll();
+
     let rsvs = createRandomRsvs(nPerDay, settings, users, daysRange);
-    rsvs = rsvs.map((rsv) => {
-        rsv.id = faker.datatype.uuid();
-        return rsv;
-    });
+
     return {users, rsvs, buoys};
 }
 
 export async function writeTestDataToFile() {
     let { users, rsvs, buoys } = await generateTestData();
+    rsvs = rsvs.map((rsv) => {
+        rsv.id = faker.datatype.uuid();
+        return rsv;
+    });
     let data = JSON.stringify({ users, rsvs, buoys });
     fs.writeFile('autoAssign-tests.json', data, (err) => {
         if (err) throw err;
@@ -156,7 +166,6 @@ export async function writeTestDataToFile() {
 
 export async function writeTestDataToDb() {
     let { users, rsvs } = await generateTestData();
-    //await xata.db.Users.create(users);
     await xata.db.Reservations.create(rsvs);
 }
 

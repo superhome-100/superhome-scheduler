@@ -16,7 +16,6 @@
     let chosenEnd = rsv == null ? endTimes()[0] : rsv.endTime;
     let autoOrCourse = rsv == null ? (resType == null ? 'autonomous' : resType) : rsv.resType;
     let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
-    console.log(autoOrCourse);
     $canSubmit = true;
 
     let noModify = rsv != null;
