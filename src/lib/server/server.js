@@ -38,6 +38,7 @@ export async function getReservationsSince(minDateStr) {
         .filter({ date: { $ge: minDateStr }})
         .sort("date", "asc")
         .getAll();
+
     return reservations.map((r) => augmentRsv(r));
 }
 

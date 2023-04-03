@@ -64,6 +64,26 @@ h2.dialog {
     text-align: left;
 }
 
+.day .column {
+    float: left;
+    margin: 5px;
+    text-align: center;
+}
+
+.pool .column {
+    width: calc(20% - 10px);
+}
+
+.classroom .column {
+    width: calc(25% - 10px);
+}
+
+.day .row {
+    content: "";
+    display: table;
+    clear: both;
+}
+
 form .column {
     float: left;
     margin: 5px;
@@ -125,22 +145,32 @@ input[type=submit] {
     width: 100px;
 }
 
-p.rsv {
-    border-radius: 2em;
+.rsv {
+    text-align: center;
+    border-radius: 1.5em;
     font-size: 10px;
-    margin: auto;
-    width: max-content;
+    margin: 3px;
+    width: calc(100% - 20px);
     padding-inline: 1em;
 }
-.pool p.rsv {
+
+.day .rsv {
+    font-size: 13px;
+    overflow: scroll;
+}
+
+.pool .rsv {
     color: white;
 }
-.openwater p.rsv {
+
+.openwater .rsv {
     color: black;
 }
-.classroom p.rsv {
+
+.classroom .rsv {
     color: black;
 }
+
 table.calendar {
     table-layout: fixed;
     border-collapse: collapse;
@@ -194,15 +224,15 @@ div.day {
     white-space: nowrap;
 }
 
-.pool p.rsv{
+.pool .rsv{
     background: var(--blue);
 }
 
-.openwater p.rsv {
+.openwater .rsv {
     background: var(--green);
 }
 
-.classroom p.rsv {
+.classroom .rsv {
     background: var(--yellow);
 }
 

@@ -10,13 +10,10 @@ const tables = [
       { name: "resType", type: "string" },
       { name: "numStudents", type: "int" },
       { name: "maxDepth", type: "int" },
-      { name: "buoy", type: "string" },
       { name: "comments", type: "text" },
       { name: "user", type: "link", link: { table: "Users" } },
       { name: "startTime", type: "string" },
       { name: "endTime", type: "string" },
-      { name: "classroom", type: "string" },
-      { name: "lane", type: "string" },
       { name: "category", type: "string" },
       {
         name: "status",

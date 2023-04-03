@@ -3,7 +3,7 @@ import { XataClient } from '../src/lib/server/xata.codegen.server.js';
 import { datetimeToLocalDateStr } from '../src/lib/datetimeUtils.js';
 import { startTimes, endTimes, minValidDate } from '../src/lib/ReservationTimes.js';
 import { settings } from '../src/lib/stores.js';
-import { parseSettingsTbl } from '../src/lib/utils.js';
+import { parseSettingsTbl, checkSpaceAvailable } from '../src/lib/utils.js';
 import fs from 'fs';
 
 const XATA_API_KEY='xau_9xJINLTWEBX1d0EyWIi7YL9QinLT2TEv1';
@@ -113,7 +113,7 @@ function createRandomBuddyGroup(users, date) {
     return rsvs;
 }
 
-export function createRandomRsvs(numPerDay, settings, users, daysRange) {
+export function createRandomRsvs(numPerDay, settings, users, buoys, daysRange) {
     let entries = [];
     for (let day=0; day < daysRange; day++) {
         let dt = minValidDate();
@@ -122,7 +122,15 @@ export function createRandomRsvs(numPerDay, settings, users, daysRange) {
         let dayUsers = [...users];
         for (let i=0; i < numPerDay; i++) {
             let rsvs = createRandomBuddyGroup(dayUsers, date);
-            entries.push(...rsvs);
+            for (let rsv of rsvs) {
+                // assign temporary id
+                rsv.id = faker.datatype.uuid();
+                let result = checkSpaceAvailable(rsv, entries, buoys);
+                if (result.status === 'success') {
+                    delete rsv.id;
+                    entries.push(rsv);
+                }
+            }
             if (dayUsers.length == 0) {
                 break;
             }
@@ -138,7 +146,6 @@ export async function generateTestData() {
     settings.set(parseSettingsTbl(settingsTbl));
 
     let buoys = await xata.db.Buoys.getAll();
-
     /*
     let nUser = 30;
     let newUsers = createRandomUsers(nUser);
@@ -146,17 +153,13 @@ export async function generateTestData() {
     */
     let users = await xata.db.Users.getAll();
 
-    let rsvs = createRandomRsvs(nPerDay, settings, users, daysRange);
+    let rsvs = createRandomRsvs(nPerDay, settings, users, buoys, daysRange);
 
     return {users, rsvs, buoys};
 }
 
 export async function writeTestDataToFile() {
     let { users, rsvs, buoys } = await generateTestData();
-    rsvs = rsvs.map((rsv) => {
-        rsv.id = faker.datatype.uuid();
-        return rsv;
-    });
     let data = JSON.stringify({ users, rsvs, buoys });
     fs.writeFile('autoAssign-tests.json', data, (err) => {
         if (err) throw err;
@@ -165,7 +168,7 @@ export async function writeTestDataToFile() {
 }
 
 export async function writeTestDataToDb() {
-    let { users, rsvs } = await generateTestData();
+    let { rsvs } = await generateTestData();
     await xata.db.Reservations.create(rsvs);
 }
 

@@ -5,7 +5,7 @@
     import ResFormPool from './ResFormPool.svelte';
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
-    import { canSubmit, user, reservations } from '$lib/stores.js';
+    import { canSubmit, user, reservations, buoys } from '$lib/stores.js';
     import { minValidDateStr, beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { 
@@ -37,7 +37,7 @@
             return;
         }
 
-        if (checkDuplicateRsv(thisRsv)) {
+        if (checkDuplicateRsv(thisRsv, $reservations)) {
             alert(
                 'You have an existing reservation that overlaps with this date/time; ' +
                 'please either cancel that reservation, or choose a different date/time'
@@ -46,7 +46,7 @@
             return;
         }
 
-        let result = checkSpaceAvailable(thisRsv); 
+        let result = checkSpaceAvailable(thisRsv, $reservations, $buoys); 
         if (result.status === 'error') {
             alert(result.message);
             cancel();

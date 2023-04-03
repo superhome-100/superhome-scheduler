@@ -36,29 +36,18 @@
             <tr>
                 <th>{buoy.name}</th>
                 {#each ['AM', 'PM'] as time}
-                    <td>
-                        {#if schedule[time][buoy.name] != undefined}
+                    {#if schedule[time][buoy.name] != undefined}
+                        <td class="rsv">
                             {#each schedule[time][buoy.name] as rsv}
                                 <p>{displayTag(rsv)}</p>
                             {/each}
-                        {/if}
-                    </td>
+                        </td>
+                    {:else}
+                        <td/>
+                    {/if}
                 {/each}
             </tr>
         {/if}
     {/each}
 </table>
-
-<style type="text/css" media="screen">
-    table {
-        border-collapse:collapse;
-    }
-    table td {
-        border:1px solid #00FF00;
-    }
-    td {
-        vertical-align: top;
-        text-align: center;
-    }
-</style>
 
