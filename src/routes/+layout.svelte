@@ -11,50 +11,64 @@
     let loginState = 'pending';
     let profileSrc;
 
+    $: {
+        if (loginState === 'out' && $page.route.id != '/') {
+            goto('/');
+        }
+    }
+
     onMount(initApp);
 
     async function refreshAppState() {
         console.log('refreshing...');
-        let data = await loadAppData();
-        $reservations = data.reservations;
-        console.log('reservations: ');
-        console.log($reservations);
-        $users = data.users;
+        let data = await get('AppData');
+        if (data.status === 'success') {
+            $reservations = data.reservations;
+            $users = data.users;
+        }
     }
 
     async function initApp() {
-        let cmd = async () => {
+        let init = async () => {
             try {
                 loadFB();
-                let data = await getSettings();
+                let data = await get('Settings');
+                if (data.status === 'error') {
+                    throw new Error('Could not get settings from database');
+                }
                 $settings = data.settings;
+                console.log($settings);
                 $buoys = data.buoys;
-                $user = await getSession();
+ 
+                data = await get('Session');
+                if (data.status === 'error') {
+                    throw new Error('Could not get session from database');
+                }
+                $user = data.user;
+
                 if ($user == null) {
                     loginState = 'out';
                 } else {
                     loginState = 'in';
-                    let data = await loadAppData();
+                    data = await get('AppData');
+                    if (data.status === 'error') {
+                        throw new Error('Could not read app data from database');
+                    }
                     $reservations = data.reservations;
-                    console.log('reservations: ');
                     console.log($reservations);
                     $users = data.users;
                     setInterval(refreshAppState, $settings.refreshInterval);
                 }
                 return true;
+
             } catch (error) {
-                console.log('init returned error: ');
-                console.log(error);
-                if ('status' in error) {
-                    console.log(error.status);
-                    console.log(error.errors);
-                }
+                console.error(error);
                 return false;
             }
         };
 
         for (let i=0; i < 3; i++) {
-            let success = await cmd();
+            let success = await init();
             if (success) {
                 goto($page.url.href);
                 return;
@@ -65,23 +79,8 @@
         goto('/error');
     }   
 
-    async function getSettings() {
-        const response = await fetch('/api/getSettings');
-        const data = await response.json();
-        return data;
-    }
-
-    async function getSession() {
-        const response = await fetch('/api/getSession');
-        const { user } = await response.json();
-        return user;
-    }
-
-    async function loadAppData() {
-        const response = await fetch('/api/getAppData', {
-            method: 'POST',
-            headers: {'Content-type': 'application/json'},
-        });
+    async function get(item) {
+        const response = await fetch('/api/get' + item);
         const data = await response.json();
         return data;
     }
@@ -147,6 +146,7 @@
                 });
             } else {
                 alert('Facebook login returned status "' + response.status + '"');
+                loginState = 'out';
             }
         }, { scope: 'email,public_profile' });
     }
@@ -157,7 +157,13 @@
             headers: {'Content-type': 'application/json'},
             body: JSON.stringify({ userId: facebookId, userName: name })
         });
-        const record = await response.json();
+        const data = await response.json();
+        if (data.status === 'error') {
+            loginState = 'out';
+            return Promise.reject();
+        }
+
+        const record = data.record;
         if (record.status === 'active') {
                     
             $user = {
@@ -169,6 +175,7 @@
             loginState = 'in';
             loadProfilePic();
             return Promise.resolve();
+        
         } else {
 
             if (record.status === 'disabled') {
@@ -212,11 +219,7 @@
     }
 
     async function deleteSession() {
-        const response = await fetch('/api/logout', {
-            method: 'POST',
-            headers: {'Content-type': 'application/json'},
-        });
-        return response;
+        await fetch('/api/logout', { method: 'POST' });
     }
 
 </script>
