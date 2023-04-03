@@ -170,7 +170,6 @@
                 'name': record.name,
                 'facebookId': record.facebookId,
                 'id': record.id,
-                'toString': () => name.toLowerCase().replace(/ /g, '')
             };
             loginState = 'in';
             loadProfilePic();
@@ -186,15 +185,11 @@
             } else {
                 alert('Unexpected login error; Please try again');
             }
-            $user = null;
-            if ($page.route.id !== '/') {
-                goto('/');
-            }
-            loginState = 'out';
+            await logout();
             return Promise.reject();
         }
     }
-    
+
     async function logout() {
         loginState = 'pending';
         profileSrc = undefined;
@@ -208,8 +203,13 @@
         if ($page.route.id !== '/') {
             goto('/');
         }
+        await deleteSession();
+        loginState = 'out';
+    }
+
+    async function userLogout() {
         toast.promise(
-            deleteSession().then(() => loginState = 'out'),
+            logout(),
             {
                 loading: 'Logging out...',
                 success: 'You are now logged out',
@@ -226,7 +226,7 @@
 
 <div id="app">
     {#if $user && loginState === 'in'}
-        <button on:click={logout} class="fb_loggedin">Log out</button>
+        <button on:click={userLogout} class="fb_loggedin">Log out</button>
         {#if profileSrc}
             <img id="profilePicture" alt="profilePicture" src={profileSrc}>
         {:else}
