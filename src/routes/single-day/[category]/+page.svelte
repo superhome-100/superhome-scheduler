@@ -1,8 +1,7 @@
 <script>
     import { goto } from '$app/navigation';
-    import DayPool from '$lib/components/DayPool.svelte';
+    import DayHourly from '$lib/components/DayHourly.svelte';
     import DayOpenWater from '$lib/components/DayOpenWater.svelte';
-    import DayClassroom from '$lib/components/DayClassroom.svelte';
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
     import { validReservationDate, minValidDate } from '$lib/ReservationTimes.js';
     import { month2idx, idx2month } from '$lib/datetimeUtils.js';
@@ -37,6 +36,22 @@
         }
     };
 
+    const nResource = () => {
+        if (category === 'pool') {
+            return 4;
+        } else if (category === 'classroom') {
+            return 3;
+        }
+    };
+
+    const resourceName = () => {
+        if (category === 'pool') {
+            return 'lane';
+        } else if (category === 'classroom') {
+            return 'room';
+        }
+    };
+
 </script>
 
 <a href="/multi-day/{category}">
@@ -53,13 +68,13 @@
     <h2 class="day">{idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}</h2>
     <i on:click={nextDay} on:keypress={nextDay} class="arrow right"></i>
 </div>
-<div class='day'>
-    {#if category == 'pool'}
-        <DayPool/>
+<div class='{category} day'>
+    {#if category === 'pool'}
+        <DayHourly category={category} nResource={nResource()} resourceName={resourceName()}/>
+    {:else if category === 'classroom'}
+        <DayHourly category={category} nResource={nResource()} resourceName={resourceName()}/>
     {:else if category == 'openwater'}
         <DayOpenWater/>
-    {:else if category == 'classroom'}
-        <DayClassroom/>
     {/if}
 </div>
 

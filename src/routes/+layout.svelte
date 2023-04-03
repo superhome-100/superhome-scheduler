@@ -17,6 +17,8 @@
         console.log('refreshing...');
         let data = await loadAppData();
         $reservations = data.reservations;
+        console.log('reservations: ');
+        console.log($reservations);
         $users = data.users;
     }
 
@@ -34,11 +36,14 @@
                     loginState = 'in';
                     let data = await loadAppData();
                     $reservations = data.reservations;
+                    console.log('reservations: ');
+                    console.log($reservations);
                     $users = data.users;
                     setInterval(refreshAppState, $settings.refreshInterval);
                 }
                 return true;
             } catch (error) {
+                console.log('init returned error: ');
                 console.log(error);
                 if ('status' in error) {
                     console.log(error.status);
@@ -51,6 +56,7 @@
         for (let i=0; i < 3; i++) {
             let success = await cmd();
             if (success) {
+                goto($page.url.href);
                 return;
             } else {
                 await new Promise(resolve => setTimeout(resolve, 1000));

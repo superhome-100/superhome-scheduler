@@ -1,8 +1,7 @@
+import { startTimes, endTimes, inc } from './ReservationTimes.js';
 import {
     dateStrParseDate,
     datetimeToLocalDateStr,
-    timeGE,
-    timeLT,
     timeStrToMin
 } from './datetimeUtils.js';
 import { reservations, users, buoys } from './stores.js'
@@ -84,9 +83,20 @@ export function convertReservationTypes(data) {
     return data;
 }
 
-function getExistingRsvs(thisRsv) {
+function overlap(rsvA, rsvB) {
+    let startA = timeStrToMin(rsvA.startTime);
+    let endA = timeStrToMin(rsvA.endTime);
+    let startB = timeStrToMin(rsvB.startTime);
+    let endB = timeStrToMin(rsvB.endTime);
+
+    return (startA >= startB && startA < endB)
+            || ((endA <= endB && endA > startB)
+                || (startA < startB && startA > endB));
+}
+
+function getExistingRsvs(thisRsv, rsvs) {
     if (thisRsv.category === 'openwater') {
-        return get(reservations).filter((rsv) => {
+        return rsvs.filter((rsv) => {
             if (rsv.category === 'openwater'
                 && rsv.date === thisRsv.date
                 && rsv.owTime === thisRsv.owTime) {
@@ -96,19 +106,10 @@ function getExistingRsvs(thisRsv) {
             }
         });
     } else if (['pool', 'classroom'].includes(thisRsv.category)) {
-        const thisStart = timeStrToMin(thisRsv.startTime);
-        const thisEnd = timeStrToMin(thisRsv.endTime);
-        const overlap = (rsv) => {
-            let start = timeStrToMin(rsv.startTime);
-            let end = timeStrToMin(rsv.endTime);
-            return ((thisStart >= start && thisStart < end)
-                || (thisEnd <= end && thisEnd > start)
-                || (thisStart < start && thisEnd > end));
-        };
-        return get(reservations).filter((rsv) => {
+        return rsvs.filter((rsv) => {
             if (rsv.category === thisRsv.category
                 && rsv.date === thisRsv.date
-                && overlap(rsv)) {
+                && overlap(thisRsv, rsv)) {
                 return true;
             } else {
                 return false;
@@ -117,15 +118,15 @@ function getExistingRsvs(thisRsv) {
     }
 }
 
-export function checkDuplicateRsv(thisRsv) {
-    let existingRsvs = getExistingRsvs(thisRsv);
+export function checkDuplicateRsv(thisRsv, rsvs) {
+    let existingRsvs = getExistingRsvs(thisRsv, rsvs);
     return existingRsvs.filter((rsv) => thisRsv.user === rsv.user.id).length > 0;
 }
 
-export function checkSpaceAvailable(thisRsv) {
-    let existingRsvs = getExistingRsvs(thisRsv);
+export function checkSpaceAvailable(thisRsv, rsvs, buoys) {
+    let existingRsvs = getExistingRsvs(thisRsv, rsvs);
     if (thisRsv.category === 'openwater') {
-        let result = assignRsvsToBuoys(get(buoys), [...existingRsvs, thisRsv]);
+        let result = assignRsvsToBuoys(buoys, [...existingRsvs, thisRsv]);
         if (result.status === 'error') {
             return {
                 status: 'error',
@@ -136,8 +137,12 @@ export function checkSpaceAvailable(thisRsv) {
             return result;
         }
     } else if (thisRsv.category === 'pool') {
-        // to do: implement the actual pool rules
-        if (existingRsvs.length >= 6) {
+        let numDivers = existingRsvs.reduce((acc, rsv) => {
+            acc += rsv.resType === 'course' ? rsv.numStudents : 1;
+            return acc;
+        }, 0);
+
+        if (numDivers >= 6) {
             return {
                 status: 'error',
                 message: 'All pool lanes are booked at this time.  ' +
@@ -203,24 +208,134 @@ export const displayTag = (rsv) => {
     return tag;
 };
 
-export function getDaySchedule(startTimes, rsvs, datetime, category, nResource) {
+function assignUpToSoftCapacity(rsvs, softCapacity) {
     let schedule = [];
-    let today = datetimeToLocalDateStr(datetime);
-    rsvs = rsvs.filter((v) => v.category === category && v.date === today);
-
-    for (let t of startTimes) {
-        let timeRsvs = Array(nResource).fill().map(() => []);
-        let resource = 0;
-        for (let rsv of rsvs) {
-            if (timeGE(t, rsv.startTime)
-                && timeLT(t, rsv.endTime))
-            {
-                timeRsvs[resource].push(displayTag(rsv));
-                resource = (resource + 1) % nResource;
+    while (rsvs.length > 0 && schedule.length < softCapacity) {
+        let nextTime = timeStrToMin(startTimes()[0]);
+        let thisR = [];
+        for (let j=rsvs.length-1; j >= 0; j--) {
+            let rsv = rsvs[j];
+            let start = timeStrToMin(rsv.startTime);
+            if (start >= nextTime) {
+                if (start > nextTime) {
+                    thisR.push({
+                        start: nextTime,
+                        end: start,
+                        nSlots: (start - nextTime) / inc(),
+                        cls: 'filler',
+                        tag: '',
+                    });
+                }
+                nextTime = timeStrToMin(rsv.endTime);
+                let nSlots = (nextTime - start) / inc();
+                thisR.push({
+                    start,
+                    end: nextTime,
+                    nSlots,
+                    cls: 'rsv',
+                    tag: displayTag(rsv),
+                    resType: rsv.resType
+                });
+                rsvs.splice(j,1);
             }
         }
-        schedule.push({start: t, rsvs: timeRsvs});
+
+        let end = timeStrToMin(endTimes()[endTimes().length-1]);
+        if (nextTime < end) {
+            thisR.push({
+                start: nextTime,
+                end: end,
+                nSlots: (end-nextTime) / inc(),
+                cls: 'filler',
+                tag: ''
+            });
+        }
+        schedule.push(thisR);
     }
+    return schedule;
+}
+
+function assignOverflowCapacity(rsvs, schedule, softCapacity) {
+
+    const combineTags = (oldTag, rsv) => {
+        let newTag = displayTag(rsv);
+        if (oldTag != '') {
+            return oldTag + ' and ' + newTag;
+        } else {
+            return newTag;
+        }
+    };
+
+    let nextR = 0;
+
+    while (rsvs.length > 0) {
+
+
+        let rsv = rsvs[0];
+        let start = timeStrToMin(rsv.startTime);
+        let end = timeStrToMin(rsv.endTime)
+
+        nextR = (nextR + 1) % softCapacity;
+        let resource = schedule[nextR];
+
+        for (let j=0; j < resource.length; j++) {
+            let block = resource[j];
+            let blockCls = block.cls;
+            let blockTag = block.tag;
+            if (block.resType != 'course' && start >= block.start && start < block.end) {
+                if (start > block.start) {
+                    // break off beginning of existing block into its own block
+                    let begBlock = {...block};
+                    begBlock.end = start;
+                    begBlock.nSlots = (start - block.start) / inc();
+                    begBlock.cls = blockCls;
+                    begBlock.tag = blockTag;
+                    resource.splice(j, 0, begBlock);
+                    j++;
+                }
+
+                block.start = start;
+                block.nSlots = (block.end - start) / inc();
+                block.cls = 'rsv';
+                block.tag = combineTags(blockTag, rsv);
+
+                if (end <= block.end) {
+                    if (end < block.end) {
+                        // break off end of existing block into its own block
+                        let endBlock = {...block};
+                        endBlock.start = end;
+                        endBlock.nSlots = (block.end - end) / inc();
+                        endBlock.cls = blockCls;
+                        endBlock.tag = blockTag;
+                        resource.splice(j+1, 0, endBlock);
+                        j++;
+
+                        block.end = end;
+                        block.nSlots = (end - block.start) / inc();
+                    }
+
+                    // rsv has now been fully added, remove from list
+                    rsvs.splice(0, 1);
+                    break;
+
+                } else {
+                    start = block.end;
+                }
+            }
+        }
+    }
+}
+
+export function getDaySchedule(rsvs, datetime, category, softCapacity) {
+
+    let today = datetimeToLocalDateStr(datetime);
+    rsvs = rsvs.filter((v) => v.category === category && v.date === today);
+    rsvs.sort((a,b) => timeStrToMin(a.startTime) < timeStrToMin(b.startTime) ? 1 : -1);
+
+    let schedule = assignUpToSoftCapacity(rsvs, softCapacity);
+
+    assignOverflowCapacity(rsvs, schedule, softCapacity);
+
     return schedule;
 }
 

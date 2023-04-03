@@ -6,7 +6,12 @@ export async function GET({ cookies })  {
     let session = cookies.get('sessionid');
     if (session !== undefined) {
         let record = await getSession(session);
-        user = record.user;
+        if (record == undefined) {
+            // cookie is invalid -> delete it
+            cookies.delete('sessionid', { path: '/' });
+        } else {
+            user = record.user;
+        }
     }
     return json({user});
 }
