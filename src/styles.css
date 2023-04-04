@@ -114,6 +114,10 @@ div.autocomplete {
     margin: 0 5px 0 0;
 }
 
+#formComments {
+    width: 100%; 
+};
+
 input[type=submit] {
   background-color: DodgerBlue;
   color: #fff;
