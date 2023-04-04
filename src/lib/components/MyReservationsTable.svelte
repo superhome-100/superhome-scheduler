@@ -1,6 +1,6 @@
 <script>
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
-    import { minuteOfDay, beforeCancelCutoff, beforeResCutoff } from '$lib/ReservationTimes.js';
+    import { minuteOfDay, beforeCancelCutoff } from '$lib/ReservationTimes.js';
     import { timeStrToMin } from '$lib/datetimeUtils.js';
     import { user, reservations } from '$lib/stores.js';
     import Modal from './Modal.svelte';

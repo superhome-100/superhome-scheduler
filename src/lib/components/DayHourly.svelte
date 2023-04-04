@@ -2,6 +2,7 @@
     import { startTimes } from '$lib/ReservationTimes.js';
     import { viewedDate, reservations } from '$lib/stores.js';
     import { getDaySchedule } from '$lib/utils.js';
+    import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
 
     export let nResource;
     export let resourceName;
@@ -19,7 +20,7 @@
 </div>
 <div class="row" style="width: 100%">
     <div class="column">
-        {#each startTimes() as s}
+        {#each startTimes(datetimeToLocalDateStr($viewedDate)) as s}
             <div class="time" style="height: 50px">{s}</div>
         {/each}
     </div>

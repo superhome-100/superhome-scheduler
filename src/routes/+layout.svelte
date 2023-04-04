@@ -37,7 +37,6 @@
                     throw new Error('Could not get settings from database');
                 }
                 $settings = data.settings;
-                console.log($settings);
                 $buoys = data.buoys;
  
                 data = await get('Session');
@@ -57,7 +56,7 @@
                     $reservations = data.reservations;
                     console.log($reservations);
                     $users = data.users;
-                    setInterval(refreshAppState, $settings.refreshInterval);
+                    setInterval(refreshAppState, $settings.refreshInterval.default);
                 }
                 return true;
 

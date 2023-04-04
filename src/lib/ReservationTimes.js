@@ -1,11 +1,11 @@
 import { Settings } from './settings.js';
 import * as dtu from './datetimeUtils.js';
 
-export let minStart = () => dtu.timeStrToMin(Settings('minStartTime'));
-export let maxEnd = () => dtu.timeStrToMin(Settings('maxEndTime'));
-export let resCutoff = () => dtu.timeStrToMin(Settings('reservationCutOffTime'));
-export let cancelCutoff = () => dtu.timeStrToMin(Settings('cancelationCutOffTime'));
-export let inc = () => dtu.timeStrToMin(Settings('reservationIncrement'));
+export let minStart = (date) => dtu.timeStrToMin(Settings('minStartTime', date));
+export let maxEnd = (date) => dtu.timeStrToMin(Settings('maxEndTime', date));
+export let resCutoff = (date) => dtu.timeStrToMin(Settings('reservationCutOffTime', date));
+export let cancelCutoff = (date) => dtu.timeStrToMin(Settings('cancelationCutOffTime', date));
+export let inc = (date) => dtu.timeStrToMin(Settings('reservationIncrement', date));
 
 /*
 if ((inc < 60 && 60 % inc !== 0) || (inc > 60 && inc % 60 !== 0)) {
@@ -21,7 +21,7 @@ export function validReservationDate(date) {
         && today.getMonth() <= date.getMonth()
         && (today.getDate() < date.getDate()-1
             || (today.getDate() == date.getDate()-1
-            && minuteOfDay(today) < resCutoff()
+            && minuteOfDay(today) < resCutoff(dtu.datetimeToLocalDateStr(date))
             )
         );
 }
@@ -34,7 +34,7 @@ export function beforeResCutoff(dateStr) {
 
     if (dateStr > tomStr) {
         return true;
-    } else if (dateStr == tomStr && minuteOfDay(now) <= resCutoff()) {
+    } else if (dateStr == tomStr && minuteOfDay(now) <= resCutoff(dateStr)) {
         return true;
     } else {
         return false;
@@ -48,7 +48,7 @@ export function beforeCancelCutoff(dateStr, startTime) {
         return true;
     } else if (
         dateStr === today
-        && (dtu.timeStrToMin(startTime) - minuteOfDay(now)) > cancelCutoff()
+        && (dtu.timeStrToMin(startTime) - minuteOfDay(now)) > cancelCutoff(dateStr)
     ) {
         return true;
     } else {
@@ -56,34 +56,26 @@ export function beforeCancelCutoff(dateStr, startTime) {
     }
 }
 
-let nRes = () => Math.floor((maxEnd() - minStart()) / inc())
+let nRes = (dateStr) => Math.floor((maxEnd(dateStr) - minStart(dateStr)) / inc(dateStr))
 
-export const startTimes = () => Array(nRes())
+export const startTimes = (dateStr) => Array(nRes(dateStr))
     .fill()
-    .map((v,i) => dtu.minToTimeStr(minStart() + i*inc()));
+    .map((v,i) => dtu.minToTimeStr(minStart(dateStr) + i*inc(dateStr)));
 
-export const endTimes = () => Array(nRes())
+export const endTimes = (dateStr) => Array(nRes(dateStr))
     .fill()
-    .map((v,i) => dtu.minToTimeStr(minStart() + (i+1)*inc()));
+    .map((v,i) => dtu.minToTimeStr(minStart(dateStr) + (i+1)*inc(dateStr)));
 
 export function minValidDate() {
     let today = new Date();
+    let todayStr = dtu.datetimeToLocalDateStr(today);
     let d = new Date();
-    if (minuteOfDay(today) < resCutoff()) {
+    if (minuteOfDay(today) < resCutoff(todayStr)) {
         d.setDate(today.getDate()+1);
     } else {
         d.setDate(today.getDate()+2);
     }
     return d;
-}
-
-export function minValidDateObj() {
-    let d = minValidDate();
-    return {
-        year: d.getFullYear(),
-        month: dtu.idx2month[d.getMonth()],
-        day: d.getDate()
-    };
 }
 
 export function minValidDateStr() {

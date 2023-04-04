@@ -1,10 +1,6 @@
 import { startTimes, endTimes, inc } from './ReservationTimes.js';
-import {
-    dateStrParseDate,
-    datetimeToLocalDateStr,
-    timeStrToMin
-} from './datetimeUtils.js';
-import { reservations, users, buoys } from './stores.js'
+import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils.js';
+import { reservations, users } from './stores.js'
 import { get } from 'svelte/store';
 import { assignRsvsToBuoys } from './autoAssign.js';
 
@@ -61,7 +57,6 @@ export function augmentRsv(rsv, fbId=null, name=null) {
         ...rsv,
         startTime,
         endTime,
-        dateObj: dateStrParseDate(rsv.date)
     };
 
     if (fbId) { newRsv.user['facebookId'] = fbId }
@@ -208,10 +203,11 @@ export const displayTag = (rsv) => {
     return tag;
 };
 
-function assignUpToSoftCapacity(rsvs, softCapacity) {
+function assignUpToSoftCapacity(rsvs, dateStr, softCapacity) {
     let schedule = [];
+    let incT = inc(dateStr);
     while (rsvs.length > 0 && schedule.length < softCapacity) {
-        let nextTime = timeStrToMin(startTimes()[0]);
+        let nextTime = timeStrToMin(startTimes(dateStr)[0]);
         let thisR = [];
         for (let j=rsvs.length-1; j >= 0; j--) {
             let rsv = rsvs[j];
@@ -221,13 +217,13 @@ function assignUpToSoftCapacity(rsvs, softCapacity) {
                     thisR.push({
                         start: nextTime,
                         end: start,
-                        nSlots: (start - nextTime) / inc(),
+                        nSlots: (start - nextTime) / incT,
                         cls: 'filler',
                         tag: '',
                     });
                 }
                 nextTime = timeStrToMin(rsv.endTime);
-                let nSlots = (nextTime - start) / inc();
+                let nSlots = (nextTime - start) / incT;
                 thisR.push({
                     start,
                     end: nextTime,
@@ -240,12 +236,12 @@ function assignUpToSoftCapacity(rsvs, softCapacity) {
             }
         }
 
-        let end = timeStrToMin(endTimes()[endTimes().length-1]);
+        let end = timeStrToMin(endTimes(dateStr)[endTimes(dateStr).length-1]);
         if (nextTime < end) {
             thisR.push({
                 start: nextTime,
                 end: end,
-                nSlots: (end-nextTime) / inc(),
+                nSlots: (end-nextTime) / incT,
                 cls: 'filler',
                 tag: ''
             });
@@ -255,7 +251,7 @@ function assignUpToSoftCapacity(rsvs, softCapacity) {
     return schedule;
 }
 
-function assignOverflowCapacity(rsvs, schedule, softCapacity) {
+function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity) {
 
     const combineTags = (oldTag, rsv) => {
         let newTag = displayTag(rsv);
@@ -266,6 +262,7 @@ function assignOverflowCapacity(rsvs, schedule, softCapacity) {
         }
     };
 
+    let incT = inc(dateStr);
     let nextR = 0;
 
     while (rsvs.length > 0) {
@@ -287,7 +284,7 @@ function assignOverflowCapacity(rsvs, schedule, softCapacity) {
                     // break off beginning of existing block into its own block
                     let begBlock = {...block};
                     begBlock.end = start;
-                    begBlock.nSlots = (start - block.start) / inc();
+                    begBlock.nSlots = (start - block.start) / incT;
                     begBlock.cls = blockCls;
                     begBlock.tag = blockTag;
                     resource.splice(j, 0, begBlock);
@@ -295,7 +292,7 @@ function assignOverflowCapacity(rsvs, schedule, softCapacity) {
                 }
 
                 block.start = start;
-                block.nSlots = (block.end - start) / inc();
+                block.nSlots = (block.end - start) / incT;
                 block.cls = 'rsv';
                 block.tag = combineTags(blockTag, rsv);
 
@@ -304,14 +301,14 @@ function assignOverflowCapacity(rsvs, schedule, softCapacity) {
                         // break off end of existing block into its own block
                         let endBlock = {...block};
                         endBlock.start = end;
-                        endBlock.nSlots = (block.end - end) / inc();
+                        endBlock.nSlots = (block.end - end) / incT;
                         endBlock.cls = blockCls;
                         endBlock.tag = blockTag;
                         resource.splice(j+1, 0, endBlock);
                         j++;
 
                         block.end = end;
-                        block.nSlots = (end - block.start) / inc();
+                        block.nSlots = (end - block.start) / incT;
                     }
 
                     // rsv has now been fully added, remove from list
@@ -332,9 +329,9 @@ export function getDaySchedule(rsvs, datetime, category, softCapacity) {
     rsvs = rsvs.filter((v) => v.category === category && v.date === today);
     rsvs.sort((a,b) => timeStrToMin(a.startTime) < timeStrToMin(b.startTime) ? 1 : -1);
 
-    let schedule = assignUpToSoftCapacity(rsvs, softCapacity);
+    let schedule = assignUpToSoftCapacity(rsvs, today, softCapacity);
 
-    assignOverflowCapacity(rsvs, schedule, softCapacity);
+    assignOverflowCapacity(rsvs, schedule, today, softCapacity);
 
     return schedule;
 }
@@ -352,20 +349,34 @@ export function removeRsv(rsv) {
 
 export function parseSettingsTbl(settingsTbl) {
     let settings = {}
+    let fields = new Set(settingsTbl.map((e) => e.name));
 
-    for (let s of settingsTbl) {
-        let name = s.name;
-        let v = s.value;
+    let fixTypes = (e) => {
+        let name = e.name;
+        let v = e.value;
         if (['refreshIntervalSeconds'].includes(name)) {
             v = parseInt(v);
-        } else if (['poolLanes', 'classrooms'].includes(name)) {
-            v = v.split(';');
         }
         if (name === 'refreshIntervalSeconds') {
             name = 'refreshInterval'
             v = v*1000;
         }
-        settings[name] = v;
-    }
+        return {
+            ...e,
+            name,
+            value: v
+        };
+    };
+
+    fields.forEach(field => {
+        let entries = settingsTbl
+            .filter(e => e.name === field)
+            .map(e => fixTypes(e));
+        let def = entries.splice(entries.findIndex(e => e.startDate === 'default'), 1)[0];
+        settings[def.name] = {
+            default: def.value,
+            entries
+        };
+    });
     return settings;
 }

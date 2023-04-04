@@ -28,15 +28,6 @@ export const idx2month = [
     'December'
 ];
 
-export function dateStrParseDate(dateStr) {
-    let rexp = /([0-9]+)-([0-9]+)-([0-9]+)/;
-    let m = rexp.exec(dateStr);
-    return {
-        year: parseInt(m[1]),
-        month: parseInt(m[2])-1, /* use JS Date() indexing for month [0-11] */
-        day: parseInt(m[3]),
-    };
-}
 
 export function datetimeToLocalDateStr(datetime) {
     let rexp = /([0-9]+)\/([0-9]+)\/([0-9]+).*/
