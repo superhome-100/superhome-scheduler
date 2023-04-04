@@ -69,6 +69,18 @@ const tables = [
     columns: [
       { name: "name", type: "string" },
       { name: "value", type: "string" },
+      {
+        name: "startDate",
+        type: "string",
+        notNull: true,
+        defaultValue: "default",
+      },
+      {
+        name: "endDate",
+        type: "string",
+        notNull: true,
+        defaultValue: "default",
+      },
     ],
   },
   {

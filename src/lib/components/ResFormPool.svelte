@@ -1,7 +1,7 @@
 <script>
     import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
     import { startTimes, endTimes } from '$lib/ReservationTimes.js';
-    import { timeStrToMin } from '$lib/datetimeUtils.js';
+    import { timeStrToMin, datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { canSubmit } from '$lib/stores.js';
 
     export let rsv = null;
@@ -12,8 +12,11 @@
 
     category = rsv == null ? category : rsv.category;
     date = rsv == null ? date : rsv.date;
-    let chosenStart = rsv == null ? startTimes()[0] : rsv.startTime;
-    let chosenEnd = rsv == null ? endTimes()[0] : rsv.endTime;
+    let dateStr = datetimeToLocalDateStr(date);
+    let startTs = startTimes(dateStr);
+    let endTs = endTimes(dateStr);
+    let chosenStart = rsv == null ? startTs[0] : rsv.startTime;
+    let chosenEnd = rsv == null ? endTs[0] : rsv.endTime;
     let autoOrCourse = rsv == null ? (resType == null ? 'autonomous' : resType) : rsv.resType;
     let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
     $canSubmit = true;
@@ -37,12 +40,12 @@
             disabled={disabled || noModify} 
             bind:value={chosenStart} name="startTime"
         >
-            {#each startTimes() as t}
+            {#each startTs as t}
                 <option value={t}>{t}</option>
             {/each}
         </select></div>
         <div><select id="formEnd" disabled={disabled || noModify} name="endTime" value={chosenEnd}>
-            {#each endTimes() as t}
+            {#each endTs as t}
                 {#if timeStrToMin(chosenStart) < timeStrToMin(t)}
                     <option value={t}>{t}</option>
                 {/if}
