@@ -12,9 +12,8 @@
 
     category = rsv == null ? category : rsv.category;
     date = rsv == null ? date : rsv.date;
-    let dateStr = datetimeToLocalDateStr(date);
-    let startTs = startTimes(dateStr);
-    let endTs = endTimes(dateStr);
+    let startTs = startTimes(date);
+    let endTs = endTimes(date);
     let chosenStart = rsv == null ? startTs[0] : rsv.startTime;
     let chosenEnd = rsv == null ? endTs[0] : rsv.endTime;
     let autoOrCourse = rsv == null ? (resType == null ? 'autonomous' : resType) : rsv.resType;
