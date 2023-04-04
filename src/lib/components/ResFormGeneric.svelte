@@ -51,6 +51,7 @@
     }
     
     function matchUser() {
+        hiLiteIndex = 0;
         let currentBuddies = buddyFields.map((bf) => bf.name);
         currentBF.matches = [];
         if (currentBF.name.length > 0) {
@@ -71,7 +72,7 @@
 
     $: if (!currentBF.name) {
         currentBF.matches = [];
-        hiLiteIndex = null;
+        hiLiteIndex = 0;
     }
     
     const setInputVal = (match) => {
@@ -79,11 +80,11 @@
         currentBF.userId = match.id;
         currentBF.matches = [];
         buddyFields = [...buddyFields];
-        hiLiteIndex = null;
+        hiLiteIndex = 0;
         document.querySelector('#buddy' + currentBF.id + '-input').focus();
     }
     
-    let hiLiteIndex = null;
+    let hiLiteIndex = 0;
   
     const navigateList = (e) => {
         if (currentBF && currentBF.matches.length > 0) {

@@ -8,7 +8,6 @@ li.autocomplete-items {
   list-style: none;
   border-bottom: 1px solid #d4d4d4;
   z-index: 99;
-  /*position the autocomplete items to be the same width as the container:*/
   cursor: pointer;
   background-color: #fff;
 }
