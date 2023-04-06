@@ -55,44 +55,42 @@
 
 </script>
 
-<Modal>
-    <ReservationDialog category={gCategory} dateFn={minValidDate}/>
-</Modal>
+<Modal><ReservationDialog category={gCategory} dateFn={minValidDate}/></Modal>
 
-<div class="dateNav">
-    <i on:click={prevMonth} on:keypress={prevMonth} class="arrow left"></i>
-    <h1>{idx2month[gMonth]}</h1>
-    <i on:click={nextMonth} on:keypress={nextMonth} class="arrow right"></i>
-<h2>{gYear}</h2>
+<div class="multi-day menu">
+        <i on:click={prevMonth} on:keypress={prevMonth} class="arrow left"></i>
+        <i on:click={nextMonth} on:keypress={nextMonth} class="arrow right"></i>
+        <div style="display: inline">{idx2month[gMonth]}</div>
 </div>
 
-<table class="{gCategory} calendar">
-    <thead>
-        <tr>
-            <th>S</th>
-            <th>M</th>
-            <th>T</th>
-            <th>W</th>
-            <th>T</th>
-            <th>F</th>
-            <th>S</th>
-        </tr>
-    </thead>
-    <tbody>
-        {#each gMonthArr() as week}
+<div class="multi-day">
+    <table class="{gCategory} calendar">
+        <thead>
             <tr>
-                {#each week as { date, rsvs }}
-                    <td>
-                        <DayOfMonth 
-                            id={isToday(date)}
-                            date={date} 
-                            category={gCategory}
-                            rsvs={rsvs}
-                        />
-                    </td>
-                {/each}
-            <tr/>
-        {/each}
-    </tbody>
-</table>
-
+                <th>S</th>
+                <th>M</th>
+                <th>T</th>
+                <th>W</th>
+                <th>T</th>
+                <th>F</th>
+                <th>S</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#each gMonthArr() as week}
+                <tr>
+                    {#each week as { date, rsvs }}
+                        <td>
+                            <DayOfMonth 
+                                id={isToday(date)}
+                                date={date} 
+                                category={gCategory}
+                                rsvs={rsvs}
+                            />
+                        </td>
+                    {/each}
+                <tr/>
+            {/each}
+        </tbody>
+    </table>
+</div>

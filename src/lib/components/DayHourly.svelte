@@ -12,16 +12,16 @@
 
 </script>
 
-<div class="header row" style="width: 100%">
+<div class="header row">
     <div class="header column"/>
     {#each [...Array(nResource).keys()] as rNum}
-        <div class="header column">{resourceName} {rNum+1}</div>
+        <div class="header column"><b>{resourceName} {rNum+1}</b></div>
     {/each}
 </div>
-<div class="row" style="width: 100%">
+<div class="row">
     <div class="column">
         {#each startTimes(datetimeToLocalDateStr($viewedDate)) as s}
-            <div class="time" style="height: 50px">{s}</div>
+            <div class="time" style="height: 50px"><b>{s}</b></div>
         {/each}
     </div>
     {#each schedule as resource}
