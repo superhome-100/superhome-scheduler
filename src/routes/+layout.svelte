@@ -171,6 +171,7 @@
                 'id': record.id,
             };
             loginState = 'in';
+            refreshAppState();
             loadProfilePic();
             return Promise.resolve();
         
