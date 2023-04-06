@@ -19,17 +19,11 @@
 
 body {
   margin: 0;
-  display: flex;
   place-items: center;
-  min-width: 320px;
   min-height: 100vh;
 }
 
 #app {
-    width: 100%;
-    height: 100vh;
-    margin: 0 auto;
-    position: relative;
 }
 
 h1 {
@@ -64,9 +58,30 @@ h2.dialog {
     text-align: left;
 }
 
-.day .column {
+.column {
     float: left;
     margin: 5px;
+}
+
+.row:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.menu {
+    text-align: center;
+}
+
+.pool.single-day.row {
+    width: 100%;
+}
+
+.classroom.single-day.row {
+    width: 80%;
+}
+
+.single-day .column {
     text-align: center;
 }
 
@@ -78,22 +93,8 @@ h2.dialog {
     width: calc(25% - 10px);
 }
 
-.day .row {
-    content: "";
-    display: table;
-    clear: both;
-}
-
-form .column {
-    float: left;
-    margin: 5px;
+.submitForm .column {
     width: calc(33% - 10px);
-}
-
-form .row:after {
-    content: "";
-    display: table;
-    clear: both;
 }
 
 button.buddy {
@@ -128,13 +129,13 @@ input[type=submit] {
 	margin: 0;
 	padding: 0;
 	top: 0;
+    width: 100%;
 	border: 1px solid #ddd;
 	background-color: #ddd;
 }
 
-#category_buttons {
-    width: 100%;
-    text-align: center
+.calendar-heading {
+    margin: 5px 0 5px 20px;
 }
 
 #myreservations_tabs {
@@ -154,32 +155,35 @@ input[type=submit] {
     border-radius: 1.5em;
     font-size: 10px;
     margin: 3px;
-    width: calc(100% - 20px);
+    width: calc(100% - 6px);
     padding-inline: 1em;
+    overflow: scroll;
 }
 
-.day .rsv {
+.single-day .rsv {
     font-size: 13px;
-    overflow: scroll;
 }
 
 .pool .rsv {
     color: white;
+    background: var(--blue);
 }
 
 .openwater .rsv {
     color: black;
+    background: var(--green);
 }
 
 .classroom .rsv {
     color: black;
+    background: var(--yellow);
 }
 
 table.calendar {
     table-layout: fixed;
     border-collapse: collapse;
-    margin: 5px auto;
-    width: calc(100% - 10px);
+    margin: 0 0 5px 0;
+    width: 100%;
 }
 
 table.pool td {
@@ -197,10 +201,9 @@ table.classroom td {
 table.calendar td {
     vertical-align: top;
     text-align: center;
-    width: 14%;
-    overflow: hidden;
     white-space: nowrap;
-    height: 100px;
+    overflow-x: auto;
+    height: 120px;
 }
 
 .dayOfMonth {
@@ -214,30 +217,18 @@ table.calendar td {
     text-align: center;
 }
 
-div.day {
-    overflow-x: auto;
-    margin: 10px;
+button.month-view {
+    padding: 5px;
+    float: left;
 }
 
-.day td, .day th {
+.single-day td, .single-day th {
     width: 200px;
 }
 
-.day td p {
+.single-day td p {
     margin: 5px;
     white-space: nowrap;
-}
-
-.pool .rsv{
-    background: var(--blue);
-}
-
-.openwater .rsv {
-    background: var(--green);
-}
-
-.classroom .rsv {
-    background: var(--yellow);
 }
 
 .tabs {
@@ -285,13 +276,10 @@ button.fb_loggedout {
 }
 
 #currentUser {
-    float: right;
-    margin: 10px;
-    font-size: 10px;
+    font-size: 12px;
 }
 
 #profilePicture {
-   float: right;
    border-radius: 50%;
    margin: 10px;
    width: 40px;
@@ -333,19 +321,19 @@ button.fb_loggedout {
 
 .arrow {
     border: solid black;
-    border-width: 0 0.5em 0.5em 0;
+    border-width: 0 0.2em 0.2em 0;
     display: inline-block;
-    padding: 0.5em;
+    padding: 0.3em;
 }
 
 .right {
-    transform: rotate(-45deg);
-    -webkit-transform: rotate(-45deg);
+    transform: translate(0px, 6px) rotate(-45deg);
+    -webkit-transform: translate(0px, 0px) rotate(-45deg);
 }
 
 .left {
-    transform: rotate(135deg);
-    -webkit-transform: rotate(135deg);
+    transform: translate(0px, 6px) rotate(135deg);
+    -webkit-transform: translate(0px, 0px) rotate(135deg);
 }
 
 .up {

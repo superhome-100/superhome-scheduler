@@ -6,7 +6,7 @@
     import { validReservationDate, minValidDate } from '$lib/ReservationTimes.js';
     import { month2idx, idx2month } from '$lib/datetimeUtils.js';
     import Modal from '$lib/components/Modal.svelte';
-    import { modal, view, viewedDate } from '$lib/stores.js';
+    import { view, viewedDate } from '$lib/stores.js';
 
     export let data;
 
@@ -54,21 +54,21 @@
 
 </script>
 
-<a href="/multi-day/{category}">
-    <button on:click={multiDayView}>&lt;&lt; Month</button>
-</a>
+<Modal><ReservationDialog category={category} dateFn={resDate}/></Modal>
 
-<Modal show={$modal}>
-    <ReservationDialog category={category} dateFn={resDate}/>
-</Modal>
-
-<br/>
-<div class="dateNav">
-    <i on:click={prevDay} on:keypress={prevDay} class="arrow left"></i>
-    <h2 class="day">{idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}</h2>
-    <i on:click={nextDay} on:keypress={nextDay} class="arrow right"></i>
+<div class="single-day menu row">
+    <a href="/multi-day/{category}">
+            <button class="month-view" on:click={multiDayView}>Month View</button>
+    </a>
+    <div class="dateNav">
+        <i on:click={prevDay} on:keypress={prevDay} class="arrow left"></i>
+        <i on:click={nextDay} on:keypress={nextDay} class="arrow right"></i>
+        <h2 style="display: inline">{idx2month[$viewedDate.getMonth()]}</h2>
+        <h2 style="display: inline">{$viewedDate.getDate()}</h2>
+    </div>
 </div>
-<div class='{category} day'>
+
+<div class='{category} single-day row'>
     {#if category === 'pool'}
         <DayHourly category={category} nResource={nResource()} resourceName={resourceName()}/>
     {:else if category === 'classroom'}
@@ -77,9 +77,3 @@
         <DayOpenWater/>
     {/if}
 </div>
-
-<style>
-    h2.day {
-        display: inline;
-    }
-</style>
