@@ -138,47 +138,6 @@ input[type=submit] {
     margin: 5px 0 5px 20px;
 }
 
-#myreservations_tabs {
-    height: 500px;
-}
-
-#myReservationsTable {
-    margin: 0 auto;
-}
-
-#myReservationsTable td {
-    width: 100px;
-}
-
-.rsv {
-    text-align: center;
-    border-radius: 1.5em;
-    font-size: 10px;
-    margin: 3px;
-    width: calc(100% - 6px);
-    padding-inline: 1em;
-    overflow: scroll;
-}
-
-.single-day .rsv {
-    font-size: 13px;
-}
-
-.pool .rsv {
-    color: white;
-    background: var(--blue);
-}
-
-.openwater .rsv {
-    color: black;
-    background: var(--green);
-}
-
-.classroom .rsv {
-    color: black;
-    background: var(--yellow);
-}
-
 table.calendar {
     table-layout: fixed;
     border-collapse: collapse;
@@ -204,17 +163,6 @@ table.calendar td {
     white-space: nowrap;
     overflow-x: auto;
     height: 120px;
-}
-
-.dayOfMonth {
-    overflow: hidden;
-    height: 100%;
-}
-
-.dayOfMonth .date {
-    margin: auto;
-    width: 25px;
-    text-align: center;
 }
 
 button.month-view {
@@ -298,25 +246,6 @@ button.fb_loggedout {
   .tab_button.selected {
       color: black;
   }
-}
-
-#today {
-    border-radius: 2em;
-}
-
-.pool #today {
-    color: white;
-    background: var(--blue);
-}
-
-.openwater #today {
-    background: var(--green);
-    color: black;
-}
-
-.classroom #today {
-    background: var(--yellow);
-    color: black;
 }
 
 .arrow {

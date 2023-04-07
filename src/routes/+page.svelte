@@ -10,8 +10,8 @@
 
 {#if $user != null}
     <Modal><ReservationDialog dateFn={minValidDate}/></Modal>
-    <div class="row myreservations">
-        <Tabs divId="myreservations_tabs">
+    <div>
+        <Tabs>
             
             <TabList>
                 <Tab>Upcoming</Tab>

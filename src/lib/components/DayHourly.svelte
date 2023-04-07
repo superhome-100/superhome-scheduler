@@ -10,6 +10,9 @@
 
     $: schedule = getDaySchedule($reservations, $viewedDate, category, nResource);
 
+    const rowHeight = 3;
+    const blkMgn = 0.125; // dependent on tailwind margin styling
+    
 </script>
 
 <div class="header row">
@@ -21,13 +24,16 @@
 <div class="row">
     <div class="column">
         {#each startTimes(datetimeToLocalDateStr($viewedDate)) as s}
-            <div class="time" style="height: 50px"><b>{s}</b></div>
+            <div class='font-semibold' style='height: {rowHeight}rem'>{s}</div>
         {/each}
     </div>
     {#each schedule as resource}
         <div class="column">
             {#each resource as { start, nSlots, cls, tag }}
-                <div class="{cls}" style="height: {50*nSlots-3}px">{tag}</div>
+                <div 
+                    class='{cls} {category} text-sm' 
+                    style="height: {rowHeight*nSlots - blkMgn}rem"
+                >{tag}</div>
             {/each}
         </div>
     {/each}
