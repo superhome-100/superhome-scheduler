@@ -1,10 +1,3 @@
-<div class="tab-list">
+<div class="p-2 border-b border-solid border-gray-400">
 	<slot></slot>
 </div>
-
-<style>
-	.tab-list {
-        padding: 10px;
-		border-bottom: 1px solid gray;
-	}
-</style>

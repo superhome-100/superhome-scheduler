@@ -2,3 +2,42 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+@layer components {
+    .today {
+        @apply rounded-3xl;
+    }
+    
+    .rsv {
+        @apply overflow-hidden text-center text-ellipsis whitespace-nowrap rounded-2xl m-1 w-auto ps-2 pe-2;
+
+    }
+
+    .rsv, .today {
+        &.pool {
+            @apply bg-gradient-to-br from-pool-bg-from to-pool-bg-to text-pool-fg;
+        }
+        &.openwater {
+            @apply bg-gradient-to-br from-openwater-bg-from to-openwater-bg-to text-openwater-fg;
+        }
+        &.classroom {
+            @apply bg-classroom-bg text-classroom-fg;
+        }
+    }
+
+    .calendar {
+        & td {
+            @apply align-top h-32 border border-solid;
+        }
+        & td.pool {
+            @apply border-pool-bg-to;
+        }
+        & td.openwater {
+            @apply border-openwater-bg-to;
+        }
+        & td.classroom {
+            @apply border-classroom-bg;
+        }
+    }
+}

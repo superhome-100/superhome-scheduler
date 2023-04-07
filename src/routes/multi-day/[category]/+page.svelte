@@ -63,8 +63,8 @@
         <div style="display: inline">{idx2month[gMonth]}</div>
 </div>
 
-<div class="multi-day">
-    <table class="{gCategory} calendar">
+<div>
+    <table class='calendar table-fixed border-collapse ml-1 w-full'>
         <thead>
             <tr>
                 <th>S</th>
@@ -80,7 +80,7 @@
             {#each gMonthArr() as week}
                 <tr>
                     {#each week as { date, rsvs }}
-                        <td>
+                        <td class={gCategory}>
                             <DayOfMonth 
                                 id={isToday(date)}
                                 date={date} 

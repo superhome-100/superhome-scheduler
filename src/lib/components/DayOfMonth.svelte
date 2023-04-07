@@ -1,14 +1,14 @@
 <script>
     import { goto } from '$app/navigation';
     import { view, viewedDate } from '$lib/stores.js';
-    
+
     export let date;
     export let rsvs;
     export let category;
     let id_internal;
     export {id_internal as id};
 
-    const nDisplay = 4;
+    const nDisplay = 3;
 
     function handleClick() {
         $viewedDate = date;
@@ -34,12 +34,14 @@
 
 </script>
 
-<div class="dayOfMonth">
-    <a href="/single-day/{category}" style="text-decoration: none">
-        <div style="height:100%" on:click={handleClick} on:keypress={handleClick}>
-            <p class="date" id={id_internal}>{date.getDate()}</p>
+<div class='overflow-hidden h-full'>
+    <a class='no-underline' href="/single-day/{category}">
+        <div class='h-full' on:click={handleClick} on:keypress={handleClick}>
+            <p class='m-auto w-6 text-center {id_internal} {category}'>
+                {date.getDate()}
+            </p>
             {#each getDisplayTags(rsvs) as tag}
-                <p class="rsv">{tag}</p>
+                <p class="rsv {category} text-xs">{tag}</p>
             {/each}
         </div>
     </a>

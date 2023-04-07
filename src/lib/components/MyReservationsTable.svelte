@@ -42,7 +42,7 @@
 </script>
 
 {#if $user}
-    <table id="myReservationsTable">
+    <table class="m-auto">
         <thead>
             <tr>
                 <th>Date</th>
@@ -59,7 +59,7 @@
         <tbody>
             {#each $reservations as rsv}
                 {#if rsv.user.id === $user.id && getResType(rsv) === resType} 
-                    <tr>
+                    <tr class="[&>td]:w-24">
                         <td>{chopYear(rsv.date)}</td>
                         <td>{rsv.category}</td>
                         <td>{rsv.status}</td>

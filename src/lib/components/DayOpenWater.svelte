@@ -3,7 +3,6 @@
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { displayTag } from '$lib/utils.js';
     import { assignRsvsToBuoys } from '$lib/autoAssign.js';
-
     
     function getOpenWaterSchedule(rsvs, datetime) {
         let schedule = {};
@@ -24,7 +23,7 @@
 
 </script>
 
-<table class="day">
+<table class="m-auto w-full">
     <tr>
         <th>buoy</th>
         {#each ['AM', 'PM'] as time}
@@ -37,7 +36,8 @@
                 <th>{buoy.name}</th>
                 {#each ['AM', 'PM'] as time}
                     {#if schedule[time][buoy.name] != undefined}
-                        <td class="rsv">
+                        <td>
+                            <div class='rsv openwater text-sm'>
                             {#each schedule[time][buoy.name] as rsv}
                                 <p>{displayTag(rsv)}</p>
                             {/each}

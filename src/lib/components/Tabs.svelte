@@ -6,8 +6,6 @@
 	import { setContext, onDestroy } from 'svelte';
 	import { writable } from 'svelte/store';
 
-    export let divId;
-    
     const tabs = [];
 	const panels = [];
 	const selectedTab = writable(null);
@@ -53,6 +51,6 @@
     });
 </script>
 
-<div class="tabs" id={divId}>
+<div class="text-center">
 	<slot></slot>
 </div>
