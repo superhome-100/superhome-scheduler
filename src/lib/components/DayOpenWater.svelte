@@ -23,31 +23,35 @@
 
 </script>
 
-<table class="m-auto w-full">
-    <tr>
-        <th>buoy</th>
-        {#each ['AM', 'PM'] as time}
-            <th>{time}</th>
+<table class='table-fixed m-auto'>
+    <thead>
+        <tr>
+            <th>buoy</th>
+            {#each ['AM', 'PM'] as time}
+                <th>{time}</th>
+            {/each}
+        </tr>
+    </thead>
+    <tbody>
+        {#each $buoys as buoy}
+            {#if schedule.AM[buoy.name] != undefined || schedule.PM[buoy.name] != undefined}
+                <tr>
+                    <th>{buoy.name}</th>
+                    {#each ['AM', 'PM'] as time}
+                        {#if schedule[time][buoy.name] != undefined}
+                            <td class="h-16">
+                                <div class='rsv openwater text-sm h-full'>
+                                {#each schedule[time][buoy.name] as rsv}
+                                    <p>{displayTag(rsv)}</p>
+                                {/each}
+                            </td>
+                        {:else}
+                            <td/>
+                        {/if}
+                    {/each}
+                </tr>
+            {/if}
         {/each}
-    </tr>
-    {#each $buoys as buoy}
-        {#if schedule.AM[buoy.name] != undefined || schedule.PM[buoy.name] != undefined}
-            <tr>
-                <th>{buoy.name}</th>
-                {#each ['AM', 'PM'] as time}
-                    {#if schedule[time][buoy.name] != undefined}
-                        <td>
-                            <div class='rsv openwater text-sm'>
-                            {#each schedule[time][buoy.name] as rsv}
-                                <p>{displayTag(rsv)}</p>
-                            {/each}
-                        </td>
-                    {:else}
-                        <td/>
-                    {/if}
-                {/each}
-            </tr>
-        {/if}
-    {/each}
+    </tbody>
 </table>
 
