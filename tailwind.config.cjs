@@ -14,7 +14,8 @@ const config = {
                 'openwater-bg-from': '#081F69', //'#1D4ED8', //'#3CD4BE',
                 'openwater-bg-to': '#1254A7', // '#06B6D4',
                 'openwater-fg': '#FFFFFF', //'#1D293A',
-                'classroom-bg': '#F43F5E', //'#FDE047'
+                'classroom-bg-to': '#FB7185', //'#FDE047'
+                'classroom-bg-from': '#9F123B', 
                 'classroom-fg': '#000000'
             }
         }
