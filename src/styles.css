@@ -81,12 +81,20 @@ h2.dialog {
     width: 80%;
 }
 
+.openwater.single-day.row {
+    width: 80%;
+}
+
 .single-day .column {
     text-align: center;
 }
 
 .pool .column {
     width: calc(20% - 10px);
+}
+
+.openwater .column {
+    width: calc(33% - 10px);
 }
 
 .classroom .column {
