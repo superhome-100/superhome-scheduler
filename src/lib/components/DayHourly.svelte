@@ -11,7 +11,7 @@
     $: schedule = getDaySchedule($reservations, $viewedDate, category, nResource);
 
     const rowHeight = 3;
-    const blkMgn = 0.125; // dependent on tailwind margin styling
+    const blkMgn = 0.25; // dependent on tailwind margin styling
 
     const slotsPerHr = () => {
         let date = datetimeToLocalDateStr($viewedDate);
@@ -43,19 +43,20 @@
 </script>
 
 <div class="header row">
-    <div class="header column"/>
+    <div class="header column font-semibold" style="margin: 0">times</div>
     {#each [...Array(nResource).keys()] as rNum}
-        <div class="header column"><b>{resourceName} {rNum+1}</b></div>
+        <div class="header column font-semibold">{resourceName} {rNum+1}</div>
     {/each}
 </div>
 <div class="row">
-    <div class="column">
+    <div class="column" style="margin: 0">
         {#each displayTimes() as t}
             <div class='font-semibold' style='height: {rowHeight}rem'>{t}</div>
         {/each}
     </div>
     {#each schedule as resource}
-        <div class="column">
+        <div class="column" style="margin: 0">
+            <div style="height: 0.5rem"/>
             {#each resource as { start, nSlots, cls, tag }}
                 <div 
                     class='{cls} {category} text-sm' 

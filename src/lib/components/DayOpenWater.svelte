@@ -20,38 +20,62 @@
     }
 
     $: schedule = getOpenWaterSchedule($reservations, $viewedDate);
+    const heightUnit = 3; //rem
+    const blkMgn = 0.25; // dependent on tailwind margin styling
+    $: buoyHeight = $buoys.reduce((o, b) => {
+        let nRes = Math.max(
+            schedule.AM[b.name] ? schedule.AM[b.name].length : 0, 
+            schedule.PM[b.name] ? schedule.PM[b.name].length: 0
+        );
+        o[b.name] = nRes*heightUnit - blkMgn;
+        return o;
+    }, {});
 
 </script>
 
-<table class='table-fixed m-auto'>
-    <thead>
-        <tr>
-            <th>buoy</th>
-            {#each ['AM', 'PM'] as time}
-                <th>{time}</th>
-            {/each}
-        </tr>
-    </thead>
-    <tbody>
+<div class='row'>
+    <div class='column'>
+        <div class='font-semibold'>buoy</div>
         {#each $buoys as buoy}
             {#if schedule.AM[buoy.name] != undefined || schedule.PM[buoy.name] != undefined}
-                <tr>
-                    <th>{buoy.name}</th>
-                    {#each ['AM', 'PM'] as time}
-                        {#if schedule[time][buoy.name] != undefined}
-                            <td class="h-16">
-                                <div class='rsv openwater text-sm h-full'>
-                                {#each schedule[time][buoy.name] as rsv}
-                                    <p>{displayTag(rsv)}</p>
-                                {/each}
-                            </td>
-                        {:else}
-                            <td/>
-                        {/if}
-                    {/each}
-                </tr>
+                <div class='flex items-center justify-center font-semibold' style='height:{buoyHeight[buoy.name]}rem'>{buoy.name}</div>
             {/if}
         {/each}
-    </tbody>
-</table>
+    </div>
+    <div class='column'>
+        <div class='font-semibold'>AM</div>
+        {#each $buoys as buoy}
+            {#if schedule.AM[buoy.name] != undefined || schedule.PM[buoy.name] != undefined}
+                {#if schedule.AM[buoy.name] != undefined}
+                    <div 
+                        class='rsv openwater text-sm h-full'
+                        style='height:{buoyHeight[buoy.name]}rem'
+                    >
+                        {#each schedule.AM[buoy.name] as rsv}
+                            <p>{displayTag(rsv)}</p>
+                        {/each}
+                    </div>
+                {:else}
+                    <div/>
+                {/if}
+            {/if}
+        {/each}
+    </div>
+    <div class='column'>
+        <div class='font-semibold'>PM</div>
+        {#each $buoys as buoy}
+            {#if schedule.AM[buoy.name] != undefined || schedule.PM[buoy.name] != undefined}
+                {#if schedule.PM[buoy.name] != undefined}
+                    <div class='rsv openwater text-sm h-full' style='height:{buoyHeight[buoy.name]}rem'>
+                        {#each schedule.PM[buoy.name] as rsv}
+                            <p>{displayTag(rsv)}</p>
+                        {/each}
+                    </div>
+                {:else}
+                    <div/>
+                {/if}
+            {/if}
+        {/each}
+    </div>
+</div> 
 
