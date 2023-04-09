@@ -54,15 +54,20 @@
         ? 'today' : null;
 
 </script>
-
-<Modal><ReservationDialog category={gCategory} dateFn={minValidDate}/></Modal>
-
-<div class="multi-day menu">
+<br/>
+<div class="multi-day menu row w-full">
+    <div class="dateNav m-auto column w-[45%]">
         <i on:click={prevMonth} on:keypress={prevMonth} class="arrow left"></i>
         <i on:click={nextMonth} on:keypress={nextMonth} class="arrow right"></i>
-        <div style="display: inline">{idx2month[gMonth]}</div>
+    </div>
+    <div class='dateNav column w-[10%]'>
+        <p class='inline text-2xl ml-2'>{idx2month[gMonth]}</p>
+    </div>
+    <div class='column w-[45%]'>
+        <Modal><ReservationDialog category={gCategory} dateFn={minValidDate}/></Modal>
+    </div>
 </div>
-
+<br/>
 <div>
     <table class='calendar table-fixed border-collapse ml-1 w-full'>
         <thead>

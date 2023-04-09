@@ -1,7 +1,4 @@
 :root {
-  --blue: #0000FF;
-  --green: #00FF00;
-  --yellow: #FFFF00;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -23,24 +20,6 @@ body {
   min-height: 100vh;
 }
 
-#app {
-}
-
-h1 {
-    font-size: 3.2em;
-    line-height: 1.1;
-    display: inline;
-}
-
-h2.dialog {
-	font-size: 2rem;
-    text-align: center;
-}
-
-.dateNav {
-    text-align: center; 
-}
-
 .submitButton {
     text-align: right;
     padding: 5px;   
@@ -60,7 +39,7 @@ h2.dialog {
 
 .column {
     float: left;
-    margin: 5px;
+    margin: auto;
 }
 
 .row:after {
@@ -73,6 +52,10 @@ h2.dialog {
     text-align: center;
 }
 
+.menu.row {
+    width: 100%;
+}
+
 .pool.single-day.row {
     width: 100%;
 }
@@ -82,23 +65,11 @@ h2.dialog {
 }
 
 .openwater.single-day.row {
-    width: 80%;
+    width: 100%;
 }
 
 .single-day .column {
     text-align: center;
-}
-
-.pool .column {
-    width: calc(20% - 10px);
-}
-
-.openwater .column {
-    width: calc(33% - 10px);
-}
-
-.classroom .column {
-    width: calc(25% - 10px);
 }
 
 .submitForm .column {
@@ -257,20 +228,20 @@ button.fb_loggedout {
 }
 
 .arrow {
-    border: solid black;
-    border-width: 0 0.2em 0.2em 0;
+    border: solid;
+    border-width: 0 0.5em 0.5em 0;
     display: inline-block;
-    padding: 0.3em;
+    padding: 0.6em;
 }
 
 .right {
     transform: translate(0px, 6px) rotate(-45deg);
-    -webkit-transform: translate(0px, 0px) rotate(-45deg);
+    -webkit-transform: translate(0px, 6px) rotate(-45deg);
 }
 
 .left {
     transform: translate(0px, 6px) rotate(135deg);
-    -webkit-transform: translate(0px, 0px) rotate(135deg);
+    -webkit-transform: translate(0px, 6px) rotate(135deg);
 }
 
 .up {

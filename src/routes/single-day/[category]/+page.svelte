@@ -54,21 +54,28 @@
 
 </script>
 
-<Modal><ReservationDialog category={category} dateFn={resDate}/></Modal>
-
+<br/>
 <div class="single-day menu row">
-    <a href="/multi-day/{category}">
+    <div class='column w-[35%] m-0'>
+        <a href="/multi-day/{category}">
             <button class="month-view" on:click={multiDayView}>Month View</button>
-    </a>
-    <div class="dateNav">
+        </a>
+    </div>
+    <div class='dateNav column w-[20%] m-0'>
         <i on:click={prevDay} on:keypress={prevDay} class="arrow left"></i>
         <i on:click={nextDay} on:keypress={nextDay} class="arrow right"></i>
-        <h2 style="display: inline">{idx2month[$viewedDate.getMonth()]}</h2>
-        <h2 style="display: inline">{$viewedDate.getDate()}</h2>
+    </div>
+    <div class='dateNav column w-[25%] m-0'>
+        <p class='text-2xl ml-2'>
+            {idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}
+        </p>
+    </div>
+    <div class='column w-[20%] m-0'>
+        <Modal><ReservationDialog category={category} dateFn={resDate}/></Modal>
     </div>
 </div>
-
-<div class='{category} single-day row'>
+<br/>
+<div class='{category} single-day'>
     {#if category === 'pool'}
         <DayHourly category={category} nResource={nResource()} resourceName={resourceName()}/>
     {:else if category === 'classroom'}

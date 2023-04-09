@@ -3,6 +3,9 @@
 @tailwind components;
 @tailwind utilities;
 
+*,*:before,*:after {
+    box-sizing: border-box;
+}
 
 @layer components {
     .today {
@@ -10,7 +13,7 @@
     }
     
     .rsv {
-        @apply overflow-hidden text-center text-ellipsis whitespace-nowrap rounded-2xl mb-1 w-auto ps-2 pe-2;
+        @apply overflow-hidden text-center text-ellipsis whitespace-nowrap rounded-2xl mb-1 w-11/12 m-auto px-2;
 
     }
 

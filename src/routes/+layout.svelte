@@ -349,7 +349,7 @@
         </SidebarWrapper>
     </Sidebar>
 </Drawer>
-<div id="app" class="flex px-4 mx-auto w-full">
+<div id="app" class="flex px-1 mx-auto w-full">
     <main class="lg:ml-72 w-full mx-auto">
         {#if $user && loginState === 'in'}
             <slot/>
