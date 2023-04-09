@@ -30,14 +30,14 @@
 
 <style>
     .button_plus {
-        position: sticky;
+        position: relative;
         width: 35px;
         height: 35px;
         background: #fff;
         cursor: pointer;
-        border: 2px solid #095776;
-        top: 10%;
-        left: 90%;
+        border: 2px solid #1254A7;
+        top: 0%;
+        left: 50%;
     }
 
     .button_plus:after {
@@ -46,7 +46,7 @@
         transform: translate(-50%, -50%);
         height: 4px;
         width: 50%;
-        background: #095776;
+        background: #1254A7;
         top: 50%;
         left: 50%;
     }
@@ -57,7 +57,7 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background: #095776;
+        background: #1254A7;
         height: 50%;
         width: 4px;
     }
@@ -69,7 +69,8 @@
     }
 
     .button_plus:hover {
-        background-color: #095776;
+        border: 2px solid white;
+        background-color: #1254A7;
         transition: 0.2s;
     }
 

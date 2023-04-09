@@ -42,27 +42,25 @@
 
 </script>
 
-<div class="header row">
-    <div class="header column font-semibold" style="margin: 0">times</div>
-    {#each [...Array(nResource).keys()] as rNum}
-        <div class="header column font-semibold">{resourceName} {rNum+1}</div>
-    {/each}
-</div>
 <div class="row">
-    <div class="column" style="margin: 0">
+    <div class="column w-[12%]" style="margin: 0">
+        <div style='height: 1lh'/>
         {#each displayTimes() as t}
             <div class='font-semibold' style='height: {rowHeight}rem'>{t}</div>
         {/each}
     </div>
-    {#each schedule as resource}
-        <div class="column" style="margin: 0">
-            <div style="height: 0.5rem"/>
-            {#each resource as { start, nSlots, cls, tag }}
-                <div 
-                    class='{cls} {category} text-sm' 
-                    style="height: {rowHeight*(nSlots/slotDiv) - blkMgn}rem"
-                >{tag}</div>
-            {/each}
+    {#each [...Array(nResource).keys()] as i}
+        <div class="column font-semibold" style='width: {88/nResource}%'>
+            <div>{resourceName} {i+1}</div>
+            {#if i < schedule.length}
+                <div style='height: 0.5lh'/>
+                {#each schedule[i] as { start, nSlots, cls, tag }}
+                    <div 
+                        class='{cls} {category} text-sm' 
+                        style="height: {rowHeight*(nSlots/slotDiv) - blkMgn}rem"
+                    >{tag}</div>
+                {/each}
+            {/if}
         </div>
     {/each}
 </div>

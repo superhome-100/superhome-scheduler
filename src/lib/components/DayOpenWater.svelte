@@ -16,66 +16,78 @@
             ); 
             schedule[owTime] = result.assignments;
         }
+
         return schedule;
     }
 
     $: schedule = getOpenWaterSchedule($reservations, $viewedDate);
-    const heightUnit = 3; //rem
+    
+    const heightUnit = 2; //rem
     const blkMgn = 0.25; // dependent on tailwind margin styling
-    $: buoyHeight = $buoys.reduce((o, b) => {
+        
+    $: rowHeights = $buoys.reduce((o, b) => {
         let nRes = Math.max(
             schedule.AM[b.name] ? schedule.AM[b.name].length : 0, 
             schedule.PM[b.name] ? schedule.PM[b.name].length: 0
         );
-        o[b.name] = nRes*heightUnit - blkMgn;
+        o[b.name] = {  
+            header: nRes*heightUnit,
+            buoy: nRes*heightUnit - blkMgn,
+            margins: [...Array(nRes).keys()].map((idx) => {
+                const outer = (nRes*heightUnit - blkMgn - 1.25*nRes) / 2;
+                let top, btm;
+                if (idx == 0) {
+                    top = outer;
+                    btm = 0;
+                } else if (idx  == nRes-1) {
+                    top = 0;
+                    btm = outer;
+                } else {
+                    top = 0;
+                    btm = 0;
+                }
+                return top + 'rem 0 ' + btm + 'rem 0'
+            })
+        }
         return o;
     }, {});
+
 
 </script>
 
 <div class='row'>
-    <div class='column'>
+    <div class='column w-[10%]'>
         <div class='font-semibold'>buoy</div>
-        {#each $buoys as buoy}
-            {#if schedule.AM[buoy.name] != undefined || schedule.PM[buoy.name] != undefined}
-                <div class='flex items-center justify-center font-semibold' style='height:{buoyHeight[buoy.name]}rem'>{buoy.name}</div>
+        {#each $buoys as { name }}
+            {#if schedule.AM[name] != undefined || schedule.PM[name] != undefined}
+                <div 
+                    class='flex items-center justify-center font-semibold' 
+                    style='height: {rowHeights[name].header}rem'
+                >{name}</div>
             {/if}
         {/each}
     </div>
-    <div class='column'>
-        <div class='font-semibold'>AM</div>
-        {#each $buoys as buoy}
-            {#if schedule.AM[buoy.name] != undefined || schedule.PM[buoy.name] != undefined}
-                {#if schedule.AM[buoy.name] != undefined}
+    {#each [{cur:'AM', other:'PM'}, {cur:'PM', other:'AM'}] as {cur, other}}
+        <div class='column' style='width: 45%'>
+            <div class='font-semibold'>{cur}</div>
+            {#each $buoys as { name }}
+                {#if schedule[cur][name] != undefined}
                     <div 
-                        class='rsv openwater text-sm h-full'
-                        style='height:{buoyHeight[buoy.name]}rem'
+                        class='rsv openwater text-sm'
+                        style='height: {rowHeights[name].buoy}rem'
                     >
-                        {#each schedule.AM[buoy.name] as rsv}
-                            <p>{displayTag(rsv)}</p>
+                        {#each schedule[cur][name] as rsv, i}
+                            <div 
+                                class='overflow-hidden whitespace-nowrap'
+                                style='margin: {rowHeights[name].margins[i]}'
+                            >{displayTag(rsv)}</div>
                         {/each}
                     </div>
-                {:else}
-                    <div/>
+                {:else if schedule[other][name] != undefined}
+                    <div style='height: {rowHeights[name].header}rem'/>
                 {/if}
-            {/if}
-        {/each}
-    </div>
-    <div class='column'>
-        <div class='font-semibold'>PM</div>
-        {#each $buoys as buoy}
-            {#if schedule.AM[buoy.name] != undefined || schedule.PM[buoy.name] != undefined}
-                {#if schedule.PM[buoy.name] != undefined}
-                    <div class='rsv openwater text-sm h-full' style='height:{buoyHeight[buoy.name]}rem'>
-                        {#each schedule.PM[buoy.name] as rsv}
-                            <p>{displayTag(rsv)}</p>
-                        {/each}
-                    </div>
-                {:else}
-                    <div/>
-                {/if}
-            {/if}
-        {/each}
-    </div>
+            {/each}
+        </div>
+    {/each}
 </div> 
 
