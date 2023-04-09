@@ -50,14 +50,14 @@
         {/each}
     </div>
     {#each [...Array(nResource).keys()] as i}
-        <div class="column font-semibold" style='width: {88/nResource}%'>
+        <div class="column" style='width: {88/nResource}%'>
             <div>{resourceName} {i+1}</div>
             {#if i < schedule.length}
-                <div style='height: 0.5lh'/>
+                <div style='height: 0.5rem'/>
                 {#each schedule[i] as { start, nSlots, cls, tag }}
                     <div 
                         class='{cls} {category} text-sm' 
-                        style="height: {rowHeight*(nSlots/slotDiv) - blkMgn}rem"
+                        style="height: {rowHeight*(nSlots/slotDiv) - (cls === 'rsv' ? blkMgn : 0)}rem"
                     >{tag}</div>
                 {/each}
             {/if}
