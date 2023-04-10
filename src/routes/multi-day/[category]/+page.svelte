@@ -4,6 +4,7 @@
     import DayOfMonth from '$lib/components/DayOfMonth.svelte';
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
     import Modal from '$lib/components/Modal.svelte';
+    import Chevron from '$lib/components/Chevron.svelte';
     import { minValidDate } from '$lib/ReservationTimes.js';
     import { idx2month } from '$lib/datetimeUtils.js';
     import { view, viewedMonth, reservations } from '$lib/stores.js';
@@ -55,16 +56,14 @@
 
 </script>
 <br/>
-<div class="flex justify-between">
-    <span class='text-3xl ml-2'>{gCategory}</span>
-    <div class='flex justify-between'>
-        <span class='mr-2'>
-            <i on:click={prevMonth} on:keypress={prevMonth} class="arrow left"></i>
-            <i on:click={nextMonth} on:keypress={nextMonth} class="arrow right"></i>
-        </span>
+<div class="flex items-center justify-between">
+    <span class='text-2xl ml-2'>{gCategory}</span>
+    <div class='inline-flex items-center justify-between'>
+        <span on:click={prevMonth} on:keypress={prevMonth}><Chevron direction='left'/></span>
+        <span on:click={nextMonth} on:keypress={nextMonth}><Chevron direction='right'/></span>
         <span class='text-2xl ml-2'>{idx2month[gMonth]}</span>
     </div>
-    <span>
+    <span class='mr-2'>
         <Modal><ReservationDialog category={gCategory} dateFn={minValidDate}/></Modal>
     </span>
 </div>
