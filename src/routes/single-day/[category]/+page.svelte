@@ -3,6 +3,7 @@
     import DayHourly from '$lib/components/DayHourly.svelte';
     import DayOpenWater from '$lib/components/DayOpenWater.svelte';
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
+    import Chevron from '$lib/components/Chevron.svelte';
     import { validReservationDate, minValidDate } from '$lib/ReservationTimes.js';
     import { month2idx, idx2month } from '$lib/datetimeUtils.js';
     import Modal from '$lib/components/Modal.svelte';
@@ -61,24 +62,22 @@
             <button class="month-view" on:click={multiDayView}>Month View</button>
         </a>
     </span>
-    <div class='flex justify-between'>
-        <span class='mr-2'>
-            <i on:click={prevDay} on:keypress={prevDay} class="arrow left"></i>
-        </span>
-        <span class='text-2xl'>
-            {idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}
-        </span>
-        <span class='ml-1.5'>
-            <i on:click={nextDay} on:keypress={nextDay} class="arrow right"></i>
-        </span>
-    </div>
-    <br/>
-    <span>
+    <span class='inline-flex items-center text-2xl md:text-3xl md:ml-2'>{category}</span>
+   <span class='mr-2'>
         <Modal><ReservationDialog category={category} dateFn={resDate}/></Modal>
     </span>
 </div>
+<br/>
 <div class='text-center'>
-    <span class='inline-flex items-center text-2xl md:text-3xl md:ml-2'>{category}</span>
+    <span class='inline-flex items-center mr-2' on:click={prevDay} on:keypress={prevDay}>
+        <Chevron direction='left'/>
+    </span>
+    <span class='text-2xl'>
+        {idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}
+    </span>
+    <span class='inline-flex items-center ml-2' on:click={nextDay} on:keypress={nextDay}>
+        <Chevron direction='right'/>
+    </span>
 </div>
 <br/>
 <div class='{category} single-day'>
