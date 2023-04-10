@@ -55,17 +55,18 @@
 
 </script>
 <br/>
-<div class="multi-day menu row w-full">
-    <div class="dateNav m-auto column w-[45%]">
-        <i on:click={prevMonth} on:keypress={prevMonth} class="arrow left"></i>
-        <i on:click={nextMonth} on:keypress={nextMonth} class="arrow right"></i>
+<div class="flex justify-between">
+    <span class='text-3xl ml-2'>{gCategory}</span>
+    <div class='flex justify-between'>
+        <span class='mr-2'>
+            <i on:click={prevMonth} on:keypress={prevMonth} class="arrow left"></i>
+            <i on:click={nextMonth} on:keypress={nextMonth} class="arrow right"></i>
+        </span>
+        <span class='text-2xl ml-2'>{idx2month[gMonth]}</span>
     </div>
-    <div class='dateNav column w-[10%]'>
-        <p class='inline text-2xl ml-2'>{idx2month[gMonth]}</p>
-    </div>
-    <div class='column w-[45%]'>
+    <span>
         <Modal><ReservationDialog category={gCategory} dateFn={minValidDate}/></Modal>
-    </div>
+    </span>
 </div>
 <br/>
 <div>

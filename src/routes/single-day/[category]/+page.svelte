@@ -55,24 +55,30 @@
 </script>
 
 <br/>
-<div class="single-day menu row">
-    <div class='column w-[35%] m-0'>
+<div class="flex justify-between">
+    <span class='ml-2'>
         <a href="/multi-day/{category}">
             <button class="month-view" on:click={multiDayView}>Month View</button>
         </a>
-    </div>
-    <div class='dateNav column w-[20%] m-0'>
-        <i on:click={prevDay} on:keypress={prevDay} class="arrow left"></i>
-        <i on:click={nextDay} on:keypress={nextDay} class="arrow right"></i>
-    </div>
-    <div class='dateNav column w-[25%] m-0'>
-        <p class='text-2xl ml-2'>
+    </span>
+    <div class='flex justify-between'>
+        <span class='mr-2'>
+            <i on:click={prevDay} on:keypress={prevDay} class="arrow left"></i>
+        </span>
+        <span class='text-2xl'>
             {idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}
-        </p>
+        </span>
+        <span class='ml-1.5'>
+            <i on:click={nextDay} on:keypress={nextDay} class="arrow right"></i>
+        </span>
     </div>
-    <div class='column w-[20%] m-0'>
+    <br/>
+    <span>
         <Modal><ReservationDialog category={category} dateFn={resDate}/></Modal>
-    </div>
+    </span>
+</div>
+<div class='text-center'>
+    <span class='inline-flex items-center text-2xl md:text-3xl md:ml-2'>{category}</span>
 </div>
 <br/>
 <div class='{category} single-day'>

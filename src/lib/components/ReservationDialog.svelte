@@ -37,7 +37,7 @@
         cursor: pointer;
         border: 2px solid #1254A7;
         top: 0%;
-        left: 50%;
+        left: 0%;
     }
 
     .button_plus:after {

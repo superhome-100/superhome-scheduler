@@ -279,12 +279,12 @@
       }
     };
     $: activeUrl = $page.url.pathname;
-    let spanClass = 'pl-2 self-center text-md text-gray-900 whitespace-nowrap dark:text-white';
+    let spanClass = 'pl-8 self-center text-md text-gray-900 whitespace-nowrap dark:text-white';
 </script>
 
 <svelte:window bind:innerWidth={width} />
 
-<Navbar let:hidden let:toggle>
+<Navbar let:hidden let:toggle color='currentColor'>
     <NavHamburger on:click={toggleDrawer} btnClass="ml-3 lg:hidden" />    
     <NavBrand href='/' class="lg:ml-64">
         <span class="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
@@ -292,7 +292,11 @@
         </span>
     </NavBrand>
     {#if $user && loginState === 'in'}
-        <NavUl {hidden}>
+        <NavUl 
+            divClass='block md:w-auto' 
+            ulClass='flex flex-col p-0 mt-0 md:flex-row md:space-x-8 md:text-sm md:font-medium'
+            {hidden}
+        >
             <NavLi>
                 {#if profileSrc}
                     <img id="profilePicture" alt="profilePicture" src={profileSrc}>
@@ -313,7 +317,7 @@
     class="overflow-scroll pb-32"
     id= "sidebar"
 >
-    <div class=" flex items-center">
+    <div class="flex items-center">
         <CloseButton on:click={() => (drawerHidden = true)} class="mb-4 dark:text-white lg:hidden" />
     </div>
     <Sidebar asideClass="w-54">

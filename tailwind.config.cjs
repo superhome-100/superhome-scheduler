@@ -16,11 +16,11 @@ const config = {
                 'openwater-fg': '#FFFFFF', //'#1D293A',
                 'classroom-bg-to': '#FB7185', //'#FDE047'
                 'classroom-bg-from': '#9F123B', 
-                'classroom-fg': '#000000'
+                'classroom-fg': '#FFFFFF'
             }
         }
 	},
-
+    darkMode: 'media',
 	plugins: [
         require('flowbite/plugin')
     ],
