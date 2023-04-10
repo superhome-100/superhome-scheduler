@@ -56,28 +56,29 @@
 </script>
 
 <br/>
-<div class="flex justify-between">
-    <span class='ml-2'>
-        <a href="/multi-day/{category}">
-            <button class="month-view" on:click={multiDayView}>Month View</button>
-        </a>
-    </span>
-    <span class='inline-flex items-center text-2xl md:text-3xl md:ml-2'>{category}</span>
+<div class="flex justify-between"> 
+    <span class='text-2xl ml-2 md:text-3xl md:ml-2'>{category}</span>
+    <div class='inline-flex items-center justify-between'>
+        <span on:click={prevDay} on:keypress={prevDay}>
+            <Chevron direction='left'/>
+        </span>
+        <span on:click={nextDay} on:keypress={nextDay}>
+            <Chevron direction='right'/>
+        </span>
+        <span class='text-2xl ml-2'>
+            {idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}
+        </span> 
+    </div>
    <span class='mr-2'>
         <Modal><ReservationDialog category={category} dateFn={resDate}/></Modal>
     </span>
 </div>
 <br/>
-<div class='text-center'>
-    <span class='inline-flex items-center mr-2' on:click={prevDay} on:keypress={prevDay}>
-        <Chevron direction='left'/>
-    </span>
-    <span class='text-2xl'>
-        {idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}
-    </span>
-    <span class='inline-flex items-center ml-2' on:click={nextDay} on:keypress={nextDay}>
-        <Chevron direction='right'/>
-    </span>
+<div>
+    <a class='inline-flex' href="/multi-day/{category}">
+        <span><Chevron direction='left'/></span>
+        <span>Month View</span>
+    </a>
 </div>
 <br/>
 <div class='{category} single-day'>
