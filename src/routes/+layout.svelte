@@ -222,6 +222,7 @@
         }
         await deleteSession();
         loginState = 'out';
+        drawerHidden = true;
     }
 
     async function userLogout() {
@@ -241,7 +242,9 @@
 
     let drawerHidden = false;
     const toggleDrawer = () => {
-        drawerHidden = !drawerHidden;
+        if (loginState === 'in') {
+            drawerHidden = !drawerHidden;
+        }
     };
 
     // Drawer component
