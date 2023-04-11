@@ -299,7 +299,7 @@
         >
             <NavLi>
                 {#if profileSrc}
-                    <img class='border-radius-[50%] w-10' alt="profilePicture" src={profileSrc}>
+                    <img class='rounded-[50%] w-10' alt="profilePicture" src={profileSrc}>
                 {:else}
                     <div class='text-xs'>{$user.name}</div>
                 {/if}
@@ -358,7 +358,10 @@
         {#if $user && loginState === 'in'}
             <slot/>
         {:else if loginState === 'out'}
-            <button on:click={login} class="fb_loggedout">Log in with Facebook</button>
+            <button 
+                on:click={login} 
+                class='bg-[#3b5998] text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
+            >Log in with Facebook</button>
         {/if}
     </main>
 </div>
