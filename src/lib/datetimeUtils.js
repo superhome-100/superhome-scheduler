@@ -28,7 +28,6 @@ export const idx2month = [
     'December'
 ];
 
-
 export function datetimeToLocalDateStr(datetime) {
     let rexp = /([0-9]+)\/([0-9]+)\/([0-9]+).*/
     let m = rexp.exec(datetime.toLocaleDateString('en-US'));

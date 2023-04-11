@@ -1,7 +1,7 @@
 <script>
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { minuteOfDay, beforeCancelCutoff } from '$lib/ReservationTimes.js';
-    import { timeStrToMin } from '$lib/datetimeUtils.js';
+    import { timeStrToMin, idx2month } from '$lib/datetimeUtils.js';
     import { user, reservations } from '$lib/stores.js';
     import Modal from './Modal.svelte';
     import Dialog from './Dialog.svelte';
@@ -33,42 +33,82 @@
         return view;
     }
     
-    const chopYear = (dateStr) => {
-        let re = /[0-9]+-0*(.+)/;
+    const shortDate = (dateStr) => {
+        let re = /[0-9]+-([0-9]+)-[0]*([0-9]+)/;
         let m = re.exec(dateStr);
-        return m[1];
+        let shortM = idx2month[parseInt(m[1])-1].slice(0,3);
+        return m[2] + ' ' + shortM;
+    };
+
+    const bgColorFrom = 
+        (category) => category === 'pool' 
+            ? 'from-pool-bg-from' 
+            : (category === 'openwater') 
+                ? 'from-openwater-bg-from' 
+                : (category === 'classroom') 
+                    ? 'from-classroom-bg-from' 
+                    : undefined;
+
+    const bgColorTo = 
+        (category) => category === 'pool' 
+            ? 'to-pool-bg-to' 
+            : (category === 'openwater') 
+                ? 'to-openwater-bg-to' 
+                : (category === 'classroom') 
+                    ? 'to-classroom-bg-to' 
+                    : undefined;
+
+    const catDesc = (rsv) => {
+        let desc = [rsv.categoryPretty]; 
+        if (rsv.resType === 'course') {
+            desc += ' +' + rsv.numStudents;
+        }
+        return desc;
+    };
+
+    const timeDesc = (rsv) => {
+        const fmt = (time) => {
+            let rx = /([0-9]+):([0-9]+)/;
+            let m = rx.exec(time);
+            let hr = parseInt(m[1]);
+            let ind = 'a';
+            if (hr > 12) {
+                hr -= 12;
+                ind = 'p';
+            }
+            if (m[2] == '00') {
+                return hr + ind;
+            } else {
+                return hr + ':' + m[2] + ind;
+            }
+        };
+        let desc;
+        if (['pool', 'classroom'].includes(rsv.category)) {
+            desc = ' ' + fmt(rsv.startTime) + '-' + fmt(rsv.endTime);
+        } else if (rsv.category === 'openwater') {
+            desc = rsv.maxDepth + 'm - ' + rsv.owTime;
+        }
+        return desc;
     };
 
 </script>
 
 {#if $user}
-    <table id="myReservationsTable">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Category</th>
-                <th>Status</th>
-                {#if resType === 'upcoming'}
-                    <th>View/Modify</th>
-                    <th>Cancel</th>
-                {:else if resType === 'past'}
-                    <th>View</th>
-                {/if}
-            </tr>
-        </thead>
+    <table class="m-auto border-separate border-spacing-y-1">
         <tbody>
             {#each $reservations as rsv}
                 {#if rsv.user.id === $user.id && getResType(rsv) === resType} 
-                    <tr>
-                        <td>{chopYear(rsv.date)}</td>
-                        <td>{rsv.category}</td>
-                        <td>{rsv.status}</td>
+                    <tr class='[&>td]:w-24 h-10 bg-gradient-to-br {bgColorFrom(rsv.category)} {bgColorTo(rsv.category)}'>
+                        <td class='rounded-s-xl text-white text-sm font-semibold'>{shortDate(rsv.date)}</td>
+                        <td class='text-white text-sm font-semibold'>{catDesc(rsv)}</td>
+                        <td class='text-white text-sm font-semibold'>{timeDesc(rsv)}</td>
+                        <td class='text-white text-sm font-semibold'>{rsv.status}</td>
                         <td>
                             <Modal>
                                 <Dialog dialogType='modify' rsv={rsv}/>
                             </Modal>
                         </td>
-                        <td>
+                        <td class='rounded-e-xl'>
                             {#if beforeCancelCutoff(rsv.date, rsv.startTime)}
                                 <Modal>
                                     <Dialog dialogType='cancel' rsv={rsv}/>

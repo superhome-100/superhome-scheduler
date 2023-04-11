@@ -81,8 +81,8 @@
 </script>
 
 {#if hasForm}
-    <div class="submitForm">
-        <h2>reservation request</h2>
+    <div>
+        <div class='text-center text-2xl font-semibold my-2'>reservation request</div>
         <form 
             method="POST" 
             action="/?/submitReservation" 

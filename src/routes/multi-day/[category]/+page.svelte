@@ -4,6 +4,7 @@
     import DayOfMonth from '$lib/components/DayOfMonth.svelte';
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
     import Modal from '$lib/components/Modal.svelte';
+    import Chevron from '$lib/components/Chevron.svelte';
     import { minValidDate } from '$lib/ReservationTimes.js';
     import { idx2month } from '$lib/datetimeUtils.js';
     import { view, viewedMonth, reservations } from '$lib/stores.js';
@@ -54,45 +55,47 @@
         ? 'today' : null;
 
 </script>
-
-<Modal>
-    <ReservationDialog category={gCategory} dateFn={minValidDate}/>
-</Modal>
-
-<div class="dateNav">
-    <i on:click={prevMonth} on:keypress={prevMonth} class="arrow left"></i>
-    <h1>{idx2month[gMonth]}</h1>
-    <i on:click={nextMonth} on:keypress={nextMonth} class="arrow right"></i>
-<h2>{gYear}</h2>
+<br/>
+<div class="flex items-center justify-between">
+    <span class='text-2xl ml-2'>{gCategory}</span>
+    <div class='inline-flex items-center justify-between'>
+        <span on:click={prevMonth} on:keypress={prevMonth}><Chevron direction='left'/></span>
+        <span on:click={nextMonth} on:keypress={nextMonth}><Chevron direction='right'/></span>
+        <span class='text-2xl ml-2'>{idx2month[gMonth]}</span>
+    </div>
+    <span class='mr-2'>
+        <Modal><ReservationDialog category={gCategory} dateFn={minValidDate}/></Modal>
+    </span>
 </div>
-
-<table class="{gCategory} calendar">
-    <thead>
-        <tr>
-            <th>S</th>
-            <th>M</th>
-            <th>T</th>
-            <th>W</th>
-            <th>T</th>
-            <th>F</th>
-            <th>S</th>
-        </tr>
-    </thead>
-    <tbody>
-        {#each gMonthArr() as week}
+<br/>
+<div>
+    <table class='calendar table-fixed border-collapse ml-1 w-full'>
+        <thead>
             <tr>
-                {#each week as { date, rsvs }}
-                    <td>
-                        <DayOfMonth 
-                            id={isToday(date)}
-                            date={date} 
-                            category={gCategory}
-                            rsvs={rsvs}
-                        />
-                    </td>
-                {/each}
-            <tr/>
-        {/each}
-    </tbody>
-</table>
-
+                <th>S</th>
+                <th>M</th>
+                <th>T</th>
+                <th>W</th>
+                <th>T</th>
+                <th>F</th>
+                <th>S</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#each gMonthArr() as week}
+                <tr>
+                    {#each week as { date, rsvs }}
+                        <td class={gCategory}>
+                            <DayOfMonth 
+                                id={isToday(date)}
+                                date={date} 
+                                category={gCategory}
+                                rsvs={rsvs}
+                            />
+                        </td>
+                    {/each}
+                <tr/>
+            {/each}
+        </tbody>
+    </table>
+</div>

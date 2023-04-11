@@ -34,30 +34,49 @@
         <div><label for="formMaxDepth">Max Depth</label></div>
     </div>
     <div slot="categoryInputs">
-        <div><select id="formOwTime" disabled={disabled || noModify} name="owTime" value={owTime}>
-            <option value='AM'>AM</option>
-            <option value='PM'>PM</option>
-        </select></div>
-        <div><select id="formResType" disabled={disabled} bind:value={autoOrCourse} name="resType">
-            <option value='autonomous'>Autonomous</option>
-            <option value='course'>Course</option>
-        </select></div>
+        <div class='h-6'>
+            <select 
+                id="formOwTime" 
+                disabled={disabled || noModify} 
+                name="owTime" 
+                value={owTime}
+            >
+                <option value='AM'>AM</option>
+                <option value='PM'>PM</option>
+            </select>
+        </div>
+        <div class='h-6'>
+            <select 
+                id="formResType" 
+                disabled={disabled} 
+                bind:value={autoOrCourse} 
+                name="resType"
+            >
+                <option value='autonomous'>Autonomous</option>
+                <option value='course'>Course</option>
+            </select>
+        </div>
         {#if autoOrCourse == 'course'}
-            <div><select disabled={disabled} name="numStudents" value={numStudents}>
-                {#each [...Array(10).keys()] as n}
-                    <option value={n+1}>{n+1}</option>
-                {/each}
-            </select></div>
+            <div class='h-6'>
+                <select disabled={disabled} name="numStudents" value={numStudents}>
+                    {#each [...Array(10).keys()] as n}
+                        <option value={n+1}>{n+1}</option>
+                    {/each}
+                </select>
+            </div>
         {/if}
-        <div><input 
-            disabled={disabled || noModify}
-            type=number 
-            min=1 
-            style="width:40px" 
-            bind:value={maxDepth} 
-            on:input={checkSubmit}
-            name="maxDepth"
-        ></div>
+        <div class='h-6'>
+            <input 
+                disabled={disabled || noModify}
+                type=number 
+                class='w-12 valid:border-gray-500 required:border-red-500'
+                min=1
+                bind:value={maxDepth} 
+                on:input={checkSubmit}
+                name="maxDepth"
+                required={maxDepth==undefined}
+            ><span class='ml-1 text-sm'>meters</span>
+        </div>
     </div>
 </ResFormGeneric>
 
