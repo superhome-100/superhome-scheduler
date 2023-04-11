@@ -9,18 +9,6 @@
     clear: both;
 }
 
-button.tab_button {
-	background: none;
-	border: none;
-	border-radius: 2px;
-	margin: 0;
-	color: gray;
-}
-	
-.tab_button.selected {
-	color: black;
-}
-
 button, input[type=submit] {
   border-radius: 8px;
   border: 1px solid transparent;

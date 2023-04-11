@@ -8,6 +8,9 @@
 	registerTab(tab);
 </script>
 
-<button class="tab_button" class:selected="{$selectedTab === tab}" on:click="{() => selectTab(tab)}">
+<button 
+    class="bg-transparent border-none outline-none rounded-2xl m-0 {$selectedTab === tab ? 'text:black' : 'text-gray-500'}" 
+    on:click="{() => selectTab(tab)}"
+>
 	<slot></slot>
 </button>
