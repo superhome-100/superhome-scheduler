@@ -21,7 +21,7 @@
     @media (prefers-color-scheme: dark) {
         :root {
             color: rgba(255, 255, 255, 0.87);
-            background-color: #242424;
+            background-color: #242420;
         }
         button, input[type=submit] {
             background-color: #1a1a1a;
@@ -31,6 +31,26 @@
 
 
 @layer components {
+    button {
+        @apply rounded-lg border border-solid border-transparent py-2 px-4 font-sans cursor-pointer bg-gray-100 ease-in duration-100;
+    }
+
+    button:hover {
+        @apply border-openwater-bg-to;
+    }
+
+    button:focus, button:focus-visible {
+        @apply outline-4; 
+    }
+
+    .column {
+        @apply float-left m-auto;
+    }
+
+    .row:after {
+        @apply content-none table clear-both;
+    }
+
     .today {
         @apply rounded-3xl;
     }
@@ -68,7 +88,7 @@
     }
     
     input[type=date], input[type=text], input[type=number], select, option {
-        @apply align-middle ps-0.5 pr-0 pe-0 py-0 h-5 ml-2 mb-0.5 text-sm text-black dark:text-white bg-white dark:bg-gray-600 rounded disabled:text-gray-500 dark:disabled:text-gray-300;
+        @apply align-middle ps-0.5 pr-0 pe-0 py-0 h-5 ml-2 mb-0.5 text-sm text-black dark:text-white bg-white dark:bg-gray-800 rounded disabled:text-gray-500 dark:disabled:text-gray-300;
     }
 
 }
