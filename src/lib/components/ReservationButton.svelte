@@ -7,7 +7,7 @@
 
 </script>
 
-<svg class='w-8 h-8' viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
+<svg class='w-8 h-8 cursor-pointer' viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
     <rect class='{outer} dark:fill-white' width='9' height='9' x='0.5' y='0.5' />
     <rect class='fill-white {outerDark}' width='8' height='8' x='1' y='1' />
     <path

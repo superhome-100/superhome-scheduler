@@ -12,10 +12,10 @@ const config = {
                 'pool-bg': '#60A5FA', //'#1D4ED8',
                 'pool-fg': '#FFFFFF',
                 'openwater-bg-from': '#081F69', //'#1D4ED8', //'#3CD4BE',
-                'openwater-bg-to': '#1254A7', // '#06B6D4',
+                'openwater-bg-to': '#3070B7', // '#06B6D4',
                 'openwater-fg': '#FFFFFF', //'#1D293A',
-                'classroom-bg-to': '#FB7185', //'#FDE047'
-                'classroom-bg-from': '#9F123B', 
+                'classroom-bg-to': '#888', //'#FB7185', //'#FDE047'
+                'classroom-bg-from': '#000', //'#9F123B', 
                 'classroom-fg': '#FFFFFF'
             }
         }

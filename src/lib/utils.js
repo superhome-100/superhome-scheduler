@@ -43,6 +43,7 @@ export function sortUserReservations(newRsvs, id, sorted={'past': [], 'upcoming'
 export function augmentRsv(rsv, fbId=null, name=null) {
     let startTime = rsv.startTime;
     let endTime = rsv.endTime;
+    let categoryPretty = rsv.category.charAt(0).toUpperCase() + rsv.category.slice(1);
     if (rsv.category === 'openwater') {
         if (rsv.owTime === 'AM') {
             startTime = '9:00';
@@ -52,9 +53,9 @@ export function augmentRsv(rsv, fbId=null, name=null) {
             endTime = '16:00';
         }
     }
-
     let newRsv = {
         ...rsv,
+        categoryPretty,
         startTime,
         endTime,
     };
