@@ -9,13 +9,14 @@
 </script>
 
 {#if $user != null}
-    <Modal>
-        <ReservationDialog dateFn={minValidDate}/>
-    </Modal>
-
     <br/>
+    <span class='flex justify-between mr-2'>
+        <span/>
+        <span class='text-lg font-semibold'>{$user.name.split(' ')[0]}'s Reservations</span>
+        <Modal><ReservationDialog dateFn={minValidDate}/></Modal>
+    </span>
     <div>
-        <Tabs divId="myreservations_tabs">
+        <Tabs>
             
             <TabList>
                 <Tab>Upcoming</Tab>

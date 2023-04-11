@@ -1,4 +1,20 @@
 <script lang="js">
+    import "../app.postcss";
+    import {
+        Navbar,
+        NavBrand,
+        NavLi,
+        NavUl,
+        NavHamburger,
+        Sidebar,
+        SidebarGroup,
+        SidebarItem,
+        SidebarWrapper,
+        Drawer,
+        CloseButton,
+        SidebarDropdownWrapper
+    } from 'flowbite-svelte';
+    import { sineIn } from 'svelte/easing';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
     import '../styles.css';
@@ -66,6 +82,7 @@
             }
         };
 
+        // try up to 3 times to load app state
         for (let i=0; i < 3; i++) {
             let success = await init();
             if (success) {
@@ -76,7 +93,7 @@
             }
         }
         goto('/error');
-    }   
+    }
 
     async function get(item) {
         const response = await fetch('/api/get' + item);
@@ -95,7 +112,7 @@
                 document.head.removeChild(script)
             }
         }
-    }   
+    }
 
     function loadProfilePic() {
         const FB = window['FB'];
@@ -149,7 +166,7 @@
             }
         }, { scope: 'email,public_profile' });
     }
-    
+
     async function authenticateUser(facebookId, name) {
         const response = await fetch('/api/login', {
             method: 'POST',
@@ -205,6 +222,7 @@
         }
         await deleteSession();
         loginState = 'out';
+        drawerHidden = true;
     }
 
     async function userLogout() {
@@ -222,37 +240,133 @@
         await fetch('/api/logout', { method: 'POST' });
     }
 
+    let drawerHidden = false;
+    const toggleDrawer = () => {
+        if (loginState === 'in') {
+            drawerHidden = !drawerHidden;
+        }
+    };
+
+    // Drawer component
+    let backdrop = false;
+    let activateClickOutside = true;
+    let breakPoint = 1024;
+    let width;
+    let transitionParams = {
+        x: -320,
+        duration: 200,
+        easing: sineIn
+    };
+
+    $: if (width >= breakPoint) {
+        drawerHidden = false;
+        activateClickOutside = false;
+    } else {
+        drawerHidden = true;
+        activateClickOutside = true;
+    }
+
+    onMount(() => {
+        if (width >= breakPoint) {
+            drawerHidden = false;
+            activateClickOutside = false;
+        } else {
+            drawerHidden = true;
+            activateClickOutside = true;
+        }
+    });
+    // Sidebar Component
+    const toggleSide = () => {
+      if (width < breakPoint) {
+        drawerHidden = !drawerHidden;
+      }
+    };
+    $: activeUrl = $page.url.pathname;
+    let spanClass = 'pl-8 self-center text-md text-gray-900 whitespace-nowrap dark:text-white';
 </script>
 
-<div id="app">
+<svelte:window bind:innerWidth={width} />
+
+<Navbar let:hidden let:toggle color='currentColor'>
+    <NavHamburger on:click={toggleDrawer} btnClass="ml-3 lg:hidden" />    
+    <NavBrand href='/' class="lg:ml-64">
+        <span class="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
+            SuperHOME Scheduler
+        </span>
+    </NavBrand>
     {#if $user && loginState === 'in'}
-        <button on:click={userLogout} class="fb_loggedin">Log out</button>
-        {#if profileSrc}
-            <img id="profilePicture" alt="profilePicture" src={profileSrc}>
-        {:else}
-            <div id="currentUser">Logged in as: <b>{$user.name}</b></div>
+        <NavUl 
+            divClass='block md:w-auto' 
+            ulClass='flex flex-col p-0 mt-0 md:flex-row md:space-x-8 md:text-sm md:font-medium'
+            {hidden}
+        >
+            <NavLi>
+                {#if profileSrc}
+                    <img class='rounded-[50%] w-10' alt="profilePicture" src={profileSrc}>
+                {:else}
+                    <div class='text-xs'>{$user.name}</div>
+                {/if}
+            </NavLi>
+        </NavUl>
+    {/if}
+</Navbar>
+<Drawer
+    transitionType= "fly"
+    {backdrop}
+    {transitionParams}
+    bind:hidden={drawerHidden}
+    bind:activateClickOutside
+    width="w-64"
+    class="overflow-scroll pb-32"
+    id= "sidebar"
+>
+    <div class="flex items-center">
+        <CloseButton on:click={() => (drawerHidden = true)} class="mb-4 dark:text-white lg:hidden" />
+    </div>
+    <Sidebar asideClass="w-54">
+        <SidebarWrapper divClass="overflow-y-auto py-4 px-3 rounded dark:bg-gray-800">
+            <SidebarGroup>
+                {#if loginState === 'in'}
+                    <SidebarItem label="Logout" on:click={userLogout} />
+                {/if}
+                <SidebarItem label="My Reservations" href="/" on:click={toggleSide} active={activeUrl === `/`} />
+                <SidebarDropdownWrapper isOpen={true} label="Calendars">
+                    <SidebarItem
+                        label= "Pool"
+                        href="/{$view}/pool"
+                        {spanClass}
+                        on:click={toggleSide}
+                        active={activeUrl === $view + '/pool'}
+                    />
+                    <SidebarItem
+                        label= "Open Water"
+                        href="/{$view}/openwater"
+                        {spanClass}
+                        on:click={toggleSide}
+                        active={activeUrl === $view + '/openwater'}
+                    /><SidebarItem
+                        label= "Classroom"
+                        href="/{$view}/classroom"
+                        {spanClass}
+                        on:click={toggleSide}
+                        active={activeUrl === $view + '/classroom'}
+                    />
+                </SidebarDropdownWrapper>
+            </SidebarGroup>
+        </SidebarWrapper>
+    </Sidebar>
+</Drawer>
+<div id="app" class="flex px-1 mx-auto w-full">
+    <main class="lg:ml-72 w-full mx-auto">
+        {#if $user && loginState === 'in'}
+            <slot/>
+        {:else if loginState === 'out'}
+            <button 
+                on:click={login} 
+                class='bg-[#3b5998] text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
+            >Log in with Facebook</button>
         {/if}
-    {:else if loginState === 'out'}
-        <button on:click={login} class="fb_loggedout">Log in with Facebook</button>
-    {/if}
-        
-    {#if $user}
-        <div id="category_buttons">
-            <a href="/">
-                <button>My Reservations</button>
-            </a>
-            <a href="/{$view}/pool">
-                <button>Pool</button>
-            </a>
-            <a href="/{$view}/openwater">
-                <button>Open Water</button>
-            </a>
-            <a href="/{$view}/classroom">
-                <button>Classroom</button>
-            </a>
-        </div>
-    {/if}
-    <slot />
+    </main>
 </div>
 
 <Toaster/>

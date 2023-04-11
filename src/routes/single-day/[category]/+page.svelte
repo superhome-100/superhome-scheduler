@@ -3,10 +3,11 @@
     import DayHourly from '$lib/components/DayHourly.svelte';
     import DayOpenWater from '$lib/components/DayOpenWater.svelte';
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
+    import Chevron from '$lib/components/Chevron.svelte';
     import { validReservationDate, minValidDate } from '$lib/ReservationTimes.js';
     import { month2idx, idx2month } from '$lib/datetimeUtils.js';
     import Modal from '$lib/components/Modal.svelte';
-    import { modal, view, viewedDate } from '$lib/stores.js';
+    import { view, viewedDate } from '$lib/stores.js';
 
     export let data;
 
@@ -54,21 +55,33 @@
 
 </script>
 
-<a href="/multi-day/{category}">
-    <button on:click={multiDayView}>&lt;&lt; Month</button>
-</a>
-
-<Modal show={$modal}>
-    <ReservationDialog category={category} dateFn={resDate}/>
-</Modal>
-
 <br/>
-<div class="dateNav">
-    <i on:click={prevDay} on:keypress={prevDay} class="arrow left"></i>
-    <h2 class="day">{idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}</h2>
-    <i on:click={nextDay} on:keypress={nextDay} class="arrow right"></i>
+<div class="flex justify-between"> 
+    <span class='text-2xl ml-2 md:text-3xl md:ml-2'>{category}</span>
+    <div class='inline-flex items-center justify-between'>
+        <span on:click={prevDay} on:keypress={prevDay}>
+            <Chevron direction='left'/>
+        </span>
+        <span on:click={nextDay} on:keypress={nextDay}>
+            <Chevron direction='right'/>
+        </span>
+        <span class='text-2xl ml-2'>
+            {idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}
+        </span> 
+    </div>
+   <span class='mr-2'>
+        <Modal><ReservationDialog category={category} dateFn={resDate}/></Modal>
+    </span>
 </div>
-<div class='{category} day'>
+<br/>
+<div>
+    <a class='inline-flex' href="/multi-day/{category}">
+        <span><Chevron direction='left'/></span>
+        <span>Month View</span>
+    </a>
+</div>
+<br/>
+<div class='{category} single-day'>
     {#if category === 'pool'}
         <DayHourly category={category} nResource={nResource()} resourceName={resourceName()}/>
     {:else if category === 'classroom'}
@@ -77,9 +90,3 @@
         <DayOpenWater/>
     {/if}
 </div>
-
-<style>
-    h2.day {
-        display: inline;
-    }
-</style>
