@@ -17,7 +17,6 @@
     import { sineIn } from 'svelte/easing';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
-    import '../styles.css';
     import { PUBLIC_FACEBOOK_APP_ID } from "$env/static/public";
     import { settings, buoys, user, users, view, reservations } from '$lib/stores.js';
     import { onMount } from 'svelte';
@@ -310,6 +309,7 @@
         </NavUl>
     {/if}
 </Navbar>
+
 <Drawer
     transitionType= "fly"
     {backdrop}
@@ -317,14 +317,14 @@
     bind:hidden={drawerHidden}
     bind:activateClickOutside
     width="w-64"
-    class="overflow-scroll pb-32"
-    id= "sidebar"
+    id="sidebar"
+    divClass='overflow-y-auto z-50 p-4 bg-white dark:bg-[#252515]'
 >
     <div class="flex items-center">
         <CloseButton on:click={() => (drawerHidden = true)} class="mb-4 dark:text-white lg:hidden" />
     </div>
     <Sidebar asideClass="w-54">
-        <SidebarWrapper divClass="overflow-y-auto py-4 px-3 rounded dark:bg-gray-800">
+        <SidebarWrapper divClass="overflow-y-auto py-4 px-3 rounded">
             <SidebarGroup>
                 {#if loginState === 'in'}
                     <SidebarItem label="Logout" on:click={userLogout} />
@@ -356,6 +356,7 @@
         </SidebarWrapper>
     </Sidebar>
 </Drawer>
+
 <div id="app" class="flex px-1 mx-auto w-full">
     <main class="lg:ml-72 w-full mx-auto">
         {#if $user && loginState === 'in'}
