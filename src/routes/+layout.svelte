@@ -299,9 +299,9 @@
         >
             <NavLi>
                 {#if profileSrc}
-                    <img id="profilePicture" alt="profilePicture" src={profileSrc}>
+                    <img class='border-radius-[50%] w-10' alt="profilePicture" src={profileSrc}>
                 {:else}
-                    <div id="currentUser">{$user.name}</div>
+                    <div class='text-xs'>{$user.name}</div>
                 {/if}
             </NavLi>
         </NavUl>

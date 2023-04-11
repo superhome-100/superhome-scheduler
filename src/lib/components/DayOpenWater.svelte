@@ -56,7 +56,7 @@
 </script>
 
 <div class='row'>
-    <div class='column w-[10%]'>
+    <div class='column text-center w-[10%]'>
         <div class='font-semibold'>buoy</div>
         {#each $buoys as { name }}
             {#if schedule.AM[name] != undefined || schedule.PM[name] != undefined}
@@ -68,7 +68,7 @@
         {/each}
     </div>
     {#each [{cur:'AM', other:'PM'}, {cur:'PM', other:'AM'}] as {cur, other}}
-        <div class='column' style='width: 45%'>
+        <div class='column text-center w-[45%]'>
             <div class='font-semibold'>{cur}</div>
             {#each $buoys as { name }}
                 {#if schedule[cur][name] != undefined}

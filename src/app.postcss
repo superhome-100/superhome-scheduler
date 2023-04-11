@@ -3,10 +3,6 @@
 @tailwind components;
 @tailwind utilities;
 
-*,*:before,*:after {
-    box-sizing: border-box;
-}
-
 @layer base {
     :root {
     font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -60,4 +56,9 @@
             @apply border-classroom-bg-to;
         }
     }
+    
+    input[type=date], input[type=text], input[type=number], select, option {
+        @apply align-middle ps-0.5 pr-0 pe-0 py-0 h-5 ml-2 mb-0.5 text-sm text-black dark:text-white bg-white dark:bg-gray-600 rounded disabled:text-gray-500;
+    }
+
 }

@@ -3,6 +3,8 @@
     import { minValidDateStr } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import BuddyMatch from '$lib/components/BuddyMatch.svelte';
+    import PlusIcon from '$lib/components/PlusIcon.svelte';
+    import DeleteIcon from '$lib/components/DeleteIcon.svelte';
 
     export let rsv = null;
     export let date;
@@ -101,78 +103,90 @@
         }
     }
 
+    const autocompUlStyle = 'relative ml-2 top-0 border border-solid border-bg-gray-300 '
+                          + 'rounded text-sm';
+
 </script>
 
 <svelte:window on:keydown={navigateList} />
 
 <div class="row">
-    <div class="column labels">
+    <div class="column labels text-right w-[33%]">
         <div><label for="formDate">Date</label></div>
         <div><label for="formCategory">Category</label></div>
         <slot name="categoryLabels"/>
         <div><label for="formComments">Comments</label></div>
         <div><label>Add buddy
-                <button 
-                    class="buddy" 
-                    type="button" 
-                    on:click={addBuddyField}
-                    disabled={disabled}
-                    tabindex="1"
-                >+</button>
+            <button 
+                class='p-0' 
+                type="button" 
+                on:click={addBuddyField}
+                disabled={disabled}
+                tabindex="1"
+            ><PlusIcon/></button>
         </label></div>
     </div>
 
-    <div class="column inputs">
+    <div class="column inputs text-left w-[50%]">
         <div><input type="hidden" name="user" value={$user.id}></div>
-        <div><input 
+        <div class='h-6'><input 
             type="date" 
             name="date" 
             id="formDate"
+            class='w-28'
             min={minValidDateStr()} 
             value={date}
             disabled={disabled || noModify}
         ></div>
-        <div><select 
+        <div class='h-6'>
+            <select 
                 name="category" 
                 id="formCategory" 
                 bind:value={category}
                 disabled={disabled || noModify}
             >
-            <option value="pool">Pool</option>
-            <option value="openwater">Open Water</option>
-            <option value="classroom">Classroom</option>
-        </select></div>
+                <option value="pool">Pool</option>
+                <option value="openwater">Open Water</option>
+                <option value="classroom">Classroom</option>
+            </select>
+        </div>
         <slot name="categoryInputs"/> 
-        <div><input 
-            id="formComments"
-            type="text" 
-            name="comments" 
-            value={comments}
-            disabled={disabled || noModify}
-        ></div>
+        <div class='h-6 p-0'>
+            <input 
+                id="formComments"
+                type="text" 
+                name="comments" 
+                value={comments}
+                disabled={disabled || noModify}
+            >
+        </div>
         {#each buddyFields as bf (bf.id)}
-            <div class="autocomplete">
-                <div><input 
-                    id={"buddy" + bf.id + "-input"}
-                    type="text" 
-                    autocomplete="off"
-                    name="buddy{bf.id}" 
-                    bind:value={bf.name} 
-                    on:input={matchUser}
-                    on:focus={() => currentBF = bf}
-                    use:focus
-                    disabled={disabled}
-                ></div>
+            <div class="relative table h-6 [&>div]:table-cell">
+                <div>
+                    <input 
+                        id={"buddy" + bf.id + "-input"}
+                        type="text" 
+                        autocomplete="off"
+                        name="buddy{bf.id}" 
+                        bind:value={bf.name} 
+                        on:input={matchUser}
+                        on:focus={() => currentBF = bf}
+                        use:focus
+                        disabled={disabled}
+                        tabindex='2'
+                    >
+                </div>
                 <input type="hidden" value={bf.userId} name="buddy{bf.id}_id">
                 <button 
-                    class="buddy" 
+                    class="p-0" 
                     type="button" 
                     on:click={removeBuddyField(bf)}
                     disabled={disabled}
-                >x</button> 
+                    tabindex='3'
+                ><DeleteIcon/></button> 
             </div>
             {#if bf.matches.length > 0}
-                <ul id="autocomplete-items-list">
+                <ul class={autocompUlStyle}>
                     {#each bf.matches as m, i}
                         <BuddyMatch 
                             itemLabel={m.name} 
@@ -187,7 +201,13 @@
 </div>
 
 <input type="hidden" name="numBuddies" value={buddyFields.length}>
-<div class="submitButton">
-    <button type="submit" tabindex="2" disabled={!$canSubmit || disabled}>Submit</button>
+
+<div class='text-right p-2'>
+    <button 
+        type="submit" 
+        class='bg-gray-100 disabled:text-gray-400 px-3 py-1'
+        tabindex='4' 
+        disabled={!$canSubmit || disabled}
+    >Submit</button>
 </div>
 
