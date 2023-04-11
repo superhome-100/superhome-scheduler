@@ -43,14 +43,14 @@
 </script>
 
 <div class="row">
-    <div class="column w-[12%]" style="margin: 0">
+    <div class="column w-[12%] m-0 text-center">
         <div style='height: 1lh'/>
         {#each displayTimes() as t}
             <div class='font-semibold' style='height: {rowHeight}rem'>{t}</div>
         {/each}
     </div>
     {#each [...Array(nResource).keys()] as i}
-        <div class="column" style='width: {88/nResource}%'>
+        <div class="column text-center" style='width: {88/nResource}%'>
             <div class='font-semibold'>{resourceName} {i+1}</div>
             {#if i < schedule.length}
                 <div style='height: 0.5rem'/>

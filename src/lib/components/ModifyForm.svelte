@@ -52,8 +52,8 @@
 </script>
 
 {#if hasForm}
-    <div class="submitForm">
-        <h2>{prompt} reservation</h2>
+    <div>
+        <div class='text-center text-2xl font-semibold my-2'>{prompt} reservation</div>
         <form 
             method="POST" 
             action="/?/updateReservation" 

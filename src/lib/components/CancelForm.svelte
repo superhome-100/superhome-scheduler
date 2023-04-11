@@ -39,7 +39,7 @@
 </script>
 
 {#if hasForm}
-    <div class="submitForm">
+    <div>
         <form 
             method="POST" 
             action="/?/cancelReservation" 
@@ -48,7 +48,8 @@
             <input type="hidden" name="id" value={rsv.id}>
             <input type="hidden" name="date" value={rsv.date}>
             <input type="hidden" name="category" value={rsv.category}>
-            <div>Really cancel {rsv.category} reservation on {rsv.date}?</div>
+            <div>Really cancel {rsv.category} reservation on</div>
+            <div>{rsv.date}?</div>
             <button type="submit">Confirm</button>
         </form>
     </div>
