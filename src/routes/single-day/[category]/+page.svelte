@@ -55,14 +55,23 @@
 
 </script>
 
-<div class="flex justify-between"> 
-    <span class='text-2xl ml-2 md:text-3xl md:ml-2'>{category}</span>
+<div class='flex items-center justify-between'>
+    <div class='dropdown h-8 mb-4'>
+        <label tabindex='0' class='btn lowercase font-normal text-xl text-black hover:text-white bg-white hover:bg-gray-700 border-transparent m-0'>{category}</label>
+        <ul tabindex='0' class='dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit'>
+            {#each ['pool', 'openwater', 'classroom'] as cat}
+                {#if cat !== category}
+                    <li><a class='text-xl' href='/single-day/{cat}'>{cat}</a></li>
+                {/if}
+            {/each}
+        </ul>
+    </div>
     <div class='inline-flex items-center justify-between'>
-        <span on:click={prevDay} on:keypress={prevDay}>
-            <Chevron direction='left'/>
+        <span on:click={prevDay} on:keypress={prevDay} class='cursor-pointer'>
+            <Chevron direction='left' svgClass='h-8 w-8'/>
         </span>
-        <span on:click={nextDay} on:keypress={nextDay}>
-            <Chevron direction='right'/>
+        <span on:click={nextDay} on:keypress={nextDay} class='cursor-pointer'>
+            <Chevron direction='right' svgClass='h-8 w-8'/>
         </span>
         <span class='text-2xl ml-2'>
             {idx2month[$viewedDate.getMonth()]} {$viewedDate.getDate()}
@@ -74,9 +83,9 @@
 </div>
 <br/>
 <div>
-    <a class='inline-flex' href="/multi-day/{category}">
+    <a class='inline-flex items-center border border-solid border-transparent hover:border-black rounded-lg pl-1.5 pr-4 pb-1.5 pt-2 hover:text-white hover:bg-gray-700' href="/multi-day/{category}">
         <span><Chevron direction='left'/></span>
-        <span>Month View</span>
+        <span class='text-xl pb-1'>month view</span>
     </a>
 </div>
 <br/>

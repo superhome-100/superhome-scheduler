@@ -5,6 +5,7 @@
     import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils.js';
     import { getContext } from 'svelte';
     import ViewForms from '$lib/components/ViewForms.svelte';
+    import { badgeColor } from '$lib/utils.js';
 
     export let nResource;
     export let resourceName;
@@ -58,7 +59,9 @@
         let names = rsvs.map((rsv)=>rsv.user.name);
         let fmt = [];
         while (names.length > 0 && fmt.length < nSlots) {
-            fmt.push(names.splice(0,1));
+            for (name of names.splice(0,1)[0].split(' ')) {
+                fmt.push(name);
+            }
             if (names.length > 0) {
                 fmt.push('and');
             }
@@ -84,15 +87,22 @@
             {#if i < schedule.length}
                 <div style='height: 0.5rem'/>
                 {#each schedule[i] as { start, nSlots, cls, tag, data }}
-                    <div 
-                        class='{cls} {category} text-sm cursor-pointer hover:font-semibold' 
-                        style="height: {rowHeight*(nSlots/slotDiv) - (cls === 'rsv' ? blkMgn : 0)}rem"
-                        on:click={cls === 'rsv' ? showViewRsvs(data) : ()=>{}}
-                    >
-                        {#each formatTag(data, nSlots) as line}
-                            <div>{line}</div>
-                        {/each}
-                    </div>
+                    {#if cls === 'rsv'}
+                        <div class='indicator w-full'>
+                            <span class='rsv-indicator {badgeColor(data)}'/>
+                            <div 
+                                class='{cls} {category} text-sm cursor-pointer hover:font-semibold' 
+                                style="height: {rowHeight*(nSlots/slotDiv) - (cls === 'rsv' ? blkMgn : 0)}rem"
+                                on:click={cls === 'rsv' ? showViewRsvs(data) : ()=>{}}
+                            >
+                                {#each formatTag(data, nSlots) as line}
+                                    <div>{line}</div>
+                                {/each}
+                            </div>
+                        </div>
+                    {:else}
+                        <div style="height: {rowHeight*(nSlots/slotDiv)}rem"></div>
+                    {/if}
                 {/each}
             {/if}
         </div>
