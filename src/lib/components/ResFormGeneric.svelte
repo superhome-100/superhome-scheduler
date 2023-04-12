@@ -11,6 +11,7 @@
     export let category;
     export let disabled = false;
     export let hideSubmit = false;
+    export let showBuddyFields = true;
 
     let comments = rsv == null ? null : rsv.comments;
     let noModify = rsv != null;
@@ -116,19 +117,21 @@
         <div class='h-8 mb-0.5'><label for="formDate">Date</label></div>
         <div class='h-8 mb-0.5'><label for="formCategory">Category</label></div>
         <slot name="categoryLabels"/>
-        <div class='h-8 mb-0.5'><label>Add buddy
-            <button 
-                class='p-0' 
-                type="button" 
-                on:click={addBuddyField}
-                disabled={disabled}
-                tabindex="1"
-            ><PlusIcon/></button>
-        </label></div>
-        {#if buddyFields.length > 1}
-            {#each buddyFields.slice(1) as bf}
-                <div class='h-8 mb-0.5'/>
-            {/each}
+        {#if showBuddyFields}
+            <div class='h-8 mb-0.5'><label>Add buddy
+                <button 
+                    class='p-0' 
+                    type="button" 
+                    on:click={addBuddyField}
+                    disabled={disabled}
+                    tabindex="1"
+                ><PlusIcon/></button>
+            </label></div>
+            {#if buddyFields.length > 1}
+                {#each buddyFields.slice(1) as bf}
+                    <div class='h-8 mb-0.5'/>
+                {/each}
+            {/if}
         {/if}
         <div class='h-8 mb-0.5'><label for="formComments">Comments</label></div>
     </div>
@@ -157,48 +160,50 @@
             </select>
         </div>
         <slot name="categoryInputs"/> 
-        {#if buddyFields.length == 0}
-            <div class='h-8 mb-0.5'/>
-        {:else}
-        {#each buddyFields as bf (bf.id)}
-            <div class="relative table [&>div]:table-cell">
-                <div>
-                    <input 
-                        id={"buddy" + bf.id + "-input"}
-                        type="text" 
-                        class='w-48'
-                        autocomplete="off"
-                        name="buddy{bf.id}" 
-                        bind:value={bf.name} 
-                        on:input={matchUser}
-                        on:focus={() => currentBF = bf}
-                        use:focus
-                        disabled={disabled}
-                        tabindex='2'
-                    >
-                </div>
-                <input type="hidden" value={bf.userId} name="buddy{bf.id}_id">
-                <button 
-                    class="p-0" 
-                    type="button" 
-                    on:click={removeBuddyField(bf)}
-                    disabled={disabled}
-                    tabindex='3'
-                ><DeleteIcon/></button> 
-            </div>
-            {#if bf.matches.length > 0}
-                <ul class={autocompUlStyle}>
-                    {#each bf.matches as m, i}
-                        <BuddyMatch 
-                            itemLabel={m.name} 
-                            highlighted={i === hiLiteIndex} 
-                            on:click={() => setInputVal(m)}
-                        /> 
-                    {/each}
-                </ul>
+        {#if showBuddyFields}
+            {#if buddyFields.length == 0}
+                <div class='h-8 mb-0.5'/>
+            {:else}
+                {#each buddyFields as bf (bf.id)}
+                    <div class="relative table [&>div]:table-cell">
+                        <div>
+                            <input 
+                                id={"buddy" + bf.id + "-input"}
+                                type="text" 
+                                class='w-48'
+                                autocomplete="off"
+                                name="buddy{bf.id}" 
+                                bind:value={bf.name} 
+                                on:input={matchUser}
+                                on:focus={() => currentBF = bf}
+                                use:focus
+                                disabled={disabled}
+                                tabindex='2'
+                            >
+                        </div>
+                        <input type="hidden" value={bf.userId} name="buddy{bf.id}_id">
+                        <button 
+                            class="p-0" 
+                            type="button" 
+                            on:click={removeBuddyField(bf)}
+                            disabled={disabled}
+                            tabindex='3'
+                        ><DeleteIcon/></button> 
+                    </div>
+                    {#if bf.matches.length > 0}
+                        <ul class={autocompUlStyle}>
+                            {#each bf.matches as m, i}
+                                <BuddyMatch 
+                                    itemLabel={m.name} 
+                                    highlighted={i === hiLiteIndex} 
+                                    on:click={() => setInputVal(m)}
+                                /> 
+                            {/each}
+                        </ul>
+                    {/if}
+                {/each}
             {/if}
-        {/each}
-    {/if}
+        {/if}
         <div>
             <textarea 
                 id="formComments"
