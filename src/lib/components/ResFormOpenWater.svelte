@@ -6,6 +6,7 @@
     export let disabled = false;
     export let date;
     export let category;
+    export let hideSubmit = false;
 
     category = rsv == null ? category : rsv.category;
     date = rsv == null ? date : rsv.date;
@@ -24,8 +25,8 @@
 
 </script>
 
-<ResFormGeneric disabled={disabled} date={date} bind:category={category} rsv={rsv}>
-    <div slot="categoryLabels">
+<ResFormGeneric {hideSubmit} {disabled} {date} bind:category={category} {rsv}>
+    <div class='[&>div]:h-8 [&>div]:m-0.5' slot="categoryLabels">
         <div><label for="formOwTime">Time</label></div>
         <div><label for="formResType">Type</label></div>
         {#if autoOrCourse === 'course'}
@@ -34,7 +35,7 @@
         <div><label for="formMaxDepth">Max Depth</label></div>
     </div>
     <div slot="categoryInputs">
-        <div class='h-6'>
+        <div>
             <select 
                 id="formOwTime" 
                 disabled={disabled || noModify} 
@@ -45,7 +46,7 @@
                 <option value='PM'>PM</option>
             </select>
         </div>
-        <div class='h-6'>
+        <div>
             <select 
                 id="formResType" 
                 disabled={disabled} 
@@ -57,7 +58,7 @@
             </select>
         </div>
         {#if autoOrCourse == 'course'}
-            <div class='h-6'>
+            <div>
                 <select disabled={disabled} name="numStudents" value={numStudents}>
                     {#each [...Array(10).keys()] as n}
                         <option value={n+1}>{n+1}</option>
@@ -65,7 +66,7 @@
                 </select>
             </div>
         {/if}
-        <div class='h-6'>
+        <div>
             <input 
                 disabled={disabled || noModify}
                 type=number 

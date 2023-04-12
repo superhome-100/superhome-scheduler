@@ -10,6 +10,7 @@
     export let date;
     export let category;
     export let disabled = false;
+    export let hideSubmit = false;
 
     let comments = rsv == null ? null : rsv.comments;
     let noModify = rsv != null;
@@ -110,13 +111,12 @@
 
 <svelte:window on:keydown={navigateList} />
 
-<div class="row">
+<div class="row w-full">
     <div class="column labels text-right w-[33%]">
-        <div><label for="formDate">Date</label></div>
-        <div><label for="formCategory">Category</label></div>
+        <div class='h-8 mb-0.5'><label for="formDate">Date</label></div>
+        <div class='h-8 mb-0.5'><label for="formCategory">Category</label></div>
         <slot name="categoryLabels"/>
-        <div><label for="formComments">Comments</label></div>
-        <div><label>Add buddy
+        <div class='h-8 mb-0.5'><label>Add buddy
             <button 
                 class='p-0' 
                 type="button" 
@@ -125,20 +125,26 @@
                 tabindex="1"
             ><PlusIcon/></button>
         </label></div>
+        {#if buddyFields.length > 1}
+            {#each buddyFields.slice(1) as bf}
+                <div class='h-8 mb-0.5'/>
+            {/each}
+        {/if}
+        <div class='h-8 mb-0.5'><label for="formComments">Comments</label></div>
     </div>
 
-    <div class="column inputs text-left w-[50%]">
+    <div class="column inputs text-left w-[67%]">
         <div><input type="hidden" name="user" value={$user.id}></div>
-        <div class='h-6'><input 
+        <div><input 
             type="date" 
             name="date" 
             id="formDate"
-            class='w-28'
+            class='w-44'
             min={minValidDateStr()} 
             value={date}
             disabled={disabled || noModify}
         ></div>
-        <div class='h-6'>
+        <div>
             <select 
                 name="category" 
                 id="formCategory" 
@@ -151,21 +157,16 @@
             </select>
         </div>
         <slot name="categoryInputs"/> 
-        <div class='h-6 p-0'>
-            <input 
-                id="formComments"
-                type="text" 
-                name="comments" 
-                value={comments}
-                disabled={disabled || noModify}
-            >
-        </div>
+        {#if buddyFields.length == 0}
+            <div class='h-8 mb-0.5'/>
+        {:else}
         {#each buddyFields as bf (bf.id)}
-            <div class="relative table h-6 [&>div]:table-cell">
+            <div class="relative table [&>div]:table-cell">
                 <div>
                     <input 
                         id={"buddy" + bf.id + "-input"}
                         type="text" 
+                        class='w-48'
                         autocomplete="off"
                         name="buddy{bf.id}" 
                         bind:value={bf.name} 
@@ -197,6 +198,17 @@
                 </ul>
             {/if}
         {/each}
+    {/if}
+        <div>
+            <textarea 
+                id="formComments"
+                name="comments" 
+                class='mb-4'
+                cols="17"
+                bind:value={comments}
+                disabled={disabled || noModify}
+            />
+        </div>
     </div>
 </div>
 
@@ -208,6 +220,6 @@
         class='bg-gray-100 disabled:text-gray-400 px-3 py-1'
         tabindex='4' 
         disabled={!$canSubmit || disabled}
+        hidden={hideSubmit}
     >Submit</button>
 </div>
-

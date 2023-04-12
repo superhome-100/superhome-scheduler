@@ -5,6 +5,7 @@
     export let disabled = false;
     export let category;
     export let date;
+    export let hideSubmit = false;
 </script>
 
-<ResFormPool resType="course" rsv={rsv} date={date} bind:category={category} disabled={disabled}/>
+<ResFormPool resType="course" {rsv} {date} bind:category={category} {disabled} {hideSubmit}/>

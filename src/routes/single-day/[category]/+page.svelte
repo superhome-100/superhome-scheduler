@@ -55,7 +55,6 @@
 
 </script>
 
-<br/>
 <div class="flex justify-between"> 
     <span class='text-2xl ml-2 md:text-3xl md:ml-2'>{category}</span>
     <div class='inline-flex items-center justify-between'>
@@ -82,11 +81,13 @@
 </div>
 <br/>
 <div class='{category} single-day'>
-    {#if category === 'pool'}
-        <DayHourly category={category} nResource={nResource()} resourceName={resourceName()}/>
-    {:else if category === 'classroom'}
-        <DayHourly category={category} nResource={nResource()} resourceName={resourceName()}/>
-    {:else if category == 'openwater'}
-        <DayOpenWater/>
-    {/if}
+    <Modal>
+        {#if category === 'pool'}
+            <DayHourly category={category} nResource={nResource()} resourceName={resourceName()}/>
+        {:else if category === 'classroom'}
+            <DayHourly category={category} nResource={nResource()} resourceName={resourceName()}/>
+        {:else if category == 'openwater'}
+            <DayOpenWater/>
+        {/if}
+    </Modal>
 </div>

@@ -28,6 +28,6 @@
 </script>
 
 <div on:click={showDialog} on:keypress={showDialog}>
-    <ReservationButton {category}/>
+    <ReservationButton/>
 </div>
 
