@@ -54,14 +54,17 @@
         return hrs;
     };
 
-    const formatTag = (tag, nSlots) => {
-        let words = tag.split(' ');
+    const formatTag = (rsvs, nSlots) => {
+        let names = rsvs.map((rsv)=>rsv.user.name);
         let fmt = [];
-        while (words.length > 0 && fmt.length < nSlots) {
-            fmt.push(words.splice(0,1));
+        while (names.length > 0 && fmt.length < nSlots) {
+            fmt.push(names.splice(0,1));
+            if (names.length > 0) {
+                fmt.push('and');
+            }
         }
-        if (words.length > 0) {
-            fmt.push(words.join(' '));
+        if (names.length > 0) {
+            fmt.push(names.join(' and '));
         }
         return fmt;
     };
@@ -86,7 +89,7 @@
                         style="height: {rowHeight*(nSlots/slotDiv) - (cls === 'rsv' ? blkMgn : 0)}rem"
                         on:click={cls === 'rsv' ? showViewRsvs(data) : ()=>{}}
                     >
-                        {#each formatTag(tag, nSlots) as line}
+                        {#each formatTag(data, nSlots) as line}
                             <div>{line}</div>
                         {/each}
                     </div>
