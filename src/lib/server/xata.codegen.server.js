@@ -37,6 +37,7 @@ const tables = [
           { name: "id", type: "multiple" },
         ],
       },
+      { name: "buoy", type: "string" },
     ],
   },
   {
@@ -88,7 +89,6 @@ const tables = [
     columns: [
       { name: "name", type: "string" },
       { name: "maxDepth", type: "int" },
-      { name: "maxCapacity", type: "int" },
     ],
   },
 ];

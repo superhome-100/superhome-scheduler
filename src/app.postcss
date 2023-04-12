@@ -71,21 +71,6 @@
         }
     }
 
-    .calendar {
-        & td {
-            @apply align-top h-32 border border-solid;
-        }
-        & td.pool {
-            @apply border-pool-bg-to;
-        }
-        & td.openwater {
-            @apply border-openwater-bg-to;
-        }
-        & td.classroom {
-            @apply border-classroom-bg-to;
-        }
-    }
-    
     input[type=date], input[type=text], input[type=number], select, option, textarea {
         @apply align-middle ps-0.5 pe-0 py-0 ml-2 mb-0.5 text-xl text-black dark:text-white bg-white dark:bg-gray-800 rounded disabled:text-gray-500 dark:disabled:text-gray-300;
     }
@@ -94,5 +79,11 @@
         @apply h-8;
     }
 
-
+    .btn-fsh-dropdown {
+        @apply lowercase font-normal text-xl text-black hover:text-white bg-white hover:bg-gray-700 border-transparent m-0;
+    }
+    
+    .rsv-indicator {
+        @apply mr-2.5 mt-2.5 indicator-item badge h-2 w-2 p-0 border-transparent;
+    }
 }

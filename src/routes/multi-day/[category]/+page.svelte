@@ -14,6 +14,7 @@
     $view = 'multi-day';
 
     $: gCategory = data.category;
+    $: console.log(gCategory);
     $: gMonth = $viewedMonth.getMonth();
     $: gYear = $viewedMonth.getFullYear();
     $: gMonthArr = () => monthArr(
@@ -54,13 +55,32 @@
         && date.getDate() == today.getDate() 
         ? 'today' : null;
 
+    const catStyle = (cat) => { return (cat === 'pool')
+        ? 'border-pool-bg-to' : (cat === 'openwater')
+        ? 'border-openwater-bg-to' : (cat === 'classroom')
+        ? 'border-classroom-bg-to' : undefined;
+    };
+
 </script>
 
 <div class="flex items-center justify-between">
-    <span class='text-2xl ml-2'>{gCategory}</span>
+    <div class='dropdown h-8 mb-4'>
+        <label tabindex='0' class='btn btn-fsh-dropdown'>{gCategory}</label>
+        <ul tabindex='0' class='dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit'>
+            {#each ['pool', 'openwater', 'classroom'] as cat}
+                {#if cat !== gCategory}
+                    <li><a class='text-xl' href='/multi-day/{cat}'>{cat}</a></li>
+                {/if}
+            {/each}
+        </ul>
+    </div>
     <div class='inline-flex items-center justify-between'>
-        <span on:click={prevMonth} on:keypress={prevMonth}><Chevron direction='left'/></span>
-        <span on:click={nextMonth} on:keypress={nextMonth}><Chevron direction='right'/></span>
+        <span on:click={prevMonth} on:keypress={prevMonth} class='cursor-pointer'>
+            <Chevron direction='left' svgClass='h-8 w-8'/>
+        </span>
+        <span on:click={nextMonth} on:keypress={nextMonth} class='cursor-pointer'>
+            <Chevron direction='right' svgClass='h-8 w-8'/>
+        </span>
         <span class='text-2xl ml-2'>{idx2month[gMonth]}</span>
     </div>
     <span class='mr-2'>
@@ -69,7 +89,7 @@
 </div>
 <br/>
 <div>
-    <table class='calendar table-fixed border-collapse ml-1 w-full'>
+    <table class='calendar table-fixed border-collapse w-full'>
         <thead>
             <tr>
                 <th>S</th>
@@ -85,7 +105,7 @@
             {#each gMonthArr() as week}
                 <tr>
                     {#each week as { date, rsvs }}
-                        <td class={gCategory}>
+                        <td class='{catStyle(gCategory)} align-top h-24 border border-solid'>
                             <DayOfMonth 
                                 id={isToday(date)}
                                 date={date} 

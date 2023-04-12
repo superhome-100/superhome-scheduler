@@ -5,6 +5,7 @@
     import { assignRsvsToBuoys } from '$lib/autoAssign.js';
     import { getContext } from 'svelte';
     import ViewForms from '$lib/components/ViewForms.svelte';
+    import { badgeColor } from '$lib/utils.js';
 
     const { open } = getContext('simple-modal');
 
@@ -91,11 +92,14 @@
                         style='height: {rowHeights[name].buoy}rem'
                     >
                         {#each schedule[cur][name] as rsv, i}
-                            <div 
-                                class='overflow-hidden whitespace-nowrap cursor-pointer hover:font-semibold'
-                                style='margin: {rowHeights[name].margins[i]}'
-                                on:click={showViewRsv(rsv)}
-                            >{displayTag(rsv)}</div>
+                            <div class='block indicator w-full'>
+                                <span class='rsv-indicator mr-0 {badgeColor([rsv])}'/>
+                                <div 
+                                    class='cursor-pointer hover:font-semibold'
+                                    style='margin: {rowHeights[name].margins[i]}'
+                                    on:click={showViewRsv(rsv)}
+                                >{displayTag(rsv)}</div>
+                            </div>
                         {/each}
                     </div>
                 {:else if schedule[other][name] != undefined}

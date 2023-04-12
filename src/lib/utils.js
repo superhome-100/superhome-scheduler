@@ -254,15 +254,6 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity) {
 
 function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity) {
 
-    const combineTags = (oldTag, rsv) => {
-        let newTag = displayTag(rsv);
-        if (oldTag != '') {
-            return oldTag + ' and ' + newTag;
-        } else {
-            return newTag;
-        }
-    };
-
     let incT = inc(dateStr);
     let nextR = 0;
 
@@ -286,6 +277,7 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity) {
                     begBlock.end = start;
                     begBlock.nSlots = (start - block.start) / incT;
                     begBlock.cls = blockCls;
+                    begBlock.data = [...block.data];
                     resource.splice(j, 0, begBlock);
                     j++;
                 }
@@ -379,3 +371,10 @@ export function parseSettingsTbl(settingsTbl) {
     });
     return settings;
 }
+
+export const badgeColor = (rsvs) => {
+    let approved = rsvs.reduce((sts,rsv) => sts && rsv.status === 'confirmed', true);
+    return approved ? 'bg-[#00FF00]' : 'bg-[#FFFF00]';
+};
+
+

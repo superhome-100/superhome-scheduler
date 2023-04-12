@@ -22,7 +22,8 @@ const config = {
 	},
     darkMode: 'media',
 	plugins: [
-        require('flowbite/plugin')
+        require('flowbite/plugin'),
+        require('daisyui')
     ],
 };
 
