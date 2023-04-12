@@ -23,9 +23,11 @@
 
     let noModify = rsv != null;
 
+    $: showBuddyFields = autoOrCourse === 'autonomous';
+
 </script>
 
-<ResFormGeneric {hideSubmit} {disabled} {date} bind:category={category} {rsv}>
+<ResFormGeneric {hideSubmit} {showBuddyFields} {disabled} {date} bind:category={category} {rsv}>
     <div class='[&>div]:h-8 [&>div]:m-0.5' slot="categoryLabels">
         <div><label for="formOwTime">Time</label></div>
         <div><label for="formResType">Type</label></div>
