@@ -221,7 +221,6 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity) {
                         nSlots: (start - nextTime) / incT,
                         cls: 'filler',
                         data: [],
-                        tag: '',
                     });
                 }
                 nextTime = timeStrToMin(rsv.endTime);
@@ -232,7 +231,6 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity) {
                     nSlots,
                     cls: 'rsv',
                     data: [rsv],
-                    tag: displayTag(rsv),
                     resType: rsv.resType
                 });
                 rsvs.splice(j,1);
@@ -247,7 +245,6 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity) {
                 nSlots: (end-nextTime) / incT,
                 cls: 'filler',
                 data: [],
-                tag: ''
             });
         }
         schedule.push(thisR);
@@ -281,7 +278,6 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity) {
         for (let j=0; j < resource.length; j++) {
             let block = resource[j];
             let blockCls = block.cls;
-            let blockTag = block.tag;
             let nRsv = block.data.length;
             if (block.resType != 'course' && start >= block.start && start < block.end) {
                 if (start > block.start) {
@@ -290,7 +286,6 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity) {
                     begBlock.end = start;
                     begBlock.nSlots = (start - block.start) / incT;
                     begBlock.cls = blockCls;
-                    begBlock.tag = blockTag;
                     resource.splice(j, 0, begBlock);
                     j++;
                 }
@@ -299,7 +294,6 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity) {
                 block.nSlots = (block.end - start) / incT;
                 block.cls = 'rsv';
                 block.data.push(rsv);
-                block.tag = combineTags(blockTag, rsv);
 
                 if (end <= block.end) {
                     if (end < block.end) {
@@ -308,7 +302,6 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity) {
                         endBlock.start = end;
                         endBlock.nSlots = (block.end - end) / incT;
                         endBlock.cls = blockCls;
-                        endBlock.tag = blockTag;
                         endBlock.data = endBlock.data.slice(0,nRsv);
                         resource.splice(j+1, 0, endBlock);
                         j++;
