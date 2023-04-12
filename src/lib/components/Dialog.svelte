@@ -2,7 +2,6 @@
     import { getContext } from 'svelte';
 	import CancelForm from './CancelForm.svelte';
     import ModifyForm from './ModifyForm.svelte';
-    import { reservations } from '$lib/stores.js';
     import DeleteIcon from './DeleteIcon.svelte';
     import EditIcon from './EditIcon.svelte';
 

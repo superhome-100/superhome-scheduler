@@ -55,7 +55,7 @@
         ? 'today' : null;
 
 </script>
-<br/>
+
 <div class="flex items-center justify-between">
     <span class='text-2xl ml-2'>{gCategory}</span>
     <div class='inline-flex items-center justify-between'>

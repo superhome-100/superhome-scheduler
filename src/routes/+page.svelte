@@ -9,8 +9,7 @@
 </script>
 
 {#if $user != null}
-    <br/>
-    <span class='flex justify-between mr-2'>
+    <span class='flex items-center justify-between mr-2'>
         <span/>
         <span class='text-lg font-semibold'>{$user.name.split(' ')[0]}'s Reservations</span>
         <Modal><ReservationDialog dateFn={minValidDate}/></Modal>
@@ -24,10 +23,14 @@
             </TabList>
             
             <TabPanel>
-                <MyReservationsTable resType='upcoming'/>
+                <Modal>
+                    <MyReservationsTable resType='upcoming'/>
+                </Modal>
             </TabPanel>
             <TabPanel>
-                <MyReservationsTable resType='past'/>
+                <Modal>
+                    <MyReservationsTable resType='past'/>
+                </Modal>
             </TabPanel>
         
         </Tabs>

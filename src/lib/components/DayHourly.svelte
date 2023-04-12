@@ -3,10 +3,24 @@
     import { viewedDate, reservations } from '$lib/stores.js';
     import { getDaySchedule } from '$lib/utils.js';
     import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils.js';
+    import { getContext } from 'svelte';
+    import ViewForms from '$lib/components/ViewForms.svelte';
 
     export let nResource;
     export let resourceName;
     export let category;
+
+    const { open } = getContext('simple-modal');
+
+    const showViewRsvs = (rsvs) => {
+		open(
+			ViewForms,
+            {
+                rsvs: rsvs, 
+                hasForm: true,
+            }
+		);
+    };
 
     $: schedule = getDaySchedule($reservations, $viewedDate, category, nResource);
 
@@ -38,7 +52,19 @@
         }
         hrs.push(et[et.length-1]);
         return hrs;
-    }
+    };
+
+    const formatTag = (tag, nSlots) => {
+        let words = tag.split(' ');
+        let fmt = [];
+        while (words.length > 0 && fmt.length < nSlots) {
+            fmt.push(words.splice(0,1));
+        }
+        if (words.length > 0) {
+            fmt.push(words.join(' '));
+        }
+        return fmt;
+    };
 
 </script>
 
@@ -54,11 +80,16 @@
             <div class='font-semibold'>{resourceName} {i+1}</div>
             {#if i < schedule.length}
                 <div style='height: 0.5rem'/>
-                {#each schedule[i] as { start, nSlots, cls, tag }}
+                {#each schedule[i] as { start, nSlots, cls, tag, data }}
                     <div 
-                        class='{cls} {category} text-sm' 
+                        class='{cls} {category} text-sm cursor-pointer hover:font-semibold' 
                         style="height: {rowHeight*(nSlots/slotDiv) - (cls === 'rsv' ? blkMgn : 0)}rem"
-                    >{tag}</div>
+                        on:click={cls === 'rsv' ? showViewRsvs(data) : ()=>{}}
+                    >
+                        {#each formatTag(tag, nSlots) as line}
+                            <div>{line}</div>
+                        {/each}
+                    </div>
                 {/each}
             {/if}
         </div>

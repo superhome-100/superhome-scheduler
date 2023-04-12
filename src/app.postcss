@@ -56,8 +56,7 @@
     }
     
     .rsv {
-        @apply overflow-hidden text-center text-ellipsis whitespace-nowrap rounded-2xl mb-1 w-[98%] m-auto px-2;
-
+        @apply overflow-scroll text-center whitespace-nowrap rounded-2xl mb-1 w-[98%] m-auto px-2;
     }
 
     .rsv, .today {
@@ -87,8 +86,13 @@
         }
     }
     
-    input[type=date], input[type=text], input[type=number], select, option {
-        @apply align-middle ps-0.5 pr-0 pe-0 py-0 h-5 ml-2 mb-0.5 text-sm text-black dark:text-white bg-white dark:bg-gray-800 rounded disabled:text-gray-500 dark:disabled:text-gray-300;
+    input[type=date], input[type=text], input[type=number], select, option, textarea {
+        @apply align-middle ps-0.5 pe-0 py-0 ml-2 mb-0.5 text-xl text-black dark:text-white bg-white dark:bg-gray-800 rounded disabled:text-gray-500 dark:disabled:text-gray-300;
     }
+
+    input[type=date], input[type=text], input[type=number], select, option {
+        @apply h-8;
+    }
+
 
 }

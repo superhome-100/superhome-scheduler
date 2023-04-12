@@ -3,7 +3,21 @@
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { displayTag } from '$lib/utils.js';
     import { assignRsvsToBuoys } from '$lib/autoAssign.js';
-    
+    import { getContext } from 'svelte';
+    import ViewForms from '$lib/components/ViewForms.svelte';
+
+    const { open } = getContext('simple-modal');
+
+    const showViewRsv = (rsv) => {
+        open(
+            ViewForms,
+            {
+                rsvs: [rsv], 
+                hasForm: true,
+                }
+        );
+    };
+
     function getOpenWaterSchedule(rsvs, datetime) {
         let schedule = {};
         let today = datetimeToLocalDateStr(datetime);
@@ -78,8 +92,9 @@
                     >
                         {#each schedule[cur][name] as rsv, i}
                             <div 
-                                class='overflow-hidden whitespace-nowrap'
+                                class='overflow-hidden whitespace-nowrap cursor-pointer hover:font-semibold'
                                 style='margin: {rowHeights[name].margins[i]}'
+                                on:click={showViewRsv(rsv)}
                             >{displayTag(rsv)}</div>
                         {/each}
                     </div>

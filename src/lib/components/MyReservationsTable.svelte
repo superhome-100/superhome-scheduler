@@ -3,8 +3,10 @@
     import { minuteOfDay, beforeCancelCutoff } from '$lib/ReservationTimes.js';
     import { timeStrToMin, idx2month } from '$lib/datetimeUtils.js';
     import { user, reservations } from '$lib/stores.js';
+    import { getContext } from 'svelte';
     import Modal from './Modal.svelte';
     import Dialog from './Dialog.svelte';
+    import ModifyForm from './ModifyForm.svelte';
 
     export let resType; /* past or upcoming */
 
@@ -90,6 +92,18 @@
         }
         return desc;
     };
+    
+    const { open } = getContext('simple-modal');
+
+    const showModify = (rsv) => {
+		open(
+			ModifyForm,
+            {
+                rsv: rsv, 
+                hasForm: true,
+            }
+		);
+    };
 
 </script>
 
@@ -98,17 +112,15 @@
         <tbody>
             {#each $reservations as rsv}
                 {#if rsv.user.id === $user.id && getResType(rsv) === resType} 
-                    <tr class='[&>td]:w-24 h-10 bg-gradient-to-br {bgColorFrom(rsv.category)} {bgColorTo(rsv.category)}'>
+                    <tr 
+                        on:click={showModify(rsv)} 
+                        class='[&>td]:w-24 h-10 bg-gradient-to-br {bgColorFrom(rsv.category)} {bgColorTo(rsv.category)} cursor-pointer'
+                    >
                         <td class='rounded-s-xl text-white text-sm font-semibold'>{shortDate(rsv.date)}</td>
                         <td class='text-white text-sm font-semibold'>{catDesc(rsv)}</td>
                         <td class='text-white text-sm font-semibold'>{timeDesc(rsv)}</td>
                         <td class='text-white text-sm font-semibold'>{rsv.status}</td>
-                        <td>
-                            <Modal>
-                                <Dialog dialogType='modify' rsv={rsv}/>
-                            </Modal>
-                        </td>
-                        <td class='rounded-e-xl'>
+                        <td on:click|stopPropagation={()=>{}} class='rounded-e-xl'>
                             {#if beforeCancelCutoff(rsv.date, rsv.startTime)}
                                 <Modal>
                                     <Dialog dialogType='cancel' rsv={rsv}/>
