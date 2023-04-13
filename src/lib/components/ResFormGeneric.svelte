@@ -118,15 +118,20 @@
         <div class='h-8 mb-0.5'><label for="formCategory">Category</label></div>
         <slot name="categoryLabels"/>
         {#if showBuddyFields}
-            <div class='h-8 mb-0.5'><label>Add buddy
+            <div class='h-8 mb-0.5 flex items-center justify-end'>
+                <label>Add buddy
+                    
+                </label>
                 <button 
-                    class='p-0' 
-                    type="button" 
-                    on:click={addBuddyField}
-                    disabled={disabled}
-                    tabindex="1"
-                ><PlusIcon/></button>
-            </label></div>
+                        class='p-0' 
+                        type="button" 
+                        on:click={addBuddyField}
+                        disabled={disabled}
+                        tabindex="1"
+                    >
+                        <PlusIcon svgClass='h-6 w-6'/>
+                    </button>
+            </div>
             {#if buddyFields.length > 1}
                 {#each buddyFields.slice(1) as bf}
                     <div class='h-8 mb-0.5'/>
@@ -165,8 +170,9 @@
                 <div class='h-8 mb-0.5'/>
             {:else}
                 {#each buddyFields as bf (bf.id)}
-                    <div class="relative table [&>div]:table-cell">
-                        <div>
+                    <input type="hidden" value={bf.userId} name="buddy{bf.id}_id">
+                    <div class="relative table">
+                        <div class='table-cell align-middle'>
                             <input 
                                 id={"buddy" + bf.id + "-input"}
                                 type="text" 
@@ -180,15 +186,15 @@
                                 disabled={disabled}
                                 tabindex='2'
                             >
+                            <button 
+                                class="p-0" 
+                                style='vertical-align:inherit'
+                                type="button" 
+                                on:click={removeBuddyField(bf)}
+                                {disabled}
+                                tabindex='3'
+                            ><DeleteIcon svgStyle={'h-6 w-6'}/></button> 
                         </div>
-                        <input type="hidden" value={bf.userId} name="buddy{bf.id}_id">
-                        <button 
-                            class="p-0" 
-                            type="button" 
-                            on:click={removeBuddyField(bf)}
-                            disabled={disabled}
-                            tabindex='3'
-                        ><DeleteIcon/></button> 
                     </div>
                     {#if bf.matches.length > 0}
                         <ul class={autocompUlStyle}>
