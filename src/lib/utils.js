@@ -134,11 +134,11 @@ export function checkSpaceAvailable(thisRsv, rsvs, buoys) {
         }
     } else if (thisRsv.category === 'pool') {
         let numDivers = existingRsvs.reduce((acc, rsv) => {
-            acc += rsv.resType === 'course' ? rsv.numStudents : 1;
+            acc += rsv.resType === 'course' ? 2 : 1;
             return acc;
         }, 0);
 
-        if (numDivers >= 6) {
+        if (numDivers >= 8) {
             return {
                 status: 'error',
                 message: 'All pool lanes are booked at this time.  ' +
@@ -204,36 +204,39 @@ export const displayTag = (rsv) => {
     return tag;
 };
 
-function assignUpToSoftCapacity(rsvs, dateStr, softCapacity) {
-    let schedule = [];
+function assignUpToSoftCapacity(rsvs, dateStr, softCapacity, sameResource) {
+    let schedule = Array(softCapacity).fill();
     let incT = inc(dateStr);
-    while (rsvs.length > 0 && schedule.length < softCapacity) {
+    let count = 0;
+    while (rsvs.length > 0 && count < softCapacity) {
         let nextTime = timeStrToMin(startTimes(dateStr)[0]);
         let thisR = [];
         for (let j=rsvs.length-1; j >= 0; j--) {
             let rsv = rsvs[j];
-            let start = timeStrToMin(rsv.startTime);
-            if (start >= nextTime) {
-                if (start > nextTime) {
+            if (sameResource(count, rsv)) {
+                let start = timeStrToMin(rsv.startTime);
+                if (start >= nextTime) {
+                    if (start > nextTime) {
+                        thisR.push({
+                            start: nextTime,
+                            end: start,
+                            nSlots: (start - nextTime) / incT,
+                            cls: 'filler',
+                            data: [],
+                        });
+                    }
+                    nextTime = timeStrToMin(rsv.endTime);
+                    let nSlots = (nextTime - start) / incT;
                     thisR.push({
-                        start: nextTime,
-                        end: start,
-                        nSlots: (start - nextTime) / incT,
-                        cls: 'filler',
-                        data: [],
+                        start,
+                        end: nextTime,
+                        nSlots,
+                        cls: 'rsv',
+                        data: [rsv],
+                        resType: rsv.resType
                     });
+                    rsvs.splice(j,1);
                 }
-                nextTime = timeStrToMin(rsv.endTime);
-                let nSlots = (nextTime - start) / incT;
-                thisR.push({
-                    start,
-                    end: nextTime,
-                    nSlots,
-                    cls: 'rsv',
-                    data: [rsv],
-                    resType: rsv.resType
-                });
-                rsvs.splice(j,1);
             }
         }
 
@@ -247,12 +250,13 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity) {
                 data: [],
             });
         }
-        schedule.push(thisR);
+        schedule[count] = thisR;
+        count++;
     }
     return schedule;
 }
 
-function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity) {
+function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResource) {
 
     let incT = inc(dateStr);
     let nextR = 0;
@@ -270,7 +274,7 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity) {
             let block = resource[j];
             let blockCls = block.cls;
             let nRsv = block.data.length;
-            if (block.resType != 'course' && start >= block.start && start < block.end) {
+            if (block.resType != 'course' && sameResource(nextR, rsv) && start >= block.start && start < block.end) {
                 if (start > block.start) {
                     // break off beginning of existing block into its own block
                     let begBlock = {...block};
@@ -320,9 +324,16 @@ export function getDaySchedule(rsvs, datetime, category, softCapacity) {
     rsvs = rsvs.filter((v) => v.category === category && v.date === today);
     rsvs.sort((a,b) => timeStrToMin(a.startTime) < timeStrToMin(b.startTime) ? 1 : -1);
 
-    let schedule = assignUpToSoftCapacity(rsvs, today, softCapacity);
+    let sameResource;
+    if (category === 'pool') {
+        sameResource = (idx, rsv) => rsv.pool_lane === undefined || rsv.pool_lane == idx+1;
+    } else if (category === 'classroom') {
+        sameResource = (idx, rsv) => rsv.room === undefined || rsv.room == idx+1;
+    }
 
-    assignOverflowCapacity(rsvs, schedule, today, softCapacity);
+    let schedule = assignUpToSoftCapacity(rsvs, today, softCapacity, sameResource);
+
+    assignOverflowCapacity(rsvs, schedule, today, softCapacity, sameResource);
 
     return schedule;
 }
