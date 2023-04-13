@@ -46,14 +46,6 @@
         handleDateChange();
     }
 
-    let today = new Date();
-
-    const isToday = (date) => 
-        date.getFullYear() == today.getFullYear() 
-        && date.getMonth() == today.getMonth() 
-        && date.getDate() == today.getDate() 
-        ? 'today' : null;
-
     const catStyle = (cat) => { return (cat === 'pool')
         ? 'border-pool-bg-to' : (cat === 'openwater')
         ? 'border-openwater-bg-to' : (cat === 'classroom')
@@ -106,7 +98,6 @@
                     {#each week as { date, rsvs }}
                         <td class='{catStyle(gCategory)} align-top h-24 border border-solid'>
                             <DayOfMonth 
-                                id={isToday(date)}
                                 date={date} 
                                 category={gCategory}
                                 rsvs={rsvs}
