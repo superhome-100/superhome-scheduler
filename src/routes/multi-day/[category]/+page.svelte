@@ -69,7 +69,7 @@
         <ul tabindex='0' class='dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit'>
             {#each ['pool', 'openwater', 'classroom'] as cat}
                 {#if cat !== gCategory}
-                    <li><a class='text-xl' href='/multi-day/{cat}'>{cat}</a></li>
+                    <li><a class='text-xl active:bg-gray-300' href='/multi-day/{cat}'>{cat}</a></li>
                 {/if}
             {/each}
         </ul>

@@ -57,11 +57,11 @@
 
 <div class='flex items-center justify-between'>
     <div class='dropdown h-8 mb-4'>
-        <label tabindex='0' class='btn lowercase font-normal text-xl text-black hover:text-white bg-white hover:bg-gray-700 border-transparent m-0'>{category}</label>
+        <label tabindex='0' class='btn btn-fsh-dropdown'>{category}</label>
         <ul tabindex='0' class='dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit'>
             {#each ['pool', 'openwater', 'classroom'] as cat}
                 {#if cat !== category}
-                    <li><a class='text-xl' href='/single-day/{cat}'>{cat}</a></li>
+                    <li><a class='text-xl active:bg-gray-300' href='/single-day/{cat}'>{cat}</a></li>
                 {/if}
             {/each}
         </ul>

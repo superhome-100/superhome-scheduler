@@ -32,17 +32,22 @@
         return tags;
     }
 
+    const catBg = (cat) => cat === 'pool' ? 'bg-pool-bg-to' : cat === 'openwater' ? 'bg-openwater-bg-to' : cat === 'classroom' ? 'bg-classroom-bg-to' : undefined;
+
 </script>
 
 <div class='overflow-hidden h-full'>
     <a class='no-underline' href="/single-day/{category}">
         <div class='h-full' on:click={handleClick} on:keypress={handleClick}>
-            <p class='m-auto w-6 text-center {id_internal} {category}'>
+            <p class='flex items-center justify-center m-auto w-6 text-center {id_internal}'>
                 {date.getDate()}
             </p>
-            {#each getDisplayTags(rsvs) as tag}
-                <p class="rsv {category} text-xs">{tag}</p>
-            {/each}
+            {#if rsvs.length > 0}
+                <div 
+                    class='mx-auto mt-4 flex items-center justify-center  text-sm rounded-xl h-6 w-10 rsv {category}'
+                >+{rsvs.length}
+                </div>
+            {/if}
         </div>
     </a>
 </div>
