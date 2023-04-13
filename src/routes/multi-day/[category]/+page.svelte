@@ -14,7 +14,6 @@
     $view = 'multi-day';
 
     $: gCategory = data.category;
-    $: console.log(gCategory);
     $: gMonth = $viewedMonth.getMonth();
     $: gYear = $viewedMonth.getFullYear();
     $: gMonthArr = () => monthArr(

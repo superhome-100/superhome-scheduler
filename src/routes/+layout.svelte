@@ -23,7 +23,7 @@
     import { toast, Toaster } from 'svelte-french-toast';
 
 
-    let loginState = 'pending';
+    $: loginState = 'pending';
     let profileSrc;
 
     $: {
@@ -239,7 +239,7 @@
         await fetch('/api/logout', { method: 'POST' });
     }
 
-    let drawerHidden = false;
+    let drawerHidden = true;
     const toggleDrawer = () => {
         if (loginState === 'in') {
             drawerHidden = !drawerHidden;
@@ -248,7 +248,6 @@
 
     // Drawer component
     let backdrop = false;
-    let activateClickOutside = true;
     let breakPoint = 1024;
     let width;
     let transitionParams = {
@@ -257,37 +256,23 @@
         easing: sineIn
     };
 
-    $: if (width >= breakPoint) {
-        drawerHidden = false;
-        activateClickOutside = false;
-    } else {
-        drawerHidden = true;
-        activateClickOutside = true;
-    }
+    $: drawerHidden = loginState !== 'in' || width < breakPoint
 
-    onMount(() => {
-        if (width >= breakPoint) {
-            drawerHidden = false;
-            activateClickOutside = false;
-        } else {
-            drawerHidden = true;
-            activateClickOutside = true;
-        }
-    });
-    // Sidebar Component
     const toggleSide = () => {
       if (width < breakPoint) {
         drawerHidden = !drawerHidden;
       }
     };
+    
     $: activeUrl = $page.url.pathname;
     let spanClass = 'pl-8 self-center text-md text-gray-900 whitespace-nowrap dark:text-white';
+
 </script>
 
 <svelte:window bind:innerWidth={width} />
 
 <Navbar let:hidden let:toggle color='currentColor'>
-    <NavHamburger on:click={toggleDrawer} btnClass="ml-3 lg:hidden" />    
+    <NavHamburger on:click={toggleDrawer} btnClass="ml-3 {loginState !== 'in' ? 'hidden' : ''} lg:hidden" />    
     <NavBrand href='/' class="lg:ml-64">
         <span class="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
             SuperHOME Scheduler
@@ -315,7 +300,7 @@
     {backdrop}
     {transitionParams}
     bind:hidden={drawerHidden}
-    bind:activateClickOutside
+    bind:activateClickOutside={drawerHidden}
     width="w-64"
     id="sidebar"
     divClass='overflow-y-auto z-50 p-4 bg-white dark:bg-[#252515]'
@@ -336,20 +321,20 @@
                         href="/{$view}/pool"
                         {spanClass}
                         on:click={toggleSide}
-                        active={activeUrl === $view + '/pool'}
+                        active={activeUrl === '/' + $view + '/pool'}
                     />
                     <SidebarItem
                         label= "Open Water"
                         href="/{$view}/openwater"
                         {spanClass}
                         on:click={toggleSide}
-                        active={activeUrl === $view + '/openwater'}
+                        active={activeUrl === '/' + $view + '/openwater'}
                     /><SidebarItem
                         label= "Classroom"
                         href="/{$view}/classroom"
                         {spanClass}
                         on:click={toggleSide}
-                        active={activeUrl === $view + '/classroom'}
+                        active={activeUrl === '/' + $view + '/classroom'}
                     />
                 </SidebarDropdownWrapper>
             </SidebarGroup>
