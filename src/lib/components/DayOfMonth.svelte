@@ -5,8 +5,6 @@
     export let date;
     export let rsvs;
     export let category;
-    let id_internal;
-    export {id_internal as id};
 
     const nDisplay = 3;
 
@@ -34,12 +32,24 @@
 
     const catBg = (cat) => cat === 'pool' ? 'bg-pool-bg-to' : cat === 'openwater' ? 'bg-openwater-bg-to' : cat === 'classroom' ? 'bg-classroom-bg-to' : undefined;
 
+    const dateStyle = (date) => { 
+        let today = new Date();
+        if (date.getFullYear() == today.getFullYear() 
+            && date.getMonth() == today.getMonth() 
+            && date.getDate() == today.getDate()
+        ) {
+            return 'rounded-[50%] bg-stone-300 dark:bg-stone-600';
+        } else {
+            return '';
+        }
+    };
+
 </script>
 
 <div class='overflow-hidden h-full'>
     <a class='no-underline' href="/single-day/{category}">
         <div class='h-full' on:click={handleClick} on:keypress={handleClick}>
-            <p class='flex items-center justify-center m-auto w-6 text-center {id_internal}'>
+            <p class='flex justify-center w-6 m-auto {dateStyle(date)}'>
                 {date.getDate()}
             </p>
             {#if rsvs.length > 0}
