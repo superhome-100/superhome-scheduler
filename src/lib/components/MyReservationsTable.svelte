@@ -7,13 +7,13 @@
     import Modal from './Modal.svelte';
     import Dialog from './Dialog.svelte';
     import ModifyForm from './ModifyForm.svelte';
+    import ViewForms from './ViewForms.svelte';
 
     export let resType; /* past or upcoming */
 
     function getResType(rsv) {
         let view;
         let today = new Date();
-        let minute = minuteOfDay(today);
         let todayStr = datetimeToLocalDateStr(today);
         if (rsv.date > todayStr) {
             view = 'upcoming';
@@ -96,13 +96,23 @@
     const { open } = getContext('simple-modal');
 
     const showModify = (rsv) => {
-		open(
-			ModifyForm,
-            {
-                rsv: rsv, 
-                hasForm: true,
-            }
-		);
+        if (beforeCancelCutoff(rsv.date, rsv.startTime)) { 
+		    open(
+			    ModifyForm,
+                {
+                    rsv: rsv, 
+                    hasForm: true,
+                }
+		    );
+        } else {
+            open(
+                ViewForms,
+                {
+                    rsvs: [rsv], 
+                    hasForm: true,
+                }
+		    );
+        }
     };
 
 </script>

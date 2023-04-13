@@ -10,7 +10,7 @@
     export let date;
     export let category;
     export let disabled = false;
-    export let hideSubmit = false;
+    export let viewOnly = false;
     export let showBuddyFields = true;
 
     let comments = rsv == null ? null : rsv.comments;
@@ -108,21 +108,30 @@
     const autocompUlStyle = 'relative ml-2 top-0 border border-solid border-bg-gray-300 '
                           + 'rounded text-sm';
 
+    const bdColor = (status) => status === 'confirmed' ? 'border-[#00FF00]' : 'border-[#FFFF00]';
+
 </script>
 
 <svelte:window on:keydown={navigateList} />
 
 <div class="row w-full">
     <div class="column labels text-right w-[33%]">
-        <div class='h-8 mb-0.5'><label for="formDate">Date</label></div>
-        <div class='h-8 mb-0.5'><label for="formCategory">Category</label></div>
+        {#if viewOnly}
+            <div class='form-label h-8 mb-1'><label for='status'>Status</label></div>
+        {/if}
+        <div class='form-label h-8 mb-0.5'><label for="formDate">Date</label></div>
+        <div class='form-label h-8 mb-0.5'><label for="formCategory">Category</label></div>
         <slot name="categoryLabels"/>
+        
         {#if showBuddyFields}
-            <div class='h-8 mb-0.5 flex items-center justify-end'>
-                <label>Add buddy
-                    
-                </label>
-                <button 
+            {#if viewOnly}
+                <div class='form-label h-8 mb-0.5'><label>Buddies</label></div>
+            {:else}
+                <div class='form-label h-8 mb-0.5'>
+                    <label>Add buddy
+                        
+                    </label>
+                    <button 
                         class='p-0' 
                         type="button" 
                         on:click={addBuddyField}
@@ -131,17 +140,23 @@
                     >
                         <PlusIcon svgClass='h-6 w-6'/>
                     </button>
-            </div>
+                </div>
+            {/if}
             {#if buddyFields.length > 1}
                 {#each buddyFields.slice(1) as bf}
                     <div class='h-8 mb-0.5'/>
                 {/each}
             {/if}
         {/if}
-        <div class='h-8 mb-0.5'><label for="formComments">Comments</label></div>
+        <div class='form-label h-8 mb-0.5'><label for="formComments">Comments</label></div>
     </div>
 
     <div class="column inputs text-left w-[67%]">
+        {#if viewOnly}
+                <div class='align-middle px-2 py-0 pb-1 mb-1 ml-2 text-xl w-fit bg-white text-black dark:bg-gray-800 dark:text-white text-white rounded-lg {bdColor(rsv.status)} border ring-1 ring-black'>
+                    {rsv.status}
+                </div>
+        {/if}
         <div><input type="hidden" name="user" value={$user.id}></div>
         <div><input 
             type="date" 
@@ -183,17 +198,19 @@
                                 on:input={matchUser}
                                 on:focus={() => currentBF = bf}
                                 use:focus
-                                disabled={disabled}
+                                {disabled}
                                 tabindex='2'
                             >
-                            <button 
-                                class="p-0" 
-                                style='vertical-align:inherit'
-                                type="button" 
-                                on:click={removeBuddyField(bf)}
-                                {disabled}
-                                tabindex='3'
-                            ><DeleteIcon svgStyle={'h-6 w-6'}/></button> 
+                            {#if !viewOnly}
+                                <button 
+                                    class="p-0" 
+                                    style='vertical-align:inherit'
+                                    type="button" 
+                                    on:click={removeBuddyField(bf)}
+                                    {disabled}
+                                    tabindex='3'
+                                ><DeleteIcon svgStyle={'h-6 w-6'}/></button> 
+                            {/if}
                         </div>
                     </div>
                     {#if bf.matches.length > 0}
@@ -231,6 +248,6 @@
         class='bg-gray-100 disabled:text-gray-400 px-3 py-1'
         tabindex='4' 
         disabled={!$canSubmit || disabled}
-        hidden={hideSubmit}
+        hidden={viewOnly}
     >Submit</button>
 </div>

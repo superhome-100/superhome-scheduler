@@ -11,11 +11,9 @@
     import { augmentRsv, removeRsv, validateBuddies, updateReservationFormData } from '$lib/utils.js';
 
     export let hasForm = false;
-    export let rsvs
+    export let rsvs;
 
     const { close } = getContext('simple-modal');
-
-    const disabled = true;
 
 </script>
 
@@ -23,14 +21,14 @@
     <div class='mb-4'>
         {#each rsvs as rsv}
             <div class='text-center text-xl font-semibold my-4'>
-                {rsv.user.name}'s reservation
+                {rsv.user.name}
             </div>       
             {#if rsv.category === 'pool'}
-                <ResFormPool hideSubmit {disabled} {rsv}/>
+                <ResFormPool viewOnly disabled {rsv}/>
             {:else if rsv.category === 'openwater'}
-                <ResFormOpenWater hideSubmit {disabled} {rsv}/>
+                <ResFormOpenWater viewOnly disabled {rsv}/>
             {:else if rsv.category === 'classroom'}
-                <ResFormClassroom hideSubmit {disabled} {rsv}/>
+                <ResFormClassroom viewOnly disabled {rsv}/>
             {/if}
         {/each}
     </div>
