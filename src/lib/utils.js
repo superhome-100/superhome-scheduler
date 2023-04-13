@@ -328,10 +328,15 @@ export function getDaySchedule(rsvs, datetime, category, softCapacity) {
     if (category === 'pool') {
         sameResource = (idx, rsv) => rsv.pool_lane === undefined || rsv.pool_lane == idx+1;
     } else if (category === 'classroom') {
-        sameResource = (idx, rsv) => rsv.room === undefined || rsv.room == idx+1;
+        sameResource = (idx, rsv) => rsv.room === undefined || rsv.room == (2-idx)+1;
     }
 
     let schedule = assignUpToSoftCapacity(rsvs, today, softCapacity, sameResource);
+
+    if (category === 'classroom') {
+        // we prioritize assigning to classroom 3, then 2, then 1 if necessary
+        schedule.reverse();
+    }
 
     assignOverflowCapacity(rsvs, schedule, today, softCapacity, sameResource);
 
