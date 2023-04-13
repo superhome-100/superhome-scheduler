@@ -84,7 +84,7 @@
     {#each [...Array(nResource).keys()] as i}
         <div class="column text-center" style='width: {88/nResource}%'>
             <div class='font-semibold'>{resourceName} {i+1}</div>
-            {#if i < schedule.length}
+            {#if schedule[i]}
                 <div style='height: 0.5rem'/>
                 {#each schedule[i] as { start, nSlots, cls, tag, data }}
                     {#if cls === 'rsv'}
