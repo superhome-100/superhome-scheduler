@@ -9,7 +9,7 @@
     export let category;
     export let date;
     export let resType = null;
-    export let hideSubmit = false;
+    export let viewOnly = false;
 
     category = rsv == null ? category : rsv.category;
     date = rsv == null ? date : rsv.date;
@@ -27,8 +27,8 @@
 
 </script>
 
-<ResFormGeneric {hideSubmit} {showBuddyFields} {disabled} {date} bind:category={category} {rsv}>
-    <div class='[&>div]:h-8 [&>div]:m-0.5' slot="categoryLabels">
+<ResFormGeneric {viewOnly} {showBuddyFields} {disabled} {date} bind:category={category} {rsv}>
+    <div class='[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5' slot="categoryLabels">
         <div><label for="formStart">Start Time</label></div>
         <div><label for="formEnd">End Time</label></div>
         <div><label for="formResType">Type </label></div>
@@ -36,6 +36,7 @@
             <div><label for="formNumStudents"># Students</label></div>
         {/if}
     </div>
+
     <div slot="categoryInputs">
         <div><select 
             id="formStart" 
