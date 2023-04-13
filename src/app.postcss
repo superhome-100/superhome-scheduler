@@ -11,7 +11,7 @@
 
         color-scheme: light dark;
         color: #000;
-        background-color: #fff;
+        @apply bg-root-bg-light;
         font-synthesis: none;
         text-rendering: optimizeLegibility;
         -webkit-font-smoothing: antialiased;
@@ -52,14 +52,14 @@
     }
 
     .today {
-        @apply rounded-3xl;
+        @apply rounded-3xl bg-stone-300 dark:bg-stone-600 hover:bg-stone-600 hover:dark:bg-stone-300;
     }
     
     .rsv {
         @apply overflow-scroll text-center whitespace-nowrap rounded-2xl mb-1 w-[98%] m-auto px-2;
     }
 
-    .rsv, .today {
+    .rsv {
         &.pool {
             @apply bg-gradient-to-br from-pool-bg-from to-pool-bg-to text-pool-fg;
         }
@@ -80,7 +80,7 @@
     }
 
     .btn-fsh-dropdown {
-        @apply lowercase font-normal text-xl text-black hover:text-white bg-white hover:bg-gray-700 border-transparent m-0;
+        @apply lowercase font-normal text-xl text-black dark:text-white hover:text-white bg-root-bg-light dark:bg-root-bg-dark hover:bg-gray-700 border-transparent m-0;
     }
     
     .rsv-indicator {
