@@ -4,7 +4,13 @@ import * as dtu from './datetimeUtils.js';
 export let minStart = (date) => dtu.timeStrToMin(Settings('minStartTime', date));
 export let maxEnd = (date) => dtu.timeStrToMin(Settings('maxEndTime', date));
 export let resCutoff = (date) => dtu.timeStrToMin(Settings('reservationCutOffTime', date));
-export let cancelCutoff = (date) => dtu.timeStrToMin(Settings('cancelationCutOffTime', date));
+export let cancelCutoff = (cat, date) => {
+    if (cat === 'classroom') {
+        return 0;
+    } else {
+        return dtu.timeStrToMin(Settings('cancelationCutOffTime', date));
+    }
+};
 export let inc = (date) => dtu.timeStrToMin(Settings('reservationIncrement', date));
 
 /*
@@ -34,14 +40,14 @@ export function beforeResCutoff(dateStr) {
     }
 }
 
-export function beforeCancelCutoff(dateStr, startTime) {
+export function beforeCancelCutoff(dateStr, startTime, category) {
     let now = new Date();
     let today = dtu.datetimeToLocalDateStr(now);
     if (dateStr > today) {
         return true;
     } else if (
         dateStr === today
-        && (dtu.timeStrToMin(startTime) - minuteOfDay(now)) > cancelCutoff(dateStr)
+        && (dtu.timeStrToMin(startTime) - minuteOfDay(now)) > cancelCutoff(category, dateStr)
     ) {
         return true;
     } else {
