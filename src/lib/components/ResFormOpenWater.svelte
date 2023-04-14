@@ -3,10 +3,12 @@
     import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 
     export let rsv = null;
-    export let disabled = false;
     export let date;
     export let category;
     export let viewOnly = false;
+    export let restrictModify = false;
+
+    let disabled = viewOnly || restrictModify;
 
     category = rsv == null ? category : rsv.category;
     date = rsv == null ? date : rsv.date;
@@ -21,13 +23,11 @@
     }
     checkSubmit();
 
-    let noModify = rsv != null;
-
     $: showBuddyFields = autoOrCourse === 'autonomous';
 
 </script>
 
-<ResFormGeneric {viewOnly} {showBuddyFields} {disabled} {date} bind:category={category} {rsv}>
+<ResFormGeneric {viewOnly} {restrictModify} {showBuddyFields} {date} bind:category={category} {rsv}>
     <div class='[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5' slot="categoryLabels">
         <div><label for="formOwTime">Time</label></div>
         <div><label for="formResType">Type</label></div>
@@ -40,7 +40,7 @@
         <div>
             <select 
                 id="formOwTime" 
-                disabled={disabled || noModify} 
+                {disabled} 
                 name="owTime" 
                 value={owTime}
             >
@@ -51,7 +51,7 @@
         <div>
             <select 
                 id="formResType" 
-                disabled={disabled || noModify} 
+                {disabled} 
                 bind:value={autoOrCourse} 
                 name="resType"
             >
@@ -61,8 +61,8 @@
         </div>
         {#if autoOrCourse == 'course'}
             <div>
-                <select disabled={disabled} name="numStudents" value={numStudents}>
-                    {#each [...Array(10).keys()] as n}
+                <select disabled={viewOnly} name="numStudents" value={numStudents}>
+                    {#each [...Array(restrictModify ? numStudents : 10).keys()] as n}
                         <option value={n+1}>{n+1}</option>
                     {/each}
                 </select>
@@ -70,7 +70,7 @@
         {/if}
         <div>
             <input 
-                disabled={disabled || noModify}
+                {disabled}
                 type=number 
                 class='w-12 valid:border-gray-500 required:border-red-500'
                 min=1

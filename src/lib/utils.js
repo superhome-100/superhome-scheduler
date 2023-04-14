@@ -1,6 +1,7 @@
 import { startTimes, endTimes, inc } from './ReservationTimes.js';
 import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils.js';
 import { reservations, users } from './stores.js'
+import { Settings } from './settings.js';
 import { get } from 'svelte/store';
 import { assignRsvsToBuoys } from './autoAssign.js';
 
@@ -46,11 +47,11 @@ export function augmentRsv(rsv, fbId=null, name=null) {
     let categoryPretty = rsv.category.charAt(0).toUpperCase() + rsv.category.slice(1);
     if (rsv.category === 'openwater') {
         if (rsv.owTime === 'AM') {
-            startTime = '9:00';
-            endTime = '11:00';
+            startTime = Settings('openwater_AM_startTime', rsv.date);
+            endTime = Settings('openwater_AM_endTime', rsv.date);
         } else if (rsv.owTime === 'PM') {
-            startTime = '14:00';
-            endTime = '16:00';
+            startTime = Settings('openwater_PM_startTime', rsv.date);
+            endTime = Settings('openwater_PM_endTime', rsv.date);
         }
     }
     let newRsv = {
@@ -162,8 +163,8 @@ export function checkSpaceAvailable(thisRsv, rsvs, buoys) {
 
 export function validateBuddies(formData) {
     let user = formData.get('user')
-    let userIds = get(users).map((r) => r.id);
-    let buddies = JSON.parse(formData.get('buddies')).id;
+    let userIds = Object.keys(get(users));
+    let buddies = JSON.parse(formData.get('buddies'));
     let validBuddies = [];
     for (let buddy of buddies) {
         if (user === buddy) {
@@ -183,10 +184,9 @@ export function validateBuddies(formData) {
 export function updateReservationFormData(formData) {
     let numBuddies = parseInt(formData.get('numBuddies'));
     formData.delete('numBuddies');
-    let buddies = {'name': [], 'id': []};
+    let buddies = [];
     for (let i=0; i < numBuddies; i++) {
-        buddies.name.push(formData.get('buddy' + i));
-        buddies.id.push(formData.get('buddy' + i + '_id'));
+        buddies.push(formData.get('buddy' + i + '_id'));
         formData.delete('buddy' + i);
         formData.delete('buddy' + i + '_id');
     }
@@ -326,9 +326,9 @@ export function getDaySchedule(rsvs, datetime, category, softCapacity) {
 
     let sameResource;
     if (category === 'pool') {
-        sameResource = (idx, rsv) => rsv.pool_lane === undefined || rsv.pool_lane == idx+1;
+        sameResource = (idx, rsv) => rsv.pool_lane == null || rsv.pool_lane == idx+1;
     } else if (category === 'classroom') {
-        sameResource = (idx, rsv) => rsv.room === undefined || rsv.room == (2-idx)+1;
+        sameResource = (idx, rsv) => rsv.room == null || rsv.room == (2-idx)+1;
     }
 
     let schedule = assignUpToSoftCapacity(rsvs, today, softCapacity, sameResource);

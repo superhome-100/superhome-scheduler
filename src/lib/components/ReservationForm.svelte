@@ -90,11 +90,11 @@
             use:enhance={submitReservation}
         >
             {#if category === 'pool'}
-                <ResFormPool date={date} bind:category={category}/>
+                <ResFormPool {date} bind:category={category}/>
             {:else if category === 'openwater'}
-                <ResFormOpenWater date={date} bind:category={category}/>
+                <ResFormOpenWater {date} bind:category={category}/>
             {:else if category === 'classroom'}
-                <ResFormClassroom date={date} bind:category={category}/>
+                <ResFormClassroom {date} bind:category={category}/>
             {/if}
        </form>
     </div>

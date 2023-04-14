@@ -12,7 +12,11 @@ export async function GET() {
     try {
         const reservations = await getReservationsSince(oneWeekAgo());
         const users = await getActiveUsers();
-        return json({ status: 'success', reservations, users });
+        const usersById = users.reduce((obj, user) => {
+            obj[user.id] = user;
+            return obj;
+        }, {});
+        return json({ status: 'success', reservations, usersById });
     } catch (error) {
         return json({ status: 'error', error });
     }

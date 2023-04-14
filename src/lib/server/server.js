@@ -1,5 +1,5 @@
 import { getXataClient } from '$lib/server/xata.js';
-import { augmentRsv, convertReservationTypes } from '$lib/utils.js';
+import { convertReservationTypes } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
 
 const xata = getXataClient();
@@ -39,7 +39,7 @@ export async function getReservationsSince(minDateStr) {
         .sort("date", "asc")
         .getAll();
 
-    return reservations.map((r) => augmentRsv(r));
+    return reservations;
 }
 
 export async function getActiveUsers() {
@@ -50,17 +50,12 @@ export async function getActiveUsers() {
 }
 
 export async function getUserReservations(userId) {
-    let rsvs = await xata.db.Reservations
+    let reservations = await xata.db.Reservations
         .filter({
             "user.facebookId": userId})
         .sort("date", "asc")
         .getAll();
 
-    let reservations = [];
-    for (let rsv of rsvs) {
-        let newRsv = augmentRsv(rsv);
-        reservations.push(newRsv);
-    }
     return reservations;
 }
 

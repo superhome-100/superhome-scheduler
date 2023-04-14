@@ -2,11 +2,13 @@ function groupByBuddy(rsvs) {
     let grps = [];
     for (const rsvA of rsvs) {
         const thisBg = new Set([rsvA.id]);
-        for (const id of rsvA.buddies.id) {
-            // make sure the requested buddies have their own reservations
-            for (const rsvB of rsvs) {
-                if (rsvB.user.id === id && rsvB.buoy === rsvA.buoy) {
-                    thisBg.add(rsvB.id);
+        if (rsvA.buddies != null) {
+            for (const id of rsvA.buddies) {
+                // make sure the requested buddies have their own reservations
+                for (const rsvB of rsvs) {
+                    if (rsvB.user.id === id && rsvB.buoy === rsvA.buoy) {
+                        thisBg.add(rsvB.id);
+                    }
                 }
             }
         }

@@ -16,12 +16,6 @@ const tables = [
       { name: "endTime", type: "string" },
       { name: "category", type: "string" },
       {
-        name: "status",
-        type: "string",
-        notNull: true,
-        defaultValue: "pending",
-      },
-      {
         name: "createdAt",
         type: "datetime",
         notNull: true,
@@ -29,15 +23,11 @@ const tables = [
       },
       { name: "date", type: "string" },
       { name: "owner", type: "bool", defaultValue: "true" },
-      {
-        name: "buddies",
-        type: "object",
-        columns: [
-          { name: "name", type: "multiple" },
-          { name: "id", type: "multiple" },
-        ],
-      },
       { name: "buoy", type: "string" },
+      { name: "pool_lane", type: "string" },
+      { name: "room", type: "string" },
+      { name: "buddies", type: "multiple" },
+      { name: "status", type: "string", defaultValue: "pending" },
     ],
   },
   {
