@@ -45,6 +45,9 @@ export function augmentRsv(rsv, fbId=null, name=null) {
     let startTime = rsv.startTime;
     let endTime = rsv.endTime;
     let categoryPretty = rsv.category.charAt(0).toUpperCase() + rsv.category.slice(1);
+    if (rsv.buddies == null) {
+        rsv.buddies = [];
+    }
     if (rsv.category === 'openwater') {
         if (rsv.owTime === 'AM') {
             startTime = Settings('openwater_AM_startTime', rsv.date);
@@ -227,15 +230,27 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity, sameResource) {
                     }
                     nextTime = timeStrToMin(rsv.endTime);
                     let nSlots = (nextTime - start) / incT;
-                    thisR.push({
+                    let block = {
                         start,
                         end: nextTime,
                         nSlots,
                         cls: 'rsv',
                         data: [rsv],
                         resType: rsv.resType
-                    });
+                    };
                     rsvs.splice(j,1);
+                    for (let id of rsv.buddies) {
+                        for (let i=0; i<rsvs.length; i++) {
+                            let cand = rsvs[i];
+                            if (cand.user.id === id) {
+                                block.data.push(cand);
+                                rsvs.splice(i,1);
+                                j--;
+                                break;
+                            }
+                        }
+                    }
+                    thisR.push(block);
                 }
             }
         }
@@ -274,7 +289,12 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResou
             let block = resource[j];
             let blockCls = block.cls;
             let nRsv = block.data.length;
-            if (block.resType != 'course' && sameResource(nextR, rsv) && start >= block.start && start < block.end) {
+            if (block.resType != 'course'
+                && block.data.length < 2    // in case buddy has already been paired
+                && sameResource(nextR, rsv)
+                && start >= block.start
+                && start < block.end
+            ) {
                 if (start > block.start) {
                     // break off beginning of existing block into its own block
                     let begBlock = {...block};

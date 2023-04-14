@@ -19,6 +19,11 @@
     date = rsv == null ? datetimeToLocalDateStr(date) : rsv.date;
     category = rsv == null ? category : rsv.category;
 
+    $: maxBuddies = category === 'openwater' ? 2 
+                  : category === 'pool' ? 1 
+                  : category === 'classroom' ? 0 
+                  : undefined;
+
     const initBF = () => {
         let buddyFields = [];
         if (rsv != null && rsv.buddies != null) {
@@ -143,7 +148,7 @@
                         class='p-0' 
                         type="button" 
                         on:click={addBuddyField}
-                        disabled={disabled || buddyFields.length == 2}
+                        disabled={disabled || buddyFields.length == maxBuddies}
                         tabindex="1"
                     >
                         <PlusIcon svgClass='h-6 w-6'/>
@@ -171,7 +176,7 @@
             name="date" 
             id="formDate"
             class='w-44'
-            min={minValidDateStr()} 
+            min={minValidDateStr(category)} 
             value={date}
             {disabled}
         ></div>

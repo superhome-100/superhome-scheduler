@@ -86,7 +86,7 @@
             <div class='font-semibold'>{resourceName} {i+1}</div>
             {#if schedule[i]}
                 <div style='height: 0.5rem'/>
-                {#each schedule[i] as { start, nSlots, cls, tag, data }}
+                {#each schedule[i] as { nSlots, cls, tag, data }}
                     {#if cls === 'rsv'}
                         <div class='indicator w-full'>
                             <span class='rsv-indicator {badgeColor(data)}'/>

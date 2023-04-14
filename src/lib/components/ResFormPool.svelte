@@ -1,6 +1,6 @@
 <script>
     import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
-    import { startTimes, endTimes } from '$lib/ReservationTimes.js';
+    import { startTimes, endTimes, minuteOfDay } from '$lib/ReservationTimes.js';
     import { timeStrToMin, datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { canSubmit } from '$lib/stores.js';
 
@@ -15,9 +15,19 @@
 
     category = rsv == null ? category : rsv.category;
     date = rsv == null ? date : rsv.date;
-    let startTs = startTimes(date);
+
+    const getStartTimes = (date) => {
+        let startTs = startTimes(date);
+        let today = new Date();
+        if (date === datetimeToLocalDateStr(today)) {
+            let now = minuteOfDay(today);
+            startTs = startTs.filter((time) => timeStrToMin(time) > now);
+        }
+        return startTs;
+    }
+
     let endTs = endTimes(date);
-    let chosenStart = rsv == null ? startTs[0] : rsv.startTime;
+    let chosenStart = rsv == null ? getStartTimes(date)[0] : rsv.startTime;
     let chosenEnd = rsv == null ? endTs[0] : rsv.endTime;
     let autoOrCourse = rsv == null ? (resType == null ? 'autonomous' : resType) : rsv.resType;
     let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
@@ -26,7 +36,7 @@
 
 </script>
 
-<ResFormGeneric {viewOnly} {restrictModify} {showBuddyFields} {date} bind:category={category} {rsv}>
+<ResFormGeneric {viewOnly} {restrictModify} {showBuddyFields} bind:date={date} bind:category={category} {rsv}>
     <div class='[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5' slot="categoryLabels">
         <div><label for="formStart">Start Time</label></div>
         <div><label for="formEnd">End Time</label></div>
@@ -42,7 +52,7 @@
             {disabled} 
             bind:value={chosenStart} name="startTime"
         >
-            {#each startTs as t}
+            {#each getStartTimes(date) as t}
                 <option value={t}>{t}</option>
             {/each}
         </select></div>

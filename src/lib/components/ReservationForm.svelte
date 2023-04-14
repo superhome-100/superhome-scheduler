@@ -6,7 +6,7 @@
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
     import { canSubmit, user, reservations, buoys } from '$lib/stores.js';
-    import { minValidDateStr, beforeResCutoff } from '$lib/ReservationTimes.js';
+    import { beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { 
         augmentRsv, 
@@ -18,7 +18,7 @@
     } from '$lib/utils.js';
 
     export let category = 'openwater';
-    export let date;
+    export let dateFn;
     export let hasForm = false;
 
     const { close } = getContext('simple-modal');
@@ -28,7 +28,7 @@
         updateReservationFormData(data);
         let thisRsv = convertReservationTypes(Object.fromEntries(data));
         
-        if (!beforeResCutoff(thisRsv.date)) {
+        if (thisRsv.category !== 'classroom' && !beforeResCutoff(thisRsv.date)) {
             alert(
                 'The submission window for this reservation has expired; ' + 
                 'please choose a later date'
@@ -77,7 +77,7 @@
             }
         };
     };
-
+    
 </script>
 
 {#if hasForm}
@@ -90,11 +90,11 @@
             use:enhance={submitReservation}
         >
             {#if category === 'pool'}
-                <ResFormPool {date} bind:category={category}/>
+                <ResFormPool date={dateFn('pool')} bind:category={category}/>
             {:else if category === 'openwater'}
-                <ResFormOpenWater {date} bind:category={category}/>
+                <ResFormOpenWater date={dateFn('openwater')} bind:category={category}/>
             {:else if category === 'classroom'}
-                <ResFormClassroom {date} bind:category={category}/>
+                <ResFormClassroom date={dateFn('classroom')} bind:category={category}/>
             {/if}
        </form>
     </div>
