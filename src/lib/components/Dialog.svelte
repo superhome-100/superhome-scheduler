@@ -33,14 +33,13 @@
         );
     };
     export const showDialog = dialogType === 'modify' ? showModify : showCancel;
-    const iconStyle = 'w-4 h-4';
 </script>
 
 <button on:click={showDialog} class='p-1 bg-white/50 rounded-[50%]'>
     {#if dialogType === 'modify'}
-        <EditIcon {iconStyle}/>
+        <EditIcon/>
     {:else if dialogType === 'cancel'}
-        <DeleteIcon {iconStyle}/>
+        <DeleteIcon/>
     {/if}
 </button>
 

@@ -56,7 +56,7 @@
         </select></div>
         <div><select 
                 id="formResType" 
-                disabled={disabled || resType != null} 
+                disabled={disabled || noModify || resType != null} 
                 bind:value={autoOrCourse} 
                 name="resType"
             >
