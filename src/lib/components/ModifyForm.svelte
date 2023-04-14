@@ -6,9 +6,15 @@
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
     import { canSubmit, user, reservations } from '$lib/stores.js';
-    import { minValidDateStr, beforeCancelCutoff } from '$lib/ReservationTimes.js';
+    import { minValidDateStr, beforeCancelCutoff, beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
-    import { augmentRsv, removeRsv, validateBuddies, updateReservationFormData } from '$lib/utils.js';
+    import { 
+        augmentRsv, 
+        removeRsv, 
+        validateBuddies, 
+        updateReservationFormData, 
+        convertReservationTypes 
+    } from '$lib/utils.js';
 
     export let hasForm = false;
     export let rsv;
@@ -16,20 +22,35 @@
     const { close } = getContext('simple-modal');
 
     const reservationUnchanged = (formData) => {
-        if (rsv.resType === 'autonomous') {
-            let buddies = JSON.parse(Object.fromEntries(formData).buddies);
-            if (buddies.id.length != rsv.buddies.id.length) {
-                return false;
-            }
-            for (let id of buddies.id) {
-                if (!rsv.buddies.id.includes(id)) {
+        const isEmpty = (v) => v == null || v == '' || (Object.hasOwn(v, 'length') && v.length == 0);
+        const bothEmpty = ((a,b) => isEmpty(a) && isEmpty(b));
+
+        let submitted = convertReservationTypes(Object.fromEntries(formData));   
+        for (let field in submitted) {
+            if (field === 'user') { continue };
+            
+            let a = rsv[field];
+            let b = submitted[field];
+
+            if (bothEmpty(a,b)) { continue };
+
+            if (field === 'buddies') {
+                if (rsv.buddies == null || submitted.buddies == null) {
                     return false;
                 }
+                if (rsv.buddies.length != submitted.buddies.length) {
+                    return false;
+                }
+                for (let id of rsv.buddies) {
+                    if (!submitted.buddies.includes(id)) {
+                        return false;
+                    }
+                }
+            } else if (a !== b) {
+                return false;
             }
-            return true;
-        } else if (rsv.resType === 'course') {
-            return parseInt(formData.get('numStudents')) == rsv.numStudents;
         }
+        return true;
     };
 
     const updateReservation = async ({ form, data, action, cancel }) => {
@@ -71,28 +92,44 @@
             }
         };
     };
-    let disabled = !beforeCancelCutoff(rsv.date, rsv.startTime);
-    let prompt = disabled ? '' : 'modify';
+    let viewOnly = !beforeCancelCutoff(rsv.date, rsv.startTime);
+    let restrictModify = !beforeResCutoff(rsv.date);
+
 </script>
 
 {#if hasForm}
-    <div>
-        <div class='text-center text-2xl font-semibold my-2'>{prompt} reservation</div>
-        <form 
-            method="POST" 
-            action="/?/updateReservation" 
-            use:enhance={updateReservation}
-        >
-            <input type="hidden" name="id" value={rsv.id}>
+    {#if viewOnly}
+        <div class='mb-4'>
+            <div class='text-center text-xl font-semibold my-4'>
+                {rsv.user.name}
+            </div>       
             {#if rsv.category === 'pool'}
-                <ResFormPool disabled={disabled} rsv={rsv}/>
+                <ResFormPool viewOnly {rsv}/>
             {:else if rsv.category === 'openwater'}
-                <ResFormOpenWater disabled={disabled} rsv={rsv}/>
+                <ResFormOpenWater viewOnly {rsv}/>
             {:else if rsv.category === 'classroom'}
-                <ResFormClassroom disabled={disabled} rsv={rsv}/>
+                <ResFormClassroom viewOnly {rsv}/>
             {/if}
-        </form>
-    </div>
+        </div>
+    {:else}
+        <div>
+            <div class='text-center text-2xl font-semibold my-2'>modify reservation</div>
+            <form 
+                method="POST" 
+                action="/?/updateReservation" 
+                use:enhance={updateReservation}
+            >
+                <input type="hidden" name="id" value={rsv.id}>
+                {#if rsv.category === 'pool'}
+                    <ResFormPool {restrictModify} {rsv}/>
+                {:else if rsv.category === 'openwater'}
+                    <ResFormOpenWater {restrictModify} {rsv}/>
+                {:else if rsv.category === 'classroom'}
+                    <ResFormClassroom {restrictModify} {rsv}/>
+                {/if}
+            </form>
+        </div>
+    {/if}
 {/if}
 
 <Toaster/>

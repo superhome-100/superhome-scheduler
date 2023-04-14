@@ -5,11 +5,13 @@
     import { canSubmit } from '$lib/stores.js';
 
     export let rsv = null;
-    export let disabled = false;
     export let category;
     export let date;
     export let resType = null;
     export let viewOnly = false;
+    export let restrictModify = false;
+
+    let disabled = viewOnly || restrictModify;
 
     category = rsv == null ? category : rsv.category;
     date = rsv == null ? date : rsv.date;
@@ -20,14 +22,11 @@
     let autoOrCourse = rsv == null ? (resType == null ? 'autonomous' : resType) : rsv.resType;
     let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
     $canSubmit = true;
-
-    let noModify = rsv != null;
-
     $: showBuddyFields = autoOrCourse === 'autonomous';
 
 </script>
 
-<ResFormGeneric {viewOnly} {showBuddyFields} {disabled} {date} bind:category={category} {rsv}>
+<ResFormGeneric {viewOnly} {restrictModify} {showBuddyFields} {date} bind:category={category} {rsv}>
     <div class='[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5' slot="categoryLabels">
         <div><label for="formStart">Start Time</label></div>
         <div><label for="formEnd">End Time</label></div>
@@ -40,14 +39,14 @@
     <div slot="categoryInputs">
         <div><select 
             id="formStart" 
-            disabled={disabled || noModify} 
+            {disabled} 
             bind:value={chosenStart} name="startTime"
         >
             {#each startTs as t}
                 <option value={t}>{t}</option>
             {/each}
         </select></div>
-        <div><select id="formEnd" disabled={disabled || noModify} name="endTime" value={chosenEnd}>
+        <div><select id="formEnd" {disabled} name="endTime" value={chosenEnd}>
             {#each endTs as t}
                 {#if timeStrToMin(chosenStart) < timeStrToMin(t)}
                     <option value={t}>{t}</option>
@@ -56,7 +55,7 @@
         </select></div>
         <div><select 
                 id="formResType" 
-                disabled={disabled || noModify || resType != null} 
+                disabled={disabled || resType != null} 
                 bind:value={autoOrCourse} 
                 name="resType"
             >
@@ -67,8 +66,8 @@
             <input type="hidden" name="resType" value={resType}>
         {/if}
         {#if autoOrCourse === 'course'}
-            <div><select {disabled} value={numStudents} name="numStudents">
-                {#each [...Array(10).keys()] as n}
+            <div><select disabled={viewOnly} value={numStudents} name="numStudents">
+                {#each [...Array(restrictModify ? numStudents : 10).keys()] as n}
                     <option value={n+1}>{n+1}</option>
                 {/each}
             </select></div>

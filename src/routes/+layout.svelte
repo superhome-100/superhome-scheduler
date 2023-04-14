@@ -19,6 +19,7 @@
     import { page } from '$app/stores';
     import { PUBLIC_FACEBOOK_APP_ID } from "$env/static/public";
     import { settings, buoys, user, users, view, reservations } from '$lib/stores.js';
+    import { augmentRsv } from '$lib/utils.js';
     import { onMount } from 'svelte';
     import { toast, Toaster } from 'svelte-french-toast';
 
@@ -38,8 +39,8 @@
         console.log('refreshing...');
         let data = await get('AppData');
         if (data.status === 'success') {
-            $reservations = data.reservations;
-            $users = data.users;
+            $reservations = data.reservations.map((rsv) => augmentRsv(rsv));
+            $users = data.usersById;
         }
     }
 
@@ -68,9 +69,9 @@
                     if (data.status === 'error') {
                         throw new Error('Could not read app data from database');
                     }
-                    $reservations = data.reservations;
+                    $reservations = data.reservations.map((rsv) => augmentRsv(rsv));
                     console.log($reservations);
-                    $users = data.users;
+                    $users = data.usersById;
                     setInterval(refreshAppState, $settings.refreshInterval.default);
                 }
                 return true;

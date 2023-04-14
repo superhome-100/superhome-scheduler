@@ -9,22 +9,23 @@
     export let rsv = null;
     export let date;
     export let category;
-    export let disabled = false;
     export let viewOnly = false;
     export let showBuddyFields = true;
+    export let restrictModify = false;
+
+    let disabled = viewOnly || restrictModify;
 
     let comments = rsv == null ? null : rsv.comments;
-    let noModify = rsv != null;
     date = rsv == null ? datetimeToLocalDateStr(date) : rsv.date;
     category = rsv == null ? category : rsv.category;
 
     const initBF = () => {
         let buddyFields = [];
-        if (rsv != null) {
-            for (let i=0; i < rsv.buddies.name.length; i++) {
+        if (rsv != null && rsv.buddies != null) {
+            for (let i=0; i < rsv.buddies.length; i++) {
                 buddyFields.push({
-                    'name': rsv.buddies.name[i],
-                    'userId': rsv.buddies.id[i],
+                    'name': $users[rsv.buddies[i]].name,
+                    'userId': rsv.buddies[i],
                     'id': i,
                     'matches': []
                 });
@@ -60,7 +61,8 @@
         currentBF.matches = [];
         if (currentBF.name.length > 0) {
             let buddyName = currentBF.name.toLowerCase();
-            for (let record of $users) {
+            for (let id in $users) {
+                let record = $users[id];
                 if (record.id != $user.id && !currentBuddies.includes(record.name)) {
                     let rec = record.name.slice(0, buddyName.length).toLowerCase(); 
                     if (buddyName === rec) {
@@ -141,7 +143,7 @@
                         class='p-0' 
                         type="button" 
                         on:click={addBuddyField}
-                        disabled={disabled}
+                        disabled={disabled || buddyFields.length == 2}
                         tabindex="1"
                     >
                         <PlusIcon svgClass='h-6 w-6'/>
@@ -171,14 +173,14 @@
             class='w-44'
             min={minValidDateStr()} 
             value={date}
-            disabled={disabled || noModify}
+            {disabled}
         ></div>
         <div>
             <select 
                 name="category" 
                 id="formCategory" 
                 bind:value={category}
-                disabled={disabled || noModify}
+                {disabled}
             >
                 <option value="pool">Pool</option>
                 <option value="openwater">Open Water</option>
@@ -240,7 +242,7 @@
                 class='mb-4'
                 cols="17"
                 bind:value={comments}
-                disabled={disabled || noModify}
+                {disabled}
             />
         </div>
     </div>
@@ -253,7 +255,7 @@
         type="submit" 
         class='bg-gray-100 disabled:text-gray-400 px-3 py-1'
         tabindex='4' 
-        disabled={!$canSubmit || disabled}
+        disabled={!$canSubmit}
         hidden={viewOnly}
     >Submit</button>
 </div>
