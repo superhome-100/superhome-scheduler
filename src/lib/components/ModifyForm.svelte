@@ -15,8 +15,32 @@
 
     const { close } = getContext('simple-modal');
 
+    const reservationUnchanged = (formData) => {
+        if (rsv.resType === 'autonomous') {
+            let buddies = JSON.parse(Object.fromEntries(formData).buddies);
+            if (buddies.id.length != rsv.buddies.id.length) {
+                return false;
+            }
+            for (let id of buddies.id) {
+                if (!rsv.buddies.id.includes(id)) {
+                    return false;
+                }
+            }
+            return true;
+        } else if (rsv.resType === 'course') {
+            return parseInt(formData.get('numStudents')) == rsv.numStudents;
+        }
+    };
+
     const updateReservation = async ({ form, data, action, cancel }) => {
         updateReservationFormData(data);
+        
+        if (reservationUnchanged(data)) {
+            cancel();
+            close();
+            return;
+        }
+
         let result = validateBuddies(data);
         if (result.status == 'error') {
             alert(result.msg);

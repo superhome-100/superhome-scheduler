@@ -142,6 +142,7 @@ export async function submitReservationPerBuddy(formData) {
 export async function updateReservation(formData) {
     let {id, ...rest} = Object.fromEntries(formData);
     rest = convertReservationTypes(rest);
+    rest.status = 'pending';
     const record = xata.db.Reservations.update(id, rest);
     return record;
 }
