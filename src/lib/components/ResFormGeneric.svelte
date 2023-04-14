@@ -110,6 +110,12 @@
 
     const bdColor = (status) => status === 'confirmed' ? 'border-[#00FF00]' : 'border-[#FFFF00]';
 
+    const statusStyle = (status) => 'align-middle px-2 py-0 pb-1 mb-1 ml-2 w-fit '
+                    + 'text-xl text-gray-500 dark:text-gray-300 '
+                    + 'bg-white dark:bg-gray-500 '
+                    + 'rounded-lg border ' + bdColor(status) + ' ' 
+                    + 'ring-1 ring-gray-500 dark:ring-gray-300';
+
 </script>
 
 <svelte:window on:keydown={navigateList} />
@@ -153,7 +159,7 @@
 
     <div class="column inputs text-left w-[67%]">
         {#if viewOnly}
-                <div class='align-middle px-2 py-0 pb-1 mb-1 ml-2 text-xl w-fit bg-white text-black dark:bg-gray-800 dark:text-white text-white rounded-lg {bdColor(rsv.status)} border ring-1 ring-black'>
+                <div class={statusStyle(rsv.status)}>
                     {rsv.status}
                 </div>
         {/if}
