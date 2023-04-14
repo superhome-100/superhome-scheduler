@@ -6,7 +6,7 @@
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
     import { canSubmit, user, reservations } from '$lib/stores.js';
-    import { minValidDateStr, beforeCancelCutoff, beforeResCutoff } from '$lib/ReservationTimes.js';
+    import { beforeCancelCutoff, beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { 
         augmentRsv, 
@@ -68,7 +68,7 @@
             cancel();
             return;
         }
-        if (!beforeCancelCutoff(rsv.date, rsv.startTime)) {
+        if (rsv.category !== 'classroom' && !beforeCancelCutoff(rsv.date, rsv.startTime)) {
             alert(`The modification window for this reservation has expired; 
                 this reservation can no longer be modified`
             );
@@ -92,8 +92,11 @@
             }
         };
     };
-    let viewOnly = !beforeCancelCutoff(rsv.date, rsv.startTime);
+    
     let restrictModify = !beforeResCutoff(rsv.date);
+    let viewOnly = rsv.category !== 'classroom'
+            && !beforeCancelCutoff(rsv.date, rsv.startTime) 
+            || (restrictModify && rsv.resType === 'autonomous');
 
 </script>
 
@@ -107,8 +110,6 @@
                 <ResFormPool viewOnly {rsv}/>
             {:else if rsv.category === 'openwater'}
                 <ResFormOpenWater viewOnly {rsv}/>
-            {:else if rsv.category === 'classroom'}
-                <ResFormClassroom viewOnly {rsv}/>
             {/if}
         </div>
     {:else}
@@ -125,7 +126,7 @@
                 {:else if rsv.category === 'openwater'}
                     <ResFormOpenWater {restrictModify} {rsv}/>
                 {:else if rsv.category === 'classroom'}
-                    <ResFormClassroom {restrictModify} {rsv}/>
+                    <ResFormClassroom {rsv}/>
                 {/if}
             </form>
         </div>

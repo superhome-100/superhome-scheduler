@@ -15,15 +15,8 @@ if ((inc < 60 && 60 % inc !== 0) || (inc > 60 && inc % 60 !== 0)) {
 
 export const minuteOfDay = (date) => date.getHours()*60 + date.getMinutes();
 
-export function validReservationDate(date) {
-    let today = new Date();
-    return today.getFullYear() <= date.getFullYear()
-        && today.getMonth() <= date.getMonth()
-        && (today.getDate() < date.getDate()-1
-            || (today.getDate() == date.getDate()-1
-            && minuteOfDay(today) < resCutoff(dtu.datetimeToLocalDateStr(date))
-            )
-        );
+export function validReservationDate(date, category) {
+    return dtu.datetimeToLocalDateStr(date) >= minValidDateStr(category);
 }
 
 export function beforeResCutoff(dateStr) {
@@ -66,11 +59,19 @@ export const endTimes = (dateStr) => Array(nRes(dateStr))
     .fill()
     .map((v,i) => dtu.minToTimeStr(minStart(dateStr) + (i+1)*inc(dateStr)));
 
-export function minValidDate() {
+export function minValidDate(category) {
     let today = new Date();
     let todayStr = dtu.datetimeToLocalDateStr(today);
     let d = new Date();
-    if (minuteOfDay(today) < resCutoff(todayStr)) {
+    if (category === 'classroom') {
+        let lastSlot = dtu.timeStrToMin(startTimes(todayStr)[startTimes(todayStr).length-1]);
+        if (minuteOfDay(today) < lastSlot) {
+            d.setDate(today.getDate())
+        } else {
+            d.setDate(today.getDate()+1)
+        }
+    }
+    else if (minuteOfDay(today) < resCutoff(todayStr)) {
         d.setDate(today.getDate()+1);
     } else {
         d.setDate(today.getDate()+2);
@@ -78,11 +79,9 @@ export function minValidDate() {
     return d;
 }
 
-export function minValidDateStr() {
-    let d = minValidDate();
-    return `${d.getFullYear()}-`
-        + `${d.getMonth()+1}-`.padStart(3,'0')
-        + `${d.getDate()}`.padStart(2,'0');
+export function minValidDateStr(category) {
+    let d = minValidDate(category);
+    return dtu.datetimeToLocalDateStr(d);
 }
 
 

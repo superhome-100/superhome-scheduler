@@ -29,8 +29,8 @@
         $viewedDate = next;
     }
 
-    const resDate = () => {
-        if (validReservationDate($viewedDate)) {
+    const dateFn = (category) => {
+        if (validReservationDate($viewedDate, category)) {
             return $viewedDate;
         } else {
             return minValidDate();
@@ -78,7 +78,7 @@
         </span> 
     </div>
    <span class='mr-2'>
-        <Modal><ReservationDialog category={category} dateFn={resDate}/></Modal>
+       <Modal><ReservationDialog {category} {dateFn}/></Modal>
     </span>
 </div>
 <br/>
