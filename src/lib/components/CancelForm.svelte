@@ -13,7 +13,7 @@
     
     const cancelReservation = async ({ form, data, action, cancel }) => {
         let rsv = Object.fromEntries(data);
-        if (!beforeCancelCutoff(rsv.date, rsv.startTime)) {
+        if (!beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category)) {
             alert(
                 `The cancelation window for this reservation has expired; 
                 this reservation can no longer be canceled`
@@ -48,6 +48,7 @@
             <input type="hidden" name="id" value={rsv.id}>
             <input type="hidden" name="date" value={rsv.date}>
             <input type="hidden" name="category" value={rsv.category}>
+            <input type="hidden" name="startTime" value={rsv.startTime}>
             <div>Really cancel {rsv.category} reservation on</div>
             <div>{rsv.date}?</div>
             <button type="submit">Confirm</button>

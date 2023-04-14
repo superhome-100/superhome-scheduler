@@ -68,7 +68,7 @@
             cancel();
             return;
         }
-        if (rsv.category !== 'classroom' && !beforeCancelCutoff(rsv.date, rsv.startTime)) {
+        if (!beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category)) {
             alert(`The modification window for this reservation has expired; 
                 this reservation can no longer be modified`
             );

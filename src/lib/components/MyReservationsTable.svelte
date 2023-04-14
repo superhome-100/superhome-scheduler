@@ -130,7 +130,7 @@
                         <td class='text-white text-sm font-semibold'>{catDesc(rsv)}</td>
                         <td class='text-white text-sm font-semibold'>{timeDesc(rsv)}</td>
                         <td class='text-white text-sm font-semibold'>{rsv.status}</td>
-                        {#if beforeCancelCutoff(rsv.date, rsv.startTime)}
+                        {#if beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category)}
                             <td on:click|stopPropagation={()=>{}} class='rounded-e-xl'>
                                 <Modal>
                                     <Dialog dialogType='cancel' rsv={rsv}/>
