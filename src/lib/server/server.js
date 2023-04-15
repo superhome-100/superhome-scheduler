@@ -1,11 +1,10 @@
 import { getXataClient } from '$lib/server/xata.js';
 import { convertReservationTypes } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
-import fs from 'fs';
 
 const xata = getXataClient();
 
-export async function writeTableToCsv(table) {
+export async function getTableCsv(table) {
     let fields = ['user.name', 'date', 'category', 'status',
         'resType', 'numStudents', 'owTime', 'startTime', 'endTime'];
     let records = await xata.db[table]
@@ -17,9 +16,7 @@ export async function writeTableToCsv(table) {
             .reduce((vs,f) => vs.push(f.split('.').reduce((o,k) => o[k], rec)) && vs, [])
             .reduce((l, v) => v == null ? l + ',' : l + ',' + v) + '\n';
     }
-    let csvFn = './downloads/' + table + '.csv';
-    fs.writeFileSync(csvFn, csv);
-    return csvFn;
+    return csv;
 }
 
 export async function getSettings() {

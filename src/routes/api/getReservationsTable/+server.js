@@ -1,9 +1,7 @@
-import fs from 'fs';
-import { writeTableToCsv } from '$lib/server/server.js';
+import { getTableCsv } from '$lib/server/server.js';
 
 export async function GET() {
-    let csvFn = await writeTableToCsv('Reservations');
-    let csv = fs.readFileSync(csvFn);
+    let csv = await getTableCsv('Reservations');
 
     return new Response(csv, {
         status: 200,
