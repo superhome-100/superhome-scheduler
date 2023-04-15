@@ -114,37 +114,50 @@
 		    );
         }
     };
-
+    
+    const getMyReservations = (rsvs, resType) => {
+        rsvs = rsvs.filter((rsv) => rsv.user.id === $user.id && getResType(rsv) === resType);
+        return rsvs.sort((a,b) => {
+            if (a.date > b.date) {
+                console.log(a.date + ' > ' + b.date);
+                return 1;
+            } else if (a.date === b.date && timeStrToMin(a.startTime) > timeStrToMin(b.startTime)) {
+                console.log(a.startTime + ' > ' + b.startTime);
+                return 1;
+            } else {
+                console.log(b.date + ' >= ' + a.date + ' or ' + timeStrToMin(b.startTime) + ' >= ' + timeStrToMin(a.startTime));
+                return -1;
+            }
+        });
+    };
 </script>
 
 {#if $user}
     <table class="m-auto border-separate border-spacing-y-1">
         <tbody>
-            {#each $reservations as rsv}
-                {#if rsv.user.id === $user.id && getResType(rsv) === resType} 
-                    <tr 
-                        on:click={showModify(rsv)} on:keypress={showModify(rsv)} 
-                        class='[&>td]:w-24 h-10 bg-gradient-to-br {bgColorFrom(rsv.category)} {bgColorTo(rsv.category)} cursor-pointer'
-                    >
-                        <td class='rounded-s-xl text-white text-sm font-semibold'>{shortDate(rsv.date)}</td>
-                        <td class='text-white text-sm font-semibold'>{catDesc(rsv)}</td>
-                        <td class='text-white text-sm font-semibold'>{timeDesc(rsv)}</td>
-                        <td class='text-white text-sm font-semibold'>{rsv.status}</td>
-                        {#if beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category)}
-                            <td 
-                                on:click|stopPropagation={()=>{}} 
-                                on:keypress|stopPropagation={()=>{}}
-                                class='rounded-e-xl'
-                            >
-                                <Modal>
-                                    <Dialog dialogType='cancel' rsv={rsv}/>
-                                </Modal>
-                            </td>
-                        {:else}
-                            <td class='rounded-e-xl'/>
-                        {/if}
-                    </tr>
-                {/if}
+            {#each getMyReservations($reservations, resType) as rsv (rsv.id)}
+                <tr 
+                    on:click={showModify(rsv)} on:keypress={showModify(rsv)} 
+                    class='[&>td]:w-24 h-10 bg-gradient-to-br {bgColorFrom(rsv.category)} {bgColorTo(rsv.category)} cursor-pointer'
+                >
+                    <td class='rounded-s-xl text-white text-sm font-semibold'>{shortDate(rsv.date)}</td>
+                    <td class='text-white text-sm font-semibold'>{catDesc(rsv)}</td>
+                    <td class='text-white text-sm font-semibold'>{timeDesc(rsv)}</td>
+                    <td class='text-white text-sm font-semibold'>{rsv.status}</td>
+                    {#if beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category)}
+                        <td 
+                            on:click|stopPropagation={()=>{}} 
+                            on:keypress|stopPropagation={()=>{}}
+                            class='rounded-e-xl'
+                        >
+                            <Modal>
+                                <Dialog dialogType='cancel' rsv={rsv}/>
+                            </Modal>
+                        </td>
+                    {:else}
+                        <td class='rounded-e-xl'/>
+                    {/if}
+                </tr>
             {/each}
         </tbody>
     </table>

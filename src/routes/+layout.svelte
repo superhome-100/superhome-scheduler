@@ -36,7 +36,8 @@
     onMount(initApp);
 
     async function refreshAppState() {
-        console.log('refreshing...');
+        let now = new Date();
+        console.log('refreshing at ' + now.toLocaleString());
         let data = await get('AppData');
         if (data.status === 'success') {
             $reservations = data.reservations.map((rsv) => augmentRsv(rsv));
@@ -70,7 +71,7 @@
                         throw new Error('Could not read app data from database');
                     }
                     $reservations = data.reservations.map((rsv) => augmentRsv(rsv));
-                    console.log($reservations);
+                    console.log('loaded ' + $reservations.length + ' reservations');
                     $users = data.usersById;
                     setInterval(refreshAppState, $settings.refreshInterval.default);
                 }

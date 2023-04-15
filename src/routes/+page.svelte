@@ -19,7 +19,7 @@
             
             <TabList>
                 <Tab>Upcoming</Tab>
-                <Tab>Past</Tab>
+                <Tab>Previous Week</Tab>
             </TabList>
             
             <TabPanel>
