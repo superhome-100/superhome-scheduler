@@ -28,9 +28,9 @@
         updateReservationFormData(data);
         let thisRsv = convertReservationTypes(Object.fromEntries(data));
         
-        if (thisRsv.category !== 'classroom' && !beforeResCutoff(thisRsv.date)) {
+        if (!beforeResCutoff(thisRsv.date, thisRsv.startTime, thisRsv.category)) {
             alert(
-                'The submission window for this reservation has expired; ' + 
+                'The submission window for this reservation date/time has expired; ' + 
                 'please choose a later date'
             );
             cancel();
