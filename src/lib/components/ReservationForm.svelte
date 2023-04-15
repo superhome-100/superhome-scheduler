@@ -53,7 +53,7 @@
             return;
         }
         
-        result = validateBuddies(data);
+        result = validateBuddies(thisRsv);
         if (result.status === 'error') {
             alert(result.msg);
             cancel();

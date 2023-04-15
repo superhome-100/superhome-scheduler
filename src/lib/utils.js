@@ -166,13 +166,11 @@ export function checkSpaceAvailable(thisRsv, rsvs, buoys) {
     }
 }
 
-export function validateBuddies(formData) {
-    let user = formData.get('user')
+export function validateBuddies(rsv) {
     let userIds = Object.keys(get(users));
-    let buddies = JSON.parse(formData.get('buddies'));
     let validBuddies = [];
-    for (let buddy of buddies) {
-        if (user === buddy) {
+    for (let buddy of rsv.buddies) {
+        if (rsv.user.id === buddy) {
             return {status: 'error', msg: 'Cannot add yourself as a buddy'};
         }
         if (!userIds.includes(buddy)) {

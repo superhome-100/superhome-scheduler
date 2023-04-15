@@ -28,7 +28,7 @@
 
     let endTs = endTimes(date);
     let chosenStart = rsv == null ? getStartTimes(date)[0] : rsv.startTime;
-    let chosenEnd = rsv == null ? endTs[0] : rsv.endTime;
+    let chosenEnd = rsv == null ? getStartTimes(date)[1] : rsv.endTime;
     let autoOrCourse = rsv == null ? (resType == null ? 'autonomous' : resType) : rsv.resType;
     let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
     $canSubmit = true;
