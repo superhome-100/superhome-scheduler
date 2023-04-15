@@ -89,7 +89,7 @@
             return;
         }
         
-        result = validateBuddies(data);
+        result = validateBuddies(submitted);
         if (result.status == 'error') {
             alert(result.msg);
             cancel();
@@ -107,6 +107,7 @@
             switch(result.type) {
                 case 'success':
                     removeRsv(rsv);
+
                     let updatedRsv = augmentRsv(result.data, $user.facebookId, $user.name);
                     $reservations.push(updatedRsv);
                     $reservations = [...$reservations];
