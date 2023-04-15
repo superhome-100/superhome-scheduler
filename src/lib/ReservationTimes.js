@@ -25,13 +25,15 @@ export function validReservationDate(date, category) {
     return dtu.datetimeToLocalDateStr(date) >= minValidDateStr(category);
 }
 
-export function beforeResCutoff(dateStr) {
+export function beforeResCutoff(dateStr, startTime, category) {
     let now = new Date();
     let tomorrow = new Date();
     tomorrow.setDate(now.getDate() + 1);
     let tomStr = dtu.datetimeToLocalDateStr(tomorrow);
 
-    if (dateStr > tomStr) {
+    if (category === 'classroom') {
+        return beforeCancelCutoff(dateStr, startTime, category);
+    } else if (dateStr > tomStr) {
         return true;
     } else if (dateStr == tomStr && minuteOfDay(now) <= resCutoff(dateStr)) {
         return true;

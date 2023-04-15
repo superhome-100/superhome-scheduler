@@ -93,9 +93,8 @@
         };
     };
     
-    let restrictModify = !beforeResCutoff(rsv.date);
-    let viewOnly = rsv.category !== 'classroom'
-            && !beforeCancelCutoff(rsv.date, rsv.startTime) 
+    let restrictModify = !beforeResCutoff(rsv.date, rsv.startTime, rsv.category);
+    let viewOnly = !beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category) 
             || (restrictModify && rsv.resType === 'autonomous');
 
 </script>
