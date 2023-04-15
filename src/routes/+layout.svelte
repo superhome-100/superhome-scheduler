@@ -40,7 +40,7 @@
         if (result.status == 200) {
             let blob = await result.blob();
             let a = document.createElement('a');
-            a.href = window.URL.createObjectURL(data);
+            a.href = window.URL.createObjectURL(blob);
             a.download = 'reservations.csv';
             a.click();
             a.remove();
