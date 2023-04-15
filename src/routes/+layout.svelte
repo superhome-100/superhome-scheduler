@@ -36,15 +36,18 @@
     onMount(initApp);
 
     async function downloadReservations() {
-        fetch('api/getReservationsTable')
-            .then(res => res.blob())
-            .then(data => {
-                var a = document.createElement('a');
-                a.href = window.URL.createObjectURL(data);
-                a.download = 'reservations.csv';
-                a.click();
-                a.remove();
-            });
+        let result = await fetch('api/getReservationsTable')
+        if (result.status == 200) {
+            let blob = await result.blob();
+            let a = document.createElement('a');
+            a.href = window.URL.createObjectURL(data);
+            a.download = 'reservations.csv';
+            a.click();
+            a.remove();
+        } else {
+            console.log('status code: ' + result.status);
+            console.log(result);
+        }
     }
 
     async function refreshAppState() {
