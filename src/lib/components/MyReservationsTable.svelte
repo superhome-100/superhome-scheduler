@@ -119,13 +119,10 @@
         rsvs = rsvs.filter((rsv) => rsv.user.id === $user.id && getResType(rsv) === resType);
         return rsvs.sort((a,b) => {
             if (a.date > b.date) {
-                console.log(a.date + ' > ' + b.date);
                 return 1;
             } else if (a.date === b.date && timeStrToMin(a.startTime) > timeStrToMin(b.startTime)) {
-                console.log(a.startTime + ' > ' + b.startTime);
                 return 1;
             } else {
-                console.log(b.date + ' >= ' + a.date + ' or ' + timeStrToMin(b.startTime) + ' >= ' + timeStrToMin(a.startTime));
                 return -1;
             }
         });

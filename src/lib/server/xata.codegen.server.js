@@ -41,6 +41,7 @@ const tables = [
         defaultValue: '"disabled"',
       },
       { name: "facebookId", type: "string", unique: true },
+      { name: "privileges", type: "string", defaultValue: "normal" },
     ],
   },
   {

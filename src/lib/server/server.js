@@ -1,8 +1,26 @@
 import { getXataClient } from '$lib/server/xata.js';
 import { convertReservationTypes } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
+import fs from 'fs';
 
 const xata = getXataClient();
+
+export async function writeTableToCsv(table) {
+    let fields = ['user.name', 'date', 'category', 'status',
+        'resType', 'numStudents', 'owTime', 'startTime', 'endTime'];
+    let records = await xata.db[table]
+        .select(fields)
+        .getAll();
+    let csv = fields.reduce((h,v) => h + ',' + v) + '\n';
+    for (let rec of records) {
+        csv += fields
+            .reduce((vs,f) => vs.push(f.split('.').reduce((o,k) => o[k], rec)) && vs, [])
+            .reduce((l, v) => v == null ? l + ',' : l + ',' + v) + '\n';
+    }
+    let csvFn = './downloads/' + table + '.csv';
+    fs.writeFileSync(csvFn, csv);
+    return csvFn;
+}
 
 export async function getSettings() {
     let settingsTbl = await xata.db.Settings.getAll();
@@ -12,7 +30,7 @@ export async function getSettings() {
 
 export async function getSession(id) {
     let records = await xata.db.Sessions
-        .select(['*', 'user.facebookId', 'user.name'])
+        .select(['*', 'user.privileges', 'user.facebookId', 'user.name'])
         .filter({id: id})
         .getMany();
     return records[0];
