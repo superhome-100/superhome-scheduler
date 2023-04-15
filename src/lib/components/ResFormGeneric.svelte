@@ -185,7 +185,7 @@
                 name="category" 
                 id="formCategory" 
                 bind:value={category}
-                {disabled}
+                disabled={disabled || rsv != null}
             >
                 <option value="pool">Pool</option>
                 <option value="openwater">Open Water</option>
