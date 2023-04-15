@@ -35,6 +35,18 @@
 
     onMount(initApp);
 
+    async function downloadReservations() {
+        fetch('api/getReservationsTable')
+            .then(res => res.blob())
+            .then(data => {
+                var a = document.createElement('a');
+                a.href = window.URL.createObjectURL(data);
+                a.download = 'reservations.csv';
+                a.click();
+                a.remove();
+            });
+    }
+
     async function refreshAppState() {
         let now = new Date();
         console.log('refreshing at ' + now.toLocaleString());
@@ -315,6 +327,9 @@
             <SidebarGroup>
                 {#if loginState === 'in'}
                     <SidebarItem label="Logout" on:click={userLogout} />
+                {/if}
+                {#if $user.privileges === 'admin'}
+                    <SidebarItem label='Download Reservations' on:click={downloadReservations}/>
                 {/if}
                 <SidebarItem label="My Reservations" href="/" on:click={toggleSide} active={activeUrl === `/`} />
                 <SidebarDropdownWrapper isOpen={true} label="Calendars">
