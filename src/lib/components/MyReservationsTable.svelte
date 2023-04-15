@@ -96,7 +96,7 @@
     const { open } = getContext('simple-modal');
 
     const showModify = (rsv) => {
-        if (beforeCancelCutoff(rsv.date, rsv.startTime)) { 
+        if (beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category)) { 
 		    open(
 			    ModifyForm,
                 {
@@ -123,7 +123,7 @@
             {#each $reservations as rsv}
                 {#if rsv.user.id === $user.id && getResType(rsv) === resType} 
                     <tr 
-                        on:click={showModify(rsv)} 
+                        on:click={showModify(rsv)} on:keypress={showModify(rsv)} 
                         class='[&>td]:w-24 h-10 bg-gradient-to-br {bgColorFrom(rsv.category)} {bgColorTo(rsv.category)} cursor-pointer'
                     >
                         <td class='rounded-s-xl text-white text-sm font-semibold'>{shortDate(rsv.date)}</td>
@@ -131,7 +131,11 @@
                         <td class='text-white text-sm font-semibold'>{timeDesc(rsv)}</td>
                         <td class='text-white text-sm font-semibold'>{rsv.status}</td>
                         {#if beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category)}
-                            <td on:click|stopPropagation={()=>{}} class='rounded-e-xl'>
+                            <td 
+                                on:click|stopPropagation={()=>{}} 
+                                on:keypress|stopPropagation={()=>{}}
+                                class='rounded-e-xl'
+                            >
                                 <Modal>
                                     <Dialog dialogType='cancel' rsv={rsv}/>
                                 </Modal>

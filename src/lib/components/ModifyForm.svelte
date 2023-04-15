@@ -5,7 +5,7 @@
     import ResFormPool from './ResFormPool.svelte';
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
-    import { canSubmit, user, reservations } from '$lib/stores.js';
+    import { canSubmit, user, reservations, buoys } from '$lib/stores.js';
     import { beforeCancelCutoff, beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { 
@@ -13,7 +13,9 @@
         removeRsv, 
         validateBuddies, 
         updateReservationFormData, 
-        convertReservationTypes 
+        convertReservationTypes,
+        checkDuplicateRsv,
+        checkSpaceAvailable
     } from '$lib/utils.js';
 
     export let hasForm = false;
@@ -21,28 +23,27 @@
 
     const { close } = getContext('simple-modal');
 
-    const reservationUnchanged = (formData) => {
+    const reservationUnchanged = (submitted, original) => {
         const isEmpty = (v) => v == null || v == '' || (Object.hasOwn(v, 'length') && v.length == 0);
         const bothEmpty = ((a,b) => isEmpty(a) && isEmpty(b));
 
-        let submitted = convertReservationTypes(Object.fromEntries(formData));   
         for (let field in submitted) {
             if (field === 'user') { continue };
             
-            let a = rsv[field];
+            let a = original[field];
             let b = submitted[field];
 
             if (bothEmpty(a,b)) { continue };
 
             if (field === 'buddies') {
-                if (rsv.buddies == null || submitted.buddies == null) {
+                if (a == null || b == null) {
                     return false;
                 }
-                if (rsv.buddies.length != submitted.buddies.length) {
+                if (a.length != b.length) {
                     return false;
                 }
-                for (let id of rsv.buddies) {
-                    if (!submitted.buddies.includes(id)) {
+                for (let id of a) {
+                    if (!b.includes(id)) {
                         return false;
                     }
                 }
@@ -53,22 +54,48 @@
         return true;
     };
 
+    const addMissingFields = (submitted, original) => {
+        for (let field in original) {
+            if (submitted[field] === undefined) {
+                submitted[field] = original[field];
+            }
+        }
+    };
+
     const updateReservation = async ({ form, data, action, cancel }) => {
         updateReservationFormData(data);
-        
-        if (reservationUnchanged(data)) {
+        let submitted = convertReservationTypes(Object.fromEntries(data));
+        addMissingFields(submitted, rsv);
+
+        if (reservationUnchanged(submitted, rsv)) {
             cancel();
             close();
             return;
         }
 
-        let result = validateBuddies(data);
+        if (checkDuplicateRsv(submitted, $reservations)) {
+            alert(
+                'You have an existing reservation that overlaps with this date/time; ' +
+                'please either cancel that reservation, or choose a different date/time'
+            );
+            cancel();
+            return;
+        }
+
+        let result = checkSpaceAvailable(submitted, $reservations, $buoys); 
+        if (result.status === 'error') {
+            alert(result.message);
+            cancel();
+            return;
+        }
+        
+        result = validateBuddies(data);
         if (result.status == 'error') {
             alert(result.msg);
             cancel();
             return;
         }
-        if (!beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category)) {
+        if (!beforeCancelCutoff(submitted.date, submitted.startTime, submitted.category)) {
             alert(`The modification window for this reservation has expired; 
                 this reservation can no longer be modified`
             );

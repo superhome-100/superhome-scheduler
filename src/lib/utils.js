@@ -97,7 +97,8 @@ function overlap(rsvA, rsvB) {
 function getExistingRsvs(thisRsv, rsvs) {
     if (thisRsv.category === 'openwater') {
         return rsvs.filter((rsv) => {
-            if (rsv.category === 'openwater'
+            if (rsv.id != thisRsv.id
+                && rsv.category === 'openwater'
                 && rsv.date === thisRsv.date
                 && rsv.owTime === thisRsv.owTime) {
                 return true;
@@ -107,7 +108,8 @@ function getExistingRsvs(thisRsv, rsvs) {
         });
     } else if (['pool', 'classroom'].includes(thisRsv.category)) {
         return rsvs.filter((rsv) => {
-            if (rsv.category === thisRsv.category
+            if (rsv.id != thisRsv.id
+                && rsv.category === thisRsv.category
                 && rsv.date === thisRsv.date
                 && overlap(thisRsv, rsv)) {
                 return true;
