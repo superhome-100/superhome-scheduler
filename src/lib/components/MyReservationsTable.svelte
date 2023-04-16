@@ -127,6 +127,12 @@
             }
         });
     };
+    
+    const textColor = (status) => status === 'confirmed' ? 'text-status-confirmed' : 'text-status-pending';
+
+    const statusStyle = (status) => 'align-middle m-auto w-fit '
+                    + 'rounded-lg ' + textColor(status); 
+
 </script>
 
 {#if $user}
@@ -140,7 +146,9 @@
                     <td class='rounded-s-xl text-white text-sm font-semibold'>{shortDate(rsv.date)}</td>
                     <td class='text-white text-sm font-semibold'>{catDesc(rsv)}</td>
                     <td class='text-white text-sm font-semibold'>{timeDesc(rsv)}</td>
-                    <td class='text-white text-sm font-semibold'>{rsv.status}</td>
+                    <td class='text-white text-sm font-semibold'>
+                        <div class={statusStyle(rsv.status)}>{rsv.status}</div>
+                    </td>
                     {#if beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category)}
                         <td 
                             on:click|stopPropagation={()=>{}} 
