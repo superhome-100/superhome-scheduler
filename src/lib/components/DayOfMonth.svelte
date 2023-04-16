@@ -54,7 +54,7 @@
             </p>
             {#if rsvs.length > 0}
                 <div 
-                    class='mx-auto mt-4 flex items-center justify-center  text-sm rounded-xl h-6 w-10 rsv {category}'
+                    class='mx-auto mt-4 flex items-center justify-center text-sm rounded-xl h-6 w-10 rsv {category}'
                 >+{rsvs.length}
                 </div>
             {/if}
