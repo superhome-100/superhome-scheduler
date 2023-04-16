@@ -18,6 +18,8 @@ const config = {
                 'classroom-fg': '#FFFFFF',
                 'root-bg-light': '#FFFFFF',
                 'root-bg-dark': '#242420',
+                'status-pending': '#FFFF00',
+                'status-confirmed': '#00FF00',
             }
         }
 	},
