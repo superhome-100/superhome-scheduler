@@ -115,7 +115,7 @@
     const autocompUlStyle = 'relative ml-2 top-0 border border-solid border-bg-gray-300 '
                           + 'rounded text-sm';
 
-    const bdColor = (status) => status === 'confirmed' ? 'border-[#00FF00]' : 'border-[#FFFF00]';
+    const bdColor = (status) => status === 'confirmed' ? 'border-status-confirmed' : 'border-status-pending';
 
     const statusStyle = (status) => 'align-middle px-2 py-0 pb-1 mb-1 ml-2 w-fit '
                     + 'text-xl text-gray-500 dark:text-gray-300 '
