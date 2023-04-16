@@ -36,6 +36,7 @@
         {/if}
         <div><label for="formMaxDepth">Max Depth</label></div>
     </div>
+    
     <div slot="categoryInputs">
         <div>
             <select 
@@ -61,7 +62,7 @@
         </div>
         {#if autoOrCourse == 'course'}
             <div>
-                <select disabled={viewOnly} name="numStudents" value={numStudents}>
+                <select id='formNumStudents' disabled={viewOnly} name="numStudents" value={numStudents}>
                     {#each [...Array(restrictModify ? numStudents : 10).keys()] as n}
                         <option value={n+1}>{n+1}</option>
                     {/each}
@@ -72,6 +73,7 @@
             <input 
                 {disabled}
                 type=number 
+                id='formMaxDepth'
                 class='w-14 valid:border-gray-500 required:border-red-500'
                 min='1'
                 max='{$buoys.reduce((maxv, b) => Math.max(maxv, b.maxDepth), 0)}'
@@ -81,6 +83,24 @@
                 required={maxDepth==undefined}
             ><span class='ml-1 text-sm'>meters</span>
         </div>
+    </div>
+    <div class='[&>span]:whitespace-nowrap [&>span]:ml-auto [&>span]:mr-4 [&>span]:text-sm text-center block-inline' slot='categoryOptionals'>
+        <span>
+            <label for='formPulley'>Pulley</label>
+            <input class='w-8' type='checkbox' id='formPulley' name='pulley'>
+        </span>
+        <span>
+            <label for='formBottomWeight'>Extra Bottom Weight</label>
+            <input class='w-8' type='checkbox' id='formBottomWeight' name='bottomWeight'>
+        </span>
+        <span>
+            <label for='formBottomPlate'>Bottom Plate</label>
+            <input class='w-8' type='checkbox' id='formBottomPlate' name='bottomPlate'>
+        </span>
+        <span>
+            <label for='formLargeBuoy'>Large Buoy</label>
+            <input class='w-8' type='checkbox' id='formLargeBuoy' name='largeBuoy'>
+        </span>
     </div>
 </ResFormGeneric>
 

@@ -163,7 +163,6 @@
         {/if}
         <div class='form-label h-8 mb-0.5'><label for="formComments">Comments</label></div>
     </div>
-
     <div class="column inputs text-left w-[67%]">
         {#if viewOnly}
                 <div class={statusStyle(rsv.status)}>
@@ -253,15 +252,24 @@
         </div>
     </div>
 </div>
+<div class='row w-full'>
+    <div class='column w-full'>
+        <slot name='categoryOptionals'></slot>
+    </div>
+</div>
 
 <input type="hidden" name="numBuddies" value={buddyFields.length}>
 
-<div class='text-right p-2'>    
-    <button 
-        type="submit" 
-        class='bg-gray-100 disabled:text-gray-400 px-3 py-1'
-        tabindex='5' 
-        disabled={!$canSubmit}
-        hidden={viewOnly}
-    >Submit</button>
+<div class='row w-full'>
+    <div class='column w-full'>
+        <div class='text-right p-2'>    
+            <button 
+                type="submit" 
+                class='bg-gray-100 disabled:text-gray-400 px-3 py-1'
+                tabindex='5' 
+                disabled={!$canSubmit}
+                hidden={viewOnly}
+            >Submit</button>
+        </div>
+    </div>
 </div>
