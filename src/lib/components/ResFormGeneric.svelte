@@ -149,7 +149,7 @@
                         type="button" 
                         on:click={addBuddyField}
                         disabled={disabled || buddyFields.length == maxBuddies}
-                        tabindex="1"
+                        tabindex='1'
                     >
                         <PlusIcon svgClass='h-6 w-6'/>
                     </button>
@@ -247,6 +247,7 @@
                 class='mb-4'
                 cols="17"
                 bind:value={comments}
+                tabindex='4'
                 {disabled}
             />
         </div>
@@ -255,11 +256,11 @@
 
 <input type="hidden" name="numBuddies" value={buddyFields.length}>
 
-<div class='text-right p-2'>
+<div class='text-right p-2'>    
     <button 
         type="submit" 
         class='bg-gray-100 disabled:text-gray-400 px-3 py-1'
-        tabindex='4' 
+        tabindex='5' 
         disabled={!$canSubmit}
         hidden={viewOnly}
     >
