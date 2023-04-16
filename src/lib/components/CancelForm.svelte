@@ -4,7 +4,7 @@
     import { user, users, reservations } from '$lib/stores.js';
     import { beforeCancelCutoff } from '$lib/ReservationTimes.js';
     import { toast, Toaster } from 'svelte-french-toast';
-    import { removeRsv } from '$lib/utils.js';
+    import { augmentRsv, removeRsv } from '$lib/utils.js';
 
     export let rsv;
     export let hasForm = false;
@@ -40,6 +40,8 @@
                 case 'success':
                     for (let rsv of result.data.modified) {
                         removeRsv(rsv.id);
+                        let user = $users[rsv.user.id];
+                        rsv = augmentRsv(rsv, user.facebookId, user.name);
                         $reservations.push(rsv);
                     }
                     for (let rsv of result.data.canceled) {
