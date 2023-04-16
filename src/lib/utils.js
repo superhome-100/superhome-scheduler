@@ -77,8 +77,10 @@ export function convertReservationTypes(data) {
     if ('numStudents' in data) {
         data.numStudents = parseInt(data.numStudents);
     }
-    if ('buddies' in data) {
-        data.buddies = JSON.parse(data.buddies);
+    for (let f of ['buddies', 'oldBuddies', 'delBuddies']) {
+        if (f in data) {
+            data[f] = JSON.parse(data[f]);
+        }
     }
     return data;
 }
@@ -361,10 +363,10 @@ export function getDaySchedule(rsvs, datetime, category, softCapacity) {
     return schedule;
 }
 
-export function removeRsv(rsv) {
+export function removeRsv(id) {
     let rsvs = get(reservations);
     for (let i=0; i < rsvs.length; i++) {
-        if (rsv.id === rsvs[i].id) {
+        if (id === rsvs[i].id) {
             rsvs.splice(i,1);
             reservations.set(rsvs);
             break;
