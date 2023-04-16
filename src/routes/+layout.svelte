@@ -35,19 +35,30 @@
 
     onMount(initApp);
 
-    async function downloadReservations() {
-        let result = await fetch('api/getReservationsTable')
-        if (result.status == 200) {
-            let blob = await result.blob();
-            let a = document.createElement('a');
-            a.href = window.URL.createObjectURL(blob);
-            a.download = 'reservations.csv';
-            a.click();
-            a.remove();
-        } else {
-            console.log('status code: ' + result.status);
-            console.log(result);
-        }
+    function downloadReservations() {
+        const fn = async () => {
+            let result = await fetch('/api/getReservationsTable')
+            if (result.status == 200) {
+                let blob = await result.blob();
+                let a = document.createElement('a');
+                a.href = window.URL.createObjectURL(blob);
+                a.download = 'reservations.csv';
+                a.click();
+                a.remove();
+                return Promise.resolve();
+            } else {
+                return Promise.reject();
+            }
+        };
+        toast.promise(
+            fn(),
+            {
+                loading: 'downloading...',
+                success: 'success!',
+                error: 'error!  please try again'
+            }
+        );
+                
     }
 
     async function refreshAppState() {
