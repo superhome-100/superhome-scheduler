@@ -96,7 +96,7 @@
                                 on:click={cls === 'rsv' ? showViewRsvs(data) : ()=>{}}
                             >
                                 {#each formatTag(data, nSlots) as line}
-                                    <div>{line}</div>
+                                    <span class='mx-0.5 inline-block'>{line}</span>
                                 {/each}
                             </div>
                         </div>
