@@ -1,5 +1,5 @@
 <script>
-    import { canSubmit } from '$lib/stores.js';
+    import { canSubmit, buoys } from '$lib/stores.js';
     import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 
     export let rsv = null;
@@ -72,8 +72,9 @@
             <input 
                 {disabled}
                 type=number 
-                class='w-12 valid:border-gray-500 required:border-red-500'
-                min=1
+                class='w-14 valid:border-gray-500 required:border-red-500'
+                min='1'
+                max='{$buoys.reduce((maxv, b) => Math.max(maxv, b.maxDepth), 0)}'
                 bind:value={maxDepth} 
                 on:input={checkSubmit}
                 name="maxDepth"
