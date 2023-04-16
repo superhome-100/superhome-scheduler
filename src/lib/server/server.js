@@ -1,5 +1,5 @@
 import { getXataClient } from '$lib/server/xata.js';
-import { convertReservationTypes } from '$lib/utils.js';
+import { convertReservationTypes, getExistingRsvs } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
 
 const xata = getXataClient();
@@ -98,9 +98,47 @@ export async function authenticateUser(userId, userName) {
 }
 
 export async function submitReservation(formData) {
-    let rsv = convertReservationTypes(Object.fromEntries(formData));
-    let record = await xata.db.Reservations.create(rsv);
-    return record;
+    let sub = convertReservationTypes(Object.fromEntries(formData));
+    let { user, buddies, ...common } = sub;
+    let records = [];
+
+    if (buddies.length > 0) {
+        let filters = {
+            date: sub.date,
+            category: sub.category,
+            'user.id': { $any : buddies },
+        };
+        if (sub.category === 'openwater') {
+            filters.owTime = sub.owTime;
+        } else if (['pool', 'classroom'].includes(sub.category)) {
+            filters.startTime = sub.startTime;
+            filters.endTime = sub.endTime;
+        }
+        let existing = await xata.db.Reservations.filter(filters).getAll();
+
+        if (buddyGroupTooLarge(sub, existing)) {
+            return {
+                status: 'error',
+                code: 'buddies'
+            };
+        }
+
+        for (let id of buddies) {
+            let record = await xata.db.Reservations.create({user: id, ...common});
+            records.push(record);
+        }
+    }
+    let record = await xata.db.Reservations.create(sub);
+    records.push(record);
+    return records;
+}
+
+function buddyGroupTooLarge(sub, existing) {
+    let buddies = new Set(sub.buddies);
+    for (let sub of existing) {
+        sub.buddies.forEach(id => buddies.add(id))
+    }
+    return buddies.length > 2;
 }
 
 /*
