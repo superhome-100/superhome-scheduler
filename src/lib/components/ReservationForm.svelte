@@ -5,7 +5,7 @@
     import ResFormPool from './ResFormPool.svelte';
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
-    import { canSubmit, user, reservations, buoys } from '$lib/stores.js';
+    import { canSubmit, user, users, reservations, buoys } from '$lib/stores.js';
     import { beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { 
@@ -65,8 +65,11 @@
         return async ({ result, update }) => {
             switch(result.type) {
                 case 'success':
-                    let rsv = augmentRsv(result.data, $user.facebookId, $user.name);
-                    $reservations.push(rsv);
+                    for (let rsv of result.data) {
+                        let user = $users[rsv.user.id];
+                        rsv = augmentRsv(rsv, user.facebookId, user.name);
+                        $reservations.push(rsv);
+                    }
                     $reservations = [...$reservations];
                     toast.success('Reservation submitted!');
                     break;

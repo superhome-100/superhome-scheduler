@@ -124,7 +124,8 @@ export async function submitReservation(formData) {
         }
 
         for (let id of buddies) {
-            let record = await xata.db.Reservations.create({user: id, ...common});
+            let bg = [user, ...buddies.filter(bid => bid != id)]
+            let record = await xata.db.Reservations.create({user: id, buddies: bg, ...common});
             records.push(record);
         }
     }

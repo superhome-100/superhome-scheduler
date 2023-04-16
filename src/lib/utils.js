@@ -239,15 +239,13 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity, sameResource) {
                         resType: rsv.resType
                     };
                     rsvs.splice(j,1);
-                    for (let id of rsv.buddies) {
-                        for (let i=0; i<rsvs.length; i++) {
-                            let cand = rsvs[i];
-                            if (cand.user.id === id) {
-                                block.data.push(cand);
-                                rsvs.splice(i,1);
-                                j--;
-                                break;
-                            }
+                    for (let i=0; i<rsvs.length; i++) {
+                        let cand = rsvs[i];
+                        if (rsv.buddies.includes(cand.user.id)) {
+                            block.data.push(cand);
+                            rsvs.splice(i,1);
+                            j--;
+                            break;
                         }
                     }
                     thisR.push(block);
