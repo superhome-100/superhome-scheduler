@@ -97,70 +97,160 @@ export async function authenticateUser(userId, userName) {
     return record;
 }
 
-export async function submitReservation(formData) {
-    let rsv = convertReservationTypes(Object.fromEntries(formData));
-    let record = await xata.db.Reservations.create(rsv);
-    return record;
-}
-
-/*
-export async function submitReservationPerBuddy(formData) {
-
-    let { name, numBuddies, buddies, buddyIds, data } = separateBuddyDetails(Object.fromEntries(formData));
-    let { user, ...common } = data;
-    common = {
-        ...common,
-        maxDepth: 'maxDepth' in common ? parseInt(common.maxDepth) : null,
-        numStudents: common.numStudents == null ? null : parseInt(common.numStudents)
+async function getBuddyReservations(sub, buddies) {
+    let filters = {
+        date: sub.date,
+        category: sub.category,
+        'user.id': { $any : buddies },
     };
-
-    // first create each buddy's record to get the reservation IDs
-    let entries = [{...common, user, buddies}];
-    for (let i=0; i < numBuddies; i++) {
-        let buddyGrp = {
-            'name': [name, ...buddies.name.slice(0,i).concat(buddies.name.slice(i+1))],
-        };
-        entries.push({
-            ...common,
-            user: buddyIds[i],
-            buddies: buddyGrp,
-            owner: false
-        });
-    };
-    const initRecs = await xata.db.Reservations.create(entries);
-    buddies.resIds = initRecs.map((r) => r.id);
-
-    let ownerRec;
-    // then update the records with the other buddies' IDs
-    if (numBuddies > 0) {
-        entries = []
-        for (let i=0; i < numBuddies+1; i++) {
-            entries.push({
-                id: initRecs[i].id,
-                'buddies.resId': [...initRecs.slice(0,i).map((rec)=>rec.id).concat(initRecs.slice(i+1).map((rec)=>rec.id))]
-            });
-        }
-        const records = await xata.db.Reservations.update(entries);
-        ownerRec = records[0];
-    } else {
-        ownerRec = initRecs[0];
+    if (sub.category === 'openwater') {
+        filters.owTime = sub.owTime;
+    } else if (['pool', 'classroom'].includes(sub.category)) {
+        filters.startTime = sub.startTime;
+        filters.endTime = sub.endTime;
     }
-    return ownerRec;
+    let existing = await xata.db.Reservations.filter(filters).getAll();
+    return existing;
 }
-*/
+
+export async function submitReservation(formData) {
+    let sub = convertReservationTypes(Object.fromEntries(formData));
+
+    let entries = [sub];
+    if (sub.buddies.length > 0) {
+        let { user, buddies, ...common } = sub;
+        let existing = await getBuddyReservations(sub, sub.buddies);
+        if (existing.length > 0) {
+            return {
+                status: 'error',
+                code: 'BUDDY_RSV_EXISTS'
+            };
+        }
+
+        for (let id of buddies) {
+            let bg = [user, ...buddies.filter(bid => bid != id)]
+            entries.push({...common, user: id, buddies: bg, owner: false});
+        }
+    }
+    let records = await xata.db.Reservations.create(entries);
+    return {
+        status: 'success',
+        records
+    };
+}
 
 export async function updateReservation(formData) {
-    let {id, ...rest} = Object.fromEntries(formData);
-    rest = convertReservationTypes(rest);
-    rest.status = 'pending';
-    const record = xata.db.Reservations.update(id, rest);
-    return record;
+    let {oldBuddies, ...sub} = convertReservationTypes(Object.fromEntries(formData));
+    sub.status = 'pending';
+
+    oldBuddies = oldBuddies ? oldBuddies : [];
+
+    let newBuddies = sub.buddies.filter(id => !oldBuddies.includes(id));
+    if (newBuddies.length > 0) {
+        let preExisting = await getBuddyReservations(sub, newBuddies);
+        if (preExisting.length > 0) {
+            return {
+                status: 'error',
+                code: 'BUDDY_RSV_EXISTS'
+            };
+        }
+    }
+
+    let buddySet = new Set(sub.buddies);
+    for (let id of oldBuddies) {
+        buddySet.add(id);
+    }
+
+    let modify = [sub];
+    let create = [];
+    let remove = [];
+
+    if (buddySet.size > 0) {
+        let existing;
+        let { user, buddies, id, ...common } = sub;
+        if (oldBuddies.length > 0) {
+            existing = await getBuddyReservations(sub, oldBuddies);
+        }
+
+        for (let bId of buddySet) {
+            if (buddies.includes(bId) && oldBuddies.includes(bId)) {
+                // modify
+                let rsvId = existing.filter(rsv => rsv.user.id === bId)[0].id;
+                let bg = [user, ...buddies.filter(bIdp => bIdp != bId)]
+                let entry = {
+                    ...common,
+                    id: rsvId,
+                    user: bId,
+                    buddies: bg,
+                    owner: false,
+                };
+                modify.push(entry);
+            } else if (buddies.includes(bId)) {
+                // create
+                let bg = [user, ...buddies.filter(bIdp => bIdp != bId)]
+                let entry = {
+                    ...common,
+                    user: bId,
+                    buddies: bg,
+                    owner: false,
+                };
+                create.push(entry);
+            } else {
+                // cancel
+                let rsvId = existing.filter(rsv => rsv.user.id === bId)[0].id;
+                remove.push(rsvId);
+            }
+        }
+    }
+
+    let records = {
+        'created': [],
+        'canceled': []
+    };
+    let modrecs = await xata.db.Reservations.update(modify);
+    records.modified = modrecs;
+    if (create.length > 0) {
+        let createrecs = await xata.db.Reservations.create(create);
+        records.created = createrecs;
+    }
+    if (remove.length > 0) {
+        let cancelrecs = await xata.db.Reservations.delete(remove);
+        records.canceled = cancelrecs;
+    }
+    return {
+        status: 'success',
+        records
+    };
 }
 
 export async function cancelReservation(formData) {
-    let data = Object.fromEntries(formData);
-    const record = await xata.db.Reservations.delete(data.id);
-    return record;
+    let data = convertReservationTypes(Object.fromEntries(formData));
+
+    let save = data.buddies.filter(id => !data.delBuddies.includes(id));
+    let remove = [data.id];
+    let records = {modified:[], canceled:[]};
+    if (data.buddies.length > 0) {
+        let existing = await getBuddyReservations(data, data.buddies);
+        let modify = existing
+            .filter(rsv => save.includes(rsv.user.id))
+            .map(rsv => {
+                let buddies = save.filter(id => id != rsv.user.id);
+                return {...rsv, buddies};
+            });
+        let modrecs = await xata.db.Reservations.update(modify);
+        records.modified = modrecs;
+
+        remove = remove.concat(
+            existing
+                .filter(rsv => !save.includes(rsv.user.id))
+                .map(rsv => rsv.id)
+        );
+    }
+
+    let cancelrecs = await xata.db.Reservations.delete(remove);
+    records.canceled = cancelrecs;
+
+    return records;
 }
 
 export function checkSessionActive(route, cookies) {
