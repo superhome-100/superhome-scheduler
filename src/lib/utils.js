@@ -1,5 +1,5 @@
 import { startTimes, endTimes, inc } from './ReservationTimes.js';
-import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils.js';
+import { datetimeToLocalDateStr, minToTimeStr, timeStrToMin } from './datetimeUtils.js';
 import { reservations, users } from './stores.js'
 import { Settings } from './settings.js';
 import { get } from 'svelte/store';
@@ -218,7 +218,8 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity, sameResource) {
     let incT = inc(dateStr);
     let count = 0;
     // assign courses first (put them at the end) to ensure they get their own lane
-    rsvs.sort((a,b) => a.resType === 'course' ? 1 : -1);
+    // then assign buddies next to ensure they are paired in the same lane
+    rsvs.sort((a,b) => a.resType === 'course' ? 1 : a.buddies.length > 0 ? 1 : -1);
     // helper hidden var for splitting courses into multiple lanes when necessary
     for (let rsv of rsvs) {
         if (rsv.resType === 'course') {
@@ -259,13 +260,15 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity, sameResource) {
                     } else {
                         rsvs.splice(j,1);
 
-                        for (let i=0; i<rsvs.length; i++) {
-                            let cand = rsvs[i];
-                            if (rsv.buddies.includes(cand.user.id)) {
-                                block.data.push(cand);
-                                rsvs.splice(i,1);
-                                j--;
-                                break;
+                        if (rsv.buddies.length > 0) {
+                            for (let i=0; i<rsvs.length; i++) {
+                                let cand = rsvs[i];
+                                if (rsv.buddies.includes(cand.user.id)) {
+                                    block.data.push(cand);
+                                    rsvs.splice(i,1);
+                                    j--;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -296,6 +299,7 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResou
     let nextR = 0;
 
     while (rsvs.length > 0) {
+        let nRem = rsvs.length;
         let rsv = rsvs[0];
         let start = timeStrToMin(rsv.startTime);
         let end = timeStrToMin(rsv.endTime)
@@ -305,10 +309,10 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResou
 
         for (let j=0; j < resource.length; j++) {
             let block = resource[j];
-            let blockCls = block.cls;
+            let blockClass = block.cls;
             let nRsv = block.data.length;
             if (block.resType != 'course'
-                && block.data.length < 2    // in case buddy has already been paired
+                && nRsv < 2    // in case buddy has already been paired
                 && sameResource(nextR, rsv)
                 && start >= block.start
                 && start < block.end
@@ -318,7 +322,7 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResou
                     let begBlock = {...block};
                     begBlock.end = start;
                     begBlock.nSlots = (start - block.start) / incT;
-                    begBlock.cls = blockCls;
+                    begBlock.cls = blockClass;
                     begBlock.data = [...block.data];
                     resource.splice(j, 0, begBlock);
                     j++;
@@ -335,7 +339,7 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResou
                         let endBlock = {...block};
                         endBlock.start = end;
                         endBlock.nSlots = (block.end - end) / incT;
-                        endBlock.cls = blockCls;
+                        endBlock.cls = blockClass;
                         endBlock.data = endBlock.data.slice(0,nRsv);
                         resource.splice(j+1, 0, endBlock);
                         j++;
@@ -352,6 +356,11 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResou
                     start = block.end;
                 }
             }
+        }
+        if (rsvs.length == nRem) {
+            // couldn't fit all of this rsv into a single resource; split it up
+            // and add the remainder to the next resource
+            rsv.startTime = minToTimeStr(start);
         }
     }
 }

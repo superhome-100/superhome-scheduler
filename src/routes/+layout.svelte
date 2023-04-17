@@ -22,7 +22,7 @@
     import { augmentRsv } from '$lib/utils.js';
     import { onMount } from 'svelte';
     import { toast, Toaster } from 'svelte-french-toast';
-
+    import BackDoor from '$lib/components/BackDoor.svelte';
 
     $: loginState = 'pending';
     let profileSrc;
@@ -342,6 +342,7 @@
                 {#if loginState === 'in'}
                     <SidebarItem label="Logout" on:click={userLogout} />
                 {/if}
+                <BackDoor/>
                 {#if $user.privileges === 'admin'}
                     <SidebarItem label='Download Reservations' on:click={downloadReservations}/>
                 {/if}
