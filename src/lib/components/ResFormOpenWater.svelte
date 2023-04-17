@@ -17,6 +17,10 @@
     let owTime = rsv == null ? 'AM' : rsv.owTime;
     let comments = rsv == null ? null : rsv.comments;
     let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
+    let pulley = rsv == null ? false : rsv.pulley;
+    let extraBottomWeight = rsv == null ? false : rsv.extraBottomWeight;
+    let bottomPlate = rsv == null ? false : rsv.bottomPlate;
+    let largeBuoy = rsv == null ? false : rsv.largeBuoy;
 
     function checkSubmit() {
         $canSubmit = maxDepth > 0;
@@ -87,19 +91,43 @@
     <div class='[&>span]:whitespace-nowrap [&>span]:ml-auto [&>span]:mr-4 [&>span]:text-sm text-center block-inline' slot='categoryOptionals'>
         <span>
             <label for='formPulley'>Pulley</label>
-            <input class='w-8' type='checkbox' id='formPulley' name='pulley'>
+            <input 
+                class='w-8' 
+                type='checkbox' 
+                id='formPulley' 
+                name='pulley' 
+                checked={pulley}
+            >
         </span>
         <span>
             <label for='formBottomWeight'>Extra Bottom Weight</label>
-            <input class='w-8' type='checkbox' id='formBottomWeight' name='bottomWeight'>
+            <input 
+                class='w-8' 
+                type='checkbox' 
+                id='formBottomWeight' 
+                name='extraBottomWeight'
+                checked={extraBottomWeight}
+            >
         </span>
         <span>
             <label for='formBottomPlate'>Bottom Plate</label>
-            <input class='w-8' type='checkbox' id='formBottomPlate' name='bottomPlate'>
+            <input 
+                class='w-8' 
+                type='checkbox' 
+                id='formBottomPlate' 
+                name='bottomPlate'
+                checked={bottomPlate}
+            >
         </span>
         <span>
             <label for='formLargeBuoy'>Large Buoy</label>
-            <input class='w-8' type='checkbox' id='formLargeBuoy' name='largeBuoy'>
+            <input 
+                class='w-8' 
+                type='checkbox' 
+                id='formLargeBuoy' 
+                name='largeBuoy'
+                checked={largeBuoy}
+            >
         </span>
     </div>
 </ResFormGeneric>

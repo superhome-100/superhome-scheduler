@@ -115,7 +115,6 @@ async function getBuddyReservations(sub, buddies) {
 
 export async function submitReservation(formData) {
     let sub = convertReservationTypes(Object.fromEntries(formData));
-
     sub.status = sub.category === 'classroom' ? 'confirmed' : 'pending';
 
     let entries = [sub];

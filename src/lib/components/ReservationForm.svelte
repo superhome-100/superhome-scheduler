@@ -40,7 +40,7 @@
         if (checkDuplicateRsv(submitted, $reservations)) {
             alert(
                 'You have an existing reservation that overlaps with this date/time; ' +
-                'please either cancel that reservation, or choose a different date/time'
+                'please either cancel that reservation or choose a different date/time'
             );
             cancel();
             return;
