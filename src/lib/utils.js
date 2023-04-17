@@ -297,11 +297,17 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResou
 
     let incT = inc(dateStr);
     let nextR = 0;
+    let nextRsv = true;
+    let start;
 
     while (rsvs.length > 0) {
         let nRem = rsvs.length;
         let rsv = rsvs[0];
-        let start = timeStrToMin(rsv.startTime);
+
+        if (nextRsv) {
+            start = timeStrToMin(rsv.startTime);
+        }
+
         let end = timeStrToMin(rsv.endTime)
 
         nextR = (nextR + 1) % softCapacity;
@@ -350,6 +356,7 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResou
 
                     // rsv has now been fully added, remove from list
                     rsvs.splice(0, 1);
+                    nextRsv = true;
                     break;
 
                 } else {
@@ -360,7 +367,7 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResou
         if (rsvs.length == nRem) {
             // couldn't fit all of this rsv into a single resource; split it up
             // and add the remainder to the next resource
-            rsv.startTime = minToTimeStr(start);
+            nextRsv = false;
         }
     }
 }
