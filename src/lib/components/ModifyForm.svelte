@@ -63,7 +63,6 @@
     };
 
     const updateReservation = async ({ form, data, action, cancel }) => {
-        
         updateReservationFormData(data, rsv.category);
         data.set('category', rsv.category);
 
