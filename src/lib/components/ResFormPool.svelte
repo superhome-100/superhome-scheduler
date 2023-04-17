@@ -25,10 +25,8 @@
         }
         return startTs;
     }
-
-    let endTs = endTimes(date);
-    let chosenStart = rsv == null ? getStartTimes(date)[0] : rsv.startTime;
-    let chosenEnd = rsv == null ? getStartTimes(date)[1] : rsv.endTime;
+    $: chosenStart = rsv == null ? getStartTimes(date)[0] : rsv.startTime;
+    $: chosenEnd = rsv == null ? getStartTimes(date)[1] : rsv.endTime;
     let autoOrCourse = rsv == null ? (resType == null ? 'autonomous' : resType) : rsv.resType;
     let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
     $canSubmit = true;
@@ -50,14 +48,15 @@
         <div><select 
             id="formStart" 
             {disabled} 
-            bind:value={chosenStart} name="startTime"
+            bind:value={chosenStart} 
+            name="startTime"
         >
             {#each getStartTimes(date) as t}
                 <option value={t}>{t}</option>
             {/each}
         </select></div>
         <div><select id="formEnd" {disabled} name="endTime" value={chosenEnd}>
-            {#each endTs as t}
+            {#each endTimes() as t}
                 {#if timeStrToMin(chosenStart) < timeStrToMin(t)}
                     <option value={t}>{t}</option>
                 {/if}
