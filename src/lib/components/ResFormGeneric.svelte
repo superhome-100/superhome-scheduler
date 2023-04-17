@@ -141,9 +141,7 @@
                 <div class='form-label h-8 mb-0.5'><label>Buddies</label></div>
             {:else}
                 <div class='form-label h-8 mb-0.5'>
-                    <label>Add buddy
-                        
-                    </label>
+                    <label>Add buddy</label>
                     <button 
                         class='p-0' 
                         type="button" 
