@@ -269,7 +269,13 @@
                 tabindex='5' 
                 disabled={!$canSubmit}
                 hidden={viewOnly}
-            >Submit</button>
+            >
+                {#if rsv}
+                    Update
+                {:else}
+                    Submit
+                {/if}
+            </button>
         </div>
     </div>
 </div>

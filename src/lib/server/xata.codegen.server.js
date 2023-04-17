@@ -28,6 +28,10 @@ const tables = [
       { name: "room", type: "string" },
       { name: "buddies", type: "multiple" },
       { name: "status", type: "string", defaultValue: "pending" },
+      { name: "pulley", type: "bool" },
+      { name: "extraBottomWeight", type: "bool" },
+      { name: "bottomPlate", type: "bool" },
+      { name: "largeBuoy", type: "bool" },
     ],
   },
   {
@@ -80,6 +84,10 @@ const tables = [
     columns: [
       { name: "name", type: "string" },
       { name: "maxDepth", type: "int" },
+      { name: "pulley", type: "bool" },
+      { name: "extraBottomWeight", type: "bool" },
+      { name: "bottomPlate", type: "bool" },
+      { name: "largeBuoy", type: "bool" },
     ],
   },
 ];

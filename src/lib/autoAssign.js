@@ -234,6 +234,26 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
     return buoyGrps;
 }
 
+const buoyOpts = ['pulley', 'extraBottomWeight', 'bottomPlate', 'largeBuoy'];
+
+function getGroupOpts(grp) {
+    let grpOpts = {};
+    for (let rsv of grp) {
+        for (let opt of buoyOpts) {
+            grpOpts[opt] = grpOpts[opt] || rsv[opt];
+        }
+    }
+    return grpOpts;
+}
+
+function countMatches(buoy, opts) {
+    let count = 0;
+    for (let opt of buoyOpts) {
+        count = buoy[opt] && opts[opt] ? count + 1 : count;
+    }
+    return count;
+}
+
 function assignBuoyGroupsToBuoys(buoys, grps) {
     const assignments = {};
     const getBuoy = (grp) => {
@@ -258,22 +278,44 @@ function assignBuoyGroupsToBuoys(buoys, grps) {
         }
     }
 
-    buoys.sort((a,b) => a.maxDepth < b.maxDepth ? 1 : -1);
-    // iterate from shallowest to deepest
+    buoys.sort((a,b) => a.maxDepth > b.maxDepth ? 1 : -1);
+    grps.sort((a,b) => a[0].maxDepth < b[0].maxDepth ? 1 : -1);
+    // iterate from deepest to shallowest
     while (grps.length > 0) {
         const grp = grps[grps.length-1];
-        let failedToAssign = true;
+        let candidates = [];
         for (let i=buoys.length-1; i >= 0; i--) {
             const buoy = buoys[i];
             if (buoy.maxDepth >= grp[0].maxDepth) {
-                assignments[buoy.name] = grp;
-                grps.splice(grps.length-1,1);
-                buoys.splice(i,1);
-                failedToAssign = false;
-                break;
+                candidates.push({buoy, idx: i});
             }
         }
-        if (failedToAssign) {
+
+        if (candidates.length > 0) {
+            // first find buoys with most option matches
+            let score = -1;
+            let opts = getGroupOpts(grp);
+            for (let cand of candidates) {
+                let count = countMatches(cand.buoy, opts);
+                if (count > score) {
+                    score = count;
+                }
+            }
+            // then select the one among these buoys with closest maxDepth
+            candidates = candidates.filter(cand => countMatches(cand.buoy, opts) == score);
+            score = Infinity;
+            let best;
+            for (let cand of candidates) {
+                let dist = cand.buoy.maxDepth - grp[0].maxDepth;
+                if (dist < score) {
+                    score = dist;
+                    best = cand;
+                }
+            }
+            assignments[best.buoy.name] = grp;
+            grps.splice(grps.length-1,1);
+            buoys.splice(best.idx,1);
+        } else {
             return {
                 status: 'error',
                 message: 'Ran out of buoys',

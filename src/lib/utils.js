@@ -74,6 +74,13 @@ export function convertReservationTypes(data) {
     if ('maxDepth' in data) {
         data.maxDepth = parseInt(data.maxDepth);
     }
+    for (let opt of ['pulley', 'extraBottomWeight', 'bottomPlate', 'largeBuoy']) {
+        if (opt in data) {
+            data[opt] = data[opt] === 'on';
+        } else {
+            data[opt] = false;
+        }
+    }
     if ('numStudents' in data) {
         data.numStudents = parseInt(data.numStudents);
     }
