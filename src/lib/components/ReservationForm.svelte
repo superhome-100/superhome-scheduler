@@ -5,7 +5,7 @@
     import ResFormPool from './ResFormPool.svelte';
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
-    import { canSubmit, user, reservations, buoys } from '$lib/stores.js';
+    import { canSubmit, user, users, reservations, buoys } from '$lib/stores.js';
     import { beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { 
@@ -26,9 +26,9 @@
     const submitReservation = async ({ form, data, action, cancel }) => {
         
         updateReservationFormData(data);
-        let thisRsv = convertReservationTypes(Object.fromEntries(data));
+        let submitted = convertReservationTypes(Object.fromEntries(data));
         
-        if (!beforeResCutoff(thisRsv.date, thisRsv.startTime, thisRsv.category)) {
+        if (!beforeResCutoff(submitted.date, submitted.startTime, submitted.category)) {
             alert(
                 'The submission window for this reservation date/time has expired; ' + 
                 'please choose a later date'
@@ -37,7 +37,7 @@
             return;
         }
 
-        if (checkDuplicateRsv(thisRsv, $reservations)) {
+        if (checkDuplicateRsv(submitted, $reservations)) {
             alert(
                 'You have an existing reservation that overlaps with this date/time; ' +
                 'please either cancel that reservation, or choose a different date/time'
@@ -46,14 +46,14 @@
             return;
         }
 
-        let result = checkSpaceAvailable(thisRsv, $reservations, $buoys); 
+        let result = checkSpaceAvailable(submitted, $reservations, $buoys); 
         if (result.status === 'error') {
             alert(result.message);
             cancel();
             return;
         }
         
-        result = validateBuddies(thisRsv);
+        result = validateBuddies(submitted);
         if (result.status === 'error') {
             alert(result.msg);
             cancel();
@@ -65,10 +65,20 @@
         return async ({ result, update }) => {
             switch(result.type) {
                 case 'success':
-                    let rsv = augmentRsv(result.data, $user.facebookId, $user.name);
-                    $reservations.push(rsv);
-                    $reservations = [...$reservations];
-                    toast.success('Reservation submitted!');
+                    if (result.data.status === 'success') {
+                        let records = result.data.records;
+                        for (let rsv of records) {
+                            let user = $users[rsv.user.id];
+                            rsv = augmentRsv(rsv, user.facebookId, user.name);
+                            $reservations.push(rsv);
+                        }
+                        $reservations = [...$reservations];
+                        toast.success('Reservation submitted!');
+                    } else if (result.data.status === 'error') {
+                        if (result.data.code === 'BUDDY_RSV_EXISTS') {
+                            alert('Buddy reservation already exists!  Reservation rejected');
+                        }
+                    }
                     break;
                 default:
                     console.error(result);
