@@ -146,12 +146,11 @@ export function checkSpaceAvailable(thisRsv, rsvs, buoys) {
             return result;
         }
     } else if (thisRsv.category === 'pool') {
-        let numDivers = existingRsvs.reduce((acc, rsv) => {
-            acc += rsv.resType === 'course' ? 2 : 1;
+        let numDivers = [thisRsv, ...existingRsvs].reduce((acc, rsv) => {
+            acc += rsv.resType === 'course' ? 2*Math.ceil(rsv.numStudents/4) : 1;
             return acc;
         }, 0);
-
-        if (numDivers >= 8) {
+        if (numDivers > 8) {
             return {
                 status: 'error',
                 message: 'All pool lanes are booked at this time.  ' +
@@ -218,6 +217,14 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity, sameResource) {
     let schedule = Array(softCapacity).fill();
     let incT = inc(dateStr);
     let count = 0;
+    // assign courses first (put them at the end) to ensure they get their own lane
+    rsvs.sort((a,b) => a.resType === 'course' ? 1 : -1);
+    // helper hidden var for splitting courses into multiple lanes when necessary
+    for (let rsv of rsvs) {
+        if (rsv.resType === 'course') {
+            rsv.hiddenStudents = rsv.numStudents;
+        }
+    }
     while (rsvs.length > 0 && count < softCapacity) {
         let nextTime = timeStrToMin(startTimes(dateStr)[0]);
         let thisR = [];
@@ -245,14 +252,21 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity, sameResource) {
                         data: [rsv],
                         resType: rsv.resType
                     };
-                    rsvs.splice(j,1);
-                    for (let i=0; i<rsvs.length; i++) {
-                        let cand = rsvs[i];
-                        if (rsv.buddies.includes(cand.user.id)) {
-                            block.data.push(cand);
-                            rsvs.splice(i,1);
-                            j--;
-                            break;
+                    // split courses with >4 students into multiple lanes
+                    if (rsv.resType === 'course' && rsv.hiddenStudents > 4) {
+                        rsv.hiddenStudents -= 4;
+                        j++;
+                    } else {
+                        rsvs.splice(j,1);
+
+                        for (let i=0; i<rsvs.length; i++) {
+                            let cand = rsvs[i];
+                            if (rsv.buddies.includes(cand.user.id)) {
+                                block.data.push(cand);
+                                rsvs.splice(i,1);
+                                j--;
+                                break;
+                            }
                         }
                     }
                     thisR.push(block);
@@ -282,7 +296,6 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResou
     let nextR = 0;
 
     while (rsvs.length > 0) {
-
         let rsv = rsvs[0];
         let start = timeStrToMin(rsv.startTime);
         let end = timeStrToMin(rsv.endTime)

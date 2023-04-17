@@ -1,10 +1,11 @@
 <script>
     import { startTimes, endTimes } from '$lib/ReservationTimes.js';
-    import { viewedDate, reservations } from '$lib/stores.js';
+    import { user, viewedDate, reservations } from '$lib/stores.js';
     import { getDaySchedule } from '$lib/utils.js';
     import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils.js';
     import { getContext } from 'svelte';
     import ViewForms from '$lib/components/ViewForms.svelte';
+    import ModifyForm from '$lib/components/ModifyForm.svelte';
     import { badgeColor } from '$lib/utils.js';
 
     export let nResource;
@@ -12,15 +13,30 @@
     export let category;
 
     const { open } = getContext('simple-modal');
-
+    
     const showViewRsvs = (rsvs) => {
-		open(
-			ViewForms,
-            {
-                rsvs: rsvs, 
-                hasForm: true,
+        let userRsvs = rsvs.filter(rsv => rsv.user.id === $user.id);
+        if (userRsvs.length > 0) {
+            for (let rsv of userRsvs) {
+                open(
+                    ModifyForm,
+                    {
+                        rsv: rsv,
+                        hasForm: true,
+                    }
+                );
             }
-		);
+        }
+        let otherRsvs = rsvs.filter(rsv => rsv.user.id != $user.id);
+        if (otherRsvs.length > 0) {
+            open(
+                ViewForms,
+                {
+                    rsvs: otherRsvs, 
+                    hasForm: true,
+                }
+            );
+        }
     };
 
     $: schedule = getDaySchedule($reservations, $viewedDate, category, nResource);
