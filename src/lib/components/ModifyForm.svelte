@@ -5,7 +5,7 @@
     import ResFormPool from './ResFormPool.svelte';
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
-    import { canSubmit, user, reservations, buoys } from '$lib/stores.js';
+    import { canSubmit, user, users, reservations, buoys } from '$lib/stores.js';
     import { beforeCancelCutoff, beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { 
@@ -23,7 +23,7 @@
 
     const { close } = getContext('simple-modal');
 
-    const reservationUnchanged = (submitted, original) => {
+    const reservationChanges = (submitted, original) => {
         const isEmpty = (v) => v == null || v == '' || (Object.hasOwn(v, 'length') && v.length == 0);
         const bothEmpty = ((a,b) => isEmpty(a) && isEmpty(b));
 
@@ -37,21 +37,21 @@
 
             if (field === 'buddies') {
                 if (a == null || b == null) {
-                    return false;
+                    return 'buddies';
                 }
                 if (a.length != b.length) {
-                    return false;
+                    return 'buddies';
                 }
                 for (let id of a) {
                     if (!b.includes(id)) {
-                        return false;
+                        return 'buddies';
                     }
                 }
             } else if (a !== b) {
-                return false;
+                return field;
             }
         }
-        return true;
+        return null;
     };
 
     const addMissingFields = (submitted, original) => {
@@ -63,16 +63,29 @@
     };
 
     const updateReservation = async ({ form, data, action, cancel }) => {
-        updateReservationFormData(data);
+        
+        updateReservationFormData(data, rsv.category);
+        data.set('category', rsv.category);
+
         let submitted = convertReservationTypes(Object.fromEntries(data));
         addMissingFields(submitted, rsv);
 
-        if (reservationUnchanged(submitted, rsv)) {
+        let change = reservationChanges(submitted, rsv)
+        if (change == null) {
             cancel();
             close();
             return;
+        } else if (change === 'buddies') {
+            data.append('oldBuddies', JSON.stringify(rsv.buddies));
         }
 
+        if (!beforeCancelCutoff(submitted.date, submitted.startTime, submitted.category)) {
+            alert(`The modification window for this reservation has expired; 
+                this reservation can no longer be modified`
+            );
+            cancel();
+        }
+ 
         if (checkDuplicateRsv(submitted, $reservations)) {
             alert(
                 'You have an existing reservation that overlaps with this date/time; ' +
@@ -95,23 +108,35 @@
             cancel();
             return;
         }
-        if (!beforeCancelCutoff(submitted.date, submitted.startTime, submitted.category)) {
-            alert(`The modification window for this reservation has expired; 
-                this reservation can no longer be modified`
-            );
-            cancel();
-        }
-        close();
+        
+       close();
 
         return async ({ result, update }) => {
             switch(result.type) {
                 case 'success':
-                    removeRsv(rsv);
-
-                    let updatedRsv = augmentRsv(result.data, $user.facebookId, $user.name);
-                    $reservations.push(updatedRsv);
-                    $reservations = [...$reservations];
-                    toast.success('Reservation updated!');
+                    if (result.data.status === 'success') {
+                        let records = result.data.records;
+                        for (let rsv of records.modified) {
+                            let user = $users[rsv.user.id];
+                            removeRsv(rsv.id);
+                            rsv = augmentRsv(rsv, user.facebookId, user.name);
+                            $reservations.push(rsv);
+                        }
+                        for (let rsv of records.created) {
+                            let user = $users[rsv.user.id];
+                            rsv = augmentRsv(rsv, user.facebookId, user.name);
+                            $reservations.push(rsv);
+                        }
+                        for (let rsv of records.canceled) {
+                            removeRsv(rsv.id);
+                        }
+                        $reservations = [...$reservations];
+                        toast.success('Reservation updated!');
+                    } else if (result.data.status === 'error') {
+                        if (result.data.code === 'BUDDY_RSV_EXISTS') {
+                            alert('Buddy reservation already exists!  Reservation rejected');
+                        }
+                    }
                     break;
                 default:
                     console.error(result);
@@ -122,7 +147,8 @@
     };
     
     let restrictModify = !beforeResCutoff(rsv.date, rsv.startTime, rsv.category);
-    let viewOnly = !beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category) 
+    let viewOnly = !rsv.owner 
+            || !beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category) 
             || (restrictModify && rsv.resType === 'autonomous');
 
 </script>

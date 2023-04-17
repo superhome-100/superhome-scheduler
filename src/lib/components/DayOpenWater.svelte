@@ -1,22 +1,33 @@
 <script>
-    import { viewedDate, reservations, buoys } from '$lib/stores.js';
+    import { user, viewedDate, reservations, buoys } from '$lib/stores.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { displayTag } from '$lib/utils.js';
     import { assignRsvsToBuoys } from '$lib/autoAssign.js';
     import { getContext } from 'svelte';
     import ViewForms from '$lib/components/ViewForms.svelte';
+    import ModifyForm from '$lib/components/ModifyForm.svelte';
     import { badgeColor } from '$lib/utils.js';
 
     const { open } = getContext('simple-modal');
 
     const showViewRsv = (rsv) => {
-        open(
-            ViewForms,
-            {
-                rsvs: [rsv], 
-                hasForm: true,
+        if (rsv.user.id === $user.id) {
+            open(
+                ModifyForm,
+                {
+                    rsv: rsv,
+                    hasForm: true,
                 }
-        );
+            );
+        } else {
+            open(
+                ViewForms,
+                {
+                    rsvs: [rsv], 
+                    hasForm: true,
+                }
+            );
+        }
     };
 
     function getOpenWaterSchedule(rsvs, datetime) {
