@@ -41,10 +41,10 @@
     
     $: slotDiv = slotsPerHr(startTimes(datetimeToLocalDateStr($viewedDate)));
     
-    const displayTimes = () => {
-        let date = datetimeToLocalDateStr($viewedDate);
-        let st = startTimes(date);
-        let et = endTimes(date);
+    const displayTimes = (date) => {
+        let dateStr = datetimeToLocalDateStr(date);
+        let st = startTimes(dateStr);
+        let et = endTimes(dateStr);
         let hrs = [];
         for (let i=0; i<st.length; i++) {
             if (i % slotDiv == 0) {
@@ -77,7 +77,7 @@
 <div class="row">
     <div class="column w-[12%] m-0 text-center">
         <div style='height: 1lh'/>
-        {#each displayTimes() as t}
+        {#each displayTimes($viewedDate) as t}
             <div class='font-semibold' style='height: {rowHeight}rem'>{t}</div>
         {/each}
     </div>

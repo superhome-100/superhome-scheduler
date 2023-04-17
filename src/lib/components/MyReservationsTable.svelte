@@ -128,7 +128,10 @@
         });
     };
     
-    const textColor = (status) => status === 'confirmed' ? 'text-status-confirmed' : 'text-status-pending';
+    const textColor = (status) => status === 'confirmed' 
+        ? 'text-status-confirmed' : status === 'pending'
+        ? 'text-status-pending' : status === 'rejected'
+        ? 'text-status-rejected' : undefined;
 
     const statusStyle = (status) => 'align-middle m-auto w-fit '
                     + 'rounded-lg ' + textColor(status); 

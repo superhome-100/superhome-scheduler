@@ -20,7 +20,7 @@ export function monthArr(year, month, reservations) {
                 let dateStr = datetimeToLocalDateStr(date);
                 let dayRsvs = [];
                 for (let rsv of reservations) {
-                    if (rsv.date === dateStr) {
+                    if (rsv.date === dateStr && rsv.status != 'rejected') {
                         dayRsvs.push(rsv);
                     }
                 }
@@ -346,7 +346,7 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResou
 export function getDaySchedule(rsvs, datetime, category, softCapacity) {
 
     let today = datetimeToLocalDateStr(datetime);
-    rsvs = rsvs.filter((v) => v.category === category && v.date === today);
+    rsvs = rsvs.filter((v) => v.status != 'rejected' && v.category === category && v.date === today);
     rsvs.sort((a,b) => timeStrToMin(a.startTime) < timeStrToMin(b.startTime) ? 1 : -1);
 
     let sameResource;

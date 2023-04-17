@@ -20,6 +20,7 @@ const config = {
                 'root-bg-dark': '#242420',
                 'status-pending': '#FFFF00',
                 'status-confirmed': '#00FF00',
+                'status-rejected': '#FF0000',
             }
         }
 	},

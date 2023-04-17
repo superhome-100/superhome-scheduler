@@ -33,7 +33,7 @@
     function getOpenWaterSchedule(rsvs, datetime) {
         let schedule = {};
         let today = datetimeToLocalDateStr(datetime);
-        rsvs = rsvs.filter((v) => v.category === 'openwater' && v.date === today);
+        rsvs = rsvs.filter((v) => v.status != 'rejected' && v.category === 'openwater' && v.date === today);
         
         for (let owTime of ['AM', 'PM']) {
             let result = assignRsvsToBuoys(
