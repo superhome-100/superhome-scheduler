@@ -98,7 +98,7 @@ function overlap(rsvA, rsvB) {
 
     return (startA >= startB && startA < endB)
             || ((endA <= endB && endA > startB)
-                || (startA < startB && startA > endB));
+                || (startA < startB && endA > endB));
 }
 
 function getExistingRsvs(thisRsv, rsvs) {
@@ -132,6 +132,29 @@ export function checkDuplicateRsv(thisRsv, rsvs) {
     return existingRsvs.filter((rsv) => thisRsv.user === rsv.user.id).length > 0;
 }
 
+function checkPoolSpaceAvailable(thisRsv, rsvs) {
+    let startTs = startTimes(thisRsv.date);
+    for (let i=startTs.indexOf(thisRsv.startTime); i < startTs.indexOf(thisRsv.endTime); i++) {
+        let time = timeStrToMin(startTs[i]);
+        let overlap = rsvs.filter(rsv => {
+            let start = timeStrToMin(rsv.startTime);
+            let end = timeStrToMin(rsv.endTime);
+            let notMe = thisRsv.id != rsv.id;
+            let notMyBuddy = !thisRsv.buddies.includes(rsv.user.id);
+            return notMe && notMyBuddy && start <= time && end > time;
+        });
+        let numDivers = 1 + thisRsv.buddies.length;
+        numDivers += overlap.reduce((acc, rsv) => {
+            acc += rsv.resType === 'course' ? 2*Math.ceil(rsv.numStudents/4) : 1;
+            return acc;
+        }, 0);
+        if (numDivers > 8) {
+            return false;
+        }
+    }
+    return true;
+}
+
 export function checkSpaceAvailable(thisRsv, rsvs, buoys) {
     let existingRsvs = getExistingRsvs(thisRsv, rsvs);
     if (thisRsv.category === 'openwater') {
@@ -146,18 +169,14 @@ export function checkSpaceAvailable(thisRsv, rsvs, buoys) {
             return result;
         }
     } else if (thisRsv.category === 'pool') {
-        let numDivers = [thisRsv, ...existingRsvs].reduce((acc, rsv) => {
-            acc += rsv.resType === 'course' ? 2*Math.ceil(rsv.numStudents/4) : 1;
-            return acc;
-        }, 0);
-        if (numDivers > 8) {
+        if (checkPoolSpaceAvailable(thisRsv, existingRsvs)) {
+            return { status: 'success' };
+        } else {
             return {
                 status: 'error',
                 message: 'All pool lanes are booked at this time.  ' +
                          'Please either check back later or try a different date/time'
             };
-        } else {
-            return { status: 'success' };
         }
     } else if (thisRsv.category === 'classroom') {
         if (existingRsvs.length >= 3) {
@@ -219,7 +238,7 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity, sameResource) {
     let count = 0;
     // assign courses first (put them at the end) to ensure they get their own lane
     // then assign buddies next to ensure they are paired in the same lane
-    rsvs.sort((a,b) => a.resType === 'course' ? 1 : a.buddies.length > 0 ? 1 : -1);
+    rsvs.sort((a,b) => a.resType === 'course' ? 1 : b.resType === 'course' ? -1 : a.buddies.length > b.buddies.length ? 1 : -1);
     // helper hidden var for splitting courses into multiple lanes when necessary
     for (let rsv of rsvs) {
         if (rsv.resType === 'course') {

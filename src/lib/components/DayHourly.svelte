@@ -15,28 +15,13 @@
     const { open } = getContext('simple-modal');
     
     const showViewRsvs = (rsvs) => {
-        let userRsvs = rsvs.filter(rsv => rsv.user.id === $user.id);
-        if (userRsvs.length > 0) {
-            for (let rsv of userRsvs) {
-                open(
-                    ModifyForm,
-                    {
-                        rsv: rsv,
-                        hasForm: true,
-                    }
-                );
+        open(
+            ViewForms,
+            {
+                rsvs: rsvs, 
+                hasForm: true,
             }
-        }
-        let otherRsvs = rsvs.filter(rsv => rsv.user.id != $user.id);
-        if (otherRsvs.length > 0) {
-            open(
-                ViewForms,
-                {
-                    rsvs: otherRsvs, 
-                    hasForm: true,
-                }
-            );
-        }
+        );
     };
 
     $: schedule = getDaySchedule($reservations, $viewedDate, category, nResource);
