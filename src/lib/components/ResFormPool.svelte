@@ -7,14 +7,14 @@
     export let rsv = null;
     export let category;
     export let date;
-    export let dateFn;
+    export let dateFn = null;
     export let resType = null;
     export let viewOnly = false;
     export let restrictModify = false;
 
     let disabled = viewOnly || restrictModify;
 
-    date = date == null ? dateFn() : new Date(date);
+    date = rsv == null ? date == null ? dateFn() : new Date(date) : rsv.date;
 
     const getStartTimes = (date) => {
         let startTs = startTimes(date);
@@ -25,8 +25,8 @@
         }
         return startTs;
     }
-    $: chosenStart = rsv == null ? getStartTimes(date)[0] : rsv.startTime;
-    $: chosenEnd = rsv == null ? getStartTimes(date)[1] : rsv.endTime;
+    let chosenStart = rsv == null ? getStartTimes(date)[0] : rsv.startTime;
+    let chosenEnd = rsv == null ? getStartTimes(date)[1] : rsv.endTime;
     let autoOrCourse = rsv == null ? (resType == null ? 'autonomous' : resType) : rsv.resType;
     let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
     $canSubmit = true;

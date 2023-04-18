@@ -24,7 +24,6 @@
 
     const { close } = getContext('simple-modal');
 
-
     const submitReservation = async ({ form, data, action, cancel }) => {
         
         updateReservationFormData(data);

@@ -74,9 +74,9 @@
             cancel();
             close();
             return;
-        } else if (change === 'buddies') {
-            data.append('oldBuddies', JSON.stringify(rsv.buddies));
-        }
+        } 
+        
+        data.append('oldBuddies', JSON.stringify(rsv.buddies));
 
         if (!beforeCancelCutoff(submitted.date, submitted.startTime, submitted.category)) {
             alert(`The modification window for this reservation has expired; 
