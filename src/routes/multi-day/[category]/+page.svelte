@@ -5,7 +5,7 @@
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
     import Modal from '$lib/components/Modal.svelte';
     import Chevron from '$lib/components/Chevron.svelte';
-    import { minValidDate } from '$lib/ReservationTimes.js';
+    import { minValidDateStr } from '$lib/ReservationTimes.js';
     import { idx2month } from '$lib/datetimeUtils.js';
     import { view, viewedMonth, reservations } from '$lib/stores.js';
 
@@ -75,10 +75,9 @@
         <span class='text-2xl ml-2'>{idx2month[gMonth]}</span>
     </div>
     <span class='mr-2'>
-        <Modal><ReservationDialog category={gCategory} dateFn={minValidDate}/></Modal>
+        <Modal><ReservationDialog category={gCategory} dateFn={minValidDateStr}/></Modal>
     </span>
 </div>
-<br/>
 <div>
     <table class='calendar table-fixed border-collapse w-full'>
         <thead>
@@ -96,7 +95,7 @@
             {#each gMonthArr() as week}
                 <tr>
                     {#each week as { date, rsvs }}
-                        <td class='{catStyle(gCategory)} align-top h-24 border border-solid'>
+                        <td class='{catStyle(gCategory)} align-top h-20 xs:h-24 border border-solid'>
                             <DayOfMonth 
                                 date={date} 
                                 category={gCategory}

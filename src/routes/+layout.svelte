@@ -63,7 +63,14 @@
     async function refreshAppState() {
         let now = new Date();
         console.log('refreshing at ' + now.toLocaleString());
-        let data = await get('AppData');
+        
+        let data = await get('Settings');
+        if (data.status === 'success') {
+            $settings = data.settings;
+            $buoys = data.buoys;
+        }
+
+        data = await get('AppData');
         if (data.status === 'success') {
             $reservations = data.reservations.map((rsv) => augmentRsv(rsv));
             $users = data.usersById;
@@ -301,7 +308,7 @@
 <Navbar let:hidden let:toggle color='currentColor'>
     <NavHamburger on:click={toggleDrawer} btnClass="ml-3 {loginState !== 'in' ? 'hidden' : ''} lg:hidden" />    
     <NavBrand href='/' class="lg:ml-64">
-        <span class="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
+        <span class="self-center whitespace-nowrap xs:text-xl font-semibold dark:text-white">
             SuperHOME Scheduler
         </span>
     </NavBrand>

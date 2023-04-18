@@ -79,7 +79,7 @@
 
 </script>
 
-<div class="row">
+<div class="row text-xs xs:text-base">
     <div class="column w-[12%] m-0 text-center">
         <div style='height: 1lh'/>
         {#each displayTimes($viewedDate) as t}
