@@ -4,14 +4,15 @@
 
     export let rsv = null;
     export let date;
+    export let dateFn;
     export let category;
     export let viewOnly = false;
     export let restrictModify = false;
 
     let disabled = viewOnly || restrictModify;
 
-    category = rsv == null ? category : rsv.category;
-    date = rsv == null ? date : rsv.date;
+    date = date == null ? dateFn() : new Date(date);
+    
     let autoOrCourse = rsv == null ? 'autonomous' : rsv.resType;
     let maxDepth = rsv == null || rsv.maxDepth == null ? null : rsv.maxDepth;
     let owTime = rsv == null ? 'AM' : rsv.owTime;
@@ -31,7 +32,7 @@
 
 </script>
 
-<ResFormGeneric {viewOnly} {restrictModify} {showBuddyFields} {date} bind:category={category} {rsv}>
+<ResFormGeneric {viewOnly} {restrictModify} {showBuddyFields} bind:date={date} bind:category={category} {rsv}>
     <div class='[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5' slot="categoryLabels">
         <div><label for="formOwTime">Time</label></div>
         <div><label for="formResType">Type</label></div>

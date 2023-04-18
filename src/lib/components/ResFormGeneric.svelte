@@ -174,7 +174,7 @@
             id="formDate"
             class='w-44'
             min={minValidDateStr(category)} 
-            value={date}
+            bind:value={date}
             {disabled}
         ></div>
         <div>

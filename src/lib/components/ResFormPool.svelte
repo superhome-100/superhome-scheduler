@@ -7,14 +7,14 @@
     export let rsv = null;
     export let category;
     export let date;
+    export let dateFn;
     export let resType = null;
     export let viewOnly = false;
     export let restrictModify = false;
 
     let disabled = viewOnly || restrictModify;
 
-    category = rsv == null ? category : rsv.category;
-    date = rsv == null ? date : rsv.date;
+    date = date == null ? dateFn() : new Date(date);
 
     const getStartTimes = (date) => {
         let startTs = startTimes(date);
