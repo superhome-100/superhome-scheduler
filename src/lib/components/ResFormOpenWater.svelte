@@ -91,10 +91,10 @@
                 on:input={checkSubmit}
                 name="maxDepth"
                 required={maxDepth==undefined}
-            ><span class='ml-1 text-sm'>meters</span>
+            ><span class='ml-1 text-sm dark:text-white'>meters</span>
         </div>
     </div>
-    <div class='[&>span]:whitespace-nowrap [&>span]:ml-auto [&>span]:xs:mr-4 [&>span]:mr-2 [&>span]:text-sm text-center block-inline' slot='categoryOptionals'>
+    <div class='[&>span]:whitespace-nowrap [&>span]:ml-auto [&>span]:xs:mr-4 [&>span]:mr-2 [&>span]:text-sm [&>span]:dark:text-white text-center block-inline' slot='categoryOptionals'>
         <span>
             <label for='formPulley'>Pulley</label>
             <input type='hidden' name='pulley' value={pulley ? 'on' : 'off'}>

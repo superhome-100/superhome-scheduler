@@ -166,7 +166,7 @@
         </div>
     {:else}
         <div>
-            <div class='text-center text-2xl font-semibold my-2'>modify reservation</div>
+            <div class='text-center text-lg xs:text-2xl font-semibold mb-4 mt-2 dark:text-white'>modify reservation</div>
             <form 
                 method="POST" 
                 action="/?/updateReservation" 

@@ -4,7 +4,7 @@
     export let rsv = null;
     export let category;
     export let date;
-    export let dateFn;
+    export let dateFn = null;
     export let restrictModify = false;
     export let viewOnly = false;
 </script>
