@@ -14,8 +14,11 @@
 
     let disabled = viewOnly || restrictModify;
 
-    date = rsv == null ? date == null ? dateFn() : new Date(date) : rsv.date;
-
+    date = rsv == null 
+        ? date == null 
+            ? dateFn() 
+            : datetimeToLocalDateStr(new Date(date)) 
+        : rsv.date;
     const getStartTimes = (date) => {
         let startTs = startTimes(date);
         let today = new Date();

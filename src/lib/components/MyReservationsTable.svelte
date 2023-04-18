@@ -90,7 +90,7 @@
         if (['pool', 'classroom'].includes(rsv.category)) {
             desc = ' ' + fmt(rsv.startTime) + '-' + fmt(rsv.endTime);
         } else if (rsv.category === 'openwater') {
-            desc = rsv.maxDepth + 'm - ' + rsv.owTime;
+            desc = rsv.owTime + ' ' + rsv.maxDepth + 'm ';
         }
         return desc;
     };

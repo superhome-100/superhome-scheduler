@@ -1,4 +1,5 @@
 <script>
+    import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { canSubmit, buoys } from '$lib/stores.js';
     import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 
@@ -11,7 +12,11 @@
 
     let disabled = viewOnly || restrictModify;
 
-    date = rsv == null ? date == null ? dateFn() : new Date(date): rsv.date;
+    date = rsv == null 
+        ? date == null 
+            ? dateFn() 
+            : datetimeToLocalDateStr(new Date(date))
+        : rsv.date;
     
     let autoOrCourse = rsv == null ? 'autonomous' : rsv.resType;
     let maxDepth = rsv == null || rsv.maxDepth == null ? null : rsv.maxDepth;
@@ -89,7 +94,7 @@
             ><span class='ml-1 text-sm'>meters</span>
         </div>
     </div>
-    <div class='[&>span]:whitespace-nowrap [&>span]:ml-auto [&>span]:mr-4 [&>span]:text-sm text-center block-inline' slot='categoryOptionals'>
+    <div class='[&>span]:whitespace-nowrap [&>span]:ml-auto [&>span]:xs:mr-4 [&>span]:mr-2 [&>span]:text-sm text-center block-inline' slot='categoryOptionals'>
         <span>
             <label for='formPulley'>Pulley</label>
             <input type='hidden' name='pulley' value={pulley ? 'on' : 'off'}>

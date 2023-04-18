@@ -16,7 +16,7 @@
     let disabled = viewOnly || restrictModify;
 
     let comments = rsv == null ? null : rsv.comments;
-    date = rsv == null ? datetimeToLocalDateStr(date) : rsv.date;
+    date = rsv == null ? date : rsv.date;
     category = rsv == null ? category : rsv.category;
 
     $: maxBuddies = category === 'openwater' ? 2 
@@ -201,7 +201,7 @@
                             <input 
                                 id={"buddy" + bf.id + "-input"}
                                 type="text" 
-                                class='w-48'
+                                class='w-36 xs:w-44'
                                 autocomplete="off"
                                 name="buddy{bf.id}" 
                                 bind:value={bf.name} 
@@ -241,8 +241,7 @@
             <textarea 
                 id="formComments"
                 name="comments" 
-                class='mb-4'
-                cols="17"
+                class='w-44 xs:w-52 mb-4'
                 bind:value={comments}
                 tabindex='4'
                 {disabled}

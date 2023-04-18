@@ -5,7 +5,7 @@
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
     import Chevron from '$lib/components/Chevron.svelte';
     import { validReservationDate, minValidDate } from '$lib/ReservationTimes.js';
-    import { month2idx, idx2month } from '$lib/datetimeUtils.js';
+    import { datetimeToLocalDateStr, month2idx, idx2month } from '$lib/datetimeUtils.js';
     import Modal from '$lib/components/Modal.svelte';
     import { view, viewedDate } from '$lib/stores.js';
 
@@ -70,17 +70,15 @@
         </span> 
     </div>
    <span class='mr-2'>
-       <Modal><ReservationDialog {category} dateFn={()=>$viewedDate}/></Modal>
+       <Modal><ReservationDialog {category} dateFn={()=>datetimeToLocalDateStr($viewedDate)}/></Modal>
     </span>
 </div>
-<br/>
 <div>
     <a class='inline-flex items-center border border-solid border-transparent hover:border-black rounded-lg pl-1.5 pr-4 pb-1.5 pt-2 hover:text-white hover:bg-gray-700' href="/multi-day/{category}">
         <span><Chevron direction='left'/></span>
-        <span class='text-xl pb-1'>month view</span>
+        <span class='xs:text-xl pb-1'>month view</span>
     </a>
 </div>
-<br/>
 <div class='{category} single-day'>
     <Modal>
         {#if category === 'pool'}

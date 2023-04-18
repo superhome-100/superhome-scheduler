@@ -1,3 +1,5 @@
+const defaultTheme = require('tailwindcss/defaultTheme');
+
 const config = {
 	content: [ 
         './src/**/*.{html,js,svelte,ts}',
@@ -5,6 +7,10 @@ const config = {
     ],
 
 	theme: {
+        screens: {
+            'xs': '412px',
+            ...defaultTheme.screens,
+        },
 		extend: {
             colors: {
                 'pool-bg-from': '#0E7490',

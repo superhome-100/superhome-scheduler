@@ -93,8 +93,7 @@
 
 {#if hasForm}
     <div>
-        <div class='text-center text-2xl font-semibold my-2'>reservation request</div>
-        <br/>
+        <div class='text-center mb-4 text-lg xs:text-2xl font-semibold my-2'>reservation request</div>
         <form 
             method="POST" 
             action="/?/submitReservation" 
