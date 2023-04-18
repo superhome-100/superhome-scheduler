@@ -99,7 +99,7 @@
             {#each $buoys as { name }}
                 {#if schedule[cur][name] != undefined}
                     <div 
-                        class='rsv openwater text-sm'
+                        class='rsv openwater text-sm mb-1 mt-0.5'
                         style='height: {rowHeights[name].buoy}rem'
                     >
                         {#each schedule[cur][name] as rsv, i}
