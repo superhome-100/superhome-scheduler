@@ -20,8 +20,10 @@
     export let category = 'openwater';
     export let dateFn;
     export let hasForm = false;
+    let date;
 
     const { close } = getContext('simple-modal');
+
 
     const submitReservation = async ({ form, data, action, cancel }) => {
         
@@ -100,11 +102,11 @@
             use:enhance={submitReservation}
         >
             {#if category === 'pool'}
-                <ResFormPool date={dateFn('pool')} bind:category={category}/>
+                <ResFormPool bind:date={date} dateFn={()=>dateFn('pool')} bind:category={category}/>
             {:else if category === 'openwater'}
-                <ResFormOpenWater date={dateFn('openwater')} bind:category={category}/>
+                <ResFormOpenWater bind:date={date} dateFn={()=>dateFn('openwater')} bind:category={category}/>
             {:else if category === 'classroom'}
-                <ResFormClassroom date={dateFn('classroom')} bind:category={category}/>
+                <ResFormClassroom bind:date={date} dateFn={()=>dateFn('classroom')} bind:category={category}/>
             {/if}
        </form>
     </div>
