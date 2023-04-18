@@ -90,15 +90,18 @@ export function convertReservationTypes(data) {
     return data;
 }
 
-function overlap(rsvA, rsvB) {
+function timeOverlap(startA, endA, startB, endB) {
+    return (startA >= startB && startA < endB)
+        || (endA <= endB && endA > startB)
+        || (startA < startB && endA > endB);
+}
+
+function rsvOverlap(rsvA, rsvB) {
     let startA = timeStrToMin(rsvA.startTime);
     let endA = timeStrToMin(rsvA.endTime);
     let startB = timeStrToMin(rsvB.startTime);
     let endB = timeStrToMin(rsvB.endTime);
-
-    return (startA >= startB && startA < endB)
-            || ((endA <= endB && endA > startB)
-                || (startA < startB && endA > endB));
+    return timeOverlap(startA, endA, startB, endB);
 }
 
 function getExistingRsvs(thisRsv, rsvs) {
@@ -118,7 +121,7 @@ function getExistingRsvs(thisRsv, rsvs) {
             if (rsv.id != thisRsv.id
                 && rsv.category === thisRsv.category
                 && rsv.date === thisRsv.date
-                && overlap(thisRsv, rsv)) {
+                && rsvOverlap(thisRsv, rsv)) {
                 return true;
             } else {
                 return false;
@@ -132,6 +135,11 @@ export function checkDuplicateRsv(thisRsv, rsvs) {
     return existingRsvs.filter((rsv) => thisRsv.user === rsv.user.id).length > 0;
 }
 
+const nLaneOccupants = (rsvs) => rsvs.reduce((n, rsv) => rsv.resType === 'course'
+        ? n + 2*Math.ceil(rsv.numStudents/4)
+        : n + 1,
+    0);
+
 function checkPoolSpaceAvailable(thisRsv, rsvs) {
     let startTs = startTimes(thisRsv.date);
     for (let i=startTs.indexOf(thisRsv.startTime); i < startTs.indexOf(thisRsv.endTime); i++) {
@@ -143,11 +151,7 @@ function checkPoolSpaceAvailable(thisRsv, rsvs) {
             let notMyBuddy = !thisRsv.buddies.includes(rsv.user.id);
             return notMe && notMyBuddy && start <= time && end > time;
         });
-        let numDivers = 1 + thisRsv.buddies.length;
-        numDivers += overlap.reduce((acc, rsv) => {
-            acc += rsv.resType === 'course' ? 2*Math.ceil(rsv.numStudents/4) : 1;
-            return acc;
-        }, 0);
+        let numDivers = nLaneOccupants([thisRsv]) + thisRsv.buddies.length + nLaneOccupants(overlap);
         if (numDivers > 8) {
             return false;
         }
@@ -238,7 +242,13 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity, sameResource) {
     let count = 0;
     // assign courses first (put them at the end) to ensure they get their own lane
     // then assign buddies next to ensure they are paired in the same lane
-    rsvs.sort((a,b) => a.resType === 'course' ? 1 : b.resType === 'course' ? -1 : a.buddies.length > b.buddies.length ? 1 : -1);
+    rsvs.sort((a,b) => a.resType === 'course'
+        ? 1 : b.resType === 'course'
+        ? -1 : a.buddies.length > b.buddies.length
+        ? 1 : b.buddies.length > a.buddies.length
+        ? -1 : timeStrToMin(a.startTime) > timeStrToMin(b.startTime)
+        ? 1 : -1
+    );
     // helper hidden var for splitting courses into multiple lanes when necessary
     for (let rsv of rsvs) {
         if (rsv.resType === 'course') {
@@ -314,23 +324,42 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity, sameResource) {
 
 function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResource) {
 
+    const bestLane = (rsv) => {
+        let start = timeStrToMin(rsv.startTime);
+        let end = timeStrToMin(rsv.endTime);
+        for (let resource of schedule) {
+            let ideal = true;
+            for (let block of resource.filter(blk => blk.cls === 'rsv')) {
+                if (
+                    timeOverlap(start, end, block.start, block.end)
+                    && nLaneOccupants(block.data) >= 2
+                ) {
+                    ideal = false;
+                    break;
+                };
+            }
+            if (ideal) { return resource; }
+        }
+        nextR = (nextR + 1) % softCapacity;
+        return schedule[nextR];
+    };
+
     let incT = inc(dateStr);
-    let nextR = 0;
+    let nextR = -1;
     let nextRsv = true;
-    let start;
 
     while (rsvs.length > 0) {
         let nRem = rsvs.length;
         let rsv = rsvs[0];
+        let start;
+        let end = timeStrToMin(rsv.endTime)
 
         if (nextRsv) {
             start = timeStrToMin(rsv.startTime);
+            nextRsv = false;
         }
 
-        let end = timeStrToMin(rsv.endTime)
-
-        nextR = (nextR + 1) % softCapacity;
-        let resource = schedule[nextR];
+        let resource = bestLane(rsv);
 
         for (let j=0; j < resource.length; j++) {
             let block = resource[j];
@@ -382,11 +411,6 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResou
                     start = block.end;
                 }
             }
-        }
-        if (rsvs.length == nRem) {
-            // couldn't fit all of this rsv into a single resource; split it up
-            // and add the remainder to the next resource
-            nextRsv = false;
         }
     }
 }

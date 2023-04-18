@@ -93,7 +93,6 @@
             <label for='formPulley'>Pulley</label>
             <input type='hidden' name='pulley' value={pulley ? 'on' : 'off'}>
             <input 
-                class='w-8' 
                 type='checkbox' 
                 id='formPulley' 
                 name='pulley' 
@@ -105,7 +104,6 @@
             <label for='formBottomWeight'>Extra Bottom Weight</label>
             <input type='hidden' name='extraBottomWeight' value={extraBottomWeight ? 'on' : 'off'}>
             <input 
-                class='w-8' 
                 type='checkbox' 
                 id='formBottomWeight' 
                 name='extraBottomWeight'
@@ -117,7 +115,6 @@
             <label for='formBottomPlate'>Bottom Plate</label>
             <input type='hidden' name='bottomPlate' value={bottomPlate ? 'on' : 'off'}>
             <input 
-                class='w-8' 
                 type='checkbox' 
                 id='formBottomPlate' 
                 name='bottomPlate'
@@ -129,7 +126,6 @@
             <label for='formLargeBuoy'>Large Buoy</label>
             <input type='hidden' name='largeBuoy' value={largeBuoy ? 'on' : 'off'}>
             <input 
-                class='w-8' 
                 type='checkbox' 
                 id='formLargeBuoy' 
                 name='largeBuoy'
