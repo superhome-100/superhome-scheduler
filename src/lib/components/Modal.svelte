@@ -512,6 +512,15 @@
     border-radius: 0.5rem;
     background: white;
   }
+  
+    @media (prefers-color-scheme: dark) {
+        .window {
+            background: rgb(24, 24, 20);
+            border-style: solid;
+            border-width: thin;
+            border-color: rgba(146 64 14, 0.95);
+        }
+    }
 
   .content {
     position: relative;
