@@ -19,12 +19,16 @@
             ? dateFn() 
             : datetimeToLocalDateStr(new Date(date)) 
         : rsv.date;
+
     const getStartTimes = (date) => {
         let startTs = startTimes(date);
         let today = new Date();
         if (date === datetimeToLocalDateStr(today)) {
             let now = minuteOfDay(today);
             startTs = startTs.filter((time) => timeStrToMin(time) > now);
+            if (startTs.length == 0) {
+                startTs = startTimes(date);
+            }
         }
         return startTs;
     }
