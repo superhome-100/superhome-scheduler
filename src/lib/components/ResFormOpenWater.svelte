@@ -4,14 +4,14 @@
 
     export let rsv = null;
     export let date;
-    export let dateFn;
+    export let dateFn = null;
     export let category;
     export let viewOnly = false;
     export let restrictModify = false;
 
     let disabled = viewOnly || restrictModify;
 
-    date = date == null ? dateFn() : new Date(date);
+    date = rsv == null ? date == null ? dateFn() : new Date(date): rsv.date;
     
     let autoOrCourse = rsv == null ? 'autonomous' : rsv.resType;
     let maxDepth = rsv == null || rsv.maxDepth == null ? null : rsv.maxDepth;

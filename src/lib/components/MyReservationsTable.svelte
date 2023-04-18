@@ -74,9 +74,11 @@
             let m = rx.exec(time);
             let hr = parseInt(m[1]);
             let ind = 'a';
+            if (hr >= 12) {
+                ind = 'p';
+            }
             if (hr > 12) {
                 hr -= 12;
-                ind = 'p';
             }
             if (m[2] == '00') {
                 return hr + ind;
