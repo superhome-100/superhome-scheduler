@@ -348,7 +348,7 @@
                 {#if loginState === 'in'}
                     <SidebarItem label="Logout" on:click={userLogout} />
                 {/if}
-                {#if $user.privileges === 'admin'}
+                {#if $user && $user.privileges === 'admin'}
                     <SidebarItem label='Download Reservations' on:click={downloadReservations}/>
                 {/if}
                 <SidebarItem label="My Reservations" href="/" on:click={toggleSide} active={activeUrl === `/`} />
