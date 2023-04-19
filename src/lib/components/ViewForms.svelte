@@ -14,7 +14,7 @@
 {#if hasForm}
     <div class='mb-4'>
         {#each rsvs as rsv}
-            <div class='text-center text-xl font-semibold my-4'>
+            <div class='form-title'>
                 {rsv.user.name}
             </div>       
             {#if rsv.category === 'pool'}
