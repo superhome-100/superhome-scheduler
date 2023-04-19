@@ -91,7 +91,10 @@
             {/each}
         </div>
         {#each [...Array(nResource).keys()] as i}
-            <div class="column text-center" style='width: {88/nResource}%'>
+            <div  
+                class="column text-center" 
+                style='width: {88/nResource}%'
+            >
                 <div class='font-semibold'>{resourceName} {i+1}</div>
                 {#if schedule[i]}
                     <div style='height: 0.5rem'/>
