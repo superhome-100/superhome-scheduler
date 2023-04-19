@@ -1,4 +1,5 @@
 <script>
+    import { swipe } from 'svelte-gestures';
     import { goto } from '$app/navigation';
     import { monthArr } from '$lib/utils.js';
     import DayOfMonth from '$lib/components/DayOfMonth.svelte';
@@ -45,49 +46,38 @@
         }
         handleDateChange();
     }
-
+    
+    function swipeHandler(event) {
+        if (event.detail.direction === 'left') {
+            nextMonth();
+        } else if (event.detail.direction === 'right') {
+            prevMonth();
+        }
+    }
     const catStyle = (cat) => { return (cat === 'pool')
         ? 'border-pool-bg-to' : (cat === 'openwater')
         ? 'border-openwater-bg-to' : (cat === 'classroom')
         ? 'border-classroom-bg-to' : undefined;
     };
 
-    let screenWidth = 0;
-    let breakPoint = 412;
 </script>
 
-<svelte:window bind:innerWidth={screenWidth} />
-
-<div class='[&>*]:m-auto flex items-center justify-between'>
-    {#if screenWidth >= breakPoint}
-        <div class='sm:ml-4'>
+<div class='[&>*]:mx-auto flex items-center justify-between'>
+    <div class='dropdown h-8 mb-4'>
+        <label tabindex='0' class='btn btn-fsh-dropdown'>{gCategory}</label>
+        <ul tabindex='0' class='dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit'>
             {#each ['pool', 'openwater', 'classroom'] as cat}
-                <button 
-                    class='category-btn' 
-                    on:click={()=>goto(`/multi-day/${cat}`)}
-                    class:selected={gCategory===cat}
-                >
-                    {cat}
-                </button>
+                {#if cat !== gCategory}
+                    <li><a 
+                            class='text-xl active:bg-gray-300' 
+                            href='/multi-day/{cat}'
+                        >
+                            {cat}
+                    </a></li>
+                {/if}
             {/each}
-        </div>
-    {:else}
-        <div class='dropdown h-8 mb-4'>
-            <label tabindex='0' class='btn btn-fsh-dropdown'>{gCategory}</label>
-            <ul tabindex='0' class='dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit'>
-                {#each ['pool', 'openwater', 'classroom'] as cat}
-                    {#if cat !== gCategory}
-                        <li><a 
-                                class='text-xl active:bg-gray-300' 
-                                href='/multi-day/{cat}'
-                            >
-                                {cat}
-                        </a></li>
-                    {/if}
-                {/each}
-            </ul>
-        </div>
-    {/if}
+        </ul>
+    </div>
     <div class='inline-flex items-center justify-between'>
         <span on:click={prevMonth} on:keypress={prevMonth} class='cursor-pointer'>
             <Chevron direction='left' svgClass='h-6 w-6'/>
@@ -101,7 +91,7 @@
         <Modal><ReservationDialog category={gCategory} dateFn={minValidDateStr}/></Modal>
     </span>
 </div>
-<div>
+<div use:swipe={{ timeframe: 300, minSwipeDistance: 10, touchAction: 'pan-y' }} on:swipe={swipeHandler}>
     <table class='calendar table-fixed border-collapse w-full'>
         <thead>
             <tr>

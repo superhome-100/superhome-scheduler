@@ -1,4 +1,5 @@
 <script>
+    import { swipe } from 'svelte-gestures';
     import { goto } from '$app/navigation';
     import DayHourly from '$lib/components/DayHourly.svelte';
     import DayOpenWater from '$lib/components/DayOpenWater.svelte';
@@ -28,6 +29,13 @@
         next.setDate($viewedDate.getDate() + 1);
         $viewedDate = next;
     }
+    function swipeHandler(event) {
+        if (event.detail.direction === 'left') {
+            nextDay();
+        } else if (event.detail.direction === 'right') {
+            prevDay();
+        }
+    }
 
     const nResource = () => {
         if (category === 'pool') {
@@ -45,42 +53,24 @@
         }
     };
 
-    let screenWidth = 0;
-    let breakPoint = 448;
 </script>
 
-<svelte:window bind:innerWidth={screenWidth} />
-
-<div class='flex items-center justify-between'>
-    {#if screenWidth >= breakPoint}
-        <div>
+<div class='[&>*]:mx-auto flex items-center justify-between'>
+    <div class='dropdown h-8 mb-4'>
+        <label tabindex='0' class='btn btn-fsh-dropdown'>{category}</label>
+        <ul tabindex='0' class='dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit'>
             {#each ['pool', 'openwater', 'classroom'] as cat}
-                <button 
-                    class='category-btn' 
-                    on:click={()=>goto(`/single-day/${cat}`)}
-                    class:selected={category===cat}
-                >
-                    {cat}
-                </button>
+                {#if cat !== category}
+                    <li><a 
+                            class='text-xl active:bg-gray-300' 
+                            href='/single-day/{cat}'
+                        >
+                            {cat}
+                    </a></li>
+                {/if}
             {/each}
-        </div>
-    {:else}
-        <div class='dropdown h-8 mb-4'>
-            <label tabindex='0' class='btn btn-fsh-dropdown'>{category}</label>
-            <ul tabindex='0' class='dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit'>
-                {#each ['pool', 'openwater', 'classroom'] as cat}
-                    {#if cat !== category}
-                        <li><a 
-                                class='text-xl active:bg-gray-300' 
-                                href='/single-day/{cat}'
-                            >
-                                {cat}
-                        </a></li>
-                    {/if}
-                {/each}
-            </ul>
-        </div>
-    {/if}
+        </ul>
+    </div>
     <div class='inline-flex items-center justify-between'>
         <span on:click={prevDay} on:keypress={prevDay} class='cursor-pointer'>
             <Chevron direction='left' svgClass='h-8 w-8'/>
@@ -99,10 +89,14 @@
 <div>
     <a class='inline-flex items-center border border-solid border-transparent hover:border-black rounded-lg pl-1.5 pr-4 py-0 hover:text-white hover:bg-gray-700' href="/multi-day/{category}">
         <span><Chevron direction='left'/></span>
-        <span class='pb-1'>month view</span>
+        <span class='xs:text-xl pb-1'>month view</span>
     </a>
 </div>
-<div class='{category} single-day'>
+<div 
+    class='w-full h-full min-h-[500px]'
+    use:swipe={{ timeframe: 300, minSwipeDistance: 10, touchAction: 'pan-y' }} 
+    on:swipe={swipeHandler}
+>
     <Modal>
         {#if category === 'pool'}
             <DayHourly category={category} nResource={nResource()} resourceName={resourceName()}/>
@@ -113,3 +107,4 @@
         {/if}
     </Modal>
 </div>
+
