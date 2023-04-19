@@ -3,7 +3,7 @@
     import ResFormPool from './ResFormPool.svelte';
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
-
+    import {Tabs, TabList, TabPanel, Tab } from '$lib/tabs.js';
     export let hasForm = false;
     export let rsvs;
 
@@ -13,18 +13,25 @@
 
 {#if hasForm}
     <div class='mb-4'>
-        {#each rsvs as rsv}
-            <div class='form-title'>
-                {rsv.user.name}
-            </div>       
-            {#if rsv.category === 'pool'}
-                <ResFormPool viewOnly {rsv}/>
-            {:else if rsv.category === 'openwater'}
-                <ResFormOpenWater viewOnly {rsv}/>
-            {:else if rsv.category === 'classroom'}
-                <ResFormClassroom viewOnly {rsv}/>
-            {/if}
-        {/each}
+        <Tabs>
+            <TabList>
+                {#each rsvs as rsv}
+                    <Tab>{rsv.user.name}</Tab>
+                {/each}
+            </TabList>
+            
+            {#each rsvs as rsv}
+                <TabPanel>
+                    {#if rsv.category === 'pool'}
+                        <ResFormPool viewOnly {rsv}/>
+                    {:else if rsv.category === 'openwater'}
+                        <ResFormOpenWater viewOnly {rsv}/>
+                    {:else if rsv.category === 'classroom'}
+                        <ResFormClassroom viewOnly {rsv}/>
+                    {/if}
+                </TabPanel>
+            {/each}
+        </Tabs>
     </div>
 {/if}
 

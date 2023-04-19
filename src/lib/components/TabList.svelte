@@ -1,3 +1,3 @@
-<div class="p-2 border-b border-solid border-gray-400">
+<div class="p-2">
 	<slot></slot>
 </div>

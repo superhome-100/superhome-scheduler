@@ -15,7 +15,7 @@
 		registerTab: tab => {
 			tabs.push(tab);
 			selectedTab.update(current => current || tab);
-			
+
 			onDestroy(() => {
 				const i = tabs.indexOf(tab);
 				tabs.splice(i, 1);
