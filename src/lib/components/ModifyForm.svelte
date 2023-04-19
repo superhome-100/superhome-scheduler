@@ -162,7 +162,7 @@
 {#if hasForm}
     {#if viewOnly}
         <div class='mb-4'>
-            <div class='text-center text-xl font-semibold my-4'>
+            <div class='form-title'>
                 {rsv.user.name}
             </div>       
             {#if rsv.category === 'pool'}
@@ -173,7 +173,7 @@
         </div>
     {:else}
         <div>
-            <div class='text-center text-lg xs:text-2xl font-semibold mb-4 mt-2 dark:text-white'>modify reservation</div>
+            <div class='form-title'>modify reservation</div>
             <form 
                 method="POST" 
                 action="/?/updateReservation" 
