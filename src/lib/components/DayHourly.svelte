@@ -7,6 +7,7 @@
     import ViewForms from '$lib/components/ViewForms.svelte';
     import ModifyForm from '$lib/components/ModifyForm.svelte';
     import { badgeColor } from '$lib/utils.js';
+    import { Settings } from '$lib/settings.js';
 
     export let nResource;
     export let resourceName;
@@ -79,38 +80,42 @@
 
 </script>
 
-<div class="row text-xs xs:text-base">
-    <div class="column w-[12%] m-0 text-center">
-        <div style='height: 1lh'/>
-        {#each displayTimes($viewedDate) as t}
-            <div class='font-semibold' style='height: {rowHeight}rem'>{t}</div>
+{#if Settings('openForBusiness', datetimeToLocalDateStr($viewedDate)) === false}
+    <div class='font-semibold text-3xl text-center'>Closed</div>
+{:else}
+    <div class="row text-xs xs:text-base">
+        <div class="column w-[12%] m-0 text-center">
+            <div style='height: 1lh'/>
+            {#each displayTimes($viewedDate) as t}
+                <div class='font-semibold' style='height: {rowHeight}rem'>{t}</div>
+            {/each}
+        </div>
+        {#each [...Array(nResource).keys()] as i}
+            <div class="column text-center" style='width: {88/nResource}%'>
+                <div class='font-semibold'>{resourceName} {i+1}</div>
+                {#if schedule[i]}
+                    <div style='height: 0.5rem'/>
+                    {#each schedule[i] as { nSlots, cls, tag, data }}
+                        {#if cls === 'rsv'}
+                            <div class='indicator w-full'>
+                                <span class='rsv-indicator {badgeColor(data)}'/>
+                                <div 
+                                    class='{cls} {category} text-sm cursor-pointer hover:font-semibold' 
+                                    style="height: {rowHeight*(nSlots/slotDiv) - (cls === 'rsv' ? blkMgn : 0)}rem"
+                                    on:click={cls === 'rsv' ? showViewRsvs(data) : ()=>{}}
+                                >
+                                    {#each formatTag(data, nSlots) as line}
+                                        <span class='mx-0.5 inline-block'>{line}</span>
+                                    {/each}
+                                </div>
+                            </div>
+                        {:else}
+                            <div style="height: {rowHeight*(nSlots/slotDiv)}rem"></div>
+                        {/if}
+                    {/each}
+                {/if}
+            </div>
         {/each}
     </div>
-    {#each [...Array(nResource).keys()] as i}
-        <div class="column text-center" style='width: {88/nResource}%'>
-            <div class='font-semibold'>{resourceName} {i+1}</div>
-            {#if schedule[i]}
-                <div style='height: 0.5rem'/>
-                {#each schedule[i] as { nSlots, cls, tag, data }}
-                    {#if cls === 'rsv'}
-                        <div class='indicator w-full'>
-                            <span class='rsv-indicator {badgeColor(data)}'/>
-                            <div 
-                                class='{cls} {category} text-sm cursor-pointer hover:font-semibold' 
-                                style="height: {rowHeight*(nSlots/slotDiv) - (cls === 'rsv' ? blkMgn : 0)}rem"
-                                on:click={cls === 'rsv' ? showViewRsvs(data) : ()=>{}}
-                            >
-                                {#each formatTag(data, nSlots) as line}
-                                    <span class='mx-0.5 inline-block'>{line}</span>
-                                {/each}
-                            </div>
-                        </div>
-                    {:else}
-                        <div style="height: {rowHeight*(nSlots/slotDiv)}rem"></div>
-                    {/if}
-                {/each}
-            {/if}
-        </div>
-    {/each}
-</div>
+{/if}
 

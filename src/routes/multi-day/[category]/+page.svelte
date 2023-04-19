@@ -1,5 +1,5 @@
 <script>
-    import { createEventDispatcher } from 'svelte';
+    import { goto } from '$app/navigation';
     import { monthArr } from '$lib/utils.js';
     import DayOfMonth from '$lib/components/DayOfMonth.svelte';
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
@@ -54,27 +54,28 @@
 
 </script>
 
-<div class="flex items-center justify-between">
-    <div class='dropdown h-8 mb-4'>
-        <label tabindex='0' class='btn btn-fsh-dropdown'>{gCategory}</label>
-        <ul tabindex='0' class='dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit'>
-            {#each ['pool', 'openwater', 'classroom'] as cat}
-                {#if cat !== gCategory}
-                    <li><a class='text-xl active:bg-gray-300' href='/multi-day/{cat}'>{cat}</a></li>
-                {/if}
-            {/each}
-        </ul>
+<div class='[&>*]:m-auto flex items-center justify-between'>
+    <div class='sm:ml-4'>
+        {#each ['pool', 'openwater', 'classroom'] as cat}
+            <button 
+                class='category-btn' 
+                on:click={()=>goto(`/multi-day/${cat}`)}
+                class:selected={gCategory===cat}
+            >
+                {cat}
+            </button>
+        {/each}
     </div>
     <div class='inline-flex items-center justify-between'>
         <span on:click={prevMonth} on:keypress={prevMonth} class='cursor-pointer'>
-            <Chevron direction='left' svgClass='h-8 w-8'/>
+            <Chevron direction='left' svgClass='h-6 w-6'/>
         </span>
         <span on:click={nextMonth} on:keypress={nextMonth} class='cursor-pointer'>
-            <Chevron direction='right' svgClass='h-8 w-8'/>
+            <Chevron direction='right' svgClass='h-6 w-6'/>
         </span>
-        <span class='text-2xl ml-2'>{idx2month[gMonth]}</span>
+        <span class='text-2xl'>{idx2month[gMonth]}</span>
     </div>
-    <span class='mr-2'>
+    <span class=''>
         <Modal><ReservationDialog category={gCategory} dateFn={minValidDateStr}/></Modal>
     </span>
 </div>
