@@ -164,7 +164,7 @@
     <div class="column inputs text-left w-[67%]">
         {#if viewOnly}
                 <div class={statusStyle(rsv.status)}>
-                  rsv.status}
+                    {rsv.status}
                 </div>
         {/if}
         <div><input type="hidden" name="user" value={$user.id}></div>
