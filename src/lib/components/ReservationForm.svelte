@@ -8,13 +8,14 @@
     import { canSubmit, user, users, reservations, buoys } from '$lib/stores.js';
     import { beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
+    import { Settings } from '$lib/settings.js';
     import { 
         augmentRsv, 
         updateReservationFormData, 
         validateBuddies, 
         checkSpaceAvailable,
         checkDuplicateRsv,
-        convertReservationTypes
+        convertReservationTypes,
     } from '$lib/utils.js';
 
     export let category = 'openwater';
@@ -28,7 +29,13 @@
         
         updateReservationFormData(data);
         let submitted = convertReservationTypes(Object.fromEntries(data));
-        
+
+        if (!Settings('openForBusiness', submitted.date)) {
+            alert('We are closed on this date; please choose a different date');
+            cancel();
+            return;
+        }
+
         if (!beforeResCutoff(submitted.date, submitted.startTime, submitted.category)) {
             alert(
                 'The submission window for this reservation date/time has expired; ' + 

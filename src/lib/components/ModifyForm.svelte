@@ -8,6 +8,7 @@
     import { canSubmit, user, users, reservations, buoys } from '$lib/stores.js';
     import { beforeCancelCutoff, beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
+    import { Settings } from '$lib/settings.js';
     import { 
         augmentRsv, 
         removeRsv, 
@@ -68,6 +69,12 @@
 
         let submitted = convertReservationTypes(Object.fromEntries(data));
         addMissingFields(submitted, rsv);
+
+        if (!Settings('openForBusiness', submitted.date)) {
+            alert('We are closed on this date; please choose a different date');
+            cancel();
+            return;
+        }
 
         let change = reservationChanges(submitted, rsv)
         if (change == null) {

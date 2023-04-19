@@ -465,6 +465,10 @@ export function parseSettingsTbl(settingsTbl) {
             name = 'refreshInterval'
             v = v*1000;
         }
+        if (['openForBusiness'].includes(name)) {
+            v = v === 'true' ? true : false;
+        }
+
         return {
             ...e,
             name,
@@ -489,5 +493,4 @@ export const badgeColor = (rsvs) => {
     let approved = rsvs.reduce((sts,rsv) => sts && rsv.status === 'confirmed', true);
     return approved ? 'bg-[#00FF00]' : 'bg-[#FFFF00]';
 };
-
 

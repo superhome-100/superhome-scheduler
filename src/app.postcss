@@ -90,4 +90,10 @@
     .rsv-indicator {
         @apply mr-2.5 mt-2.5 indicator-item badge h-2 w-2 p-0 border-transparent;
     }
+    .category-btn {
+        @apply text-sm sm:text-lg py-0 px-0.5 border border-r-0 last:border-r border-solid border-black dark:border-white rounded-none first:rounded-l last:rounded-r bg-white dark:bg-root-bg-dark dark:text-white hover:bg-gray-700 dark:hover:bg-gray-300 hover:text-white dark:hover:text-black hover:border-black dark:hover:border-white
+    }
+    .category-btn.selected {
+        @apply bg-gray-700 text-white dark:bg-gray-300 dark:text-black;
+    }
 }

@@ -7,7 +7,8 @@
     import ViewForms from '$lib/components/ViewForms.svelte';
     import ModifyForm from '$lib/components/ModifyForm.svelte';
     import { badgeColor } from '$lib/utils.js';
-
+    import { Settings } from '$lib/settings.js';
+    
     const { open } = getContext('simple-modal');
 
     const showViewRsv = (rsv) => {
@@ -78,46 +79,48 @@
         return o;
     }, {});
 
-
 </script>
 
-<div class='row'>
-    <div class='column text-center w-[10%]'>
-        <div class='font-semibold'>buoy</div>
-        {#each $buoys as { name }}
-            {#if schedule.AM[name] != undefined || schedule.PM[name] != undefined}
-                <div 
-                    class='flex items-center justify-center font-semibold' 
-                    style='height: {rowHeights[name].header}rem'
-                >{name}</div>
-            {/if}
-        {/each}
-    </div>
-    {#each [{cur:'AM', other:'PM'}, {cur:'PM', other:'AM'}] as {cur, other}}
-        <div class='column text-center w-[45%]'>
-            <div class='font-semibold'>{cur}</div>
+{#if Settings('openForBusiness', datetimeToLocalDateStr($viewedDate)) === false}
+    <div class='font-semibold text-3xl text-center'>Closed</div>
+{:else}
+    <div class='row'>
+        <div class='column text-center w-[10%]'>
+            <div class='font-semibold'>buoy</div>
             {#each $buoys as { name }}
-                {#if schedule[cur][name] != undefined}
+                {#if schedule.AM[name] != undefined || schedule.PM[name] != undefined}
                     <div 
-                        class='rsv openwater text-sm mb-1 mt-0.5'
-                        style='height: {rowHeights[name].buoy}rem'
-                    >
-                        {#each schedule[cur][name] as rsv, i}
-                            <div class='block indicator w-full'>
-                                <span class='rsv-indicator mr-0 {badgeColor([rsv])}'/>
-                                <div 
-                                    class='cursor-pointer hover:font-semibold'
-                                    style='margin: {rowHeights[name].margins[i]}'
-                                    on:click={showViewRsv(rsv)}
-                                >{displayTag(rsv)}</div>
-                            </div>
-                        {/each}
-                    </div>
-                {:else if schedule[other][name] != undefined}
-                    <div style='height: {rowHeights[name].header}rem'/>
+                        class='flex items-center justify-center font-semibold' 
+                        style='height: {rowHeights[name].header}rem'
+                    >{name}</div>
                 {/if}
             {/each}
         </div>
-    {/each}
-</div> 
-
+        {#each [{cur:'AM', other:'PM'}, {cur:'PM', other:'AM'}] as {cur, other}}
+            <div class='column text-center w-[45%]'>
+                <div class='font-semibold'>{cur}</div>
+                {#each $buoys as { name }}
+                    {#if schedule[cur][name] != undefined}
+                        <div 
+                            class='rsv openwater text-sm mb-1 mt-0.5'
+                            style='height: {rowHeights[name].buoy}rem'
+                        >
+                            {#each schedule[cur][name] as rsv, i}
+                                <div class='block indicator w-full'>
+                                    <span class='rsv-indicator mr-0 {badgeColor([rsv])}'/>
+                                    <div 
+                                        class='cursor-pointer hover:font-semibold'
+                                        style='margin: {rowHeights[name].margins[i]}'
+                                        on:click={showViewRsv(rsv)}
+                                    >{displayTag(rsv)}</div>
+                                </div>
+                            {/each}
+                        </div>
+                    {:else if schedule[other][name] != undefined}
+                        <div style='height: {rowHeights[name].header}rem'/>
+                    {/if}
+                {/each}
+            </div>
+        {/each}
+    </div> 
+{/if}

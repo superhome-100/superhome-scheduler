@@ -45,19 +45,42 @@
         }
     };
 
+    let screenWidth = 0;
+    let breakPoint = 412;
 </script>
 
+<svelte:window bind:innerWidth={screenWidth} />
+
 <div class='flex items-center justify-between'>
-    <div class='dropdown h-8 mb-4'>
-        <label tabindex='0' class='btn btn-fsh-dropdown'>{category}</label>
-        <ul tabindex='0' class='dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit'>
+    {#if screenWidth >= 412}
+        <div>
             {#each ['pool', 'openwater', 'classroom'] as cat}
-                {#if cat !== category}
-                    <li><a class='text-xl active:bg-gray-300' href='/single-day/{cat}'>{cat}</a></li>
-                {/if}
+                <button 
+                    class='category-btn' 
+                    on:click={()=>goto(`/single-day/${cat}`)}
+                    class:selected={category===cat}
+                >
+                    {cat}
+                </button>
             {/each}
-        </ul>
-    </div>
+        </div>
+    {:else}
+        <div class='dropdown h-8 mb-4'>
+            <label tabindex='0' class='btn btn-fsh-dropdown'>{category}</label>
+            <ul tabindex='0' class='dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit'>
+                {#each ['pool', 'openwater', 'classroom'] as cat}
+                    {#if cat !== category}
+                        <li><a 
+                                class='text-xl active:bg-gray-300' 
+                                href='/single-day/{cat}'
+                            >
+                                {cat}
+                        </a></li>
+                    {/if}
+                {/each}
+            </ul>
+        </div>
+    {/if}
     <div class='inline-flex items-center justify-between'>
         <span on:click={prevDay} on:keypress={prevDay} class='cursor-pointer'>
             <Chevron direction='left' svgClass='h-8 w-8'/>
@@ -74,9 +97,9 @@
     </span>
 </div>
 <div>
-    <a class='inline-flex items-center border border-solid border-transparent hover:border-black rounded-lg pl-1.5 pr-4 pb-1.5 pt-2 hover:text-white hover:bg-gray-700' href="/multi-day/{category}">
+    <a class='inline-flex items-center border border-solid border-transparent hover:border-black rounded-lg pl-1.5 pr-4 py-0 hover:text-white hover:bg-gray-700' href="/multi-day/{category}">
         <span><Chevron direction='left'/></span>
-        <span class='xs:text-xl pb-1'>month view</span>
+        <span class='pb-1'>month view</span>
     </a>
 </div>
 <div class='{category} single-day'>
