@@ -46,13 +46,13 @@
     };
 
     let screenWidth = 0;
-    let breakPoint = 412;
+    let breakPoint = 448;
 </script>
 
 <svelte:window bind:innerWidth={screenWidth} />
 
 <div class='flex items-center justify-between'>
-    {#if screenWidth >= 412}
+    {#if screenWidth >= breakPoint}
         <div>
             {#each ['pool', 'openwater', 'classroom'] as cat}
                 <button 
