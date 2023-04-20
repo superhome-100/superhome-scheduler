@@ -86,7 +86,7 @@
                     </div>
                 {/each}
             {/if}
-            <button type="submit">Confirm</button>
+            <button class='dark:text-white dark:border-white mb-2' type="submit">Confirm</button>
         </form>
     </div>
 {/if}
