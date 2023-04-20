@@ -10,7 +10,7 @@
 </script>
 
 <button 
-    class="bg-transparent border-none outline-none rounded-2xl m-0 {$selectedTab === tab ? 'text:black dark:text-white' : 'text-gray-500'}" 
+    class="bg-transparent border-none outline-none m-0 text-lg {$selectedTab === tab ? 'text:black dark:text-white' : 'text-gray-500'}" 
     on:click="{() => selectTab(tab)}"
 >
 	<slot></slot>
