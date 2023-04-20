@@ -73,7 +73,7 @@
             <input type="hidden" name="startTime" value={rsv.startTime}>
             <input type="hidden" name="endTime" value={rsv.endTime}>
             <input type="hidden" name="owTime" value={rsv.owTime}>
-            <div class='[&>span]:inline-block my-2 text-lg font-semibold mr-0.5'>
+            <div class='[&>span]:inline-block my-2 text-lg dark:text-white font-semibold mr-0.5'>
                 <span>Really cancel {rsv.category} reservation on</span>
                 <span>{rsv.date}?</span>
             </div>
