@@ -104,6 +104,7 @@
                 name='pulley' 
                 checked={pulley}
                 {disabled}
+                tabindex='5'
             >
         </span>
         <span>
@@ -115,6 +116,7 @@
                 name='extraBottomWeight'
                 checked={extraBottomWeight}
                 {disabled} 
+                tabindex='5'
             >
         </span>
         <span>
@@ -126,6 +128,7 @@
                 name='bottomPlate'
                 checked={bottomPlate}
                 {disabled}
+                tabindex='5'
             >
         </span>
         <span>
@@ -137,6 +140,7 @@
                 name='largeBuoy'
                 checked={largeBuoy}
                 {disabled}
+                tabindex='5'
             >
         </span>
     </div>
