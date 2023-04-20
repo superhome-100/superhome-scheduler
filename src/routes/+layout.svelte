@@ -274,6 +274,8 @@
     }
 
     let drawerHidden = true;
+    $: drawerVisible = !drawerHidden;
+
     const toggleDrawer = () => {
         if (loginState === 'in') {
             drawerHidden = !drawerHidden;
@@ -334,7 +336,7 @@
     {backdrop}
     {transitionParams}
     bind:hidden={drawerHidden}
-    bind:activateClickOutside={drawerHidden}
+    bind:activateClickOutside={drawerVisible}
     width="w-64"
     id="sidebar"
     divClass='overflow-y-auto z-50 p-4 bg-white dark:bg-[#252515]'
