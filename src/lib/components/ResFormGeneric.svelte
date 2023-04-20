@@ -1,6 +1,6 @@
 <script>
     import { canSubmit, user, users } from '$lib/stores.js';
-    import { minValidDateStr } from '$lib/ReservationTimes.js';
+    import { minValidDateStr, maxValidDateStr } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import BuddyMatch from '$lib/components/BuddyMatch.svelte';
     import PlusIcon from '$lib/components/PlusIcon.svelte';
@@ -174,6 +174,7 @@
             id="formDate"
             class='w-44'
             min={minValidDateStr(category)} 
+            max={maxValidDateStr()}
             bind:value={date}
             {disabled}
         ></div>

@@ -457,7 +457,7 @@ export function parseSettingsTbl(settingsTbl) {
     let fixTypes = (e) => {
         let name = e.name;
         let v = e.value;
-        if (['refreshIntervalSeconds'].includes(name)) {
+        if (['refreshIntervalSeconds', 'reservationLeadTimeDays'].includes(name)) {
             v = parseInt(v);
         }
         if (name === 'refreshIntervalSeconds') {

@@ -92,4 +92,14 @@ export function minValidDateStr(category) {
     return dtu.datetimeToLocalDateStr(d);
 }
 
+export function maxValidDate() {
+    let today = new Date();
+    let todayStr = dtu.datetimeToLocalDateStr(today);
+    let maxDay = new Date();
+    maxDay.setDate(today.getDate() + Settings('reservationLeadTimeDays', todayStr));
+    return maxDay;
+}
 
+export function maxValidDateStr() {
+    return dtu.datetimeToLocalDateStr(maxValidDate());
+}
