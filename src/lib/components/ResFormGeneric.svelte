@@ -264,7 +264,7 @@
             <button 
                 type="submit" 
                 class='bg-gray-100 disabled:text-gray-400 px-3 py-1'
-                tabindex='5' 
+                tabindex='6' 
                 disabled={!$canSubmit}
                 hidden={viewOnly}
             >
