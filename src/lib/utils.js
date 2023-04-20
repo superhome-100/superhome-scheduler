@@ -347,11 +347,10 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResou
     let incT = inc(dateStr);
     let nextR = -1;
     let nextRsv = true;
+    let start;
 
     while (rsvs.length > 0) {
-        let nRem = rsvs.length;
         let rsv = rsvs[0];
-        let start;
         let end = timeStrToMin(rsv.endTime)
 
         if (nextRsv) {
