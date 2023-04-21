@@ -53,14 +53,14 @@
             prevMonth();
         } else if (e.keyCode == 39) { // right arrow key
             nextMonth();
-        } else if (e.keyCode == 38) { // up arrow
-            let i = categories.indexOf(gCategory);
-            i = (i + 1) % categories.length;
-            gCategory = categories[i];
         } else if (e.keyCode == 40) { // down arrow
             let i = categories.indexOf(gCategory);
+            i = (i + 1) % categories.length;
+            goto(`/multi-day/${categories[i]}`);
+        } else if (e.keyCode == 38) { // up arrow
+            let i = categories.indexOf(gCategory);
             i = (categories.length + i - 1) % categories.length;
-            gCategory = categories[i];
+            goto(`/multi-day/${categories[i]}`);
         }
     }
 

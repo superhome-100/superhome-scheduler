@@ -5,7 +5,7 @@
     import { canSubmit } from '$lib/stores.js';
 
     export let rsv = null;
-    export let category;
+    export let category = 'pool';
     export let date;
     export let dateFn = null;
     export let resType = null;
@@ -21,20 +21,20 @@
             : datetimeToLocalDateStr(new Date(date)) 
         : rsv.date;
 
-    const getStartTimes = (date) => {
-        let startTs = startTimes(date);
+    const getStartTimes = (date, category) => {
+        let startTs = startTimes(date, category);
         let today = new Date();
         if (date === datetimeToLocalDateStr(today)) {
             let now = minuteOfDay(today);
             startTs = startTs.filter((time) => timeStrToMin(time) > now);
             if (startTs.length == 0) {
-                startTs = startTimes(date);
+                startTs = startTimes(date, category);
             }
         }
         return startTs;
     }
-    let chosenStart = rsv == null ? getStartTimes(date)[0] : rsv.startTime;
-    let chosenEnd = rsv == null ? getStartTimes(date)[1] : rsv.endTime;
+    let chosenStart = rsv == null ? getStartTimes(date, category)[0] : rsv.startTime;
+    let chosenEnd = rsv == null ? getStartTimes(date, category)[1] : rsv.endTime;
     let autoOrCourse = rsv == null ? (resType == null ? 'autonomous' : resType) : rsv.resType;
     let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
     $canSubmit = true;
@@ -59,12 +59,12 @@
             bind:value={chosenStart} 
             name="startTime"
         >
-            {#each getStartTimes(date) as t}
+            {#each getStartTimes(date, category) as t}
                 <option value={t}>{t}</option>
             {/each}
         </select></div>
         <div><select id="formEnd" {disabled} name="endTime" value={chosenEnd}>
-            {#each endTimes() as t}
+            {#each endTimes(date, category) as t}
                 {#if timeStrToMin(chosenStart) < timeStrToMin(t)}
                     <option value={t}>{t}</option>
                 {/if}

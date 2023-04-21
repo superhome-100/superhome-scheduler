@@ -30,10 +30,9 @@
     const rowHeight = 3;
     const blkMgn = 0.25; // dependent on tailwind margin styling
 
-    const slotsPerHr = () => {
-        let date = datetimeToLocalDateStr($viewedDate);
-        let st = startTimes(date);
-        let et = endTimes(date);
+    const slotsPerHr = (date, category) => {
+        let st = startTimes(date, category);
+        let et = endTimes(date, category);
         let beg = st[0];
         let end = et[et.length-1];
         let totalMin = (timeStrToMin(end) - timeStrToMin(beg)) 
@@ -41,12 +40,12 @@
         return sph;
     }
     
-    $: slotDiv = slotsPerHr(startTimes(datetimeToLocalDateStr($viewedDate)));
+    $: slotDiv = slotsPerHr(datetimeToLocalDateStr($viewedDate), category);
     
-    const displayTimes = (date) => {
+    const displayTimes = (date, category) => {
         let dateStr = datetimeToLocalDateStr(date);
-        let st = startTimes(dateStr);
-        let et = endTimes(dateStr);
+        let st = startTimes(dateStr, category);
+        let et = endTimes(dateStr, category);
         let hrs = [];
         for (let i=0; i<st.length; i++) {
             if (i % slotDiv == 0) {
@@ -86,7 +85,7 @@
     <div class="row text-xs xs:text-base">
         <div class="column w-[12%] m-0 text-center">
             <div style='height: 1lh'/>
-            {#each displayTimes($viewedDate) as t}
+            {#each displayTimes($viewedDate, category) as t}
                 <div class='font-semibold' style='height: {rowHeight}rem'>{t}</div>
             {/each}
         </div>
