@@ -50,11 +50,11 @@ export function augmentRsv(rsv, fbId=null, name=null) {
     }
     if (rsv.category === 'openwater') {
         if (rsv.owTime === 'AM') {
-            startTime = Settings('openwater_AM_startTime', rsv.date);
-            endTime = Settings('openwater_AM_endTime', rsv.date);
+            startTime = Settings('openwaterAmStartTime', rsv.date);
+            endTime = Settings('openwaterAmEndTime', rsv.date);
         } else if (rsv.owTime === 'PM') {
-            startTime = Settings('openwater_PM_startTime', rsv.date);
-            endTime = Settings('openwater_PM_endTime', rsv.date);
+            startTime = Settings('openwaterPmStartTime', rsv.date);
+            endTime = Settings('openwaterPmEndTime', rsv.date);
         }
     }
     let newRsv = {
@@ -465,7 +465,7 @@ export function parseSettingsTbl(settingsTbl) {
             name = 'refreshInterval'
             v = v*1000;
         }
-        if (['openForBusiness'].includes(name)) {
+        if (['openForBusiness', 'poolBookable', 'classroomBookable', 'openwaterAmBookable', 'openwaterPmBookable'].includes(name)) {
             v = v === 'true' ? true : false;
         }
 
@@ -493,4 +493,33 @@ export const badgeColor = (rsvs) => {
     let approved = rsvs.reduce((sts,rsv) => sts && rsv.status === 'confirmed', true);
     return approved ? 'bg-[#00FF00]' : 'bg-[#FFFF00]';
 };
+
+export function categoryIsBookable(sub) {
+    let val;
+    let msg;
+    if (sub.category === 'pool') {
+        val = Settings('poolBookable', sub.date);
+        msg = 'Pool ';
+    } else if (sub.category === 'openwater') {
+        if (sub.owTime == 'AM') {
+            val = Settings('openwaterAmBookable', sub.date);
+            msg = 'AM Openwater '
+        } else if (sub.owTime == 'PM') {
+            val = Settings('openwaterPmBookable', sub.date);
+            msg = 'PM Openwater '
+        }
+    } else if (sub.category === 'classroom') {
+        val = Settings('classroomBookable', sub.date);
+        msg = 'Classroom ';
+    }
+    if (val) {
+        return { result: true }
+    } else {
+        return {
+            result: false,
+            message: msg + 'reservations are not bookable on this date',
+        }
+    }
+}
+
 

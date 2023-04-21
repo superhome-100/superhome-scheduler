@@ -16,6 +16,7 @@
         checkSpaceAvailable,
         checkDuplicateRsv,
         convertReservationTypes,
+        categoryIsBookable,
     } from '$lib/utils.js';
 
     export let category = 'openwater';
@@ -32,6 +33,13 @@
 
         if (!Settings('openForBusiness', submitted.date)) {
             alert('We are closed on this date; please choose a different date');
+            cancel();
+            return;
+        }
+
+        const q = categoryIsBookable(submitted);
+        if (q.result == false) {
+            alert(q.message);
             cancel();
             return;
         }
