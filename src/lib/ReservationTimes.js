@@ -1,8 +1,10 @@
 import { Settings } from './settings.js';
 import * as dtu from './datetimeUtils.js';
 
-export let minStart = (date) => dtu.timeStrToMin(Settings('minStartTime', date));
-export let maxEnd = (date) => dtu.timeStrToMin(Settings('maxEndTime', date));
+export let minPoolStart = (date) => dtu.timeStrToMin(Settings('minPoolStartTime', date));
+export let maxPoolEnd = (date) => dtu.timeStrToMin(Settings('maxPoolEndTime', date));
+export let minClassroomStart = (date) => dtu.timeStrToMin(Settings('minClassroomStartTime', date));
+export let maxClassroomEnd = (date) => dtu.timeStrToMin(Settings('maxClassroomEndTime', date));
 export let resCutoff = (date) => dtu.timeStrToMin(Settings('reservationCutOffTime', date));
 export let cancelCutoff = (cat, date) => {
     if (cat === 'classroom') {
@@ -57,22 +59,25 @@ export function beforeCancelCutoff(dateStr, startTime, category) {
     }
 }
 
-let nRes = (dateStr) => Math.floor((maxEnd(dateStr) - minStart(dateStr)) / inc(dateStr))
+const minStart = (dateStr, cat) => cat === 'pool' ? minPoolStart(dateStr) : cat === 'classroom' ? minClassroomStart(dateStr) : undefined;
+const maxEnd = (dateStr, cat) => cat === 'pool' ? maxPoolEnd(dateStr) : cat === 'classroom' ? maxClassroomEnd(dateStr) : undefined;
 
-export const startTimes = (dateStr) => Array(nRes(dateStr))
-    .fill()
-    .map((v,i) => dtu.minToTimeStr(minStart(dateStr) + i*inc(dateStr)));
+const nRes = (dateStr, cat) => Math.floor((maxEnd(dateStr, cat) - minStart(dateStr, cat)) / inc(dateStr))
 
-export const endTimes = (dateStr) => Array(nRes(dateStr))
+export const startTimes = (dateStr, cat) => Array(nRes(dateStr, cat))
     .fill()
-    .map((v,i) => dtu.minToTimeStr(minStart(dateStr) + (i+1)*inc(dateStr)));
+    .map((v,i) => dtu.minToTimeStr(minStart(dateStr, cat) + i*inc(dateStr)));
+
+export const endTimes = (dateStr, cat) => Array(nRes(dateStr, cat))
+    .fill()
+    .map((v,i) => dtu.minToTimeStr(minStart(dateStr, cat) + (i+1)*inc(dateStr)));
 
 export function minValidDate(category) {
     let today = new Date();
     let todayStr = dtu.datetimeToLocalDateStr(today);
     let d = new Date();
     if (category === 'classroom') {
-        let lastSlot = dtu.timeStrToMin(startTimes(todayStr)[startTimes(todayStr).length-1]);
+        let lastSlot = dtu.timeStrToMin(startTimes(todayStr, category)[startTimes(todayStr, category).length-1]);
         if (minuteOfDay(today) < lastSlot) {
             d.setDate(today.getDate())
         } else {

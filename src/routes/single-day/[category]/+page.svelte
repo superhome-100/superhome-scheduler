@@ -37,14 +37,14 @@
             prevDay();
         } else if (e.keyCode == 39) { // right arrow key
             nextDay();
-        } else if (e.keyCode == 38) { // up arrow
-            let i = categories.indexOf(category);
-            i = (i + 1) % categories.length;
-            category = categories[i];
         } else if (e.keyCode == 40) { // down arrow
             let i = categories.indexOf(category);
+            i = (i + 1) % categories.length;
+            goto(`/single-day/${categories[i]}`);
+        } else if (e.keyCode == 38) { // up arrow
+            let i = categories.indexOf(category);
             i = (categories.length + i - 1) % categories.length;
-            category = categories[i];
+            goto(`/single-day/${categories[i]}`);
         }
     }
 

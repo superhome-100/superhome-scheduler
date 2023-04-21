@@ -1,5 +1,5 @@
 import { startTimes, endTimes, inc } from './ReservationTimes.js';
-import { datetimeToLocalDateStr, minToTimeStr, timeStrToMin } from './datetimeUtils.js';
+import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils.js';
 import { reservations, users } from './stores.js'
 import { Settings } from './settings.js';
 import { get } from 'svelte/store';
@@ -141,7 +141,7 @@ const nLaneOccupants = (rsvs) => rsvs.reduce((n, rsv) => rsv.resType === 'course
     0);
 
 function checkPoolSpaceAvailable(thisRsv, rsvs) {
-    let startTs = startTimes(thisRsv.date);
+    let startTs = startTimes(thisRsv.date, thisRsv.category);
     for (let i=startTs.indexOf(thisRsv.startTime); i < startTs.indexOf(thisRsv.endTime); i++) {
         let time = timeStrToMin(startTs[i]);
         let overlap = rsvs.filter(rsv => {
@@ -236,7 +236,8 @@ export const displayTag = (rsv) => {
     return tag;
 };
 
-function assignUpToSoftCapacity(rsvs, dateStr, softCapacity, sameResource) {
+function assignUpToSoftCapacity(rsvs, category, dateStr, softCapacity, sameResource) {
+    const maxStudentsPerLane = 2;
     let schedule = Array(softCapacity).fill();
     let incT = inc(dateStr);
     let count = 0;
@@ -256,7 +257,7 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity, sameResource) {
         }
     }
     while (rsvs.length > 0 && count < softCapacity) {
-        let nextTime = timeStrToMin(startTimes(dateStr)[0]);
+        let nextTime = timeStrToMin(startTimes(dateStr, category)[0]);
         let thisR = [];
         for (let j=rsvs.length-1; j >= 0; j--) {
             let rsv = rsvs[j];
@@ -282,9 +283,9 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity, sameResource) {
                         data: [rsv],
                         resType: rsv.resType
                     };
-                    // split courses with >4 students into multiple lanes
-                    if (rsv.resType === 'course' && rsv.hiddenStudents > 4) {
-                        rsv.hiddenStudents -= 4;
+                    // split courses with >maxStudentsPerLane students into multiple lanes
+                    if (category === 'pool' && rsv.resType === 'course' && rsv.hiddenStudents > maxStudentsPerLane) {
+                        rsv.hiddenStudents -= maxStudentsPerLane;
                         j++;
                     } else {
                         rsvs.splice(j,1);
@@ -306,7 +307,7 @@ function assignUpToSoftCapacity(rsvs, dateStr, softCapacity, sameResource) {
             }
         }
 
-        let end = timeStrToMin(endTimes(dateStr)[endTimes(dateStr).length-1]);
+        let end = timeStrToMin(endTimes(dateStr, category)[endTimes(dateStr, category).length-1]);
         if (nextTime < end) {
             thisR.push({
                 start: nextTime,
@@ -427,7 +428,7 @@ export function getDaySchedule(rsvs, datetime, category, softCapacity) {
         sameResource = (idx, rsv) => rsv.room == null || rsv.room == (2-idx)+1;
     }
 
-    let schedule = assignUpToSoftCapacity(rsvs, today, softCapacity, sameResource);
+    let schedule = assignUpToSoftCapacity(rsvs, category, today, softCapacity, sameResource);
 
     if (category === 'classroom') {
         // we prioritize assigning to classroom 3, then 2, then 1 if necessary

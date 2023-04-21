@@ -2,7 +2,7 @@
     import ResFormPool from '$lib/components/ResFormPool.svelte';
 
     export let rsv = null;
-    export let category;
+    export let category = 'classroom';
     export let date;
     export let dateFn = null;
     export let restrictModify = false;
