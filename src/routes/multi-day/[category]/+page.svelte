@@ -46,7 +46,24 @@
         }
         handleDateChange();
     }
-    
+
+    const categories = ['pool', 'openwater', 'classroom'];
+    function handleKeypress(e) {
+        if (e.keyCode == 37) { // left arrow key
+            prevMonth();
+        } else if (e.keyCode == 39) { // right arrow key
+            nextMonth();
+        } else if (e.keyCode == 38) { // up arrow
+            let i = categories.indexOf(gCategory);
+            i = (i + 1) % categories.length;
+            gCategory = categories[i];
+        } else if (e.keyCode == 40) { // down arrow
+            let i = categories.indexOf(gCategory);
+            i = (categories.length + i - 1) % categories.length;
+            gCategory = categories[i];
+        }
+    }
+
     function swipeHandler(event) {
         if (event.detail.direction === 'left') {
             nextMonth();
@@ -61,6 +78,8 @@
     };
 
 </script>
+
+<svelte:window on:keydown|preventDefault={handleKeypress}/>
 
 <div class='[&>*]:mx-auto flex items-center justify-between'>
     <div class='dropdown h-8 mb-4'>
