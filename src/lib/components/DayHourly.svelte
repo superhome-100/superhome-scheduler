@@ -25,7 +25,7 @@
         );
     };
 
-    $: schedule = getDaySchedule($reservations, $viewedDate, category, nResource);
+    $: assignmentAttempt = getDaySchedule($reservations, $viewedDate, category, nResource);
 
     const rowHeight = 3;
     const blkMgn = 0.25; // dependent on tailwind margin styling
@@ -81,6 +81,9 @@
 
 {#if Settings('openForBusiness', datetimeToLocalDateStr($viewedDate)) === false}
     <div class='font-semibold text-3xl text-center'>Closed</div>
+{:else if assignmentAttempt.status === 'error'}
+    <div class='font-semibold text-red-600 text-xl text-center mt-4'>Error assigning reservations!</div>
+    <div class='text-sm text-center mt-2'>Please report this error to the admin</div>
 {:else}
     <div class="row text-xs xs:text-base">
         <div class="column w-[12%] m-0 text-center">
@@ -95,26 +98,28 @@
                 style='width: {88/nResource}%'
             >
                 <div class='font-semibold'>{resourceName} {i+1}</div>
-                {#if schedule[i]}
-                    <div style='height: 0.5rem'/>
-                    {#each schedule[i] as { nSlots, cls, tag, data }}
-                        {#if cls === 'rsv'}
-                            <div class='indicator w-full'>
-                                <span class='rsv-indicator {badgeColor(data)}'/>
-                                <div 
-                                    class='{cls} {category} text-sm cursor-pointer hover:font-semibold' 
-                                    style="height: {rowHeight*(nSlots/slotDiv) - (cls === 'rsv' ? blkMgn : 0)}rem"
-                                    on:click={cls === 'rsv' ? showViewRsvs(data) : ()=>{}}
-                                >
-                                    {#each formatTag(data, nSlots) as line}
-                                        <span class='mx-0.5 inline-block'>{line}</span>
-                                    {/each}
+                {#if assignmentAttempt.status === 'success'}
+                    {#if assignmentAttempt.schedule[i]}
+                        <div style='height: 0.5rem'/>
+                        {#each assignmentAttempt.schedule[i] as { nSlots, cls, tag, data }}
+                            {#if cls === 'rsv'}
+                                <div class='indicator w-full'>
+                                    <span class='rsv-indicator {badgeColor(data)}'/>
+                                    <div 
+                                        class='{cls} {category} text-sm cursor-pointer hover:font-semibold' 
+                                        style="height: {rowHeight*(nSlots/slotDiv) - (cls === 'rsv' ? blkMgn : 0)}rem"
+                                        on:click={cls === 'rsv' ? showViewRsvs(data) : ()=>{}}
+                                    >
+                                        {#each formatTag(data, nSlots) as line}
+                                            <span class='mx-0.5 inline-block'>{line}</span>
+                                        {/each}
+                                    </div>
                                 </div>
-                            </div>
-                        {:else}
-                            <div style="height: {rowHeight*(nSlots/slotDiv)}rem"></div>
-                        {/if}
-                    {/each}
+                            {:else}
+                                <div style="height: {rowHeight*(nSlots/slotDiv)}rem"></div>
+                            {/if}
+                        {/each}
+                    {/if}
                 {/if}
             </div>
         {/each}

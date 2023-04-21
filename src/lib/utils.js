@@ -135,8 +135,10 @@ export function checkDuplicateRsv(thisRsv, rsvs) {
     return existingRsvs.filter((rsv) => thisRsv.user === rsv.user.id).length > 0;
 }
 
+const maxStudentsPerLane = 2;
+
 const nLaneOccupants = (rsvs) => rsvs.reduce((n, rsv) => rsv.resType === 'course'
-        ? n + 2*Math.ceil(rsv.numStudents/4)
+        ? n + 2*Math.ceil(rsv.numStudents/maxStudentsPerLane)
         : n + 1,
     0);
 
@@ -237,7 +239,6 @@ export const displayTag = (rsv) => {
 };
 
 function assignUpToSoftCapacity(rsvs, category, dateStr, softCapacity, sameResource) {
-    const maxStudentsPerLane = 2;
     let schedule = Array(softCapacity).fill();
     let incT = inc(dateStr);
     let count = 0;
@@ -349,6 +350,7 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResou
     let nextR = -1;
     let nextRsv = true;
     let start;
+    let attempts = 0;
 
     while (rsvs.length > 0) {
         let rsv = rsvs[0];
@@ -412,6 +414,20 @@ function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResou
                 }
             }
         }
+        if (!nextRsv) {
+            attempts += 1;
+        }
+        if (attempts == schedule.length) {
+            return {
+                status: 'error',
+                code: 'OUT_OF_RESOURCES',
+                schedule,
+            }
+        }
+    }
+    return {
+        status: 'success',
+        schedule,
     }
 }
 
@@ -435,9 +451,9 @@ export function getDaySchedule(rsvs, datetime, category, softCapacity) {
         schedule.reverse();
     }
 
-    assignOverflowCapacity(rsvs, schedule, today, softCapacity, sameResource);
+    let result = assignOverflowCapacity(rsvs, schedule, today, softCapacity, sameResource);
 
-    return schedule;
+    return result;
 }
 
 export function removeRsv(id) {
