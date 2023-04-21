@@ -74,7 +74,7 @@
 
 </script>
 
-<svelte:window on:keydown|preventDefault={handleKeypress}/>
+<svelte:window on:keydown={handleKeypress}/>
 
 <div class='[&>*]:mx-auto flex items-center justify-between'>
     <div class='dropdown h-8 mb-4'>
