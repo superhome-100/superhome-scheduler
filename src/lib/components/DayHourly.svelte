@@ -28,7 +28,7 @@
     $: assignmentAttempt = getDaySchedule($reservations, $viewedDate, category, nResource);
 
     const rowHeight = 3;
-    const blkMgn = 0.25; // dependent on tailwind margin styling
+    const blkMgn = 0.1875; // dependent on tailwind margin styling
 
     const slotsPerHr = (date, category) => {
         let st = startTimes(date, category);
