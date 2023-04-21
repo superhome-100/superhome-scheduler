@@ -29,6 +29,25 @@
         next.setDate($viewedDate.getDate() + 1);
         $viewedDate = next;
     }
+
+    const categories = ['pool', 'openwater', 'classroom'];
+
+    function handleKeypress(e) {
+        if (e.keyCode == 37) { // left arrow key
+            prevDay();
+        } else if (e.keyCode == 39) { // right arrow key
+            nextDay();
+        } else if (e.keyCode == 38) { // up arrow
+            let i = categories.indexOf(category);
+            i = (i + 1) % categories.length;
+            category = categories[i];
+        } else if (e.keyCode == 40) { // down arrow
+            let i = categories.indexOf(category);
+            i = (categories.length + i - 1) % categories.length;
+            category = categories[i];
+        }
+    }
+
     function swipeHandler(event) {
         if (event.detail.direction === 'left') {
             nextDay();
@@ -54,6 +73,8 @@
     };
 
 </script>
+
+<svelte:window on:keydown|preventDefault={handleKeypress}/>
 
 <div class='[&>*]:mx-auto flex items-center justify-between'>
     <div class='dropdown h-8 mb-4'>
@@ -93,7 +114,7 @@
     </a>
 </div>
 <div 
-    class='w-full h-full min-h-[500px]'
+    class='w-full min-h-[500px]'
     use:swipe={{ timeframe: 300, minSwipeDistance: 10, touchAction: 'pan-y' }} 
     on:swipe={swipeHandler}
 >
