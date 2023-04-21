@@ -11,6 +11,7 @@
     export let resType = null;
     export let viewOnly = false;
     export let restrictModify = false;
+    export let maxNumStudents = 4;
 
     let disabled = viewOnly || restrictModify;
 
@@ -76,14 +77,14 @@
                 name="resType"
             >
             <option value='autonomous'>Autonomous</option>
-            <option value='course'>Course</option>
+            <option value='course'>Course/Coaching</option>
         </select></div>
         {#if resType != null}
             <input type="hidden" name="resType" value={resType}>
         {/if}
         {#if autoOrCourse === 'course'}
             <div><select disabled={viewOnly} value={numStudents} name="numStudents">
-                {#each [...Array(restrictModify ? numStudents : 10).keys()] as n}
+                {#each [...Array(restrictModify ? numStudents : maxNumStudents).keys()] as n}
                     <option value={n+1}>{n+1}</option>
                 {/each}
             </select></div>
