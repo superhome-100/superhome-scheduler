@@ -24,7 +24,7 @@
     const getStartTimes = (date, category) => {
         let startTs = startTimes(date, category);
         let today = new Date();
-        if (date === datetimeToLocalDateStr(today)) {
+        if (!disabled && date === datetimeToLocalDateStr(today)) {
             let now = minuteOfDay(today);
             startTs = startTs.filter((time) => timeStrToMin(time) > now);
             if (startTs.length == 0) {
