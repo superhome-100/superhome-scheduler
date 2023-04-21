@@ -32,7 +32,7 @@
         }
     }
 
-    onMount(initApp);
+    onMount(() => toast.promise(initApp(), {loading: 'loading...', error: 'Loading error'}));
 
     function downloadReservations() {
         const fn = async () => {
