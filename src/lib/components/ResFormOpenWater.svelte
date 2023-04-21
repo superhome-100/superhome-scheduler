@@ -67,7 +67,7 @@
                 name="resType"
             >
                 <option value='autonomous'>Autonomous</option>
-                <option value='course'>Course</option>
+                <option value='course'>Course/Coaching</option>
             </select>
         </div>
         {#if autoOrCourse == 'course'}
