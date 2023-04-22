@@ -15,6 +15,7 @@
 
     let disabled = viewOnly || restrictModify;
 
+    let status = rsv == null ? undefined : rsv.status;
     let comments = rsv == null ? null : rsv.comments;
     date = rsv == null ? date : rsv.date;
     category = rsv == null ? category : rsv.category;
@@ -115,7 +116,16 @@
     const autocompUlStyle = 'relative ml-2 top-0 border border-solid border-bg-gray-300 '
                           + 'rounded text-sm';
 
-    const bdColor = (status) => status === 'confirmed' ? 'border-status-confirmed' : 'border-status-pending';
+    const ringColor = (status) => status === 'confirmed' 
+        ? 'ring-status-confirmed focus:ring-status-confirmed' : status === 'pending' 
+        ? 'ring-status-pending focus:ring-status-pending' : status === 'rejected' 
+        ? 'ring-status-rejected focus:ring-status-rejected' : undefined;
+
+
+    const bdColor = (status) => status === 'confirmed' 
+        ? 'border-status-confirmed' : status === 'pending' 
+        ? 'border-status-pending' : status === 'rejected' 
+        ? 'border-status-rejected' : undefined;
 
     const statusStyle = (status) => 'align-middle px-2 py-0 pb-1 mb-1 ml-2 w-fit '
                     + 'text-xl text-gray-500 dark:text-gray-300 '
@@ -123,6 +133,7 @@
                     + 'rounded-lg border ' + bdColor(status) + ' ' 
                     + 'ring-1 ring-gray-500 dark:ring-gray-300';
 
+    const adminView = () => $user.privileges === 'admin' && viewOnly;
 </script>
 
 <svelte:window on:keydown={navigateList} />
@@ -130,7 +141,7 @@
 <div class="row w-full">
     <div class="column labels text-right w-[33%]">
         {#if viewOnly}
-            <div class='form-label h-8 mb-1'><label for='status'>Status</label></div>
+            <div class='form-label h-8 mb-1'><label for='formStatus'>Status</label></div>
         {/if}
         <div class='form-label h-8 mb-0.5'><label for="formDate">Date</label></div>
         <div class='form-label h-8 mb-0.5'><label for="formCategory">Category</label></div>
@@ -162,7 +173,20 @@
         <div class='form-label h-8 mb-0.5'><label for="formComments">Comments</label></div>
     </div>
     <div class="column inputs text-left w-[67%]">
-        {#if viewOnly}
+        {#if adminView()}
+            <div>
+                <select
+                    id='formStatus'
+                    name='status'
+                    bind:value={status}
+                    class='focus:border-black ring-1 ring-offset-1 {ringColor(status)}'
+                >
+                    <option class='!bg-status-confirmed' value='confirmed'>Confirmed</option>
+                    <option value='rejected'>Rejected</option>
+                    <option value='pending'>Pending</option>
+                </select>
+            </div>
+        {:else if viewOnly}
                 <div class={statusStyle(rsv.status)}>
                     {rsv.status}
                 </div>
@@ -265,8 +289,8 @@
                 type="submit" 
                 class='bg-gray-100 disabled:text-gray-400 px-3 py-1'
                 tabindex='6' 
-                disabled={!$canSubmit}
-                hidden={viewOnly}
+                disabled={!adminView() && !$canSubmit}
+                hidden={!adminView() && viewOnly}
             >
                 {#if rsv}
                     Update

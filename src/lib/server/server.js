@@ -224,6 +224,24 @@ export async function updateReservation(formData) {
     };
 }
 
+export async function adminUpdate(formData) {
+    let rsv = {};
+    let id = formData.get('id');
+    rsv.status = formData.get('status');
+    if (formData.has('lane')) {
+        rsv.lane = formData.get('lane');
+    } else if (formData.has('buoy')) {
+        rsv.buoy = formData.get('buoy');
+    } else if (formData.has('room')) {
+        rsv.room = formData.get('room');
+    }
+    let record = await xata.db.Reservations.update(id, rsv);
+    return {
+        status: 'success',
+        record
+    };
+}
+
 export async function cancelReservation(formData) {
     let data = convertReservationTypes(Object.fromEntries(formData));
 
