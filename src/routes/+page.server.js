@@ -1,4 +1,9 @@
-import { submitReservation, updateReservation, cancelReservation } from '$lib/server/server.js';
+import {
+    submitReservation,
+    updateReservation,
+    cancelReservation,
+    adminUpdate,
+} from '$lib/server/server.js';
 
 export const actions = {
     submitReservation: async ({ request }) => {
@@ -15,6 +20,11 @@ export const actions = {
         const data = await request.formData();
         const record = await cancelReservation(data);
         return record;
-    }
+    },
+    adminUpdate: async ({ request }) => {
+        const data = await request.formData();
+        const record = await adminUpdate(data);
+        return record;
+    },
 }
 

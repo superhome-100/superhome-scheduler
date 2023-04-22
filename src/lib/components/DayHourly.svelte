@@ -1,7 +1,7 @@
 <script>
     import { startTimes, endTimes } from '$lib/ReservationTimes.js';
     import { user, viewedDate, reservations } from '$lib/stores.js';
-    import { getDaySchedule } from '$lib/utils.js';
+    import { getDaySchedule } from '$lib/autoAssignPool.js';
     import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils.js';
     import { getContext } from 'svelte';
     import ViewForms from '$lib/components/ViewForms.svelte';
