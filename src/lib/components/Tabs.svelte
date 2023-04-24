@@ -55,9 +55,11 @@
         if (event.detail.direction === 'left') {
             let idx = (tabs.indexOf($selectedTab) + 1 ) % tabs.length;
             $selectedTab = tabs[idx];
+            $selectedPanel = panels[idx];
         } else if (event.detail.direction === 'right') {
             let idx = (tabs.length + tabs.indexOf($selectedTab) - 1) % tabs.length;
             $selectedTab = tabs[idx];
+            $selectedPanel = panels[idx];
         }
     }
 </script>
