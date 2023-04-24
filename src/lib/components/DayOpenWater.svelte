@@ -11,24 +11,14 @@
     
     const { open } = getContext('simple-modal');
 
-    const showViewRsv = (rsv) => {
-        if (rsv.user.id === $user.id) {
-            open(
-                ModifyForm,
-                {
-                    rsv: rsv,
-                    hasForm: true,
-                }
-            );
-        } else {
-            open(
-                ViewForms,
-                {
-                    rsvs: [rsv], 
-                    hasForm: true,
-                }
-            );
-        }
+    const showViewRsvs= (rsvs) => {
+        open(
+            ViewForms,
+            {
+                rsvs, 
+                hasForm: true,
+            }
+        );
     };
 
     function getOpenWaterSchedule(rsvs, datetime) {
@@ -102,16 +92,15 @@
                 {#each $buoys as { name }}
                     {#if schedule[cur][name] != undefined}
                         <div 
-                            class='rsv openwater text-sm mb-1 mt-0.5'
+                            class='rsv cursor-pointer openwater text-sm mb-1 mt-0.5'
                             style='height: {rowHeights[name].buoy}rem'
+                            on:click={showViewRsvs(schedule[cur][name])}
                         >
                             {#each schedule[cur][name] as rsv, i}
                                 <div class='block indicator w-full'>
                                     <span class='rsv-indicator mr-0 {badgeColor([rsv])}'/>
                                     <div 
-                                        class='cursor-pointer hover:font-semibold'
                                         style='margin: {rowHeights[name].margins[i]}'
-                                        on:click={showViewRsv(rsv)}
                                     >{displayTag(rsv)}</div>
                                 </div>
                             {/each}
