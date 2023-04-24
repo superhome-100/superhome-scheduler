@@ -2,7 +2,7 @@
     import { getContext } from 'svelte';
 	import CancelForm from './CancelForm.svelte';
     import ModifyForm from './ModifyForm.svelte';
-    import DeleteIcon from './DeleteIcon.svelte';
+    import TrashIcon from './TrashIcon.svelte';
     import EditIcon from './EditIcon.svelte';
 
     export let rsv;
@@ -39,7 +39,7 @@
     {#if dialogType === 'modify'}
         <EditIcon/>
     {:else if dialogType === 'cancel'}
-        <DeleteIcon/>
+        <TrashIcon/>
     {/if}
 </button>
 
