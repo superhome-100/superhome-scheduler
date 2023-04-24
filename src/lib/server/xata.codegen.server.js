@@ -30,7 +30,6 @@ const tables = [
       { name: "extraBottomWeight", type: "bool" },
       { name: "bottomPlate", type: "bool" },
       { name: "largeBuoy", type: "bool" },
-      { name: "lane", type: "string" },
       { name: "room", type: "string" },
       { name: "lanes", type: "multiple" },
     ],
