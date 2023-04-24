@@ -2,7 +2,11 @@
     import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
     import { startTimes, endTimes, minuteOfDay } from '$lib/ReservationTimes.js';
     import { timeStrToMin, datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
-    import { canSubmit } from '$lib/stores.js';
+    import { canSubmit, user } from '$lib/stores.js';
+    import { Settings } from '$lib/settings.js';
+
+    const lanes = () => Settings('poolLanes');
+    const rooms = () => Settings('classrooms');
 
     export let rsv = null;
     export let category = 'pool';
@@ -39,11 +43,25 @@
     let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
     $canSubmit = true;
     $: showBuddyFields = autoOrCourse === 'autonomous';
+    
+    const adminView = () => $user.privileges === 'admin' && viewOnly; 
 
 </script>
 
 <ResFormGeneric {viewOnly} {restrictModify} {showBuddyFields} bind:date={date} bind:category={category} {rsv}>
     <div class='[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5' slot="categoryLabels">
+        {#if adminView()}
+            {#if category === 'pool'}
+                {#if rsv.resType === 'course' && rsv.numStudents > Settings('maxOccupantsPerLane')}
+                    <div><label for='formLane1'>1st Lane</label></div>
+                    <div><label for='formLane2'>2nd Lane</label></div>
+                {:else}
+                    <div><label for='formLane1'>Lane</label></div>
+                {/if}
+            {:else if category === 'classroom'}
+                <div><label for='formRoom'>Room</label></div>
+            {/if}
+        {/if}
         <div><label for="formStart">Start Time</label></div>
         <div><label for="formEnd">End Time</label></div>
         <div><label for="formResType">Type </label></div>
@@ -53,6 +71,46 @@
     </div>
 
     <div slot="categoryInputs">
+        {#if adminView()}
+            {#if category === 'pool'}
+                <div><select
+                        id='formLane1'
+                        name='lane1'
+                        value={rsv.lanes[0]}
+                    >
+                        <option value={undefined}>Auto</option>
+                        {#each lanes() as lane}
+                            <option value={lane}>{lane}</option>
+                        {/each}
+                    </select>
+                </div>
+                {#if rsv.resType === 'course' && rsv.numStudents > Settings('maxOccupantsPerLane')}
+                    <div><select
+                        id='formLane2'
+                        name='lane2'
+                        value={rsv.lanes[1]}
+                        >
+                            <option value={undefined}>Auto</option>
+                            {#each lanes() as lane}
+                                <option value={lane}>{lane}</option>
+                            {/each}
+                        </select>
+                    </div>
+                {/if}
+            {:else if category === 'classroom'}
+                <div><select
+                        id='formRoom'
+                        name='room'
+                        value={rsv.room}
+                    >
+                        <option value={undefined}>Auto</option>
+                        {#each rooms() as room}
+                            <option value={room}>{room}</option>
+                        {/each}
+                    </select>
+                </div>
+            {/if}
+        {/if}
         <div><select 
             id="formStart" 
             {disabled} 
