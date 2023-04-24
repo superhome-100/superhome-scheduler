@@ -73,7 +73,7 @@ function getMinBreaksPathRec(spacesByTimes, width, curTime, endTime, pathObj) {
     // startSpace will be undefined if curTime == startTime
     let startSpace = pathObj.path[pathObj.path.length-1];
 
-    for (let i=0; i <= spacesByTimes.length - width; i++) {
+    for (let i=0; i <= spacesByTimes.length - width; i+=width) {
         if (allNull(i)) {
             let thisBreak = startSpace == null ? 0 : i == startSpace ? 0 : 1;
             thisBreak += sharedLane(i) ? 1 : 0;

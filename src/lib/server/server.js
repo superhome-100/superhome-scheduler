@@ -232,6 +232,8 @@ export async function adminUpdate(formData) {
         const convert = (v) => v === 'undefined' ? undefined : v;
         if (convert(formData.get('lane1'))) {
             rsv.lanes = [formData.get('lane1')];
+        } else {
+            rsv.lanes = [];
         }
         if (convert(formData.get('lane2'))) {
             rsv.lanes[1] = formData.get('lane2');
