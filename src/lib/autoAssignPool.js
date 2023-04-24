@@ -27,9 +27,11 @@ function sortByPriority(rsvs) {
     for (let owner of owners) {
         owner.buddyRsvs = [];
         for (let buddy of owner.buddies) {
-            let buddyRsv = rsvs.filter(rsv => rsv.user.id === buddy)[0];
-            owner.buddyRsvs.push(buddyRsv);
-
+            let q = rsvs.filter(rsv => rsv.user.id === buddy);
+            // length could be zero if buddy's rsv was rejected
+            if (q.length == 1) {
+                owner.buddyRsvs.push(q[0]);
+            }
         }
     }
     let preAssigned = [], unAssigned = [];
@@ -202,8 +204,8 @@ function patchData(spaces) {
     let data = [];
     if (spaces[0] != null) {
         data.push(spaces[0]);
-        if (spaces[0].buddies.length > 0) {
-            data.push(spaces[0].buddyRsvs[0]);
+        if (spaces[0].buddyRsvs.length > 0) {
+            data.push(...spaces[0].buddyRsvs);
         } else if (spaces[1] != null && spaces[1].id != spaces[0].id) {
             data.push(spaces[1]);
         }
