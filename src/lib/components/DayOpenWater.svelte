@@ -2,7 +2,7 @@
     import { user, viewedDate, reservations, buoys } from '$lib/stores.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { displayTag } from '$lib/utils.js';
-    import { assignRsvsToBuoys } from '$lib/autoAssign.js';
+    import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
     import { getContext } from 'svelte';
     import ViewForms from '$lib/components/ViewForms.svelte';
     import ModifyForm from '$lib/components/ModifyForm.svelte';

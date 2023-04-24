@@ -9,6 +9,7 @@
     import { datetimeToLocalDateStr, month2idx, idx2month } from '$lib/datetimeUtils.js';
     import Modal from '$lib/components/Modal.svelte';
     import { view, viewedDate } from '$lib/stores.js';
+    import { Settings } from '$lib/settings.js';
 
     export let data;
 
@@ -56,11 +57,12 @@
         }
     }
 
-    const nResource = () => {
+    const resources = () => {
+        let dateStr = datetimeToLocalDateStr($viewedDate);
         if (category === 'pool') {
-            return 4;
+            return Settings('poolLanes', dateStr); 
         } else if (category === 'classroom') {
-            return 3;
+            return Settings('classrooms', dateStr);
         }
     };
 
@@ -120,9 +122,9 @@
 >
     <Modal>
         {#if category === 'pool'}
-            <DayHourly category={category} nResource={nResource()} resourceName={resourceName()}/>
+            <DayHourly category={category} resources={resources()} resourceName={resourceName()}/>
         {:else if category === 'classroom'}
-            <DayHourly category={category} nResource={nResource()} resourceName={resourceName()}/>
+            <DayHourly category={category} resources={resources()} resourceName={resourceName()}/>
         {:else if category == 'openwater'}
             <DayOpenWater/>
         {/if}
