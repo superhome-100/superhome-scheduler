@@ -87,7 +87,12 @@ function getMinBreaksPathRec(spacesByTimes, width, curTime, endTime, pathObj) {
                 { breaks: pathObj.breaks + thisBreak, path: [i] }
             );
             if (thisPath.path != null) {
-                if (thisPath.breaks < minBreaks) {
+                if (thisPath.breaks == 0) {
+                    // optimal path; stop the search and return this path immediately
+                    bestPath = thisPath;
+                    break;
+                }
+                else if (thisPath.breaks < minBreaks) {
                     minBreaks = thisPath.breaks;
                     bestPath = thisPath;
                 }
