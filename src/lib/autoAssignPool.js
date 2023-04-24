@@ -33,7 +33,13 @@ function sortByPriority(rsvs) {
         }
     }
     let preAssigned = [], unAssigned = [];
-    owners.forEach(rsv => rsv.lanes.length == 0 ? unAssigned.push(rsv) : preAssigned.push(rsv));
+    owners.forEach(rsv => {
+        if (rsv.category === 'pool') {
+            rsv.lanes.length == 0 ? unAssigned.push(rsv) : preAssigned.push(rsv);
+        } else if (rsv.category === 'classroom') {
+            rsv.room == null ? unAssigned.push(rsv) : preAssigned.push(rsv);
+        }
+    });
     return { pre: sorted(preAssigned), un: sorted(unAssigned) };
 }
 
@@ -41,7 +47,6 @@ function getMinBreaksPath(spacesByTimes, width, startTime, endTime) {
     let { path } = getMinBreaksPathRec(spacesByTimes, width, startTime, endTime, { breaks: 0, path: [] });
     return path;
 }
-
 
 function getMinBreaksPathRec(spacesByTimes, width, curTime, endTime, pathObj) {
     if (curTime === endTime) {
@@ -101,9 +106,15 @@ function rsvToBlock(rsv, minTime, inc, resourceNames) {
     let endTime = (timeStrToMin(rsv.endTime) - minTime) / inc;
     let width = nOccupants([rsv]) + rsv.buddies.length;
     let occ = Settings('maxOccupantsPerLane');
-    let startSpaces = rsv.lanes.length > 0
+    let startSpaces;
+    if (rsv.category === 'pool') {
+        startSpaces = rsv.lanes.length > 0
             ? rsv.lanes.map(lane => occ*resourceNames.indexOf(lane))
             : null;
+    } else if (rsv.category === 'classroom') {
+        startSpaces =  rsv.room ? [resourceNames.indexOf(rsv.room)] : null;
+    }
+
     return {
         rsv,
         startTime,
@@ -142,7 +153,7 @@ function insertUnAssigned(spacesByTimes, blk) {
     return { status: 'success' }
 }
 
-function assignSpaces(rsvs, dateStr) {
+export function assignSpaces(rsvs, dateStr) {
     let incT = inc(dateStr);
     let sTs = startTimes(dateStr, 'pool');
     let nTimes = sTs.length;
@@ -202,7 +213,7 @@ function patchData(spaces) {
     return data;
 }
 
-function patchSchedule(sByT) {
+export function patchSchedule(sByT) {
     let schedule = Array(Settings('poolLanes').length).fill().map(()=> {
         return [{
             nSlots: 0,
@@ -245,12 +256,3 @@ function patchSchedule(sByT) {
     return schedule;
 }
 
-export function getDaySchedule(rsvs, datetime, category, softCapacity) {
-    let today = datetimeToLocalDateStr(datetime);
-    rsvs = rsvs.filter((v) => v.status != 'rejected' && v.category === category && v.date === today);
-    let result = assignSpaces(rsvs, today);
-    if (result.status === 'success') {
-        result.schedule = patchSchedule(result.schedule);
-    }
-    return result;
-}

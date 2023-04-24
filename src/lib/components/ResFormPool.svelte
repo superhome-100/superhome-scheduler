@@ -5,8 +5,8 @@
     import { canSubmit, user } from '$lib/stores.js';
     import { Settings } from '$lib/settings.js';
 
-    const nLanes = () => Settings('poolLanes').length;
-    const nRooms = () => Settings('classrooms').length;
+    const lanes = () => Settings('poolLanes');
+    const rooms = () => Settings('classrooms');
 
     export let rsv = null;
     export let category = 'pool';
@@ -76,11 +76,11 @@
                 <div><select
                         id='formLane1'
                         name='lane1'
-                        value={parseInt(rsv.lanes[0])}
+                        value={rsv.lanes[0]}
                     >
                         <option value={undefined}>Auto</option>
-                        {#each [...Array(nLanes()).keys()] as lane}
-                            <option value={lane+1}>{lane+1}</option>
+                        {#each lanes() as lane}
+                            <option value={lane}>{lane}</option>
                         {/each}
                     </select>
                 </div>
@@ -88,11 +88,11 @@
                     <div><select
                         id='formLane2'
                         name='lane2'
-                        value={parseInt(rsv.lanes[1])}
+                        value={rsv.lanes[1]}
                         >
                             <option value={undefined}>Auto</option>
-                            {#each [...Array(nLanes()).keys()] as lane}
-                                <option value={lane+1}>{lane+1}</option>
+                            {#each lanes() as lane}
+                                <option value={lane}>{lane}</option>
                             {/each}
                         </select>
                     </div>
@@ -104,8 +104,8 @@
                         value={rsv.room}
                     >
                         <option value={undefined}>Auto</option>
-                        {#each [...Array(nRooms()).keys()] as room}
-                            <option value={room+1}>{room+1}</option>
+                        {#each rooms() as room}
+                            <option value={room}>{room}</option>
                         {/each}
                     </select>
                 </div>
