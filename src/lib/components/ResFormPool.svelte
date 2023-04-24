@@ -101,7 +101,7 @@
                 <div><select
                         id='formRoom'
                         name='room'
-                        value={rsv.room}
+                        value={rsv.room ? rsv.room : undefined}
                     >
                         <option value={undefined}>Auto</option>
                         {#each rooms() as room}
