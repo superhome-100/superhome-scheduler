@@ -27,7 +27,10 @@ function sortByPriority(rsvs) {
     for (let owner of owners) {
         owner.buddyRsvs = [];
         for (let buddy of owner.buddies) {
-            let q = rsvs.filter(rsv => rsv.user.id === buddy);
+            let q = rsvs.filter(rsv => rsv.user.id === buddy
+                && rsv.buddies.includes(owner.user.id)
+                && rsv.startTime === owner.startTime
+            );
             // length could be zero if buddy's rsv was rejected
             if (q.length == 1) {
                 owner.buddyRsvs.push(q[0]);
