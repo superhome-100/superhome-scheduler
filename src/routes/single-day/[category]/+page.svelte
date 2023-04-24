@@ -49,11 +49,15 @@
         }
     }
 
+    let modalOpened = false;
+
     function swipeHandler(event) {
-        if (event.detail.direction === 'left') {
-            nextDay();
-        } else if (event.detail.direction === 'right') {
-            prevDay();
+        if (!modalOpened) {
+            if (event.detail.direction === 'left') {
+                nextDay();
+            } else if (event.detail.direction === 'right') {
+                prevDay();
+            }
         }
     }
 
@@ -120,7 +124,7 @@
     use:swipe={{ timeframe: 300, minSwipeDistance: 10, touchAction: 'pan-y' }} 
     on:swipe={swipeHandler}
 >
-    <Modal>
+    <Modal on:open={() => modalOpened = true} on:close={() => modalOpened = false}>
         {#if category === 'pool'}
             <DayHourly category={category} resources={resources()} resourceName={resourceName()}/>
         {:else if category === 'classroom'}

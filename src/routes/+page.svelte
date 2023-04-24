@@ -14,26 +14,23 @@
         <span class='text-lg font-semibold'>{$user.name.split(' ')[0]}'s Reservations</span>
         <Modal><ReservationDialog dateFn={(cat) => minValidDateStr(cat)}/></Modal>
     </span>
-    <div>
-        <Tabs>
-            
-            <TabList>
-                <Tab>Upcoming</Tab>
-                <Tab>Previous Week</Tab>
-            </TabList>
-            
-            <TabPanel>
-                <Modal>
-                    <MyReservationsTable resType='upcoming'/>
-                </Modal>
-            </TabPanel>
-            <TabPanel>
-                <Modal>
-                    <MyReservationsTable resType='past'/>
-                </Modal>
-            </TabPanel>
+    <Tabs>
         
-        </Tabs>
-    </div>
-    <br/>
+        <TabList>
+            <Tab>Upcoming</Tab>
+            <Tab>Previous 7 Days</Tab>
+        </TabList>
+        
+        <TabPanel>
+            <Modal>
+                <MyReservationsTable resType='upcoming'/>
+            </Modal>
+        </TabPanel>
+        <TabPanel>
+            <Modal>
+                <MyReservationsTable resType='past'/>
+            </Modal>
+        </TabPanel>
+    
+    </Tabs>
 {/if}
