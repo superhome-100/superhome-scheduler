@@ -126,6 +126,7 @@
             }
         }
         goto('/error');
+        return Promise.reject();
     }
 
     async function get(item) {

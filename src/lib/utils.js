@@ -1,9 +1,9 @@
-import { startTimes, endTimes, inc } from './ReservationTimes.js';
+import { startTimes } from './ReservationTimes.js';
 import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils.js';
 import { reservations, users } from './stores.js'
 import { Settings } from './settings.js';
 import { get } from 'svelte/store';
-import { assignRsvsToBuoys } from './autoAssign.js';
+import { assignRsvsToBuoys } from './autoAssignOpenWater.js';
 
 export function monthArr(year, month, reservations) {
     let daysInMonth = new Date(year, month+1, 0).getDate();
