@@ -52,7 +52,12 @@
     <div class='[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5' slot="categoryLabels">
         {#if adminView()}
             {#if category === 'pool'}
-                <div><label for='formLane'>Lane</label></div>
+                {#if rsv.resType === 'course' && rsv.numStudents > Settings('maxOccupantsPerLane')}
+                    <div><label for='formLane1'>1st Lane</label></div>
+                    <div><label for='formLane2'>2nd Lane</label></div>
+                {:else}
+                    <div><label for='formLane1'>Lane</label></div>
+                {/if}
             {:else if category === 'classroom'}
                 <div><label for='formRoom'>Room</label></div>
             {/if}
@@ -69,9 +74,9 @@
         {#if adminView()}
             {#if category === 'pool'}
                 <div><select
-                        id='formLane'
-                        name='lane'
-                        value={rsv.lane}
+                        id='formLane1'
+                        name='lane1'
+                        value={parseInt(rsv.lanes[0])}
                     >
                         <option value={undefined}>Auto</option>
                         {#each [...Array(nLanes()).keys()] as lane}
@@ -79,6 +84,19 @@
                         {/each}
                     </select>
                 </div>
+                {#if rsv.resType === 'course' && rsv.numStudents > Settings('maxOccupantsPerLane')}
+                    <div><select
+                        id='formLane2'
+                        name='lane2'
+                        value={parseInt(rsv.lanes[1])}
+                        >
+                            <option value={undefined}>Auto</option>
+                            {#each [...Array(nLanes()).keys()] as lane}
+                                <option value={lane+1}>{lane+1}</option>
+                            {/each}
+                        </select>
+                    </div>
+                {/if}
             {:else if category === 'classroom'}
                 <div><select
                         id='formRoom'

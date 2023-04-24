@@ -48,6 +48,9 @@ export function augmentRsv(rsv, fbId=null, name=null) {
     if (rsv.buddies == null) {
         rsv.buddies = [];
     }
+    if (rsv.lanes == null) {
+        rsv.lanes = [];
+    }
     if (rsv.category === 'openwater') {
         if (rsv.owTime === 'AM') {
             startTime = Settings('openwaterAmStartTime', rsv.date);
