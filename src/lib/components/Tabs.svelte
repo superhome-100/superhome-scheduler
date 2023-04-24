@@ -3,6 +3,7 @@
 </script>
 
 <script>
+    import { swipe } from 'svelte-gestures';
 	import { setContext, onDestroy } from 'svelte';
 	import { writable } from 'svelte/store';
 
@@ -49,8 +50,22 @@
 		selectedTab,
 		selectedPanel
     });
+
+    function handleSwipe(event) {
+        if (event.detail.direction === 'left') {
+            let idx = (tabs.indexOf($selectedTab) + 1 ) % tabs.length;
+            $selectedTab = tabs[idx];
+        } else if (event.detail.direction === 'right') {
+            let idx = (tabs.length + tabs.indexOf($selectedTab) - 1) % tabs.length;
+            $selectedTab = tabs[idx];
+        }
+    }
 </script>
 
-<div class="text-center">
+<div 
+    class="text-center min-h-[500px]" 
+    use:swipe={{ timeframe: 300, minSwipeDistance: 10, touchAction: 'pan-y' }} 
+    on:swipe={handleSwipe}
+>
 	<slot></slot>
 </div>
