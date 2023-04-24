@@ -1,9 +1,10 @@
-import { startTimes } from './ReservationTimes.js';
+import { startTimes, inc } from './ReservationTimes.js';
 import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils.js';
 import { reservations, users } from './stores.js'
 import { Settings } from './settings.js';
 import { get } from 'svelte/store';
 import { assignRsvsToBuoys } from './autoAssignOpenWater.js';
+import { assignSpaces, patchSchedule } from './autoAssignPool.js';
 
 export function monthArr(year, month, reservations) {
     let daysInMonth = new Date(year, month+1, 0).getDate();
@@ -287,7 +288,7 @@ export function parseSettingsTbl(settingsTbl) {
         ) {
             v = v === 'true';
         }
-        if (['poolLanes', 'classroms'].includes(name)) {
+        if (['poolLanes', 'classrooms'].includes(name)) {
             v = v.split(';');
         }
 
@@ -344,4 +345,115 @@ export function categoryIsBookable(sub) {
     }
 }
 
+function assignClassrooms(rsvs, dateStr) {
+    let rooms = Settings('classrooms', dateStr);
+    let schedule = Array(rooms.length).fill().map(() => {
+        return [{
+            nSlots: 0,
+            cls: 'filler',
+            data: []
+        }];
+    });
+
+    let sTs = startTimes(dateStr, 'classroom');
+    let nTimes = sTs.length;
+    let minTime = timeStrToMin(sTs[0]);
+    let incT = inc(dateStr);
+    let timeIdx = (time) => (timeStrToMin(time)-minTime) / incT;
+
+    rsvs.sort((a,b) => a.room != null ? -1 : b.room != null ? 1 : 0);
+    rsvs.forEach(rsv => rsv.unassigned = rsv.room == null);
+
+    const lastBlk = (r) => schedule[r][schedule[r].length-1];
+    const continuingBlk = (blk, rsv) => blk.cls === 'rsv' && blk.data[0].id === rsv.id;
+    const newBlk = (blk, rsv, t) => rsv.unassigned
+        && (
+            (blk.cls === 'rsv' && blk.end === t)
+            || blk.cls === 'filler'
+        );
+
+    for (let t=0; t<nTimes; t++) {
+        let unassigned = Array(rooms.length).fill().map(()=>true);
+        for (let rsv of rsvs) {
+            let start = timeIdx(rsv.startTime);
+            let end = timeIdx(rsv.endTime);
+            if (start <= t && t < end) {
+                if (rsv.room) {
+                    // pre-assigned
+                    let r = rooms.indexOf(rsv.room)
+                    let curBlk = lastBlk(r);
+                    if (curBlk.cls == 'rsv') {
+                        curBlk.nSlots++;
+                    } else {
+                        schedule[r].push({
+                            nSlots: 1,
+                            cls: 'rsv',
+                            data: [rsv]
+                        });
+                    }
+                    unassigned[r] = false;
+                } else {
+                    // unassigned
+                    for (let r=0; r<rooms.length; r++) {
+                        let curBlk = lastBlk(r);
+                        if (continuingBlk(curBlk, rsv)) {
+                            curBlk.nSlots++;
+                            unassigned[r] = false;
+                            break;
+                        } else if (newBlk(curBlk, rsv, t)) {
+                            rsv.unassigned = false;
+                            schedule[r].push({
+                                start,
+                                end,
+                                nSlots: 1,
+                                cls: 'rsv',
+                                data: [rsv]
+                            });
+                            unassigned[r] = false;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        for (let r=0; r < unassigned.length; r++) {
+            if (unassigned[r]) {
+                let curBlk = lastBlk(r);
+                if (curBlk.cls == 'filler') {
+                    curBlk.nSlots++;
+                } else {
+                    schedule[r].push({
+                        nSlots: 1,
+                        cls: 'filler',
+                        data: []
+                    });
+                }
+            }
+        }
+    }
+    return {
+        status: 'success',
+        schedule
+    };
+}
+
+export function getDaySchedule(rsvs, datetime, category, softCapacity) {
+    let today = datetimeToLocalDateStr(datetime);
+    rsvs = rsvs.filter((v) =>
+        v.status != 'rejected'
+        && v.category === category
+        && v.date === today
+    );
+    let result;
+    if (category === 'pool') {
+        result = assignSpaces(rsvs, today);
+        if (result.status === 'success') {
+            result.schedule = patchSchedule(result.schedule);
+        }
+    } else if (category === 'classroom') {
+        result = assignClassrooms(rsvs, today);
+    }
+
+    return result;
+}
 

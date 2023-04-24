@@ -1,15 +1,14 @@
 <script>
     import { startTimes, endTimes } from '$lib/ReservationTimes.js';
     import { user, viewedDate, reservations } from '$lib/stores.js';
-    import { getDaySchedule } from '$lib/autoAssignPool.js';
     import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils.js';
     import { getContext } from 'svelte';
     import ViewForms from '$lib/components/ViewForms.svelte';
     import ModifyForm from '$lib/components/ModifyForm.svelte';
-    import { badgeColor } from '$lib/utils.js';
+    import { badgeColor, getDaySchedule } from '$lib/utils.js';
     import { Settings } from '$lib/settings.js';
 
-    export let nResource;
+    export let resources;
     export let resourceName;
     export let category;
 
@@ -25,7 +24,7 @@
         );
     };
 
-    $: assignmentAttempt = getDaySchedule($reservations, $viewedDate, category, nResource);
+    $: assignmentAttempt = getDaySchedule($reservations, $viewedDate, category, resources.length);
 
     const rowHeight = 3;
     const blkMgn = 0.1875; // dependent on tailwind margin styling
@@ -92,12 +91,12 @@
                 <div class='font-semibold' style='height: {rowHeight}rem'>{t}</div>
             {/each}
         </div>
-        {#each [...Array(nResource).keys()] as i}
+        {#each resources as resource, i}
             <div  
                 class="column text-center" 
-                style='width: {88/nResource}%'
+                style='width: {88/resources.length}%'
             >
-                <div class='font-semibold'>{resourceName} {i+1}</div>
+                <div class='font-semibold'>{resourceName} {resource}</div>
                 {#if assignmentAttempt.status === 'success'}
                     {#if assignmentAttempt.schedule[i]}
                         <div style='height: 0.5rem'/>
