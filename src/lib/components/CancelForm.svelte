@@ -80,7 +80,7 @@
             {#if rsv.owner}
                 {#each rsv.buddies as buddy, i}
                     <div>
-                        <label>Also cancel {$users[buddy].name}'s reservation
+                        <label class='dark:text-white'>Also cancel {$users[buddy].name}'s reservation
                             <input type='checkbox' name={'buddy-'+i}>
                         </label>
                     </div>
