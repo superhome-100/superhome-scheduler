@@ -215,12 +215,7 @@
 
         const record = data.record;
         if (record.status === 'active') {
-                    
-            $user = {
-                'name': record.name,
-                'facebookId': record.facebookId,
-                'id': record.id,
-            };
+            $user = record;
             loginState = 'in';
             refreshAppState();
             loadProfilePic();
