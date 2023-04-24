@@ -33,7 +33,7 @@ function sortByPriority(rsvs) {
         }
     }
     let preAssigned = [], unAssigned = [];
-    owners.forEach(rsv => rsv.lane == null ? unAssigned.push(rsv) : preAssigned.push(rsv));
+    owners.forEach(rsv => rsv.lanes.length == 0 ? unAssigned.push(rsv) : preAssigned.push(rsv));
     return { pre: sorted(preAssigned), un: sorted(unAssigned) };
 }
 
@@ -101,7 +101,7 @@ function rsvToBlock(rsv, minTime, inc, resourceNames) {
     let endTime = (timeStrToMin(rsv.endTime) - minTime) / inc;
     let width = nOccupants([rsv]) + rsv.buddies.length;
     let occ = Settings('maxOccupantsPerLane');
-    let startSpaces = rsv.lanes
+    let startSpaces = rsv.lanes.length > 0
             ? rsv.lanes.map(lane => occ*resourceNames.indexOf(lane))
             : null;
     return {

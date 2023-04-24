@@ -21,7 +21,14 @@
                 return true;
             }
             if (orig.category === 'pool') {
-                return orig.lane != data.get('lane');
+                if (orig.lanes[0] != data.get('lane1')) {
+                    return true;
+                }
+                if (data.has('lane2')) {
+                    return orig.lanes[1] != data.get('lane2');
+                } else {
+                    return false;
+                }
             } else if (orig.category === 'openwater') {
                 return orig.buoy != data.get('buoy');
             } else if (orig.category === 'classroom') {
@@ -33,6 +40,22 @@
             cancel();
             close();
             return;
+        }
+
+        if (data.has('lane2')) {
+            if (
+                (data.get('lane1') === 'undefined' && data.get('lane2') !== 'undefined')
+                || (data.get('lane1') !== 'undefined' && data.get('lane2') === 'undefined')
+            ) {
+                alert('Either both lanes must be assigned or both must be auto');
+                cancel();
+                return;
+            }
+            if (data.get('lane1') === data.get('lane2')) {
+                alert('Cannot assign same value for 1st and 2nd Lane');
+                cancel();
+                return;
+            }
         }
 
         close();

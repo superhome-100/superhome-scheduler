@@ -228,8 +228,14 @@ export async function adminUpdate(formData) {
     let rsv = {};
     let id = formData.get('id');
     rsv.status = formData.get('status');
-    if (formData.has('lane')) {
-        rsv.lane = formData.get('lane');
+    if (formData.has('lane1')) {
+        const convert = (v) => v === 'undefined' ? undefined : v;
+        if (convert(formData.get('lane1'))) {
+            rsv.lanes = [formData.get('lane1')];
+        }
+        if (convert(formData.get('lane2'))) {
+            rsv.lanes[1] = formData.get('lane2');
+        }
     } else if (formData.has('buoy')) {
         rsv.buoy = formData.get('buoy');
     } else if (formData.has('room')) {
