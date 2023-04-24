@@ -7,225 +7,250 @@ import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils.js';
 import { timeOverlap, nOccupants } from '$lib/utils.js';
 import { Settings } from '$lib/settings.js';
 
-function assignUpToSoftCapacity(rsvs, category, dateStr, softCapacity, sameResource) {
-    let schedule = Array(softCapacity).fill();
-    let incT = inc(dateStr);
-    let count = 0;
-    let maxOccupants = Settings('maxOccupantsPerLane', dateStr);
-    // assign courses first (put them at the end) to ensure they get their own lane
-    // then assign buddies next to ensure they are paired in the same lane
-    rsvs.sort((a,b) => a.resType === 'course'
-        ? 1 : b.resType === 'course'
-        ? -1 : a.buddies.length > b.buddies.length
-        ? 1 : b.buddies.length > a.buddies.length
-        ? -1 : timeStrToMin(a.startTime) > timeStrToMin(b.startTime)
-        ? 1 : -1
-    );
-    // helper hidden var for splitting courses into multiple lanes when necessary
-    for (let rsv of rsvs) {
-        if (rsv.resType === 'course') {
-            rsv.hiddenStudents = rsv.numStudents;
+// priority rules:
+//   1 pre-assigned rsvs
+//          1.1 pre-assigned courses
+//          1.2 pre-assigned buddies
+//          1.3 pre-assigned solo
+//   2 unassigned courses
+//   3 unassigned buddies
+//   4 unassigned solo
+const sorted = (rsvs) => rsvs.sort((a,b) => a.resType === 'course'
+    ? -1 : b.resType === 'course'
+    ? 1 : a.buddies.length > b.buddies.length
+    ? -1 : b.buddies.length > a.buddies.length
+    ? 1 : 0
+);
+
+function sortByPriority(rsvs) {
+    let owners = rsvs.filter(rsv => rsv.owner);
+    for (let owner of owners) {
+        owner.buddyRsvs = [];
+        for (let buddy of owner.buddies) {
+            let buddyRsv = rsvs.filter(rsv => rsv.user.id === buddy)[0];
+            owner.buddyRsvs.push(buddyRsv);
+
         }
     }
-    while (rsvs.length > 0 && count < softCapacity) {
-        let nextTime = timeStrToMin(startTimes(dateStr, category)[0]);
-        let thisR = [];
-        for (let j=rsvs.length-1; j >= 0; j--) {
-            let rsv = rsvs[j];
-            if (sameResource(count, rsv)) {
-                let start = timeStrToMin(rsv.startTime);
-                if (start >= nextTime) {
-                    if (start > nextTime) {
-                        thisR.push({
-                            start: nextTime,
-                            end: start,
-                            nSlots: (start - nextTime) / incT,
-                            cls: 'filler',
-                            data: [],
-                        });
-                    }
-                    nextTime = timeStrToMin(rsv.endTime);
-                    let nSlots = (nextTime - start) / incT;
-                    let block = {
-                        start,
-                        end: nextTime,
-                        nSlots,
-                        cls: 'rsv',
-                        data: [rsv],
-                        resType: rsv.resType
-                    };
-                    // split courses with >maxOccupants students into multiple lanes
-                    if (
-                        category === 'pool'
-                        && rsv.resType === 'course'
-                        && rsv.hiddenStudents > maxOccupants
-                    ) {
-                        rsv.hiddenStudents -= maxOccupants;
-                        j++;
-                    } else {
-                        rsvs.splice(j,1);
+    let preAssigned = [], unAssigned = [];
+    owners.forEach(rsv => rsv.lane == null ? unAssigned.push(rsv) : preAssigned.push(rsv));
+    return { pre: sorted(preAssigned), un: sorted(unAssigned) };
+}
 
-                        if (rsv.buddies.length > 0) {
-                            for (let i=0; i<rsvs.length; i++) {
-                                let cand = rsvs[i];
-                                if (rsv.buddies.includes(cand.user.id)) {
-                                    block.data.push(cand);
-                                    rsvs.splice(i,1);
-                                    j--;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    thisR.push(block);
+function getMinBreaksPath(spacesByTimes, width, startTime, endTime) {
+    let { path } = getMinBreaksPathRec(spacesByTimes, width, startTime, endTime, { breaks: 0, path: [] });
+    return path;
+}
+
+
+function getMinBreaksPathRec(spacesByTimes, width, curTime, endTime, pathObj) {
+    if (curTime === endTime) {
+        return pathObj;
+    }
+    let minBreaks = Infinity;
+    let bestPath = null;
+    const allNull = (start) => {
+        return [...Array(width).keys()].reduce((b, idx) => {
+            return b && spacesByTimes[start + idx][curTime] == null
+        }, true);
+    };
+    const sharedLane = (space) => {
+        if (width == 1) {
+            if (space % 2 == 0) {
+                return spacesByTimes[space+1][curTime] != null;
+            } else {
+                return spacesByTimes[space-1][curTime] != null;
+            }
+        } else {
+            return false;
+        }
+    };
+    // startSpace will be undefined if curTime == startTime
+    let startSpace = pathObj.path[pathObj.path.length-1];
+
+    for (let i=0; i <= spacesByTimes.length - width; i++) {
+        if (allNull(i)) {
+            let thisBreak = startSpace == null ? 0 : i == startSpace ? 0 : 1;
+            thisBreak += sharedLane(i) ? 1 : 0;
+            let thisPath = getMinBreaksPathRec(
+                spacesByTimes,
+                width,
+                curTime+1,
+                endTime,
+                { breaks: pathObj.breaks + thisBreak, path: [i] }
+            );
+            if (thisPath.path != null) {
+                if (thisPath.breaks < minBreaks) {
+                    minBreaks = thisPath.breaks;
+                    bestPath = thisPath;
                 }
             }
         }
+    }
+    if (bestPath) {
+        pathObj.breaks = bestPath.breaks;
+        pathObj.path = pathObj.path.concat(bestPath.path);
+    } else {
+        pathObj.path = null;
+    }
+    return pathObj;
+}
 
-        let end = timeStrToMin(endTimes(dateStr, category)[endTimes(dateStr, category).length-1]);
-        if (nextTime < end) {
-            thisR.push({
-                start: nextTime,
-                end: end,
-                nSlots: (end-nextTime) / incT,
-                cls: 'filler',
-                data: [],
-            });
+function rsvToBlock(rsv, minTime, inc, resourceNames) {
+    let startTime = (timeStrToMin(rsv.startTime) - minTime) / inc;
+    let endTime = (timeStrToMin(rsv.endTime) - minTime) / inc;
+    let width = nOccupants([rsv]) + rsv.buddies.length;
+    let occ = Settings('maxOccupantsPerLane');
+    let startSpaces = rsv.lanes
+            ? rsv.lanes.map(lane => occ*resourceNames.indexOf(lane))
+            : null;
+    return {
+        rsv,
+        startTime,
+        endTime,
+        width,
+        startSpaces,
+    };
+}
+
+function insertPreAssigned(spacesByTimes, blk) {
+    let width = blk.width / Settings('maxOccupantsPerLane');
+    for (let startSpace of blk.startSpaces) {
+        for (let i=startSpace; i < startSpace + width; i++) {
+            for (let j=blk.startTime; j < blk.endTime; j++) {
+                spacesByTimes[i][j] = blk.rsv;
+            }
         }
-        schedule[count] = thisR;
-        count++;
+    }
+}
+
+function insertUnAssigned(spacesByTimes, blk) {
+    let bestPath = getMinBreaksPath(spacesByTimes, blk.width, blk.startTime, blk.endTime);
+    if (bestPath) {
+        for (let time=blk.startTime; time < blk.endTime; time++) {
+            let space = bestPath[time-blk.startTime];
+            for (let i = space; i < space + blk.width; i++) {
+                spacesByTimes[i][time] = blk.rsv;
+            }
+        }
+    } else {
+        return {
+            status: 'error',
+            code: 'OUT_OF_SPACE'
+        }
+    }
+    return { status: 'success' }
+}
+
+function assignSpaces(rsvs, dateStr) {
+    let incT = inc(dateStr);
+    let sTs = startTimes(dateStr, 'pool');
+    let nTimes = sTs.length;
+    let minTime = timeStrToMin(sTs[0]);
+    let nSpaces = Settings('maxOccupantsPerLane') * Settings('poolLanes').length
+    let spacesByTimes = Array(nSpaces)
+        .fill()
+        .map(() => Array(nTimes).fill());
+
+    let { pre, un } = sortByPriority(rsvs);
+    let resourceNames = Settings('poolLanes', dateStr);
+
+    let result = {
+        status: 'success',
+        schedule: spacesByTimes
+    }
+    for (let rsv of pre) {
+        insertPreAssigned(spacesByTimes, rsvToBlock(rsv, minTime, incT, resourceNames));
+    }
+    for (let rsv of un) {
+        let thisResult = insertUnAssigned(spacesByTimes, rsvToBlock(rsv, minTime, incT, resourceNames));
+        if (thisResult.status === 'error') {
+            result.status = 'error'
+            result.code = thisResult.code;
+            result.rsv = rsv;
+        }
+    }
+    return result;
+}
+
+function dataAreDifferent(A, B) {
+    let idsA = new Set(A.map(rsv => rsv.id));
+    let idsB = new Set(B.map(rsv => rsv.id));
+    if (idsA.size != idsB.size) {
+        return true;
+    }
+    for (let id of idsA) {
+        if (!idsB.has(id)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function patchData(spaces) {
+    let data = [];
+    if (spaces[0] != null) {
+        data.push(spaces[0]);
+        if (spaces[0].buddies.length > 0) {
+            data.push(spaces[0].buddyRsvs[0]);
+        } else if (spaces[1] != null && spaces[1].id != spaces[0].id) {
+            data.push(spaces[1]);
+        }
+    } else if (spaces[1] != null) {
+        data.push(spaces[1]);
+    }
+    return data;
+}
+
+function patchSchedule(sByT) {
+    let schedule = Array(Settings('poolLanes').length).fill().map(()=> {
+        return [{
+            nSlots: 0,
+            cls: 'filler',
+            data: [],
+        }];
+    });
+    let laneWidth = Settings('maxOccupantsPerLane');
+    let nSlots = sByT[0].length;
+
+    for (let t=0; t<nSlots; t++) {
+        for (let lane=0; lane<schedule.length; lane++) {
+            let i = lane*laneWidth;
+            let data = patchData([sByT[i][t], sByT[i+1][t]]);
+            let cls = data.length == 0 ? 'filler' : 'rsv';
+            let curBlk = schedule[lane][schedule[lane].length-1];
+            if (curBlk.cls != cls) {
+                let blk = {
+                    nSlots: 1,
+                    cls,
+                    data
+                };
+                schedule[lane].push(blk);
+            } else if (cls === 'rsv') {
+                if (dataAreDifferent(data, curBlk.data)) {
+                    let blk = {
+                        nSlots: 1,
+                        cls,
+                        data
+                    };
+                    schedule[lane].push(blk)
+                } else {
+                    curBlk.nSlots += 1;
+                }
+            } else {
+                curBlk.nSlots += 1;
+            }
+        }
     }
     return schedule;
 }
 
-function assignOverflowCapacity(rsvs, schedule, dateStr, softCapacity, sameResource) {
-
-    const bestLane = (rsv) => {
-        let start = timeStrToMin(rsv.startTime);
-        let end = timeStrToMin(rsv.endTime);
-        for (let resource of schedule) {
-            let ideal = true;
-            for (let block of resource.filter(blk => blk.cls === 'rsv')) {
-                if (
-                    timeOverlap(start, end, block.start, block.end)
-                    && nOccupants(block.data) >= 2
-                ) {
-                    ideal = false;
-                    break;
-                };
-            }
-            if (ideal) { return resource; }
-        }
-        nextR = (nextR + 1) % softCapacity;
-        return schedule[nextR];
-    };
-
-    let incT = inc(dateStr);
-    let nextR = -1;
-    let nextRsv = true;
-    let start;
-    let attempts = 0;
-
-    while (rsvs.length > 0) {
-        let rsv = rsvs[0];
-        let end = timeStrToMin(rsv.endTime)
-
-        if (nextRsv) {
-            start = timeStrToMin(rsv.startTime);
-            nextRsv = false;
-        }
-
-        let resource = bestLane(rsv);
-
-        for (let j=0; j < resource.length; j++) {
-            let block = resource[j];
-            let blockClass = block.cls;
-            let nRsv = block.data.length;
-            if (block.resType != 'course'
-                && nRsv < 2    // in case buddy has already been paired
-                && sameResource(nextR, rsv)
-                && start >= block.start
-                && start < block.end
-            ) {
-                if (start > block.start) {
-                    // break off beginning of existing block into its own block
-                    let begBlock = {...block};
-                    begBlock.end = start;
-                    begBlock.nSlots = (start - block.start) / incT;
-                    begBlock.cls = blockClass;
-                    begBlock.data = [...block.data];
-                    resource.splice(j, 0, begBlock);
-                    j++;
-                }
-
-                block.start = start;
-                block.nSlots = (block.end - start) / incT;
-                block.cls = 'rsv';
-                block.data.push(rsv);
-
-                if (end <= block.end) {
-                    if (end < block.end) {
-                        // break off end of existing block into its own block
-                        let endBlock = {...block};
-                        endBlock.start = end;
-                        endBlock.nSlots = (block.end - end) / incT;
-                        endBlock.cls = blockClass;
-                        endBlock.data = endBlock.data.slice(0,nRsv);
-                        resource.splice(j+1, 0, endBlock);
-                        j++;
-
-                        block.end = end;
-                        block.nSlots = (end - block.start) / incT;
-                    }
-
-                    // rsv has now been fully added, remove from list
-                    rsvs.splice(0, 1);
-                    nextRsv = true;
-                    break;
-
-                } else {
-                    start = block.end;
-                }
-            }
-        }
-        if (!nextRsv) {
-            attempts += 1;
-        }
-        if (attempts == schedule.length) {
-            return {
-                status: 'error',
-                code: 'OUT_OF_RESOURCES',
-                schedule,
-            }
-        }
-    }
-    return {
-        status: 'success',
-        schedule,
-    }
-}
-
 export function getDaySchedule(rsvs, datetime, category, softCapacity) {
-
     let today = datetimeToLocalDateStr(datetime);
     rsvs = rsvs.filter((v) => v.status != 'rejected' && v.category === category && v.date === today);
-    rsvs.sort((a,b) => timeStrToMin(a.startTime) < timeStrToMin(b.startTime) ? 1 : -1);
-
-    let sameResource;
-    if (category === 'pool') {
-        sameResource = (idx, rsv) => rsv.pool_lane == null || rsv.pool_lane == idx+1;
-    } else if (category === 'classroom') {
-        sameResource = (idx, rsv) => rsv.room == null || rsv.room == (2-idx)+1;
+    let result = assignSpaces(rsvs, today);
+    if (result.status === 'success') {
+        result.schedule = patchSchedule(result.schedule);
     }
-
-    let schedule = assignUpToSoftCapacity(rsvs, category, today, softCapacity, sameResource);
-
-    if (category === 'classroom') {
-        // we prioritize assigning to classroom 3, then 2, then 1 if necessary
-        schedule.reverse();
-    }
-
-    let result = assignOverflowCapacity(rsvs, schedule, today, softCapacity, sameResource);
-
     return result;
 }

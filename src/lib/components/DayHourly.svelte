@@ -101,7 +101,7 @@
                 {#if assignmentAttempt.status === 'success'}
                     {#if assignmentAttempt.schedule[i]}
                         <div style='height: 0.5rem'/>
-                        {#each assignmentAttempt.schedule[i] as { nSlots, cls, tag, data }}
+                        {#each assignmentAttempt.schedule[i] as { nSlots, cls, data }}
                             {#if cls === 'rsv'}
                                 <div class='indicator w-full'>
                                     <span class='rsv-indicator {badgeColor(data)}'/>
