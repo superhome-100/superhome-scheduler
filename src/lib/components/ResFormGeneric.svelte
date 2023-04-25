@@ -80,7 +80,7 @@
         buddyFields = [...buddyFields];
     }
     
-    const focus = (el) => el.focus();
+    const focus = (el) => rsv == null ? el.focus() : null;
 
     $: if (!currentBF.name) {
         currentBF.matches = [];
