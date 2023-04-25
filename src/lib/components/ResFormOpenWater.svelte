@@ -59,9 +59,9 @@
                 <select
                     id='formBuoy'
                     name='buoy'
-                    value={rsv.buoy ? rsv.buoy : undefined}
+                    value={rsv.buoy}
                 >
-                    <option value={undefined}>Auto</option>
+                    <option value={null}>Auto</option>
                     {#each $buoys as buoy}
                         <option value={buoy.name}>{buoy.name}</option>
                     {/each}
