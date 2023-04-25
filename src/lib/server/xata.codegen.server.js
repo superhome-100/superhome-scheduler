@@ -32,6 +32,7 @@ const tables = [
       { name: "largeBuoy", type: "bool" },
       { name: "room", type: "string" },
       { name: "lanes", type: "multiple" },
+      { name: "O2OnBuoy", type: "bool" },
     ],
   },
   {

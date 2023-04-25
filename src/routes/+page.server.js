@@ -13,8 +13,13 @@ export const actions = {
     },
     updateReservation: async ({ request }) => {
         const data = await request.formData();
-        const record = await updateReservation(data);
-        return record;
+        try {
+            const record = await updateReservation(data);
+            return record;
+        } catch (error) {
+            console.error(error)
+            return error;
+        }
     },
     cancelReservation: async ({ request }) => {
         const data = await request.formData();
