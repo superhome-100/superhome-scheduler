@@ -14,24 +14,23 @@
     const { close } = getContext('simple-modal');
 
     const adminUpdate = async ({ form, data, action, cancel }) => {
-        let orig = rsvs.filter(rsv => rsv.id === data.get('id'))[0];
         const resUpdated = () => {
-            if (orig.status != data.get('status')) {
+            if (rsv.status != data.get('status')) {
                 return true;
             }
-            if (orig.category === 'pool') {
-                if (orig.lanes[0] != data.get('lane1')) {
+            if (rsv.category === 'pool') {
+                if (rsv.lanes[0] != data.get('lane1')) {
                     return true;
                 }
                 if (data.has('lane2')) {
-                    return orig.lanes[1] != data.get('lane2');
+                    return rsv.lanes[1] != data.get('lane2');
                 } else {
                     return false;
                 }
-            } else if (orig.category === 'openwater') {
-                return orig.buoy != data.get('buoy');
-            } else if (orig.category === 'classroom') {
-                return orig.room != data.get('room');
+            } else if (rsv.category === 'openwater') {
+                return rsv.buoy != data.get('buoy');
+            } else if (rsv.category === 'classroom') {
+                return rsv.room != data.get('room');
             }
         };
 
@@ -43,14 +42,14 @@
 
         if (data.has('lane2')) {
             if (
-                (data.get('lane1') === 'undefined' && data.get('lane2') !== 'undefined')
-                || (data.get('lane1') !== 'undefined' && data.get('lane2') === 'undefined')
+                (data.get('lane1') === 'null' && data.get('lane2') !== 'null')
+                || (data.get('lane1') !== 'null' && data.get('lane2') === 'null')
             ) {
                 alert('Either both lanes must be assigned or both must be auto');
                 cancel();
                 return;
             }
-            if (data.get('lane1') === data.get('lane2')) {
+            if (data.get('lane1') !== 'null' && data.get('lane1') === data.get('lane2')) {
                 alert('Cannot assign same value for 1st and 2nd Lane');
                 cancel();
                 return;
