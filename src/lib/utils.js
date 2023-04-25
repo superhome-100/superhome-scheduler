@@ -79,7 +79,7 @@ export function convertReservationTypes(data) {
         data.maxDepth = parseInt(data.maxDepth);
     }
     if (data.category === 'openwater') {
-        for (let opt of ['pulley', 'extraBottomWeight', 'bottomPlate', 'largeBuoy']) {
+        for (let opt of ['O2OnBuoy', 'pulley', 'extraBottomWeight', 'bottomPlate', 'largeBuoy']) {
             data[opt] = data[opt] === 'on';
         }
     }

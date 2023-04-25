@@ -27,6 +27,7 @@
     let extraBottomWeight = rsv == null ? false : rsv.extraBottomWeight;
     let bottomPlate = rsv == null ? false : rsv.bottomPlate;
     let largeBuoy = rsv == null ? false : rsv.largeBuoy;
+    let o2OnBuoy = rsv == null ? false : rsv.O2OnBuoy;
 
     function checkSubmit() {
         $canSubmit = maxDepth > 0;
@@ -113,10 +114,11 @@
             ><span class='ml-1 text-sm dark:text-white'>meters</span>
         </div>
     </div>
-    <div class='[&>span]:whitespace-nowrap [&>span]:ml-auto [&>span]:xs:mr-4 [&>span]:mr-2 [&>span]:text-sm [&>span]:dark:text-white text-center block-inline' slot='categoryOptionals'>
-        <span>
-            <label for='formPulley'>Pulley</label>
-            <input type='hidden' name='pulley' value={pulley ? 'on' : 'off'}>
+    <div class='[&>div]:whitespace-nowrap [&>div]:ml-[20%] [&>div]:sm:ml-[30%] [&>div]:xs:mr-4 [&>div]:mr-2 [&>div]:text-sm [&>div]:dark:text-white text-left block-inline' slot='categoryOptionals'>
+        <div>
+            {#if disabled}
+                <input type='hidden' name='pulley' value={pulley ? 'on': 'off'}>
+            {/if}
             <input 
                 type='checkbox' 
                 id='formPulley' 
@@ -125,10 +127,12 @@
                 {disabled}
                 tabindex='5'
             >
-        </span>
-        <span>
-            <label for='formBottomWeight'>Extra Bottom Weight</label>
-            <input type='hidden' name='extraBottomWeight' value={extraBottomWeight ? 'on' : 'off'}>
+            <label for='formPulley'>pulley</label>
+        </div>
+        <div>
+            {#if disabled}
+                <input type='hidden' name='extraBottomWeight' value={extraBottomWeight ? 'on' : 'off'}>
+            {/if}
             <input 
                 type='checkbox' 
                 id='formBottomWeight' 
@@ -137,10 +141,12 @@
                 {disabled} 
                 tabindex='5'
             >
-        </span>
-        <span>
-            <label for='formBottomPlate'>Bottom Plate</label>
-            <input type='hidden' name='bottomPlate' value={bottomPlate ? 'on' : 'off'}>
+            <label for='formBottomWeight'>extra bottom weight</label>
+        </div>
+        <div>
+            {#if disabled}
+                <input type='hidden' name='bottomPlate' value={bottomPlate ? 'on' : 'off'}>
+            {/if}
             <input 
                 type='checkbox' 
                 id='formBottomPlate' 
@@ -149,10 +155,12 @@
                 {disabled}
                 tabindex='5'
             >
-        </span>
-        <span>
-            <label for='formLargeBuoy'>Large Buoy</label>
-            <input type='hidden' name='largeBuoy' value={largeBuoy ? 'on' : 'off'}>
+            <label for='formBottomPlate'>bottom plate</label>
+        </div>
+        <div>
+            {#if disabled}
+                <input type='hidden' name='largeBuoy' value={largeBuoy ? 'on' : 'off'}>
+            {/if}
             <input 
                 type='checkbox' 
                 id='formLargeBuoy' 
@@ -161,7 +169,22 @@
                 {disabled}
                 tabindex='5'
             >
-        </span>
+            <label for='formLargeBuoy'>large buoy</label> 
+        </div>
+        <div>
+            {#if disabled}
+                <input type='hidden' name='O2OnBuoy' value={o2OnBuoy ? 'on' : 'off'}>
+            {/if}
+            <input 
+                type='checkbox' 
+                id='formO2OnBuoy' 
+                name='O2OnBuoy'
+                checked={o2OnBuoy}
+                {disabled}
+                tabindex='5'
+            >
+            <label for='formO2OnBuoy'>O2 on buoy</label>
+        </div>
     </div>
 </ResFormGeneric>
 

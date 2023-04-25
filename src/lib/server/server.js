@@ -143,7 +143,6 @@ export async function submitReservation(formData) {
 export async function updateReservation(formData) {
     let {oldBuddies, ...sub} = convertReservationTypes(Object.fromEntries(formData));
     sub.status = sub.category === 'classroom' ? 'confirmed' : 'pending';
-
     oldBuddies = oldBuddies ? oldBuddies : [];
 
     let newBuddies = sub.buddies.filter(id => !oldBuddies.includes(id));

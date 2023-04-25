@@ -34,7 +34,7 @@
             
             let a = original[field];
             let b = submitted[field];
-
+            
             if (bothEmpty(a,b)) { continue };
 
             if (field === 'buddies') {
