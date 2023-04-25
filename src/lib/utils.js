@@ -82,11 +82,8 @@ export function convertReservationTypes(data) {
         for (let opt of ['O2OnBuoy', 'extraBottomWeight', 'bottomPlate', 'largeBuoy']) {
             data[opt] = data[opt] === 'on';
         }
-        if (data.resType === 'course') {
-            data.pulley = data.pulley === undefined ? null : data.pulley === 'on';
-        } else if (data.resType === 'autonomous') {
-            data.pulley = data.pulley === 'on';
-        }
+        // preserve whether or not user indicated a pulley preference
+        data.pulley = data.pulley === undefined ? null : data.pulley === 'on';
     }
     if ('numStudents' in data) {
         data.numStudents = parseInt(data.numStudents);
