@@ -4,8 +4,7 @@
     import { displayTag } from '$lib/utils.js';
     import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
     import { getContext } from 'svelte';
-    import ViewForms from '$lib/components/ViewForms.svelte';
-    import ModifyForm from '$lib/components/ModifyForm.svelte';
+    import RsvTabs from '$lib/components/RsvTabs.svelte';
     import { badgeColor } from '$lib/utils.js';
     import { Settings } from '$lib/settings.js';
     
@@ -13,7 +12,7 @@
 
     const showViewRsvs= (rsvs) => {
         open(
-            ViewForms,
+            RsvTabs,
             {
                 rsvs, 
                 hasForm: true,
