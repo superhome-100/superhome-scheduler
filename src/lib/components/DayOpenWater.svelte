@@ -92,14 +92,15 @@
                 {#each $buoys as { name }}
                     {#if schedule[cur][name] != undefined}
                         <div 
-                            class='rsv cursor-pointer openwater text-sm mb-1 mt-0.5'
+                            class='rsv whitespace-nowrap overflow-hidden cursor-pointer openwater text-sm mb-1 mt-0.5'
                             style='height: {rowHeights[name].buoy}rem'
                             on:click={showViewRsvs(schedule[cur][name])}
                         >
                             {#each schedule[cur][name] as rsv, i}
-                                <div class='block indicator w-full'>
-                                    <span class='rsv-indicator mr-0 {badgeColor([rsv])}'/>
+                                <div class='block indicator w-full px-2'>
+                                    <span class='rsv-indicator {badgeColor([rsv])}'/>
                                     <div 
+                                        class='overflow-hidden'
                                         style='margin: {rowHeights[name].margins[i]}'
                                     >{displayTag(rsv)}</div>
                                 </div>

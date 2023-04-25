@@ -247,11 +247,7 @@ function getGroupOpts(grp) {
 }
 
 function countMatches(buoy, opts) {
-    let count = 0;
-    for (let opt of buoyOpts) {
-        count = buoy[opt] && opts[opt] ? count + 1 : count;
-    }
-    return count;
+    return buoyOpts.reduce((c, opt) => buoy[opt] && opts[opt] ? c+1 : c, 0);
 }
 
 function assignBuoyGroupsToBuoys(buoys, grps) {
@@ -278,37 +274,36 @@ function assignBuoyGroupsToBuoys(buoys, grps) {
         }
     }
 
-    buoys.sort((a,b) => a.maxDepth > b.maxDepth ? 1 : -1);
-    grps.sort((a,b) => a[0].maxDepth < b[0].maxDepth ? 1 : -1);
+    buoys.sort((a,b) => a.maxDepth < b.maxDepth ? 1 : -1);
+    grps.sort((a,b) => a[0].maxDepth > b[0].maxDepth ? 1 : -1);
     // iterate from deepest to shallowest
     while (grps.length > 0) {
         const grp = grps[grps.length-1];
-        let candidates = [];
-        for (let i=buoys.length-1; i >= 0; i--) {
-            const buoy = buoys[i];
-            if (buoy.maxDepth >= grp[0].maxDepth) {
-                candidates.push({buoy, idx: i});
-            }
+        const checkNoPulley = grp[0].resType === 'course' && grp[0].pulley == false;
+        let candidates = buoys
+            .map((buoy, idx) => { return { buoy, idx }})
+            .filter(cand => cand.buoy.maxDepth >= grp[0].maxDepth
+                && ((checkNoPulley && !cand.buoy.pulley)
+                    || !checkNoPulley));
+
+        if (candidates.length == 0) {
+            candidates = buoys
+                .map((buoy, idx) => { return { buoy, idx }})
+                .filter(cand => cand.buoy.maxDepth >= grp[0].maxDepth);
         }
 
         if (candidates.length > 0) {
             // first find buoys with most option matches
-            let score = -1;
             let opts = getGroupOpts(grp);
-            for (let cand of candidates) {
-                let count = countMatches(cand.buoy, opts);
-                if (count > score) {
-                    score = count;
-                }
-            }
+            let optScore = candidates.reduce((c, cand) => Math.max(countMatches(cand.buoy, opts), c), 0);
+            candidates = candidates.filter(cand => countMatches(cand.buoy, opts) == optScore);
             // then select the one among these buoys with closest maxDepth
-            candidates = candidates.filter(cand => countMatches(cand.buoy, opts) == score);
-            score = Infinity;
+            let depthScore = Infinity;
             let best;
             for (let cand of candidates) {
                 let dist = cand.buoy.maxDepth - grp[0].maxDepth;
-                if (dist < score) {
-                    score = dist;
+                if (dist < depthScore) {
+                    depthScore = dist;
                     best = cand;
                 }
             }

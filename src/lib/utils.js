@@ -79,8 +79,13 @@ export function convertReservationTypes(data) {
         data.maxDepth = parseInt(data.maxDepth);
     }
     if (data.category === 'openwater') {
-        for (let opt of ['O2OnBuoy', 'pulley', 'extraBottomWeight', 'bottomPlate', 'largeBuoy']) {
+        for (let opt of ['O2OnBuoy', 'extraBottomWeight', 'bottomPlate', 'largeBuoy']) {
             data[opt] = data[opt] === 'on';
+        }
+        if (data.resType === 'course') {
+            data.pulley = data.pulley === undefined ? null : data.pulley === 'on';
+        } else if (data.resType === 'autonomous') {
+            data.pulley = data.pulley === 'on';
         }
     }
     if ('numStudents' in data) {

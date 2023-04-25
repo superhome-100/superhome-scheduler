@@ -23,7 +23,7 @@
     let owTime = rsv == null ? 'AM' : rsv.owTime;
     let comments = rsv == null ? null : rsv.comments;
     let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
-    let pulley = rsv == null ? false : rsv.pulley;
+    let pulley = rsv == null ? null : rsv.pulley;
     let extraBottomWeight = rsv == null ? false : rsv.extraBottomWeight;
     let bottomPlate = rsv == null ? false : rsv.bottomPlate;
     let largeBuoy = rsv == null ? false : rsv.largeBuoy;
@@ -116,18 +116,42 @@
     </div>
     <div class='[&>div]:whitespace-nowrap [&>div]:ml-[20%] [&>div]:sm:ml-[30%] [&>div]:xs:mr-4 [&>div]:mr-2 [&>div]:text-sm [&>div]:dark:text-white text-left block-inline' slot='categoryOptionals'>
         <div>
-            {#if disabled}
-                <input type='hidden' name='pulley' value={pulley ? 'on': 'off'}>
+            {#if autoOrCourse === 'autonomous'}
+                {#if disabled}
+                    <input type='hidden' name='pulley' value={pulley ? 'on': 'off'}>
+                {/if}
+                <input 
+                    type='checkbox' 
+                    id='formPulley' 
+                    name='pulley' 
+                    checked={pulley}
+                    {disabled}
+                    tabindex='5'
+                >
+                <label for='formPulley'>pulley</label>
+            {:else if autoOrCourse === 'course'}
+                {#if disabled}
+                    <input type='hidden' name='pulley' value={pulley == null ? null : pulley ? 'on' : 'off'}>
+                {/if}
+                <input
+                    type='radio'
+                    id='formPulley'
+                    name='pulley'
+                    value='on'
+                    checked={pulley}
+                    {disabled}
+                >
+                <label for='formPulley'>pulley</label>
+                <input
+                    type='radio'
+                    id='formNoPulley'
+                    name='pulley'
+                    value='off'
+                    checked={pulley == false}
+                    {disabled}
+                >
+                <label for='formNoPulley'>no pulley</label>
             {/if}
-            <input 
-                type='checkbox' 
-                id='formPulley' 
-                name='pulley' 
-                checked={pulley}
-                {disabled}
-                tabindex='5'
-            >
-            <label for='formPulley'>pulley</label>
         </div>
         <div>
             {#if disabled}
