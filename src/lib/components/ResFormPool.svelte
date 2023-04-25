@@ -76,9 +76,9 @@
                 <div><select
                         id='formLane1'
                         name='lane1'
-                        value={rsv.lanes[0]}
+                        value={rsv.lanes[0] ? rsv.lanes[0] : null}
                     >
-                        <option value={undefined}>Auto</option>
+                        <option value={null}>Auto</option>
                         {#each lanes() as lane}
                             <option value={lane}>{lane}</option>
                         {/each}
@@ -88,9 +88,9 @@
                     <div><select
                         id='formLane2'
                         name='lane2'
-                        value={rsv.lanes[1]}
+                        value={rsv.lanes[1] ? rsv.lanes[1] : null}
                         >
-                            <option value={undefined}>Auto</option>
+                            <option value={null}>Auto</option>
                             {#each lanes() as lane}
                                 <option value={lane}>{lane}</option>
                             {/each}
@@ -101,9 +101,9 @@
                 <div><select
                         id='formRoom'
                         name='room'
-                        value={rsv.room ? rsv.room : undefined}
+                        value={rsv.room}
                     >
-                        <option value={undefined}>Auto</option>
+                        <option value={null}>Auto</option>
                         {#each rooms() as room}
                             <option value={room}>{room}</option>
                         {/each}
