@@ -102,13 +102,13 @@
                         <div style='height: 0.5rem'/>
                         {#each assignmentAttempt.schedule[i] as { nSlots, cls, data }}
                             {#if cls === 'rsv'}
-                                <div class='indicator w-full'>
-                                    <span class='rsv-indicator {badgeColor(data)}'/>
-                                    <div 
-                                        class='{cls} {category} text-sm cursor-pointer hover:font-semibold' 
-                                        style="height: {rowHeight*(nSlots/slotDiv) - (cls === 'rsv' ? blkMgn : 0)}rem"
-                                        on:click={cls === 'rsv' ? showViewRsvs(data) : ()=>{}}
-                                    >
+                                <div 
+                                    class='{cls} {category} text-sm cursor-pointer hover:font-semibold' 
+                                    style="height: {rowHeight*(nSlots/slotDiv) - (cls === 'rsv' ? blkMgn : 0)}rem"
+                                    on:click={cls === 'rsv' ? showViewRsvs(data) : ()=>{}}
+                                >
+                                    <div class='block indicator w-full'>
+                                        <span class='rsv-indicator {badgeColor(data)}'/>
                                         {#each formatTag(data, nSlots) as line}
                                             <span class='mx-0.5 inline-block'>{line}</span>
                                         {/each}

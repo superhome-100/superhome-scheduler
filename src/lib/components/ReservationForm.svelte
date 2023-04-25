@@ -27,10 +27,10 @@
     const { close } = getContext('simple-modal');
 
     const submitReservation = async ({ form, data, action, cancel }) => {
-        
+
         updateReservationFormData(data);
         let submitted = convertReservationTypes(Object.fromEntries(data));
-
+        
         if (!Settings('openForBusiness', submitted.date)) {
             alert('We are closed on this date; please choose a different date');
             cancel();

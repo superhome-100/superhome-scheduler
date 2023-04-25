@@ -68,7 +68,7 @@
     }
 
     .rsv-indicator {
-        @apply m-0 right-3 top-2 indicator-item badge h-2 w-2 p-0 border-transparent;
+        @apply m-0 right-0 top-2 indicator-item badge h-2 w-2 p-0 border-transparent;
     }
 
     .form-label {
@@ -79,15 +79,15 @@
         @apply text-center text-lg xs:text-2xl font-semibold mb-4 mt-2 dark:text-white; 
     }
 
-    input[type=date], input[type=text], input[type=number], input[type=checkbox], select, option, textarea {
+    input[type=radio], input[type=date], input[type=text], input[type=number], input[type=checkbox], select, option, textarea {
         @apply align-middle ps-0.5 pe-0 py-0 ml-1 xs:ml-2 mb-0.5 text-xl text-black dark:text-white rounded bg-white dark:bg-root-bg-dark disabled:text-gray-500 dark:disabled:text-gray-300 dark:disabled:bg-gray-500;
     }
 
-    input[type=date], input[type=text], input[type=number], input[type=checkbox], select, option {
+    input[type=radio], input[type=date], input[type=text], input[type=number], input[type=checkbox], select, option {
         @apply h-8;
     }
 
-    input[type=checkbox] {
+    input[type=radio], input[type=checkbox] {
         @apply dark:checked:bg-gray-800 focus:ring-0 w-8;
     }
 
