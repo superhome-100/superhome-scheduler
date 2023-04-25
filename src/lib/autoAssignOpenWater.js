@@ -128,8 +128,22 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
                 if (Bg.length == 2) {
                     Bg.push(rsv);
                 } else {
-                    const buoy1 = Bg.slice(0,2);
-                    const buoy2 = [Bg[2], rsv];
+                    let buoy1, buoy2;
+                    // try not to split up pairs of buddies
+                    if (Bg.filter(rsv=>rsv.buddies.length==1).length > 0) {
+                        for (let j=0; j<Bg.length; i++) {
+                            if (Bg[j].buddies.length == 0) {
+                                let buddy = Bg.splice(j,1)[0];
+                                buoy1 = Bg;
+                                buoy2 = [buddy, rsv];
+                                break;
+                            }
+                        }
+                    } else {
+                        // just split off the top two divers
+                        buoy1 = Bg.slice(0,2);
+                        buoy2 = [Bg[2], rsv];
+                    }
                     buoyGrps.splice(i,1);
                     buoyGrps.push(buoy1);
                     buoyGrps.push(buoy2);
