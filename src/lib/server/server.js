@@ -170,7 +170,8 @@ export async function updateReservation(formData) {
         let existing;
         let { user, buddies, id, ...common } = sub;
         if (oldBuddies.length > 0) {
-            existing = await getBuddyReservations(sub, oldBuddies);
+            let orig = await xata.db.Reservations.read(id);
+            existing = await getBuddyReservations(orig, oldBuddies);
         }
 
         for (let bId of buddySet) {
