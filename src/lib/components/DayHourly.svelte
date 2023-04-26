@@ -57,8 +57,8 @@
     const formatTag = (rsvs, nSlots) => {
         let names = rsvs.map((rsv) => {
             return rsv.resType === 'course' 
-                ? rsv.user.name + ' +' + rsv.numStudents 
-                : rsv.user.name
+                ? rsv.user.nickname + ' +' + rsv.numStudents 
+                : rsv.user.nickname
         });
         let fmt = [];
         while (names.length > 0 && fmt.length < nSlots) {
