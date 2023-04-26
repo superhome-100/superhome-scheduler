@@ -31,7 +31,7 @@
 
 </script>
 
-<div class='text-center mb-2'>
+<div class='text-center dark:text-white mb-2'>
     Set your display name
 </div>
 <form
