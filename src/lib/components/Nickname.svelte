@@ -31,14 +31,14 @@
 
 </script>
 
-<div class='text-center'>
+<div class='text-center mb-2'>
     Set your display name
 </div>
 <form
     method='POST'
     action='/?/nickname'
     use:enhance={updateNickname}
-    class='text-center'
+    class='text-center mb-2'
 >
     <input type='hidden' name='id' value={$user.id}>
     <input
