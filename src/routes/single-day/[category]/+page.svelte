@@ -74,7 +74,7 @@
         if (category === 'pool') {
             return 'lane';
         } else if (category === 'classroom') {
-            return 'room';
+            return 'classroom';
         }
     };
 
