@@ -27,7 +27,7 @@ export async function getSettings() {
 
 export async function getSession(id) {
     let records = await xata.db.Sessions
-        .select(['*', 'user.privileges', 'user.facebookId', 'user.name'])
+        .select(['*', 'user.privileges', 'user.facebookId', 'user.name', 'user.nickname'])
         .filter({id: id})
         .getMany();
     return records[0];
@@ -78,8 +78,14 @@ export async function addUser(userId, userName) {
     const record = await xata.db.Users.create({
         "facebookId": userId,
         "name": userName,
+        "nickname": userName,
         "status": "active"
     });
+    return record;
+}
+
+export async function updateNickname(userId, nickname) {
+    const record = await xata.db.Users.update(userId, {nickname});
     return record;
 }
 
