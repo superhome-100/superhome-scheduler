@@ -2,10 +2,11 @@
     import { enhance } from '$app/forms';
     import { user } from '$lib/stores.js';
     import { toast, Toaster } from 'svelte-french-toast'
+    import { getContext } from 'svelte';
 
-    function submitOnEnter(e) {
+    function removeFocus(e) {
         if (e.keyCode == 13) {
-            this.form.submit();
+            this.blur();
         }
     }
 
@@ -26,20 +27,23 @@
 
 </script>
 
+<div class='text-center'>
+    Set your display name
+</div>
 <form
     method='POST'
     action='/?/nickname'
-    class='pl-4'
     use:enhance={updateNickname}
+    class='text-center'
 >
     <input type='hidden' name='id' value={$user.id}>
     <input
         type='text'
-        class='w-44 text-xs'
+        class='text-center w-44 text-xs'
         name='nickname'
         placeholder={$user.nickname}
         value={$user.nickname}
-        on:keydown={submitOnEnter}
+        on:keypress={removeFocus}
     >
 </form>
 

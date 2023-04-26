@@ -241,7 +241,7 @@ export function updateReservationFormData(formData) {
 }
 
 export const displayTag = (rsv) => {
-    let tag = rsv.user.name;
+    let tag = rsv.user.nickname;
     if (rsv.resType === 'course') {
         tag += ' +' + rsv.numStudents;
     }
