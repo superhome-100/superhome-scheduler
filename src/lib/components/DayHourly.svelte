@@ -29,8 +29,8 @@
     const blkMgn = 0.1875; // dependent on tailwind margin styling
 
     const slotsPerHr = (date, category) => {
-        let st = startTimes(date, category);
-        let et = endTimes(date, category);
+        let st = startTimes(Settings, date, category);
+        let et = endTimes(Settings, date, category);
         let beg = st[0];
         let end = et[et.length-1];
         let totalMin = (timeStrToMin(end) - timeStrToMin(beg)) 
@@ -42,8 +42,8 @@
     
     const displayTimes = (date, category) => {
         let dateStr = datetimeToLocalDateStr(date);
-        let st = startTimes(dateStr, category);
-        let et = endTimes(dateStr, category);
+        let st = startTimes(Settings, dateStr, category);
+        let et = endTimes(Settings, dateStr, category);
         let hrs = [];
         for (let i=0; i<st.length; i++) {
             if (i % slotDiv == 0) {
@@ -77,7 +77,7 @@
 
 </script>
 
-{#if Settings('openForBusiness', datetimeToLocalDateStr($viewedDate)) === false}
+{#if Settings.get('openForBusiness', datetimeToLocalDateStr($viewedDate)) === false}
     <div class='font-semibold text-3xl text-center'>Closed</div>
 {:else if assignmentAttempt.status === 'error'}
     <div class='font-semibold text-red-600 text-xl text-center mt-4'>Error assigning reservations!</div>

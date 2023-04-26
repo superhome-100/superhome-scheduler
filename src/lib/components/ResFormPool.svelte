@@ -5,8 +5,8 @@
     import { canSubmit, user } from '$lib/stores.js';
     import { Settings } from '$lib/settings.js';
 
-    const lanes = () => Settings('poolLanes');
-    const rooms = () => Settings('classrooms');
+    const lanes = () => Settings.get('poolLanes');
+    const rooms = () => Settings.get('classrooms');
 
     export let rsv = null;
     export let category = 'pool';
@@ -26,13 +26,13 @@
         : rsv.date;
 
     const getStartTimes = (date, category) => {
-        let startTs = startTimes(date, category);
+        let startTs = startTimes(Settings, date, category);
         let today = new Date();
         if (!disabled && date === datetimeToLocalDateStr(today)) {
             let now = minuteOfDay(today);
             startTs = startTs.filter((time) => timeStrToMin(time) > now);
             if (startTs.length == 0) {
-                startTs = startTimes(date, category);
+                startTs = startTimes(Settings, date, category);
             }
         }
         return startTs;
@@ -52,7 +52,7 @@
     <div class='[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5' slot="categoryLabels">
         {#if adminView()}
             {#if category === 'pool'}
-                {#if rsv.resType === 'course' && rsv.numStudents > Settings('maxOccupantsPerLane')}
+                {#if rsv.resType === 'course' && rsv.numStudents > Settings.get('maxOccupantsPerLane')}
                     <div><label for='formLane1'>1st Lane</label></div>
                     <div><label for='formLane2'>2nd Lane</label></div>
                 {:else}
@@ -84,7 +84,7 @@
                         {/each}
                     </select>
                 </div>
-                {#if rsv.resType === 'course' && rsv.numStudents > Settings('maxOccupantsPerLane')}
+                {#if rsv.resType === 'course' && rsv.numStudents > Settings.get('maxOccupantsPerLane')}
                     <div><select
                         id='formLane2'
                         name='lane2'
@@ -122,7 +122,7 @@
             {/each}
         </select></div>
         <div><select id="formEnd" {disabled} name="endTime" value={chosenEnd}>
-            {#each endTimes(date, category) as t}
+            {#each endTimes(Settings, date, category) as t}
                 {#if timeStrToMin(chosenStart) < timeStrToMin(t)}
                     <option value={t}>{t}</option>
                 {/if}

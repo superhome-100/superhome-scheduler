@@ -1,8 +1,7 @@
 import { settings } from './stores.js';
 import { get } from 'svelte/store';
 
-export const Settings = (name, date) => {
-    let setting = get(settings)[name];
+export const getOn = (setting, date) => {
     let val = setting.default;
     for (let entry of setting.entries) {
         if (entry.startDate <= date && date <= entry.endDate) {
@@ -11,5 +10,12 @@ export const Settings = (name, date) => {
         }
     }
     return val;
+}
+
+export const Settings = {
+    get: (name, date) => {
+        let setting = get(settings)[name];
+        return getOn(setting, date);
+    },
 };
 
