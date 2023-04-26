@@ -12,6 +12,12 @@ export async function GET({ cookies })  {
                 cookies.delete('sessionid', { path: '/' });
             } else {
                 user = record.user;
+                if (user.nickname == null) {
+                    user = {
+                        ...user,
+                        nickname: user.name
+                    };
+                }
             }
         }
         return json({ status: 'success', user });

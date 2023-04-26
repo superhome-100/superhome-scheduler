@@ -47,6 +47,7 @@ const tables = [
       },
       { name: "facebookId", type: "string", unique: true },
       { name: "privileges", type: "string", defaultValue: "normal" },
+      { name: "nickname", type: "string" },
     ],
   },
   {

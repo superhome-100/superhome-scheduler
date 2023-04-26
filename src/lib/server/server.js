@@ -21,7 +21,7 @@ const Settings = {
 };
 
 export async function getTableCsv(table) {
-    let fields = ['user.name', 'date', 'category', 'status',
+    let fields = ['user.name', 'user.nickname', 'date', 'category', 'status',
         'resType', 'numStudents', 'owTime', 'startTime', 'endTime'];
     let records = await xata.db[table]
         .select(fields)
@@ -43,7 +43,7 @@ export async function getSettings() {
 
 export async function getSession(id) {
     let records = await xata.db.Sessions
-        .select(['*', 'user.privileges', 'user.facebookId', 'user.name'])
+        .select(['*', 'user.privileges', 'user.facebookId', 'user.name', 'user.nickname'])
         .filter({id: id})
         .getMany();
     return records[0];
@@ -65,7 +65,7 @@ export async function getUser(id) {
 
 export async function getReservationsSince(minDateStr) {
     let reservations = await xata.db.Reservations
-        .select(["*", "user.facebookId", "user.name"])
+        .select(["*", "user.facebookId", "user.name", 'user.nickname'])
         .filter({ date: { $ge: minDateStr }})
         .sort("date", "asc")
         .getAll();
@@ -77,6 +77,7 @@ export async function getActiveUsers() {
     let users = await xata.db.Users
         .filter({ status: "active" })
         .getAll();
+
     return users;
 }
 
@@ -94,8 +95,14 @@ export async function addUser(userId, userName) {
     const record = await xata.db.Users.create({
         "facebookId": userId,
         "name": userName,
+        "nickname": userName,
         "status": "active"
     });
+    return record;
+}
+
+export async function updateNickname(userId, nickname) {
+    const record = await xata.db.Users.update(userId, {nickname});
     return record;
 }
 
