@@ -3,6 +3,7 @@
     import { enhance } from '$app/forms';
     import { user, users, reservations } from '$lib/stores.js';
     import { beforeCancelCutoff } from '$lib/ReservationTimes.js';
+    import { Settings } from '$lib/settings.js';
     import { toast, Toaster } from 'svelte-french-toast';
     import { augmentRsv, removeRsv } from '$lib/utils.js';
 
@@ -12,7 +13,7 @@
     const { close } = getContext('simple-modal');
     
     const cancelReservation = async ({ form, data, action, cancel }) => {
-        if (!beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category)) {
+        if (!beforeCancelCutoff(Settings, rsv.date, rsv.startTime, rsv.category)) {
             alert(
                 `The cancelation window for this reservation has expired; 
                 this reservation can no longer be canceled`

@@ -70,7 +70,7 @@
 
 </script>
 
-{#if Settings('openForBusiness', datetimeToLocalDateStr($viewedDate)) === false}
+{#if Settings.get('openForBusiness', datetimeToLocalDateStr($viewedDate)) === false}
     <div class='font-semibold text-3xl text-center'>Closed</div>
 {:else}
     <div class='row'>

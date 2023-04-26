@@ -71,7 +71,7 @@
         let submitted = convertReservationTypes(Object.fromEntries(data));
         addMissingFields(submitted, rsv);
 
-        if (!Settings('openForBusiness', submitted.date)) {
+        if (!Settings.get('openForBusiness', submitted.date)) {
             alert('We are closed on this date; please choose a different date');
             cancel();
             return;
@@ -109,7 +109,7 @@
             return;
         }
 
-        let result = checkSpaceAvailable(submitted, $reservations, $buoys); 
+        let result = checkSpaceAvailable(Settings, $buoys, submitted, $reservations); 
         if (result.status === 'error') {
             alert(result.message);
             cancel();
@@ -149,6 +149,8 @@
                     } else if (result.data.status === 'error') {
                         if (result.data.code === 'BUDDY_RSV_EXISTS') {
                             alert('Buddy reservation already exists!  Reservation rejected');
+                        } else if (result.data.code === 'NO_SPACE_AVAILABLE') {
+                            alert(result.data.message);
                         }
                     }
                     break;
@@ -160,9 +162,9 @@
         };
     };
     
-    let restrictModify = !beforeResCutoff(rsv.date, rsv.startTime, rsv.category);
+    let restrictModify = !beforeResCutoff(Settings, rsv.date, rsv.startTime, rsv.category);
     let viewOnly = !rsv.owner 
-            || !beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category) 
+            || !beforeCancelCutoff(Settings, rsv.date, rsv.startTime, rsv.category) 
             || (restrictModify && rsv.resType === 'autonomous');
 
 </script>

@@ -4,6 +4,7 @@
     import MyReservationsTable from '$lib/components/MyReservationsTable.svelte';
     import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs.js';
     import { minValidDateStr } from '$lib/ReservationTimes.js';
+    import { Settings } from '$lib/settings.js';
     import { user } from '$lib/stores.js';
 
 </script>
@@ -12,7 +13,7 @@
     <span class='flex items-center justify-between mr-2'>
         <span/>
         <span class='text-lg font-semibold'>{$user.name.split(' ')[0]}'s Reservations</span>
-        <Modal><ReservationDialog dateFn={(cat) => minValidDateStr(cat)}/></Modal>
+        <Modal><ReservationDialog dateFn={(cat) => minValidDateStr(Settings, cat)}/></Modal>
     </span>
     <Tabs>
         

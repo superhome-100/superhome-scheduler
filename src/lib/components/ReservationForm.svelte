@@ -31,7 +31,7 @@
         updateReservationFormData(data);
         let submitted = convertReservationTypes(Object.fromEntries(data));
         
-        if (!Settings('openForBusiness', submitted.date)) {
+        if (!Settings.get('openForBusiness', submitted.date)) {
             alert('We are closed on this date; please choose a different date');
             cancel();
             return;
@@ -44,7 +44,7 @@
             return;
         }
 
-        if (!beforeResCutoff(submitted.date, submitted.startTime, submitted.category)) {
+        if (!beforeResCutoff(Settings, submitted.date, submitted.startTime, submitted.category)) {
             alert(
                 'The submission window for this reservation date/time has expired; ' + 
                 'please choose a later date'
@@ -62,7 +62,7 @@
             return;
         }
 
-        let result = checkSpaceAvailable(submitted, $reservations, $buoys); 
+        let result = checkSpaceAvailable(Settings, $buoys, submitted, $reservations); 
         if (result.status === 'error') {
             alert(result.message);
             cancel();
@@ -93,6 +93,8 @@
                     } else if (result.data.status === 'error') {
                         if (result.data.code === 'BUDDY_RSV_EXISTS') {
                             alert('Buddy reservation already exists!  Reservation rejected');
+                        } else if (result.data.code === 'NO_SPACE_AVAILABLE') {
+                            alert(result.data.message);
                         }
                     }
                     break;
