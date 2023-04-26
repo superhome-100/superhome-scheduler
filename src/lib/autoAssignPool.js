@@ -1,10 +1,9 @@
 import {
     inc,
     startTimes,
-    endTimes
 } from '$lib/ReservationTimes.js';
-import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils.js';
-import { timeOverlap, nOccupants } from '$lib/utils.js';
+import { timeStrToMin } from '$lib/datetimeUtils.js';
+import { nOccupants } from '$lib/utils.js';
 import { Settings } from '$lib/settings.js';
 
 // priority rules:
@@ -114,8 +113,8 @@ function getMinBreaksPathRec(spacesByTimes, width, curTime, endTime, pathObj) {
 function rsvToBlock(rsv, minTime, inc, resourceNames) {
     let startTime = (timeStrToMin(rsv.startTime) - minTime) / inc;
     let endTime = (timeStrToMin(rsv.endTime) - minTime) / inc;
-    let width = nOccupants([rsv]) + rsv.buddies.length;
-    let occ = Settings('maxOccupantsPerLane');
+    let occ = Settings.get('maxOccupantsPerLane');
+    let width = nOccupants([rsv], occ) + rsv.buddies.length;
     let startSpaces;
     if (rsv.category === 'pool') {
         startSpaces = rsv.lanes.length > 0
@@ -135,7 +134,7 @@ function rsvToBlock(rsv, minTime, inc, resourceNames) {
 }
 
 function insertPreAssigned(spacesByTimes, blk) {
-    let width = blk.width / Settings('maxOccupantsPerLane');
+    let width = blk.width / Settings.get('maxOccupantsPerLane');
     for (let startSpace of blk.startSpaces) {
         for (let i=startSpace; i < startSpace + width; i++) {
             for (let j=blk.startTime; j < blk.endTime; j++) {
@@ -164,17 +163,17 @@ function insertUnAssigned(spacesByTimes, blk) {
 }
 
 export function assignSpaces(rsvs, dateStr) {
-    let incT = inc(dateStr);
-    let sTs = startTimes(dateStr, 'pool');
+    let incT = inc(Settings, dateStr);
+    let sTs = startTimes(Settings, dateStr, 'pool');
     let nTimes = sTs.length;
     let minTime = timeStrToMin(sTs[0]);
-    let nSpaces = Settings('maxOccupantsPerLane') * Settings('poolLanes').length
+    let nSpaces = Settings.get('maxOccupantsPerLane') * Settings.get('poolLanes').length
     let spacesByTimes = Array(nSpaces)
         .fill()
         .map(() => Array(nTimes).fill());
 
     let { pre, un } = sortByPriority(rsvs);
-    let resourceNames = Settings('poolLanes', dateStr);
+    let resourceNames = Settings.get('poolLanes', dateStr);
 
     let result = {
         status: 'success',
@@ -224,14 +223,14 @@ function patchData(spaces) {
 }
 
 export function patchSchedule(sByT) {
-    let schedule = Array(Settings('poolLanes').length).fill().map(()=> {
+    let schedule = Array(Settings.get('poolLanes').length).fill().map(()=> {
         return [{
             nSlots: 0,
             cls: 'filler',
             data: [],
         }];
     });
-    let laneWidth = Settings('maxOccupantsPerLane');
+    let laneWidth = Settings.get('maxOccupantsPerLane');
     let nSlots = sByT[0].length;
 
     for (let t=0; t<nSlots; t++) {

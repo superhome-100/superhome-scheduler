@@ -1,8 +1,24 @@
 import { getXataClient } from '$lib/server/xata.js';
-import { convertReservationTypes } from '$lib/utils.js';
+import { checkSpaceAvailable, convertReservationTypes, parseSettingsTbl } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
+import { getOn } from '$lib/settings.js';
+import { startTimes, endTimes } from '$lib/ReservationTimes.js';
 
 const xata = getXataClient();
+
+let settingsStore = null;
+const Settings = {
+    init: async () => {
+        if (!settingsStore) {
+            let settingsTbl = await xata.db.Settings.getAll();
+            settingsStore = parseSettingsTbl(settingsTbl);
+        }
+    },
+    get: (name, date) => {
+        let setting = settingsStore[name];
+        return getOn(setting, date);
+    }
+};
 
 export async function getTableCsv(table) {
     let fields = ['user.name', 'date', 'category', 'status',
@@ -112,15 +128,65 @@ async function getBuddyReservations(sub, buddies) {
     if (sub.category === 'openwater') {
         filters.owTime = sub.owTime;
     } else if (['pool', 'classroom'].includes(sub.category)) {
-        filters.startTime = sub.startTime;
-        filters.endTime = sub.endTime;
+        await Settings.init();
+
+        let sTs = startTimes(Settings, sub.date, sub.category);
+        let eIdx = sTs.indexOf(sub.endTime);
+        if (eIdx < 0) { eIdx = sTs.length; }
+        let startVals = sTs.slice(sTs.indexOf(sub.startTime), eIdx);
+        let eTs = endTimes(Settings, sub.date, sub.category);
+        let sIdx = eTs.indexOf(sub.startTime)+1;
+        if (sIdx == -1) { sIdx = 0; }
+        let endVals = eTs.slice(sIdx, eTs.indexOf(sub.endTime)+1);
+        filters.$any = {
+            startTime: { $any: startVals },
+            endTime: { $any: endVals },
+        };
     }
     let existing = await xata.db.Reservations.filter(filters).getAll();
     return existing;
 }
 
+async function getExistingRsvs(entries) {
+    let ids = entries.filter(o => o.id).map(o => { return {id:o.id}});
+    let filters = {
+        date: entries[0].date,
+        category: entries[0].category,
+    };
+    if (ids.length > 0) {
+        filters.$not = { $any: ids };
+    }
+
+    return await xata.db.Reservations.filter(filters).getAll();
+}
+
+async function querySpaceAvailable(entries, remove=[]) {
+    let existing = await getExistingRsvs([...entries, ...remove]);
+    let buoys;
+    let [sub, ...buddies] = entries;
+    existing = [...existing, ...buddies];
+    if (sub.category === 'openwater') {
+        buoys = await xata.db.Buoys.getAll();
+    }
+    await Settings.init();
+    let result = checkSpaceAvailable(Settings, buoys, sub, existing);
+    if (result.status === 'error') {
+        return {
+            status: 'error',
+            code: 'NO_SPACE_AVAILABLE',
+            message: result.message,
+        };
+    } else {
+        return {
+            status: 'success'
+        }
+    }
+}
+
 export async function submitReservation(formData) {
     let sub = convertReservationTypes(Object.fromEntries(formData));
+
+    // classroom bookings are confirmed automatically
     sub.status = sub.category === 'classroom' ? 'confirmed' : 'pending';
 
     let entries = [sub];
@@ -139,6 +205,11 @@ export async function submitReservation(formData) {
             entries.push({...common, user: id, buddies: bg, owner: false});
         }
     }
+    let result = await querySpaceAvailable(entries);
+    if (result.status === 'error') {
+        return result;
+    }
+
     let records = await xata.db.Reservations.create(entries);
     return {
         status: 'success',
@@ -210,10 +281,14 @@ export async function updateReservation(formData) {
         }
     }
 
+    let result = await querySpaceAvailable([...modify, ...create], remove);
+    if (result.status === 'error') { return result; }
+
     let records = {
         'created': [],
         'canceled': []
     };
+
     let modrecs = await xata.db.Reservations.update(modify);
     records.modified = modrecs;
     if (create.length > 0) {

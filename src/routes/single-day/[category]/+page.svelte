@@ -64,9 +64,9 @@
     const resources = () => {
         let dateStr = datetimeToLocalDateStr($viewedDate);
         if (category === 'pool') {
-            return Settings('poolLanes', dateStr); 
+            return Settings.get('poolLanes', dateStr); 
         } else if (category === 'classroom') {
-            return Settings('classrooms', dateStr);
+            return Settings.get('classrooms', dateStr);
         }
     };
 
@@ -74,7 +74,7 @@
         if (category === 'pool') {
             return 'lane';
         } else if (category === 'classroom') {
-            return 'room';
+            return 'classroom';
         }
     };
 
