@@ -54,11 +54,11 @@ export function augmentRsv(rsv, fbId=null, name=null) {
     }
     if (rsv.category === 'openwater') {
         if (rsv.owTime === 'AM') {
-            startTime = Settings('openwaterAmStartTime', rsv.date);
-            endTime = Settings('openwaterAmEndTime', rsv.date);
+            startTime = Settings.get('openwaterAmStartTime', rsv.date);
+            endTime = Settings.get('openwaterAmEndTime', rsv.date);
         } else if (rsv.owTime === 'PM') {
-            startTime = Settings('openwaterPmStartTime', rsv.date);
-            endTime = Settings('openwaterPmEndTime', rsv.date);
+            startTime = Settings.get('openwaterPmStartTime', rsv.date);
+            endTime = Settings.get('openwaterPmEndTime', rsv.date);
         }
     }
     let newRsv = {
@@ -141,19 +141,18 @@ export function checkDuplicateRsv(thisRsv, rsvs) {
     return existingRsvs.filter((rsv) => thisRsv.user === rsv.user.id).length > 0;
 }
 
-export const nOccupants = (rsvs) => rsvs.reduce((n, rsv) => {
+export const nOccupants = (rsvs, maxOccPerLane) => rsvs.reduce((n, rsv) => {
     if (rsv.category === 'classroom') {
         return n + rsv.numStudents;
     } else {
-        let mpl = Settings('maxOccupantsPerLane');
         return rsv.resType === 'course'
-            ? n + 2*Math.ceil(rsv.numStudents/mpl)
+            ? n + 2*Math.ceil(rsv.numStudents/maxOccPerLane)
             : n + 1;
     }
 }, 0);
 
-function checkPoolSpaceAvailable(thisRsv, rsvs) {
-    let startTs = startTimes(thisRsv.date, thisRsv.category);
+function checkPoolSpaceAvailable(thisRsv, rsvs, settings) {
+    let startTs = startTimes(settings, thisRsv.date, thisRsv.category);
     for (let i=startTs.indexOf(thisRsv.startTime); i < startTs.indexOf(thisRsv.endTime); i++) {
         let time = timeStrToMin(startTs[i]);
         let overlap = rsvs.filter(rsv => {
@@ -163,17 +162,19 @@ function checkPoolSpaceAvailable(thisRsv, rsvs) {
             let notMyBuddy = !thisRsv.buddies.includes(rsv.user.id);
             return notMe && notMyBuddy && start <= time && end > time;
         });
-        let numDivers = nOccupants([thisRsv]) + thisRsv.buddies.length + nOccupants(overlap);
-        let nLanes = Settings('poolLanes', thisRsv.date).length;
-        let maxPerLane = Settings('maxOccupantsPerLane', thisRsv.date);
-        if (numDivers > nLanes*maxPerLane) {
+        let mpl = settings.get('maxOccupantsPerLane', thisRsv.date);
+        let numDivers = nOccupants([thisRsv], mpl)
+            + thisRsv.buddies.length
+            + nOccupants(overlap, mpl);
+        let nLanes = settings.get('poolLanes', thisRsv.date).length;
+        if (numDivers > nLanes*mpl) {
             return false;
         }
     }
     return true;
 }
 
-export function checkSpaceAvailable(thisRsv, rsvs, buoys) {
+export function checkSpaceAvailable(settings, buoys, thisRsv, rsvs) {
     let existingRsvs = getExistingRsvs(thisRsv, rsvs);
     if (thisRsv.category === 'openwater') {
         let result = assignRsvsToBuoys(buoys, [...existingRsvs, thisRsv]);
@@ -187,7 +188,7 @@ export function checkSpaceAvailable(thisRsv, rsvs, buoys) {
             return result;
         }
     } else if (thisRsv.category === 'pool') {
-        if (checkPoolSpaceAvailable(thisRsv, existingRsvs)) {
+        if (checkPoolSpaceAvailable(thisRsv, existingRsvs, settings)) {
             return { status: 'success' };
         } else {
             return {
@@ -323,18 +324,18 @@ export function categoryIsBookable(sub) {
     let val;
     let msg;
     if (sub.category === 'pool') {
-        val = Settings('poolBookable', sub.date);
+        val = Settings.get('poolBookable', sub.date);
         msg = 'Pool';
     } else if (sub.category === 'openwater') {
         if (sub.owTime == 'AM') {
-            val = Settings('openwaterAmBookable', sub.date);
+            val = Settings.get('openwaterAmBookable', sub.date);
             msg = 'AM Openwater'
         } else if (sub.owTime == 'PM') {
-            val = Settings('openwaterPmBookable', sub.date);
+            val = Settings.get('openwaterPmBookable', sub.date);
             msg = 'PM Openwater'
         }
     } else if (sub.category === 'classroom') {
-        val = Settings('classroomBookable', sub.date);
+        val = Settings.get('classroomBookable', sub.date);
         msg = 'Classroom';
     }
     if (val) {
@@ -348,7 +349,7 @@ export function categoryIsBookable(sub) {
 }
 
 function assignClassrooms(rsvs, dateStr) {
-    let rooms = Settings('classrooms', dateStr);
+    let rooms = Settings.get('classrooms', dateStr);
     let schedule = Array(rooms.length).fill().map(() => {
         return [{
             nSlots: 0,
@@ -357,10 +358,10 @@ function assignClassrooms(rsvs, dateStr) {
         }];
     });
 
-    let sTs = startTimes(dateStr, 'classroom');
+    let sTs = startTimes(Settings, dateStr, 'classroom');
     let nTimes = sTs.length;
     let minTime = timeStrToMin(sTs[0]);
-    let incT = inc(dateStr);
+    let incT = inc(Settings, dateStr);
     let timeIdx = (time) => (timeStrToMin(time)-minTime) / incT;
 
     rsvs.sort((a,b) => a.room != null ? -1 : b.room != null ? 1 : 0);
