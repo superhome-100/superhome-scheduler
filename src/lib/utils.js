@@ -42,7 +42,7 @@ export function sortUserReservations(newRsvs, id, sorted={'past': [], 'upcoming'
     return sorted;
 }
 
-export function augmentRsv(rsv, fbId=null, name=null) {
+export function augmentRsv(rsv, user=null) {
     let startTime = rsv.startTime;
     let endTime = rsv.endTime;
     let categoryPretty = rsv.category.charAt(0).toUpperCase() + rsv.category.slice(1);
@@ -68,8 +68,12 @@ export function augmentRsv(rsv, fbId=null, name=null) {
         endTime,
     };
 
-    if (fbId) { newRsv.user['facebookId'] = fbId }
-    if (name) { newRsv.user['name'] = name }
+    if (user) {
+        newRsv.user.id = user.id;
+        newRsv.user.facebookId = user.facebookId;
+        newRsv.user.name = user.name;
+        newRsv.user.nickname = user.nickname;
+    }
 
     return newRsv;
 }

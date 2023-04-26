@@ -85,7 +85,7 @@
                         let records = result.data.records;
                         for (let rsv of records) {
                             let user = $users[rsv.user.id];
-                            rsv = augmentRsv(rsv, user.facebookId, user.name);
+                            rsv = augmentRsv(rsv, user);
                             $reservations.push(rsv);
                         }
                         $reservations = [...$reservations];

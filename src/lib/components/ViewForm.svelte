@@ -18,19 +18,20 @@
             if (rsv.status != data.get('status')) {
                 return true;
             }
+            const convert = v => v === 'null' ? null : v;
             if (rsv.category === 'pool') {
-                if (rsv.lanes[0] != data.get('lane1')) {
+                if (rsv.lanes[0] != convert(data.get('lane1'))) {
                     return true;
                 }
                 if (data.has('lane2')) {
-                    return rsv.lanes[1] != data.get('lane2');
+                    return rsv.lanes[1] != convert(data.get('lane2'));
                 } else {
                     return false;
                 }
             } else if (rsv.category === 'openwater') {
-                return rsv.buoy != data.get('buoy');
+                return rsv.buoy != convert(data.get('buoy'));
             } else if (rsv.category === 'classroom') {
-                return rsv.room != data.get('room');
+                return rsv.room != convert(data.get('room'));
             }
         };
 
@@ -67,7 +68,7 @@
                         removeRsv(rsv.id);
                         $reservations = [
                             ...$reservations, 
-                            augmentRsv(rsv, user.facebookId, user.name)
+                            augmentRsv(rsv, user)
                         ];
                         toast.success('Reservation updated!');
                     } else if (result.data.status === 'error') {
