@@ -8,6 +8,7 @@
     import Dialog from './Dialog.svelte';
     import ModifyForm from './ModifyForm.svelte';
     import ViewForms from './ViewForms.svelte';
+    import { Settings } from '$lib/settings.js';
 
     export let resType; /* past or upcoming */
 
@@ -98,7 +99,7 @@
     const { open } = getContext('simple-modal');
 
     const showModify = (rsv) => {
-        if (beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category)) { 
+        if (beforeCancelCutoff(Settings, rsv.date, rsv.startTime, rsv.category)) { 
 		    open(
 			    ModifyForm,
                 {
@@ -154,7 +155,7 @@
                     <td class='text-white text-sm font-semibold'>
                         <div class={statusStyle(rsv.status)}>{rsv.status}</div>
                     </td>
-                    {#if beforeCancelCutoff(rsv.date, rsv.startTime, rsv.category)}
+                    {#if beforeCancelCutoff(Settings, rsv.date, rsv.startTime, rsv.category)}
                         <td 
                             on:click|stopPropagation={()=>{}} 
                             on:keypress|stopPropagation={()=>{}}
