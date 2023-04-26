@@ -149,6 +149,8 @@
                     } else if (result.data.status === 'error') {
                         if (result.data.code === 'BUDDY_RSV_EXISTS') {
                             alert('Buddy reservation already exists!  Reservation rejected');
+                        } else if (result.data.code === 'NO_SPACE_AVAILABLE') {
+                            alert(result.data.message);
                         }
                     }
                     break;
