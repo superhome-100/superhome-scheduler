@@ -1,6 +1,6 @@
 <script>
     import { enhance } from '$app/forms';
-    import { user } from '$lib/stores.js';
+    import { user, reservations } from '$lib/stores.js';
     import { toast, Toaster } from 'svelte-french-toast'
     import { getContext } from 'svelte';
 
@@ -15,6 +15,10 @@
             switch (result.type) {
                 case 'success':
                     $user.nickname = result.data.nickname;
+                    $reservations
+                        .filter(rsv => rsv.user.id === $user.id)
+                        .map(rsv => rsv.user.nickname = $user.nickname);
+                    $reservations = [...$reservations];
                     toast.success('Nickname updated');
                     break;
                 default:
@@ -42,7 +46,6 @@
         class='text-center w-44 text-xs'
         name='nickname'
         placeholder={$user.nickname}
-        value={$user.nickname}
         on:keypress={removeFocus}
     >
 </form>
