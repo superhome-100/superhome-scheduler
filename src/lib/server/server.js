@@ -146,7 +146,6 @@ async function querySpaceAvailable(entries, remove=[]) {
     let buoys;
     let [sub, ...buddies] = entries;
     existing = [...existing, ...buddies];
-
     if (sub.category === 'openwater') {
         buoys = await xata.db.Buoys.getAll();
     }
@@ -156,6 +155,7 @@ async function querySpaceAvailable(entries, remove=[]) {
         return {
             status: 'error',
             code: 'NO_SPACE_AVAILABLE',
+            message: result.message,
         };
     } else {
         return {
@@ -186,8 +186,11 @@ export async function submitReservation(formData) {
             entries.push({...common, user: id, buddies: bg, owner: false});
         }
     }
-    let result = querySpaceAvailable(entries);
-    if (result.status === 'error') { return result; }
+    let result = await querySpaceAvailable(entries);
+    if (result.status === 'error') {
+        return result;
+    }
+
     let records = await xata.db.Reservations.create(entries);
     return {
         status: 'success',
@@ -259,7 +262,7 @@ export async function updateReservation(formData) {
         }
     }
 
-    let result = querySpaceAvailable([...modify, ...create], remove);
+    let result = await querySpaceAvailable([...modify, ...create], remove);
     if (result.status === 'error') { return result; }
 
     let records = {
