@@ -93,7 +93,7 @@
         
         data.append('oldBuddies', JSON.stringify(rsv.buddies));
 
-        if (!beforeCancelCutoff(submitted.date, submitted.startTime, submitted.category)) {
+        if (!beforeCancelCutoff(Settings, submitted.date, submitted.startTime, submitted.category)) {
             alert(`The modification window for this reservation has expired; 
                 this reservation can no longer be modified`
             );
@@ -133,12 +133,12 @@
                         for (let rsv of records.modified) {
                             let user = $users[rsv.user.id];
                             removeRsv(rsv.id);
-                            rsv = augmentRsv(rsv, user.facebookId, user.name);
+                            rsv = augmentRsv(rsv, user);
                             $reservations.push(rsv);
                         }
                         for (let rsv of records.created) {
                             let user = $users[rsv.user.id];
-                            rsv = augmentRsv(rsv, user.facebookId, user.name);
+                            rsv = augmentRsv(rsv, user);
                             $reservations.push(rsv);
                         }
                         for (let rsv of records.canceled) {
