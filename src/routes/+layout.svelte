@@ -18,6 +18,8 @@
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
     import { PUBLIC_FACEBOOK_APP_ID } from "$env/static/public";
+    import UserIcon from '$lib/components/UserIcon.svelte';
+    import Modal from '$lib/components/Modal.svelte';
     import { settings, buoys, user, users, view, reservations } from '$lib/stores.js';
     import { augmentRsv } from '$lib/utils.js';
     import { onMount } from 'svelte';
@@ -317,11 +319,9 @@
             {hidden}
         >
             <NavLi>
-                {#if profileSrc}
-                    <img class='rounded-[50%] w-10' alt="profilePicture" src={profileSrc}>
-                {:else}
-                    <div class='text-xs'>{$user.name}</div>
-                {/if}
+                <Modal closeButton={false}>
+                    <UserIcon {profileSrc}/>
+                </Modal>
             </NavLi>
         </NavUl>
     {/if}
