@@ -384,7 +384,7 @@
         {:else if loginState === 'out'}
             <button 
                 on:click={login} 
-                class='bg-[#3b5998] text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
+                class='bg-[#3b5998] text-white text-sm xs:text-base absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
             >Log in with Facebook</button>
         {/if}
     </main>
