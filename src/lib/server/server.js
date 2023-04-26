@@ -2,6 +2,7 @@ import { getXataClient } from '$lib/server/xata.js';
 import { checkSpaceAvailable, convertReservationTypes, parseSettingsTbl } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
 import { getOn } from '$lib/settings.js';
+import { startTimes, endTimes } from '$lib/ReservationTimes.js';
 
 const xata = getXataClient();
 
@@ -121,8 +122,20 @@ async function getBuddyReservations(sub, buddies) {
     if (sub.category === 'openwater') {
         filters.owTime = sub.owTime;
     } else if (['pool', 'classroom'].includes(sub.category)) {
-        filters.startTime = sub.startTime;
-        filters.endTime = sub.endTime;
+        await Settings.init();
+
+        let sTs = startTimes(Settings, sub.date, sub.category);
+        let eIdx = sTs.indexOf(sub.endTime);
+        if (eIdx < 0) { eIdx = sTs.length; }
+        let startVals = sTs.slice(sTs.indexOf(sub.startTime), eIdx);
+        let eTs = endTimes(Settings, sub.date, sub.category);
+        let sIdx = eTs.indexOf(sub.startTime)+1;
+        if (sIdx == -1) { sIdx = 0; }
+        let endVals = eTs.slice(sIdx, eTs.indexOf(sub.endTime)+1);
+        filters.$any = {
+            startTime: { $any: startVals },
+            endTime: { $any: endVals },
+        };
     }
     let existing = await xata.db.Reservations.filter(filters).getAll();
     return existing;
