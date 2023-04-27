@@ -1,46 +1,52 @@
 <script>
-    import { getContext } from 'svelte';
+    import { getContext, createEventDispatcher } from 'svelte';
     import { enhance } from '$app/forms';
     import ResFormPool from './ResFormPool.svelte';
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
     import { reservations, user, users } from '$lib/stores.js';
-    import { augmentRsv, removeRsv } from '$lib/utils.js';
+    import { adminView, augmentRsv, removeRsv } from '$lib/utils.js';
     import { toast, Toaster } from 'svelte-french-toast';
 
     export let hasForm = false;
     export let rsv;
 
+    const dispatch = createEventDispatcher();
+
     const { close } = getContext('simple-modal');
 
-    const adminUpdate = async ({ form, data, action, cancel }) => {
-        const resUpdated = () => {
-            if (rsv.status != data.get('status')) {
+    const rsvChanged = (orig, upd) => {
+        if (orig.status != upd.status) {
+            return true;
+        }
+        if (orig.category === 'pool') {
+            if (orig.lane[0] != upd.lane[0]) {
                 return true;
             }
-            const convert = v => v === 'null' ? null : v;
-            if (rsv.category === 'pool') {
-                if (rsv.lanes[0] != convert(data.get('lane1'))) {
-                    return true;
-                }
-                if (data.has('lane2')) {
-                    return rsv.lanes[1] != convert(data.get('lane2'));
-                } else {
-                    return false;
-                }
-            } else if (rsv.category === 'openwater') {
-                return rsv.buoy != convert(data.get('buoy'));
-            } else if (rsv.category === 'classroom') {
-                return rsv.room != convert(data.get('room'));
+            if (orig.lane[1] != upd.lane[1]) {
+                return true;
             }
-        };
-
-        if (!resUpdated()) {
-            cancel();
-            close();
-            return;
+        } else if (orig.category === 'openwater') {
+            return orig.buoy != upd.buoy;
+        } else if (orig.category === 'classroom') {
+            return orig.room != upd.room;
         }
+    };
 
+    const copyChanges = (rsv, upd) => {
+        rsv.status = upd.status;
+        if (rsv.category === 'pool') {
+            rsv.lanes[0] = upd.lanes[0];
+            rsv.lanes[1] = upd.lanes[1];
+        } else if (rsv.category === 'openwater') {
+            rsv.buoy = upd.buoy;
+        } else if (rsv.category === 'classroom') {
+            rsv.room = upd.room;
+        }
+    };
+
+    const adminUpdate = async ({ form, data, action, cancel }) => {
+ 
         if (data.has('lane2')) {
             if (
                 (data.get('lane1') === 'null' && data.get('lane2') !== 'null')
@@ -57,20 +63,18 @@
             }
         }
 
-        close();
+        dispatch('submit', { rsv });
 
         return async ({ result, update }) => {
             switch(result.type) {
                 case 'success':
                     if (result.data.status === 'success') {
-                        let rsv = result.data.record;
-                        let user = $users[rsv.user.id];
-                        removeRsv(rsv.id);
-                        $reservations = [
-                            ...$reservations, 
-                            augmentRsv(rsv, user)
-                        ];
-                        toast.success('Reservation updated!');
+                        let updated = result.data.record;
+                        if (rsvChanged(rsv, updated)) {
+                            copyChanges(rsv, updated);
+                            $reservations = [...$reservations];
+                            toast.success('Reservation updated!');
+                        }
                     } else if (result.data.status === 'error') {
                         toast.error('Server returned error!')
                     }
@@ -88,7 +92,7 @@
 {#if hasForm}
     <form
         method='POST'
-        action='/?/adminUpdate'
+        action='/?/adminUpdateConfirmed'
         use:enhance={adminUpdate}
     >
         {#if rsv.category === 'pool'}
@@ -98,8 +102,24 @@
         {:else if rsv.category === 'classroom'}
             <ResFormClassroom viewOnly {rsv}/>
         {/if}
-        <input type="hidden" name="id" value={rsv.id}>
+        <input type="hidden" name="id" value={rsv.id}> 
+        {#if adminView(true)}
+            <div class='[&>*]:mx-auto w-full inline-flex items-center justify-between'>
+                <button
+                    formaction='/?/adminUpdateRejected'
+                    class='bg-status-rejected px-3 py-1'
+                >Reject</button>
+                <button
+                    formaction='/?/adminUpdatePending'
+                    class='bg-status-pending px-3 py-1'
+                >Pending</button>
+                <button
+                    type='submit'
+                    class='bg-status-confirmed px-3 py-1'
+                    tabindex='6'
+                >Confirm</button>
+            </div>
+        {/if}
     </form>
 {/if}
 
-<Toaster/>

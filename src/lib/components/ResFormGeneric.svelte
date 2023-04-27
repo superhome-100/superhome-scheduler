@@ -294,8 +294,8 @@
                 type="submit" 
                 class='bg-gray-100 disabled:text-gray-400 px-3 py-1'
                 tabindex='6' 
-                disabled={!adminView(viewOnly) && !$canSubmit}
-                hidden={!adminView(viewOnly) && viewOnly}
+                disabled={!$canSubmit}
+                hidden={viewOnly}
             >
                 {#if rsv}
                     Update
