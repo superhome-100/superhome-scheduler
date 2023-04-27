@@ -191,7 +191,7 @@ export async function submitReservation(formData) {
     sub.status = sub.category === 'classroom' ? 'confirmed' : 'pending';
 
     // since lanes is of type 'multiple' in the db, it cant have a default value, so we set the default here
-    sub.lanes = ['auto', 'auto'];
+    sub.lanes = ['auto'];
 
     let entries = [sub];
     if (sub.buddies.length > 0) {
@@ -316,7 +316,7 @@ export async function adminUpdate(formData) {
 
     const cat = formData.get('category');
     if (cat === 'pool') {
-        rsv.lanes = [formData.get('lane1'), 'auto'];
+        rsv.lanes = [formData.get('lane1')];
         if (formData.has('lane2')) {
             rsv.lanes[1] = formData.get('lane2');
         }

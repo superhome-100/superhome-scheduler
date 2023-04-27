@@ -17,7 +17,7 @@
 
     let disabled = viewOnly || restrictModify;
 
-    let status = rsv == null ? undefined : rsv.status;
+    let status = rsv == null ? 'pending' : rsv.status;
     let comments = rsv == null ? null : rsv.comments;
     date = rsv == null ? date : rsv.date;
     category = rsv == null ? category : rsv.category;
@@ -183,6 +183,7 @@
             <input type="hidden" name="user" value={$user.id}>
             <input type='hidden' name='date' value={date}>
             <input type='hidden' name='category' value={category}>
+            <input type='hidden' name='status' value={status}>
         </div>
         <div><input 
             type="date" 
