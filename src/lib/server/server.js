@@ -190,6 +190,9 @@ export async function submitReservation(formData) {
     // classroom bookings are confirmed automatically
     sub.status = sub.category === 'classroom' ? 'confirmed' : 'pending';
 
+    // since lanes is of type 'multiple' in the db, it cant have a default value, so we set the default here
+    sub.lanes = ['auto', 'auto'];
+
     let entries = [sub];
     if (sub.buddies.length > 0) {
         let { user, buddies, ...common } = sub;
@@ -320,7 +323,7 @@ export async function adminUpdate(formData) {
             rsv.lanes[1] = v;
         }
     } else {
-        rsv.lanes = [];
+        rsv.lanes = ['auto', 'auto'];
     }
 
     v = convert('buoy');
