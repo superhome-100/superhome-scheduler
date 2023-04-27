@@ -29,6 +29,7 @@
     const submitReservation = async ({ form, data, action, cancel }) => {
 
         updateReservationFormData(data);
+
         let submitted = convertReservationTypes(Object.fromEntries(data));
         
         if (!Settings.get('openForBusiness', submitted.date)) {
