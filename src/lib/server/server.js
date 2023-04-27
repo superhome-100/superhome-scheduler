@@ -313,26 +313,17 @@ export async function adminUpdate(formData) {
     let rsv = {};
     let id = formData.get('id');
     rsv.status = formData.get('status');
-    const convert = (f) => formData.get(f) === 'null' ? null : formData.get(f);
 
-    let v = convert('lane1');
-    if (v) {
-        rsv.lanes = [v];
-        v = convert('lane2');
-        if (v) {
-            rsv.lanes[1] = v;
+    const cat = formData.get('category');
+    if (cat === 'pool') {
+        rsv.lanes = [formData.get('lane1'), 'auto'];
+        if (formData.has('lane2')) {
+            rsv.lanes[1] = formData.get('lane2');
         }
-    } else {
-        rsv.lanes = ['auto', 'auto'];
-    }
-
-    v = convert('buoy');
-    if (v) {
-        rsv.buoy = v;
-    }
-    v = convert('room');
-    if (v) {
-        rsv.room = v;
+    } else if (cat === 'openwater') {
+        rsv.buoy = formData.get('buoy');
+    } else if (cat === 'classroom') {
+        rsv.room = formData.get('room');
     }
 
     let record = await xata.db.Reservations.update(id, rsv);
