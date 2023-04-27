@@ -6,8 +6,7 @@
     import { getContext } from 'svelte';
     import Modal from './Modal.svelte';
     import Dialog from './Dialog.svelte';
-    import ModifyForm from './ModifyForm.svelte';
-    import ViewForms from './ViewForms.svelte';
+    import RsvTabs from './RsvTabs.svelte';
     import { Settings } from '$lib/settings.js';
 
     export let resType; /* past or upcoming */
@@ -98,26 +97,16 @@
     
     const { open } = getContext('simple-modal');
 
-    const showModify = (rsv) => {
-        if (beforeCancelCutoff(Settings, rsv.date, rsv.startTime, rsv.category)) { 
-		    open(
-			    ModifyForm,
-                {
-                    rsv: rsv, 
-                    hasForm: true,
-                }
-		    );
-        } else {
-            open(
-                ViewForms,
-                {
-                    rsvs: [rsv], 
-                    hasForm: true,
-                }
-		    );
-        }
+    const showViewRsv = (rsv) => {
+        open(
+            RsvTabs,
+            {
+                rsvs: [rsv], 
+                hasForm: true,
+            }
+        );
     };
-    
+
     const getMyReservations = (rsvs, resType) => {
         rsvs = rsvs.filter((rsv) => rsv.user.id === $user.id && getResType(rsv) === resType);
         return rsvs.sort((a,b) => {
@@ -146,7 +135,7 @@
         <tbody>
             {#each getMyReservations($reservations, resType) as rsv (rsv.id)}
                 <tr 
-                    on:click={showModify(rsv)} on:keypress={showModify(rsv)} 
+                    on:click={showViewRsv(rsv)} on:keypress={showViewRsv(rsv)} 
                     class='[&>td]:w-24 h-10 bg-gradient-to-br {bgColorFrom(rsv.category)} {bgColorTo(rsv.category)} cursor-pointer'
                 >
                     <td class='rounded-s-xl text-white text-sm font-semibold'>{shortDate(rsv.date)}</td>

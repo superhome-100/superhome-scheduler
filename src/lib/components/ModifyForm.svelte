@@ -172,9 +172,6 @@
 {#if hasForm}
     {#if viewOnly}
         <div class='mb-4'>
-            <div class='form-title'>
-                {rsv.user.name}
-            </div>       
             {#if rsv.category === 'pool'}
                 <ResFormPool viewOnly {rsv}/>
             {:else if rsv.category === 'openwater'}

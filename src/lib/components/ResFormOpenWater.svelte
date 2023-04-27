@@ -1,6 +1,7 @@
 <script>
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { canSubmit, buoys, user } from '$lib/stores.js';
+    import { adminView } from '$lib/utils.js';
     import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 
     export let rsv = null;
@@ -36,13 +37,11 @@
 
     $: showBuddyFields = autoOrCourse === 'autonomous';
 
-    const adminView = () => $user.privileges === 'admin' && viewOnly; 
-
 </script>
 
 <ResFormGeneric {viewOnly} {restrictModify} {showBuddyFields} bind:date={date} bind:category={category} {rsv}>
     <div class='[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5' slot="categoryLabels">
-        {#if adminView()}
+        {#if adminView(rsv, viewOnly)}
             <div><label for='formBuoy'>Buoy</label></div>
         {/if}
         <div><label for="formOwTime">Time</label></div>
@@ -54,7 +53,7 @@
     </div>
     
     <div slot="categoryInputs">
-        {#if adminView()}
+        {#if adminView(rsv, viewOnly)}
             <div>
                 <select
                     id='formBuoy'
