@@ -15,29 +15,32 @@
 
     const { close } = getContext('simple-modal');
 
-    const rsvChanged = (orig, upd) => {
-        if (orig.status != upd.status) {
+    const rsvChanged = (orig, form) => {
+        if (orig.status != form.get('status')) {
             return true;
         }
         if (orig.category === 'pool') {
-            if (orig.lane[0] != upd.lane[0]) {
+            if (orig.lanes[0] != form.get('lane1')) {
                 return true;
             }
-            if (orig.lane[1] != upd.lane[1]) {
+            if (form.has('lane2') && orig.lanes[1] != form.get('lane2')) {
                 return true;
             }
         } else if (orig.category === 'openwater') {
-            return orig.buoy != upd.buoy;
+            return orig.buoy != form.get('buoy');
         } else if (orig.category === 'classroom') {
-            return orig.room != upd.room;
+            return orig.room != form.get('room');
         }
+        return false;
     };
 
     const copyChanges = (rsv, upd) => {
         rsv.status = upd.status;
         if (rsv.category === 'pool') {
             rsv.lanes[0] = upd.lanes[0];
-            rsv.lanes[1] = upd.lanes[1];
+            if (upd.lanes.length > 1) {
+                rsv.lanes[1] = upd.lanes[1];
+            }
         } else if (rsv.category === 'openwater') {
             rsv.buoy = upd.buoy;
         } else if (rsv.category === 'classroom') {
@@ -46,17 +49,27 @@
     };
 
     const adminUpdate = async ({ form, data, action, cancel }) => {
- 
+        let status = action.href.includes('Confirmed') 
+            ? 'confirmed' : action.href.includes('Rejected')
+            ? 'rejected' : action.href.includes('Pending')
+            ? 'pending' : undefined;
+        data.set('status', status);
+        if (!rsvChanged(rsv, data)) {
+            cancel();
+            dispatch('submit', { rsv });
+            return;
+        }
+
         if (data.has('lane2')) {
             if (
-                (data.get('lane1') === 'null' && data.get('lane2') !== 'null')
-                || (data.get('lane1') !== 'null' && data.get('lane2') === 'null')
+                (data.get('lane1') === 'auto' && data.get('lane2') !== 'auto')
+                || (data.get('lane1') !== 'auto' && data.get('lane2') === 'auto')
             ) {
                 alert('Either both lanes must be assigned or both must be auto');
                 cancel();
                 return;
             }
-            if (data.get('lane1') !== 'null' && data.get('lane1') === data.get('lane2')) {
+            if (data.get('lane1') !== 'auto' && data.get('lane1') === data.get('lane2')) {
                 alert('Cannot assign same value for 1st and 2nd Lane');
                 cancel();
                 return;
@@ -64,17 +77,15 @@
         }
 
         dispatch('submit', { rsv });
-
+        
         return async ({ result, update }) => {
             switch(result.type) {
                 case 'success':
                     if (result.data.status === 'success') {
                         let updated = result.data.record;
-                        if (rsvChanged(rsv, updated)) {
-                            copyChanges(rsv, updated);
-                            $reservations = [...$reservations];
-                            toast.success('Reservation updated!');
-                        }
+                        copyChanges(rsv, updated);
+                        $reservations = [...$reservations];
+                        toast.success('Reservation updated!');
                     } else if (result.data.status === 'error') {
                         toast.error('Server returned error!')
                     }

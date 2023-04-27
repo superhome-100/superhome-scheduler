@@ -6,6 +6,12 @@ import {
     updateNickname,
 } from '$lib/server/server.js';
 
+const adminUpdateGeneric = async ({ request }) => {
+    const data = await request.formData();
+    const record = await adminUpdate(data);
+    return record;
+};
+
 export const actions = {
     submitReservation: async ({ request }) => {
         const data = await request.formData();
@@ -27,23 +33,9 @@ export const actions = {
         const record = await cancelReservation(data);
         return record;
     },
-    adminUpdateConfirmed: async ({ request }) => {
-        const data = await request.formData();
-        data.set('status', 'confirmed');
-        const record = await adminUpdate(data);
-        return record;
-    },
-    adminUpdatePending: async ({ request }) => {
-        const data = await request.formData();
-        data.set('status', 'pending');
-        const record = await adminUpdate(data);
-        return record;
-    },adminUpdateRejected: async ({ request }) => {
-        const data = await request.formData();
-        data.set('status', 'rejected');
-        const record = await adminUpdate(data);
-        return record;
-    },
+    adminUpdateConfirmed: adminUpdateGeneric,
+    adminUpdatePending: adminUpdateGeneric,
+    adminUpdateRejected: adminUpdateGeneric,
     nickname: async ({ request }) => {
         const data = await request.formData();
         const record = await updateNickname(data.get('id'), data.get('nickname'));
