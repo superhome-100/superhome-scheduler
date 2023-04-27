@@ -60,7 +60,7 @@
                     name='buoy'
                     value={rsv.buoy}
                 >
-                    <option value={null}>Auto</option>
+                    <option value='auto'>Auto</option>
                     {#each $buoys as buoy}
                         <option value={buoy.name}>{buoy.name}</option>
                     {/each}

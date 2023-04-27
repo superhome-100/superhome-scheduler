@@ -77,10 +77,9 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
     const depthsTooFar = (bg0, bg1, tooFar=10) => {
         return bg0[bg0.length-1].maxDepth - bg1[0].maxDepth >= tooFar;
     };
-
     // helper to make sure buddies with pre-assigned buoys are consistent
-    const buoysMatch = (bg0, bg1) => bg0[0].buoy === undefined
-        || bg1[0].buoy === undefined
+    const buoysMatch = (bg0, bg1) => bg0[0].buoy === 'auto'
+        || bg1[0].buoy === 'auto'
         || (bg0[0].buoy === bg1[0].buoy);
 
     // helper for creating a buoy group from buddy groups and removing from buddyGrps
@@ -268,15 +267,15 @@ function assignBuoyGroupsToBuoys(buoys, grps) {
     const assignments = {};
     const getBuoy = (grp) => {
         return grp.reduce((buoy,buddy) => {
-            return buddy.buoy === undefined ? buoy : buddy.buoy
-        }, undefined);
+            return buoy !== 'auto' ? buoy : buddy.buoy
+        }, 'auto');
     };
 
     // first assign pre-assigned buoys
     for (let i=grps.length-1; i >= 0; i--) {
         const grp = grps[i];
         const name = getBuoy(grp);
-        if (name !== undefined) {
+        if (name !== 'auto') {
             for (let j=buoys.length-1; j >= 0; j--) {
                 if (buoys[j].name === name) {
                     assignments[name] = grp;

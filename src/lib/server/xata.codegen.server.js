@@ -23,7 +23,6 @@ const tables = [
       },
       { name: "date", type: "string" },
       { name: "owner", type: "bool", defaultValue: "true" },
-      { name: "buoy", type: "string" },
       { name: "buddies", type: "multiple" },
       { name: "status", type: "string", defaultValue: "pending" },
       { name: "pulley", type: "bool" },
@@ -33,6 +32,7 @@ const tables = [
       { name: "room", type: "string" },
       { name: "lanes", type: "multiple" },
       { name: "O2OnBuoy", type: "bool" },
+      { name: "buoy", type: "string", defaultValue: "auto" },
     ],
   },
   {
