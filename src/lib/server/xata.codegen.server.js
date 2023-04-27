@@ -29,10 +29,10 @@ const tables = [
       { name: "extraBottomWeight", type: "bool" },
       { name: "bottomPlate", type: "bool" },
       { name: "largeBuoy", type: "bool" },
-      { name: "room", type: "string" },
       { name: "lanes", type: "multiple" },
       { name: "O2OnBuoy", type: "bool" },
       { name: "buoy", type: "string", defaultValue: "auto" },
+      { name: "room", type: "string", defaultValue: "auto" },
     ],
   },
   {

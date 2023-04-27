@@ -39,7 +39,7 @@ function sortByPriority(rsvs) {
     let preAssigned = [], unAssigned = [];
     owners.forEach(rsv => {
         if (rsv.category === 'pool') {
-            rsv.lanes.length == 0 ? unAssigned.push(rsv) : preAssigned.push(rsv);
+            rsv.lanes[0] === 'auto' ? unAssigned.push(rsv) : preAssigned.push(rsv);
         } else if (rsv.category === 'classroom') {
             rsv.room == null ? unAssigned.push(rsv) : preAssigned.push(rsv);
         }
@@ -117,7 +117,7 @@ function rsvToBlock(rsv, minTime, inc, resourceNames) {
     let width = nOccupants([rsv], occ) + rsv.buddies.length;
     let startSpaces;
     if (rsv.category === 'pool') {
-        startSpaces = rsv.lanes.length > 0
+        startSpaces = rsv.lanes[0] !== 'auto'
             ? rsv.lanes.map(lane => occ*resourceNames.indexOf(lane))
             : null;
     } else if (rsv.category === 'classroom') {

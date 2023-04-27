@@ -49,9 +49,6 @@ export function augmentRsv(rsv, user=null) {
     if (rsv.buddies == null) {
         rsv.buddies = [];
     }
-    if (rsv.lanes == null) {
-        rsv.lanes = [];
-    }
     if (rsv.category === 'openwater') {
         if (rsv.owTime === 'AM') {
             startTime = Settings.get('openwaterAmStartTime', rsv.date);
@@ -368,8 +365,8 @@ function assignClassrooms(rsvs, dateStr) {
     let incT = inc(Settings, dateStr);
     let timeIdx = (time) => (timeStrToMin(time)-minTime) / incT;
 
-    rsvs.sort((a,b) => a.room != null ? -1 : b.room != null ? 1 : 0);
-    rsvs.forEach(rsv => rsv.unassigned = rsv.room == null);
+    rsvs.sort((a,b) => a.room != 'auto' ? -1 : b.room != 'auto' ? 1 : 0);
+    rsvs.forEach(rsv => rsv.unassigned = rsv.room === 'auto');
 
     const lastBlk = (r) => schedule[r][schedule[r].length-1];
     const continuingBlk = (blk, rsv) => blk.cls === 'rsv' && blk.data[0].id === rsv.id;
@@ -385,7 +382,7 @@ function assignClassrooms(rsvs, dateStr) {
             let start = timeIdx(rsv.startTime);
             let end = timeIdx(rsv.endTime);
             if (start <= t && t < end) {
-                if (rsv.room) {
+                if (rsv.room !== 'auto') {
                     // pre-assigned
                     let r = rooms.indexOf(rsv.room)
                     let curBlk = lastBlk(r);
