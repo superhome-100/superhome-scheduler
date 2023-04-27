@@ -3,6 +3,7 @@
     import { Settings } from '$lib/settings.js';
     import { minValidDateStr, maxValidDateStr } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
+    import { adminView } from '$lib/utils.js';
     import BuddyMatch from '$lib/components/BuddyMatch.svelte';
     import PlusIcon from '$lib/components/PlusIcon.svelte';
     import DeleteIcon from '$lib/components/DeleteIcon.svelte';
@@ -134,14 +135,13 @@
                     + 'rounded-lg border ' + bdColor(status) + ' ' 
                     + 'ring-1 ring-gray-500 dark:ring-gray-300';
 
-    const adminView = () => $user.privileges === 'admin' && viewOnly;
 </script>
 
 <svelte:window on:keydown={navigateList} />
 
 <div class="row w-full">
     <div class="column labels text-right w-[33%]">
-        {#if viewOnly}
+        {#if viewOnly || adminView(rsv, viewOnly)}
             <div class='form-label h-8 mb-1'><label for='formStatus'>Status</label></div>
         {/if}
         <div class='form-label h-8 mb-0.5'><label for="formDate">Date</label></div>
@@ -174,7 +174,7 @@
         <div class='form-label h-8 mb-0.5'><label for="formComments">Comments</label></div>
     </div>
     <div class="column inputs text-left w-[67%]">
-        {#if adminView()}
+        {#if adminView(rsv, viewOnly)}
             <div>
                 <select
                     id='formStatus'
@@ -290,8 +290,8 @@
                 type="submit" 
                 class='bg-gray-100 disabled:text-gray-400 px-3 py-1'
                 tabindex='6' 
-                disabled={!adminView() && !$canSubmit}
-                hidden={!adminView() && viewOnly}
+                disabled={!adminView(rsv, viewOnly) && !$canSubmit}
+                hidden={!adminView(rsv, viewOnly) && viewOnly}
             >
                 {#if rsv}
                     Update
