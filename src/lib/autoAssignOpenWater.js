@@ -267,7 +267,7 @@ function assignBuoyGroupsToBuoys(buoys, grps) {
     const assignments = {};
     const getBuoy = (grp) => {
         return grp.reduce((buoy,buddy) => {
-            return buoy !== 'auto' ? buoy : buddy.buoy
+            return buoy !== 'auto' ? buoy : buddy.buoy ? buddy.buoy : 'auto';
         }, 'auto');
     };
 
@@ -289,13 +289,19 @@ function assignBuoyGroupsToBuoys(buoys, grps) {
 
     buoys.sort((a,b) => a.maxDepth < b.maxDepth ? 1 : -1);
     grps.sort((a,b) => a[0].maxDepth > b[0].maxDepth ? 1 : -1);
+
+    // depthBuffer deals with cases when there aren't enough buoys of adequate depth
+    // for all divers given the divers' requested depths; a buoy that is too short
+    // by at most depthBuffer may be assigned in this case
+    const depthBuffer = 5;
+
     // iterate from deepest to shallowest
     while (grps.length > 0) {
         const grp = grps[grps.length-1];
         const checkNoPulley = grp[0].resType === 'course' && grp[0].pulley == false;
         let candidates = buoys
             .map((buoy, idx) => { return { buoy, idx }})
-            .filter(cand => cand.buoy.maxDepth >= grp[0].maxDepth
+            .filter(cand => cand.buoy.maxDepth >= grp[0].maxDepth - depthBuffer
                 && ((checkNoPulley && !cand.buoy.pulley)
                     || !checkNoPulley));
 
