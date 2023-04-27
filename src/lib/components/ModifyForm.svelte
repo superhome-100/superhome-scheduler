@@ -163,40 +163,27 @@
     };
     
     let restrictModify = !beforeResCutoff(Settings, rsv.date, rsv.startTime, rsv.category);
-    let viewOnly = !rsv.owner 
-            || !beforeCancelCutoff(Settings, rsv.date, rsv.startTime, rsv.category) 
-            || (restrictModify && rsv.resType === 'autonomous');
 
 </script>
 
 {#if hasForm}
-    {#if viewOnly}
-        <div class='mb-4'>
+   <div>
+        <div class='form-title'>modify reservation</div>
+        <form 
+            method="POST" 
+            action="/?/updateReservation" 
+            use:enhance={updateReservation}
+        >
+            <input type="hidden" name="id" value={rsv.id}>
             {#if rsv.category === 'pool'}
-                <ResFormPool viewOnly {rsv}/>
+                <ResFormPool {restrictModify} {rsv}/>
             {:else if rsv.category === 'openwater'}
-                <ResFormOpenWater viewOnly {rsv}/>
+                <ResFormOpenWater {restrictModify} {rsv}/>
+            {:else if rsv.category === 'classroom'}
+                <ResFormClassroom {rsv}/>
             {/if}
-        </div>
-    {:else}
-        <div>
-            <div class='form-title'>modify reservation</div>
-            <form 
-                method="POST" 
-                action="/?/updateReservation" 
-                use:enhance={updateReservation}
-            >
-                <input type="hidden" name="id" value={rsv.id}>
-                {#if rsv.category === 'pool'}
-                    <ResFormPool {restrictModify} {rsv}/>
-                {:else if rsv.category === 'openwater'}
-                    <ResFormOpenWater {restrictModify} {rsv}/>
-                {:else if rsv.category === 'classroom'}
-                    <ResFormClassroom {rsv}/>
-                {/if}
-            </form>
-        </div>
-    {/if}
+        </form>
+    </div>
 {/if}
 
 <Toaster/>

@@ -49,7 +49,7 @@
 
 <ResFormGeneric {viewOnly} {restrictModify} {showBuddyFields} bind:date={date} bind:category={category} {rsv}>
     <div class='[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5' slot="categoryLabels">
-        {#if adminView(rsv, viewOnly)}
+        {#if adminView(viewOnly)}
             {#if category === 'pool'}
                 {#if rsv.resType === 'course' && rsv.numStudents > Settings.get('maxOccupantsPerLane')}
                     <div><label for='formLane1'>1st Lane</label></div>
@@ -70,7 +70,7 @@
     </div>
 
     <div slot="categoryInputs">
-        {#if adminView(rsv, viewOnly)}
+        {#if adminView(viewOnly)}
             {#if category === 'pool'}
                 <div><select
                         id='formLane1'

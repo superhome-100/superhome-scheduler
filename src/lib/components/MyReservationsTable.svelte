@@ -5,7 +5,7 @@
     import { user, reservations } from '$lib/stores.js';
     import { getContext } from 'svelte';
     import Modal from './Modal.svelte';
-    import Dialog from './Dialog.svelte';
+    import CancelDialog from './CancelDialog.svelte';
     import RsvTabs from './RsvTabs.svelte';
     import { Settings } from '$lib/settings.js';
 
@@ -151,7 +151,7 @@
                             class='rounded-e-xl'
                         >
                             <Modal>
-                                <Dialog dialogType='cancel' rsv={rsv}/>
+                                <CancelDialog rsv={rsv}/>
                             </Modal>
                         </td>
                     {:else}

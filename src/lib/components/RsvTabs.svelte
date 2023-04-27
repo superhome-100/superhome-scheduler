@@ -3,9 +3,20 @@
     import ViewForm from '$lib/components/ViewForm.svelte';
     import ModifyForm from '$lib/components/ModifyForm.svelte';
     import { user } from '$lib/stores.js';
+    import { beforeResCutoff, beforeCancelCutoff } from '$lib/ReservationTimes.js';
+    import { Settings } from '$lib/settings.js';
 
     export let rsvs;
     export let hasForm;
+    export let disableModify = false;
+
+    let viewOnly = (rsv) => !rsv.owner 
+            || !beforeCancelCutoff(Settings, rsv.date, rsv.startTime, rsv.category) 
+            || (
+                !beforeResCutoff(Settings, rsv.date, rsv.startTIme, rsv.category) 
+                && rsv.resType === 'autonomous'
+            );
+
 </script>
 
 <div class='mb-4'>
@@ -14,13 +25,13 @@
 
         <TabList>
             {#each rsvs as rsv}
-                <Tab>{rsv.user.name}</Tab>
+                <Tab>{rsv.user.nickname}</Tab>
             {/each}
         </TabList>
         
         {#each rsvs as rsv}
             <TabPanel>
-                {#if $user.id === rsv.user.id}
+                {#if !disableModify && !viewOnly(rsv) && $user.id === rsv.user.id}
                     <ModifyForm {hasForm} {rsv}/>
                 {:else}
                     <ViewForm {hasForm} {rsv}/>
