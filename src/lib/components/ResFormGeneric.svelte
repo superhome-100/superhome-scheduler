@@ -174,23 +174,10 @@
         <div class='form-label h-8 mb-0.5'><label for="formComments">Comments</label></div>
     </div>
     <div class="column inputs text-left w-[67%]">
-        {#if adminView(viewOnly)}
-            <div>
-                <select
-                    id='formStatus'
-                    name='status'
-                    bind:value={status}
-                    class='focus:border-black ring-1 ring-offset-1 {ringColor(status)}'
-                >
-                    <option class='!bg-status-confirmed' value='confirmed'>Confirmed</option>
-                    <option value='rejected'>Rejected</option>
-                    <option value='pending'>Pending</option>
-                </select>
+        {#if viewOnly}
+            <div class={statusStyle(rsv.status)}>
+                {rsv.status}
             </div>
-        {:else if viewOnly}
-                <div class={statusStyle(rsv.status)}>
-                    {rsv.status}
-                </div>
         {/if}
         <div>
             <input type="hidden" name="user" value={$user.id}>
