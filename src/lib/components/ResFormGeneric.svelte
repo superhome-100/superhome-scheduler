@@ -141,7 +141,7 @@
 
 <div class="row w-full">
     <div class="column labels text-right w-[33%]">
-        {#if viewOnly || adminView(rsv, viewOnly)}
+        {#if viewOnly}
             <div class='form-label h-8 mb-1'><label for='formStatus'>Status</label></div>
         {/if}
         <div class='form-label h-8 mb-0.5'><label for="formDate">Date</label></div>
@@ -174,7 +174,7 @@
         <div class='form-label h-8 mb-0.5'><label for="formComments">Comments</label></div>
     </div>
     <div class="column inputs text-left w-[67%]">
-        {#if adminView(rsv, viewOnly)}
+        {#if adminView(viewOnly)}
             <div>
                 <select
                     id='formStatus'
@@ -290,8 +290,8 @@
                 type="submit" 
                 class='bg-gray-100 disabled:text-gray-400 px-3 py-1'
                 tabindex='6' 
-                disabled={!adminView(rsv, viewOnly) && !$canSubmit}
-                hidden={!adminView(rsv, viewOnly) && viewOnly}
+                disabled={!adminView(viewOnly) && !$canSubmit}
+                hidden={!adminView(viewOnly) && viewOnly}
             >
                 {#if rsv}
                     Update

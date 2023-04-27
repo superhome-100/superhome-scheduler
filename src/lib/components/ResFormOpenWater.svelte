@@ -41,7 +41,7 @@
 
 <ResFormGeneric {viewOnly} {restrictModify} {showBuddyFields} bind:date={date} bind:category={category} {rsv}>
     <div class='[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5' slot="categoryLabels">
-        {#if adminView(rsv, viewOnly)}
+        {#if adminView(viewOnly)}
             <div><label for='formBuoy'>Buoy</label></div>
         {/if}
         <div><label for="formOwTime">Time</label></div>
@@ -53,7 +53,7 @@
     </div>
     
     <div slot="categoryInputs">
-        {#if adminView(rsv, viewOnly)}
+        {#if adminView(viewOnly)}
             <div>
                 <select
                     id='formBuoy'

@@ -464,10 +464,8 @@ export function getDaySchedule(rsvs, datetime, category, softCapacity) {
     return result;
 }
 
-export const adminView = (rsv, viewOnly) => {
+export const adminView = (viewOnly) => {
     return get(user).privileges === 'admin'
-        && (viewOnly
-            || (rsv && rsv.user.id === get(user).id)
-        );
+        && viewOnly;
 };
 
