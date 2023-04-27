@@ -230,13 +230,16 @@ export function validateBuddies(rsv) {
 }
 
 export function updateReservationFormData(formData) {
+    let resType = formData.get('resType');
     let numBuddies = parseInt(formData.get('numBuddies'));
     formData.delete('numBuddies');
     let buddies = [];
     for (let i=0; i < numBuddies; i++) {
-        let name = formData.get('buddy' + i);
-        if (name !== '') {
-            buddies.push(formData.get('buddy' + i + '_id'));
+        if (resType === 'autonomous') {
+            let name = formData.get('buddy' + i);
+            if (name !== '') {
+                buddies.push(formData.get('buddy' + i + '_id'));
+            }
         }
         formData.delete('buddy' + i);
         formData.delete('buddy' + i + '_id');
