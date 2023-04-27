@@ -34,18 +34,20 @@
     const categories = ['pool', 'openwater', 'classroom'];
 
     function handleKeypress(e) {
-        if (e.keyCode == 37) { // left arrow key
-            prevDay();
-        } else if (e.keyCode == 39) { // right arrow key
-            nextDay();
-        } else if (e.keyCode == 40) { // down arrow
-            let i = categories.indexOf(category);
-            i = (i + 1) % categories.length;
-            goto(`/single-day/${categories[i]}`);
-        } else if (e.keyCode == 38) { // up arrow
-            let i = categories.indexOf(category);
-            i = (categories.length + i - 1) % categories.length;
-            goto(`/single-day/${categories[i]}`);
+        if (!modalOpened) {
+            if (e.keyCode == 37) { // left arrow key
+                prevDay();
+            } else if (e.keyCode == 39) { // right arrow key
+                nextDay();
+            } else if (e.keyCode == 40) { // down arrow
+                let i = categories.indexOf(category);
+                i = (i + 1) % categories.length;
+                goto(`/single-day/${categories[i]}`);
+            } else if (e.keyCode == 38) { // up arrow
+                let i = categories.indexOf(category);
+                i = (categories.length + i - 1) % categories.length;
+                goto(`/single-day/${categories[i]}`);
+            }
         }
     }
 

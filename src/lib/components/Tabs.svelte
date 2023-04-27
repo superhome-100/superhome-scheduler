@@ -51,18 +51,36 @@
 		selectedPanel
     });
 
+    function nextTab() {
+        let idx = (tabs.indexOf($selectedTab) + 1 ) % tabs.length;
+        $selectedTab = tabs[idx];
+        $selectedPanel = panels[idx];
+    }
+    
+    function prevTab() {
+        let idx = (tabs.length + tabs.indexOf($selectedTab) - 1) % tabs.length;
+        $selectedTab = tabs[idx];
+        $selectedPanel = panels[idx];
+    }
+
+    function handleKeypress(e) {
+        if (e.keyCode == 37) {
+            prevTab();
+        } else if (e.keyCode == 39) {
+            nextTab();
+        }
+    }
+
     function handleSwipe(event) {
         if (event.detail.direction === 'left') {
-            let idx = (tabs.indexOf($selectedTab) + 1 ) % tabs.length;
-            $selectedTab = tabs[idx];
-            $selectedPanel = panels[idx];
+            nextTab();         
         } else if (event.detail.direction === 'right') {
-            let idx = (tabs.length + tabs.indexOf($selectedTab) - 1) % tabs.length;
-            $selectedTab = tabs[idx];
-            $selectedPanel = panels[idx];
+            prevTab();
         }
     }
 </script>
+
+<svelte:window on:keydown={handleKeypress}/>
 
 <div 
     class="text-center min-h-[500px]" 
