@@ -2,7 +2,8 @@
 	export const TABS = {};
 </script>
 
-<script>
+<script> 
+    export let tabIndex = 0;
     import { swipe } from 'svelte-gestures';
 	import { setContext, onDestroy } from 'svelte';
 	import { writable } from 'svelte/store';
@@ -50,6 +51,11 @@
 		selectedTab,
 		selectedPanel
     });
+
+    $: {
+        $selectedTab = tabs[tabIndex];
+        $selectedPanel = panels[tabIndex];
+    }
 
     function nextTab() {
         let idx = (tabs.indexOf($selectedTab) + 1 ) % tabs.length;

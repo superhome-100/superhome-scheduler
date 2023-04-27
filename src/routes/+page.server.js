@@ -27,8 +27,20 @@ export const actions = {
         const record = await cancelReservation(data);
         return record;
     },
-    adminUpdate: async ({ request }) => {
+    adminUpdateConfirmed: async ({ request }) => {
         const data = await request.formData();
+        data.set('status', 'confirmed');
+        const record = await adminUpdate(data);
+        return record;
+    },
+    adminUpdatePending: async ({ request }) => {
+        const data = await request.formData();
+        data.set('status', 'pending');
+        const record = await adminUpdate(data);
+        return record;
+    },adminUpdateRejected: async ({ request }) => {
+        const data = await request.formData();
+        data.set('status', 'rejected');
         const record = await adminUpdate(data);
         return record;
     },
