@@ -192,7 +192,11 @@
                     {rsv.status}
                 </div>
         {/if}
-        <div><input type="hidden" name="user" value={$user.id}></div>
+        <div>
+            <input type="hidden" name="user" value={$user.id}>
+            <input type='hidden' name='date' value={date}>
+            <input type='hidden' name='category' value={category}>
+        </div>
         <div><input 
             type="date" 
             name="date" 
