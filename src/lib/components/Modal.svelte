@@ -492,7 +492,7 @@
     flex-direction: column;
     justify-content: center;
     width: 100vw;
-    height: 100vh;
+    height: 100%;
     background: rgba(0, 0, 0, 0.66);
   }
 
@@ -524,7 +524,7 @@
 
   .content {
     position: relative;
-    max-height: calc(100vh - 4rem);
+    max-height: calc(100% - 4rem);
     overflow: auto;
   }
 
