@@ -58,15 +58,11 @@
     }
 
     function nextTab() {
-        let idx = (tabs.indexOf($selectedTab) + 1 ) % tabs.length;
-        $selectedTab = tabs[idx];
-        $selectedPanel = panels[idx];
+        tabIndex = (tabIndex + 1 ) % tabs.length;
     }
     
     function prevTab() {
-        let idx = (tabs.length + tabs.indexOf($selectedTab) - 1) % tabs.length;
-        $selectedTab = tabs[idx];
-        $selectedPanel = panels[idx];
+        tabIndex = (tabs.length + tabIndex - 1) % tabs.length;
     }
 
     function handleKeypress(e) {
