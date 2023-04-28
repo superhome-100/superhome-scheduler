@@ -417,9 +417,15 @@
   svelte.onMount(() => {
     isMounted = true;
   });
+
+    // fix for iOS browser's lower nav bar obscuring the modal
+    let bodyHeight = document.body.height;
+    $: {
+        document.body.height = bodyHeight;
+    }
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window on:keydown={handleKeydown} bind:innerHeight={bodyHeight} />
 
 {#if Component}
   <div
@@ -492,7 +498,7 @@
     flex-direction: column;
     justify-content: center;
     width: 100vw;
-    height: 100%;
+    height: 100vh;
     background: rgba(0, 0, 0, 0.66);
   }
 
@@ -507,7 +513,7 @@
     width: 40rem;
     max-width: 100%;
     max-height: 100%;
-    margin: 2rem auto;
+    margin: auto;
     color: black;
     border-radius: 0.5rem;
     background: white;
@@ -524,7 +530,7 @@
 
   .content {
     position: relative;
-    max-height: calc(100% - 4rem);
+    max-height: calc(100vh - 4rem);
     overflow: auto;
   }
 
