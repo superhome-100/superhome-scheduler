@@ -418,14 +418,9 @@
     isMounted = true;
   });
 
-    // fix for iOS browser's lower nav bar obscuring the modal
-    let bodyHeight = document.body.height;
-    $: {
-        document.body.height = bodyHeight;
-    }
 </script>
 
-<svelte:window on:keydown={handleKeydown} bind:innerHeight={bodyHeight} />
+<svelte:window on:keydown={handleKeydown} />
 
 {#if Component}
   <div
@@ -498,7 +493,7 @@
     flex-direction: column;
     justify-content: center;
     width: 100vw;
-    height: 100vh;
+    height: 100dvh;
     background: rgba(0, 0, 0, 0.66);
   }
 
@@ -530,8 +525,8 @@
 
   .content {
     position: relative;
-    max-height: calc(100vh - 4rem);
-    overflow: auto;
+    max-height: calc(100dvh - 4rem);
+    overflow: scroll;
   }
 
   .close {
