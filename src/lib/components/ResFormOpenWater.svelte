@@ -92,7 +92,7 @@
         {#if autoOrCourse == 'course'}
             <div>
                 <select id='formNumStudents' disabled={viewOnly} name="numStudents" value={numStudents}>
-                    {#each [...Array(restrictModify ? numStudents : 10).keys()] as n}
+                    {#each [...Array(restrictModify ? numStudents : 4).keys()] as n}
                         <option value={n+1}>{n+1}</option>
                     {/each}
                 </select>
