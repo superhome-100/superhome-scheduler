@@ -247,7 +247,7 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
     return buoyGrps;
 }
 
-const buoyOpts = ['pulley', 'extraBottomWeight', 'bottomPlate', 'largeBuoy'];
+const buoyOpts = ['pulley', 'bottomPlate', 'largeBuoy'];
 
 function getGroupOpts(grp) {
     let grpOpts = {};
@@ -290,32 +290,30 @@ function assignBuoyGroupsToBuoys(buoys, grps) {
     buoys.sort((a,b) => a.maxDepth < b.maxDepth ? 1 : -1);
     grps.sort((a,b) => a[0].maxDepth > b[0].maxDepth ? 1 : -1);
 
-    // depthBuffer deals with cases when there aren't enough buoys of adequate depth
-    // for all divers given the divers' requested depths; a buoy that is too short
-    // by at most depthBuffer may be assigned in this case
-    const depthBuffer = 5;
-
     // iterate from deepest to shallowest
     while (grps.length > 0) {
         const grp = grps[grps.length-1];
         const checkNoPulley = grp[0].resType === 'course' && grp[0].pulley == false;
-        let candidates = buoys
-            .map((buoy, idx) => { return { buoy, idx }})
-            .filter(cand => cand.buoy.maxDepth >= grp[0].maxDepth - depthBuffer
-                && ((checkNoPulley && !cand.buoy.pulley)
-                    || !checkNoPulley));
-
-        if (candidates.length == 0) {
-            candidates = buoys
-                .map((buoy, idx) => { return { buoy, idx }})
-                .filter(cand => cand.buoy.maxDepth >= grp[0].maxDepth);
+        let candidates = buoys.map((buoy, idx) => { return { buoy, idx }})
+        if (checkNoPulley) {
+            let noPulleys = candidates.filter(c => c.pulley == false);
+            if (noPulleys.length > 0) {
+                candidates = noPulleys;
+            }
         }
 
         if (candidates.length > 0) {
             // first find buoys with most option matches
             let opts = getGroupOpts(grp);
-            let optScore = candidates.reduce((c, cand) => Math.max(countMatches(cand.buoy, opts), c), 0);
-            candidates = candidates.filter(cand => countMatches(cand.buoy, opts) == optScore);
+            const calcScore = (cand) => {
+                // rather than forbiding assignment of a buoy with a max depth less
+                // than the group's max depth, we allow it in cases when no other
+                // buoys of adequate depth are available via the depthPenalty
+                let depthPenalty = Math.min(0, 2*(cand.buoy.maxDepth - grp[0].maxDepth));
+                return depthPenalty + countMatches(cand.buoy, opts);
+            };
+            let optScore = candidates.reduce((c, cand) => Math.max(c, calcScore(cand)), -Infinity);
+            candidates = candidates.filter(cand => calcScore(cand) == optScore);
             // then select the one among these buoys with closest maxDepth
             let depthScore = Infinity;
             let best;
