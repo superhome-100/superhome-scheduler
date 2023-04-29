@@ -1,24 +1,11 @@
 import { getXataClient } from '$lib/server/xata.js';
-import { checkSpaceAvailable, convertReservationTypes, parseSettingsTbl } from '$lib/utils.js';
+import { checkSpaceAvailable, convertReservationTypes } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
-import { getOn } from '$lib/settings.js';
 import { startTimes, endTimes } from '$lib/ReservationTimes.js';
+import { timeStrToMin } from '$lib/datetimeUtils.js';
+import { Settings } from '$lib/server/settings.js';
 
 const xata = getXataClient();
-
-let settingsStore = null;
-const Settings = {
-    init: async () => {
-        if (!settingsStore) {
-            let settingsTbl = await xata.db.Settings.getAll();
-            settingsStore = parseSettingsTbl(settingsTbl);
-        }
-    },
-    get: (name, date) => {
-        let setting = settingsStore[name];
-        return getOn(setting, date);
-    }
-};
 
 export async function getTableCsv(table) {
     let fields = ['user.name', 'user.nickname', 'date', 'category', 'status',
@@ -120,30 +107,107 @@ export async function authenticateUser(userId, userName) {
     return record;
 }
 
+function getTimeSlots(settings, date, category, start, end) {
+    let sTs = startTimes(settings, date, category);
+    let eTs = endTimes(settings, date, category);
+    let times = [...sTs, eTs[eTs.length-1]];
+
+    let sIdx = times.indexOf(start);
+    let eIdx = times.indexOf(end);
+    if (sIdx == -1 && eIdx == -1) {
+        return null;
+    }
+
+    if (sIdx == -1) {
+        sIdx = 0;
+    }
+    if (eIdx == -1) {
+        eIdx = times.length-1;
+    }
+
+    let beforeStart = times.slice(0, sIdx);
+    let startVals = times.slice(sIdx, eIdx);
+
+    let endVals = times.slice(sIdx+1, eIdx+1);
+    let afterEnd = times.slice(eIdx+1);
+
+    return { startVals, endVals, beforeStart, afterEnd };
+}
+
+function timeOverlap(startA, endA, startB, endB) {
+    startA = timeStrToMin(startA);
+    startB = timeStrToMin(startB);
+    endA = timeStrToMin(endA);
+    endB = timeStrToMin(endB);
+    return (startA >= startB && startA < endB)
+        || (endA <= endB && endA > startB)
+        || (startA < startB && endA > endB);
+}
+
+function getTimeOverlapFilters(settings, rsv) {
+    let owAmStart = settings.get('openwaterAmStartTime', rsv.date);
+    let owAmEnd = settings.get('openwaterAmEndTime', rsv.date);
+    let owPmStart = settings.get('openwaterPmStartTime', rsv.date);
+    let owPmEnd = settings.get('openwaterPmEndTime', rsv.date);
+    let start, end;
+    let owTimes = [];
+    if (['pool', 'classroom'].includes(rsv.category)) {
+        start = rsv.startTime;
+        end = rsv.endTime;
+        if (timeOverlap(start, end, owAmStart, owAmEnd)) {
+            owTimes.push('AM')
+        }
+        if (timeOverlap(start, end, owPmStart, owPmEnd)) {
+            owTimes.push('PM');
+        }
+    } else if (rsv.category === 'openwater') {
+        owTimes.push(rsv.owTime);
+        if (rsv.owTime === 'AM') {
+            start = owAmStart;
+            end = owAmEnd;
+        } else if (rsv.owTime === 'PM') {
+            start = owPmStart;
+            end = owPmEnd;
+        }
+    }
+    let filters = [
+        {
+            category: 'openwater',
+            owTime: { $any: owTimes },
+        }
+    ];
+
+    let slots = getTimeSlots(Settings, rsv.date, 'pool', start, end);
+    if (slots != null) {
+        let timeFilt = [];
+        if (slots.startVals.length > 0) {
+            timeFilt.push({ startTime: { $any: slots.startVals }});
+        }
+        if (slots.endVals.length > 0) {
+            timeFilt.push({ endTime: { $any: slots.endVals }});
+        }
+        if (slots.beforeStart.length > 0 && slots.afterEnd.length > 0) {
+            timeFilt.push({ $all: [
+                { startTime: { $any: slots.beforeStart }},
+                { endTime: { $any: slots.afterEnd }},
+            ]});
+        }
+        filters.push({
+            category: { $any: ['pool', 'classroom'] },
+            $any: timeFilt,
+        });
+    }
+    return filters;
+}
+
 async function getBuddyReservations(sub, buddies) {
+    await Settings.init();
     let filters = {
         date: sub.date,
-        category: sub.category,
-        'user.id': { $any : buddies },
+        user: { $any : buddies },
+        $any: getTimeOverlapFilters(Settings, sub),
     };
-    if (sub.category === 'openwater') {
-        filters.owTime = sub.owTime;
-    } else if (['pool', 'classroom'].includes(sub.category)) {
-        await Settings.init();
 
-        let sTs = startTimes(Settings, sub.date, sub.category);
-        let eIdx = sTs.indexOf(sub.endTime);
-        if (eIdx < 0) { eIdx = sTs.length; }
-        let startVals = sTs.slice(sTs.indexOf(sub.startTime), eIdx);
-        let eTs = endTimes(Settings, sub.date, sub.category);
-        let sIdx = eTs.indexOf(sub.startTime)+1;
-        if (sIdx == -1) { sIdx = 0; }
-        let endVals = eTs.slice(sIdx, eTs.indexOf(sub.endTime)+1);
-        filters.$any = {
-            startTime: { $any: startVals },
-            endTime: { $any: endVals },
-        };
-    }
     let existing = await xata.db.Reservations.filter(filters).getAll();
     return existing;
 }
@@ -190,7 +254,8 @@ export async function submitReservation(formData) {
     // classroom bookings are confirmed automatically
     sub.status = sub.category === 'classroom' ? 'confirmed' : 'pending';
 
-    // since lanes is of type 'multiple' in the db, it cant have a default value, so we set the default here
+    // since lanes is of type 'multiple' in the db, it cant have a
+    // default value, so we set the default here
     sub.lanes = ['auto'];
 
     let entries = [sub];
@@ -347,8 +412,10 @@ export async function cancelReservation(formData) {
                 let buddies = save.filter(id => id != rsv.user.id);
                 return {...rsv, buddies};
             });
-        let modrecs = await xata.db.Reservations.update(modify);
-        records.modified = modrecs;
+        if (modify.length > 0) {
+            let modrecs = await xata.db.Reservations.update(modify);
+            records.modified = modrecs;
+        }
 
         remove = remove.concat(
             existing

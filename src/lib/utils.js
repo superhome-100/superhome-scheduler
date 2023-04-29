@@ -199,7 +199,7 @@ export function checkSpaceAvailable(settings, buoys, thisRsv, rsvs) {
             };
         }
     } else if (thisRsv.category === 'classroom') {
-        if (existingRsvs.length >= 3) {
+        if (existingRsvs.length >= settings.get('classrooms', thisRsv.date).length) {
             return {
                 status: 'error',
                 message: 'All classrooms are booked at this time.  ' +
