@@ -170,12 +170,15 @@ function getTimeOverlapFilters(settings, rsv) {
             end = owPmEnd;
         }
     }
-    let filters = [
-        {
+
+    let filters = []
+
+    if (owTimes.length > 0) {
+        filters.push({
             category: 'openwater',
             owTime: { $any: owTimes },
-        }
-    ];
+        });
+    }
 
     let slots = getTimeSlots(Settings, rsv.date, 'pool', start, end);
     if (slots != null) {
@@ -200,14 +203,13 @@ function getTimeOverlapFilters(settings, rsv) {
     return filters;
 }
 
-async function getBuddyReservations(sub, buddies) {
+async function getOverlappingReservations(sub, buddies) {
     await Settings.init();
     let filters = {
         date: sub.date,
         user: { $any : buddies },
         $any: getTimeOverlapFilters(Settings, sub),
     };
-
     let existing = await xata.db.Reservations.filter(filters).getAll();
     return existing;
 }
@@ -251,6 +253,15 @@ async function querySpaceAvailable(entries, remove=[]) {
 export async function submitReservation(formData) {
     let sub = convertReservationTypes(Object.fromEntries(formData));
 
+    let checkExisting = [sub.user, ...sub.buddies];
+    let existing = await getOverlappingReservations(sub, checkExisting);
+    if (existing.length > 0) {
+        return {
+            status: 'error',
+            code: 'RSV_EXISTS'
+        };
+    }
+
     // classroom bookings are confirmed automatically
     sub.status = sub.category === 'classroom' ? 'confirmed' : 'pending';
 
@@ -261,14 +272,6 @@ export async function submitReservation(formData) {
     let entries = [sub];
     if (sub.buddies.length > 0) {
         let { user, buddies, ...common } = sub;
-        let existing = await getBuddyReservations(sub, sub.buddies);
-        if (existing.length > 0) {
-            return {
-                status: 'error',
-                code: 'BUDDY_RSV_EXISTS'
-            };
-        }
-
         for (let id of buddies) {
             let bg = [user, ...buddies.filter(bid => bid != id)]
             entries.push({...common, user: id, buddies: bg, owner: false});
@@ -286,21 +289,46 @@ export async function submitReservation(formData) {
     };
 }
 
+function buddysRsv(rsv, sub) {
+    if (sub.buddies.includes(rsv.user.id)) {
+        if (['pool', 'classroom'].includes(sub.category)) {
+            return rsv.category === sub.category
+                && rsv.startTime === sub.startTime
+                && rsv.endTime === sub.endTime;
+        } else if (sub.category === 'openwater') {
+            return rsv.category === sub.category
+                && rsv.owTime === sub.owTime;
+        } else {
+            throw new Error();
+        }
+    } else {
+        return false;
+    }
+}
+
 export async function updateReservation(formData) {
     let {oldBuddies, ...sub} = convertReservationTypes(Object.fromEntries(formData));
-    sub.status = sub.category === 'classroom' ? 'confirmed' : 'pending';
     oldBuddies = oldBuddies ? oldBuddies : [];
 
-    let newBuddies = sub.buddies.filter(id => !oldBuddies.includes(id));
-    if (newBuddies.length > 0) {
-        let preExisting = await getBuddyReservations(sub, newBuddies);
-        if (preExisting.length > 0) {
-            return {
-                status: 'error',
-                code: 'BUDDY_RSV_EXISTS'
-            };
+    let orig = xata.db.Reservations.read(sub.id);
+
+    // first check that the owner and associated buddies do not have existing
+    // reservations that will overlap with the updated reservation
+    let checkExisting = [sub.user, ...sub.buddies];
+    let existing = await getOverlappingReservations(sub, checkExisting);
+    if (existing.length > 0) {
+        for (let rsv of existing) {
+            if (rsv.id !== orig.id && !buddysRsv(rsv, orig)) {
+                console.log(rsv);
+                return {
+                    status: 'error',
+                   code: 'RSV_EXISTS'
+                };
+            }
         }
     }
+
+    sub.status = sub.category === 'classroom' ? 'confirmed' : 'pending';
 
     let buddySet = new Set(sub.buddies);
     for (let id of oldBuddies) {
@@ -312,17 +340,16 @@ export async function updateReservation(formData) {
     let remove = [];
 
     if (buddySet.size > 0) {
-        let existing;
+        let existingBuddies;
         let { user, buddies, id, ...common } = sub;
         if (oldBuddies.length > 0) {
-            let orig = await xata.db.Reservations.read(id);
-            existing = await getBuddyReservations(orig, oldBuddies);
+            existingBuddies = await getOverlappingReservations(orig, oldBuddies);
         }
 
         for (let bId of buddySet) {
             if (buddies.includes(bId) && oldBuddies.includes(bId)) {
                 // modify
-                let rsvId = existing.filter(rsv => rsv.user.id === bId)[0].id;
+                let rsvId = existingBuddies.filter(rsv => rsv.user.id === bId)[0].id;
                 let bg = [user, ...buddies.filter(bIdp => bIdp != bId)]
                 let entry = {
                     ...common,
@@ -344,7 +371,7 @@ export async function updateReservation(formData) {
                 create.push(entry);
             } else {
                 // cancel
-                let rsvId = existing.filter(rsv => rsv.user.id === bId)[0].id;
+                let rsvId = existingBuddies.filter(rsv => rsv.user.id === bId)[0].id;
                 remove.push(rsvId);
             }
         }
@@ -405,7 +432,7 @@ export async function cancelReservation(formData) {
     let remove = [data.id];
     let records = {modified:[], canceled:[]};
     if (data.buddies.length > 0) {
-        let existing = await getBuddyReservations(data, data.buddies);
+        let existing = await getOverlappingReservations(data, data.buddies);
         let modify = existing
             .filter(rsv => save.includes(rsv.user.id))
             .map(rsv => {

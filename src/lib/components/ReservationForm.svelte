@@ -92,8 +92,8 @@
                         $reservations = [...$reservations];
                         toast.success('Reservation submitted!');
                     } else if (result.data.status === 'error') {
-                        if (result.data.code === 'BUDDY_RSV_EXISTS') {
-                            alert('Buddy reservation already exists!  Reservation rejected');
+                        if (result.data.code === 'RSV_EXISTS') {
+                            alert('Reservation rejected!  You or one of your buddies has a pre-existing reservation at this time');
                         } else if (result.data.code === 'NO_SPACE_AVAILABLE') {
                             alert(result.data.message);
                         }
