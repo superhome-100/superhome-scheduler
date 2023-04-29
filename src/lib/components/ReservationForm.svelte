@@ -31,7 +31,7 @@
         updateReservationFormData(data);
 
         let submitted = convertReservationTypes(Object.fromEntries(data));
-        
+
         if (!Settings.get('openForBusiness', submitted.date)) {
             alert('We are closed on this date; please choose a different date');
             cancel();

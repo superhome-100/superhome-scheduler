@@ -231,7 +231,6 @@ async function querySpaceAvailable(entries, remove=[]) {
     let existing = await getExistingRsvs([...entries, ...remove]);
     let buoys;
     let [sub, ...buddies] = entries;
-    existing = [...existing, ...buddies];
     if (sub.category === 'openwater') {
         buoys = await xata.db.Buoys.getAll();
     }
@@ -310,7 +309,7 @@ export async function updateReservation(formData) {
     let {oldBuddies, ...sub} = convertReservationTypes(Object.fromEntries(formData));
     oldBuddies = oldBuddies ? oldBuddies : [];
 
-    let orig = xata.db.Reservations.read(sub.id);
+    let orig = await xata.db.Reservations.read(sub.id);
 
     // first check that the owner and associated buddies do not have existing
     // reservations that will overlap with the updated reservation
@@ -319,7 +318,6 @@ export async function updateReservation(formData) {
     if (existing.length > 0) {
         for (let rsv of existing) {
             if (rsv.id !== orig.id && !buddysRsv(rsv, orig)) {
-                console.log(rsv);
                 return {
                     status: 'error',
                    code: 'RSV_EXISTS'
