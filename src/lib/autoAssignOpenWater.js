@@ -130,7 +130,7 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
                     let buoy1, buoy2;
                     // try not to split up pairs of buddies
                     if (Bg.filter(rsv=>rsv.buddies.length==1).length > 0) {
-                        for (let j=0; j<Bg.length; i++) {
+                        for (let j=0; j<Bg.length; j++) {
                             if (Bg[j].buddies.length == 0) {
                                 let buddy = Bg.splice(j,1)[0];
                                 buoy1 = Bg;

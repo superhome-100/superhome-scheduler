@@ -66,10 +66,12 @@ export function augmentRsv(rsv, user=null) {
     };
 
     if (user) {
-        newRsv.user.id = user.id;
-        newRsv.user.facebookId = user.facebookId;
-        newRsv.user.name = user.name;
-        newRsv.user.nickname = user.nickname;
+        newRsv.user = {
+            id: user.id,
+            facebookId: user.facebookId,
+            name: user.name,
+            nickname: user.nickname,
+        };
     }
 
     return newRsv;
@@ -175,10 +177,30 @@ function checkPoolSpaceAvailable(thisRsv, rsvs, settings) {
     return true;
 }
 
+function simulateOWBuddies(rsv) {
+    let owner = {...rsv};
+    let simId = -1;
+    owner.buoy = 'auto';
+    owner.id = simId--;
+    owner.user = {id: owner.user};
+    let simBuds = [];
+    for (let id of rsv.buddies) {
+        let buddies = [owner.user.id, ...owner.buddies.filter(thisId => thisId != id)];
+        simBuds.push({
+            ...owner,
+            id: simId--,
+            user: {id},
+            buddies,
+        });
+    }
+    return [owner, ...simBuds];
+}
+
 export function checkSpaceAvailable(settings, buoys, thisRsv, rsvs) {
     let existingRsvs = getExistingRsvs(thisRsv, rsvs);
     if (thisRsv.category === 'openwater') {
-        let result = assignRsvsToBuoys(buoys, [...existingRsvs, thisRsv]);
+        let [owner, ...buddies] = simulateOWBuddies(thisRsv);
+        let result = assignRsvsToBuoys(buoys, [...existingRsvs, ...buddies, owner]);
         if (result.status === 'error') {
             return {
                 status: 'error',
