@@ -32,7 +32,7 @@
         if (rsv != null && rsv.buddies != null) {
             for (let i=0; i < rsv.buddies.length; i++) {
                 buddyFields.push({
-                    'name': $users[rsv.buddies[i]].name,
+                    'name': $users[rsv.buddies[i]].nickname,
                     'userId': rsv.buddies[i],
                     'id': i,
                     'matches': []
@@ -71,8 +71,8 @@
             let buddyName = currentBF.name.toLowerCase();
             for (let id in $users) {
                 let record = $users[id];
-                if (record.id != $user.id && !currentBuddies.includes(record.name)) {
-                    let rec = record.name.slice(0, buddyName.length).toLowerCase(); 
+                if (record.id != $user.id && !currentBuddies.includes(record.nickname)) {
+                    let rec = record.nickname.slice(0, buddyName.length).toLowerCase(); 
                     if (buddyName === rec) {
                         currentBF.matches.push(record);
                     }
@@ -90,7 +90,7 @@
     }
     
     const setInputVal = (match) => {
-        currentBF.name = match.name;
+        currentBF.name = match.nickname;
         currentBF.userId = match.id;
         currentBF.matches = [];
         buddyFields = [...buddyFields];
@@ -245,7 +245,7 @@
                         <ul class={autocompUlStyle}>
                             {#each bf.matches as m, i}
                                 <BuddyMatch 
-                                    itemLabel={m.name} 
+                                    itemLabel={m.nickname} 
                                     highlighted={i === hiLiteIndex} 
                                     on:click={() => setInputVal(m)}
                                 /> 

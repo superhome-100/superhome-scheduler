@@ -42,7 +42,7 @@
                     for (let rsv of result.data.modified) {
                         removeRsv(rsv.id);
                         let user = $users[rsv.user.id];
-                        rsv = augmentRsv(rsv, user.facebookId, user.name);
+                        rsv = augmentRsv(rsv, user);
                         $reservations.push(rsv);
                     }
                     for (let rsv of result.data.canceled) {
@@ -81,7 +81,7 @@
             {#if rsv.owner}
                 {#each rsv.buddies as buddy, i}
                     <div>
-                        <label class='dark:text-white'>Also cancel {$users[buddy].name}'s reservation
+                        <label class='dark:text-white'>Also cancel {$users[buddy].nickname}'s reservation
                             <input type='checkbox' name={'buddy-'+i}>
                         </label>
                     </div>

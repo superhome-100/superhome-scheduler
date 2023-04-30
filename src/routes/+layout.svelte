@@ -74,8 +74,8 @@
 
         data = await get('AppData');
         if (data.status === 'success') {
-            $reservations = data.reservations.map((rsv) => augmentRsv(rsv));
             $users = data.usersById;
+            $reservations = data.reservations.map((rsv) => augmentRsv(rsv, $users[rsv.user.id]));
         }
     }
 
