@@ -76,33 +76,36 @@ function getMinBreaksPathRec(spacesByTimes, width, curTime, endTime, pathObj) {
     };
     // startSpace will be undefined if curTime == startTime
     let startSpace = pathObj.path[pathObj.path.length-1];
-
+    let sortedSteps = []
     for (let i=0; i <= spacesByTimes.length - width; i+=width) {
         if (allNull(i)) {
             let thisBreak = startSpace == null ? 0 : i == startSpace ? 0 : 1;
             thisBreak += sharedLane(i) ? 1 : 0;
-            let thisPath = getMinBreaksPathRec(
-                spacesByTimes,
-                width,
-                curTime+1,
-                endTime,
-                { breaks: pathObj.breaks + thisBreak, path: [i] }
-            );
-            if (thisPath.path != null) {
-                if (thisPath.breaks == 0) {
-                    // optimal path; stop the search and return this path immediately
-                    bestPath = thisPath;
-                    break;
-                }
-                else if (thisPath.breaks < minBreaks) {
-                    minBreaks = thisPath.breaks;
-                    bestPath = thisPath;
-                }
+            sortedSteps.push({i,thisBreak});
+        }
+    }
+    for (let step of sortedSteps.sort((a,b) => a.thisBreak > b.thisBreak ? 1 : b.thisBreak > a.thisBreak ? -1 : 0)) {
+        let thisPath = getMinBreaksPathRec(
+            spacesByTimes,
+            width,
+            curTime+1,
+            endTime,
+            { breaks: step.thisBreak, path: [step.i] }
+        );
+        if (thisPath.path != null) {
+            if (thisPath.breaks == 0) {
+                // optimal path; stop the search and return this path immediately
+                bestPath = thisPath;
+                break;
+            }
+            else if (thisPath.breaks < minBreaks) {
+                minBreaks = thisPath.breaks;
+                bestPath = thisPath;
             }
         }
     }
     if (bestPath) {
-        pathObj.breaks = bestPath.breaks;
+        pathObj.breaks += bestPath.breaks;
         pathObj.path = pathObj.path.concat(bestPath.path);
     } else {
         pathObj.path = null;
