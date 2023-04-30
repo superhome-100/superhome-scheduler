@@ -103,7 +103,7 @@
                         {#each assignmentAttempt.schedule[i] as { nSlots, cls, data }}
                             {#if cls === 'rsv'}
                                 <div 
-                                    class='{cls} {category} text-sm cursor-pointer hover:font-semibold' 
+                                    class='{cls} {category} mb-1 text-sm cursor-pointer hover:font-semibold' 
                                     style="height: {rowHeight*(nSlots/slotDiv) - (cls === 'rsv' ? blkMgn : 0)}rem"
                                     on:click={cls === 'rsv' ? showViewRsvs(data) : ()=>{}}
                                 >
