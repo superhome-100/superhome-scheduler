@@ -10,11 +10,10 @@ export async function GET() {
 
     let reservations = await main.db.Reservations.getAll();
     for (let i=0; i<reservations.length; i++) {
-        reservations[i].user = reservations[i].user.id;
+        let {id, user, ...rest} = reservations[i];
         if (i % 50 == 0) {
             setTimeout(()=>{}, 1000);
         }
-        let {id, ...rest} = reservations[i];
-        await backup.db.Reservations.createOrUpdate(id, rest);
+        await backup.db.Reservations.createOrUpdate(id, {...rest, user: user.id});
     }
 }
