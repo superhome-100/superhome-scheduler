@@ -6,9 +6,11 @@ export async function GET(req) {
     const backup = new XataClient({ apiKey: XATA_API_KEY, branch: 'backup' });
 
     let reservations = await main.db.Reservations.getAll();
+    console.log("backing up " + reservations.length + " reservations");
     await backup.db.Reservations.createOrUpdate(reservations);
 
     let users = await main.db.Users.getAll();
+    console.log('backing up ' + users.length + ' users');
     await backup.db.Users.createOrUpdate(users);
 
     let now = new Date();
