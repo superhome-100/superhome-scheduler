@@ -4,6 +4,8 @@
     import { toast, Toaster } from 'svelte-french-toast'
     import { getContext } from 'svelte';
 
+    let { close } = getContext('simple-modal');
+
     function removeFocus(e) {
         if (e.keyCode == 13) {
             this.blur();
@@ -11,6 +13,10 @@
     }
 
     const updateNickname = async ({ form, data, action, cancel }) => {
+        if (data.get('nickname').length == 0) {
+            cancel();
+        }
+        close();
         return async ({ result, update }) => {
             switch (result.type) {
                 case 'success':
@@ -19,11 +25,11 @@
                         .filter(rsv => rsv.user.id === $user.id)
                         .map(rsv => rsv.user.nickname = $user.nickname);
                     $reservations = [...$reservations];
-                    toast.success('Nickname updated');
+                    toast.success('Display name updated');
                     break;
                 default:
                     console.error(result);
-                    toast.error('Could not update nickname!');
+                    toast.error('Could not update display name!');
                     break;
             }
         }
