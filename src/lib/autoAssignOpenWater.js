@@ -342,7 +342,11 @@ export function assignRsvsToBuoys(buoys, rsvs) {
 
     let buddyGrps = sortBuddyGroups(groupByBuddy(rsvs));
 
+    // try to avoid assigning divers with max depths that differ by
+    // more than maxDepthDiff to the same buoy; if no better option
+    // is available, divers may still be assigned to the same buoy
     const maxDepthDiff = 15;
+
     let buoyGrps = createBuoyGroups(buddyGrps, maxDepthDiff);
 
     let result = assignBuoyGroupsToBuoys([...buoys], buoyGrps);
