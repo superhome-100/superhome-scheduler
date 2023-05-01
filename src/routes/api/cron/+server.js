@@ -1,5 +1,5 @@
 import { XataClient } from '$lib/server/xata.codegen.server.js';
-import { XATA_API_KEY } form '$env/static/private';
+import { XATA_API_KEY } from '$env/static/private';
 
 export async function GET(req) {
     const main = new XataClient({ apiKey: XATA_API_KEY });
