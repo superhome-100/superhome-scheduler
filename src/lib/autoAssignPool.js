@@ -84,7 +84,8 @@ function getMinBreaksPathRec(spacesByTimes, width, curTime, endTime, pathObj) {
             sortedSteps.push({i,thisBreak});
         }
     }
-    for (let step of sortedSteps.sort((a,b) => a.thisBreak > b.thisBreak ? 1 : b.thisBreak > a.thisBreak ? -1 : 0)) {
+    sortedSteps.sort((a,b) => a.thisBreak > b.thisBreak ? 1 : b.thisBreak > a.thisBreak ? -1 : 0)
+    for (let step of sortedSteps) {
         let thisPath = getMinBreaksPathRec(
             spacesByTimes,
             width,
