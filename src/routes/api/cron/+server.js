@@ -6,16 +6,11 @@ export async function GET() {
     const backup = new XataClient({ apiKey: XATA_API_KEY, branch: 'backup' });
 
     let users = await main.db.Users.getAll();
-    for (let i=0; i < users.length; i++) {
-        if (i % 50 == 0) {
-            setTimeout(()=>{}, 1000);
-        }
-        let {id, ...rest} = users[i];
-        await backup.db.Users.createOrUpdate(id, rest);
-    }
+    await backup.db.Users.createOrUpdate(users);
 
     let reservations = await main.db.Reservations.getAll();
     for (let i=0; i<reservations.length; i++) {
+        reservations[i].user = reservations[i].user.id;
         if (i % 50 == 0) {
             setTimeout(()=>{}, 1000);
         }
