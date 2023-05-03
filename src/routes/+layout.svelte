@@ -25,7 +25,7 @@
     import { onMount } from 'svelte';
     import { toast, Toaster } from 'svelte-french-toast';
 
-    $: isFacebook = window && window.navigator ? (navigator.userAgent.includes('FBAN') || navigator.userAgent.includes('FBAV')) : false;
+    $: isFacebook = typeof window !== 'undefined' && window.navigator ? (navigator.userAgent.includes('FBAN') || navigator.userAgent.includes('FBAV')) : false;
     $: loginState = 'pending';
     let profileSrc;
 
