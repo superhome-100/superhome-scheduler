@@ -25,6 +25,7 @@
     import { onMount } from 'svelte';
     import { toast, Toaster } from 'svelte-french-toast';
 
+    $: isFacebook = typeof window !== 'undefined' && window.navigator ? (navigator.userAgent.includes('FBAN') || navigator.userAgent.includes('FBAV')) : false;
     $: loginState = 'pending';
     let profileSrc;
 
@@ -392,3 +393,9 @@
 
 <Toaster/>
 
+{#if isFacebook}
+    <article class="fixed top-0 w-full h-full bg-orange-400 p-20">
+        <h1>Please don't use facebook browser</h1>
+        <p>To use default browser. Android tap in the upper right-hand corner. iOS tap in the lower right-hand corner.</p>
+    </article>
+{/if}
