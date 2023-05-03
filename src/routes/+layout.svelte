@@ -24,6 +24,7 @@
     import { augmentRsv } from '$lib/utils.js';
     import { onMount } from 'svelte';
     import { toast, Toaster } from 'svelte-french-toast';
+    import Nprogress from "$lib/components/Nprogress.svelte";
 
     $: isFacebook = typeof window !== 'undefined' && window.navigator ? (navigator.userAgent.includes('FBAN') || navigator.userAgent.includes('FBAV')) : false;
     $: loginState = 'pending';
@@ -172,6 +173,7 @@
             version    : 'v3.2' 
         });
         FB.getLoginStatus(function(response) {
+            console.log(response);
             if (response.status === 'connected') {
                 loginState = 'in';
                 loadProfilePic();
@@ -304,6 +306,7 @@
 
 </script>
 
+<Nprogress/>
 <svelte:window bind:innerWidth={width} />
 
 <Navbar let:hidden let:toggle color='currentColor'>
