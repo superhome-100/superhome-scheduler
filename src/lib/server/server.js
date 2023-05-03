@@ -261,8 +261,8 @@ export async function submitReservation(formData) {
         };
     }
 
-    // classroom bookings are confirmed automatically
-    sub.status = sub.category === 'classroom' ? 'confirmed' : 'pending';
+    // openwater bookings require the admin to manually confirm
+    sub.status = sub.category === 'openwater' ? 'pending' : 'confirmed';
 
     // since lanes is of type 'multiple' in the db, it cant have a
     // default value, so we set the default here
