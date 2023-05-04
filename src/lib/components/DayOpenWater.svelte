@@ -71,7 +71,7 @@
 
     const rsvClass = (rsv) => {
         if (rsv.user.id === $user.id) {
-            return 'border border-transparent rounded bg-lime-300 text-black';
+            return 'border border-transparent rounded-2xl bg-lime-300 text-black';
         } else {
             return '';
         }
