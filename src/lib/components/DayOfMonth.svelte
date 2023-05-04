@@ -55,7 +55,7 @@
             {#if rsvs.length > 0}
                 <div 
                     class='mx-auto mt-4 flex items-center justify-center text-sm rounded-xl h-6 w-10 rsv {category}'
-                >+{rsvs.length}
+                >+{rsvs.reduce((n, rsv) => rsv.resType === 'course' ? n + 1 + rsv.numStudents : n + 1, 0)}
                 </div>
             {/if}
         </div>
