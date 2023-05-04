@@ -91,12 +91,12 @@
     <div class='font-semibold text-3xl text-center'>Closed</div>
 {:else}
     <div class='row'>
-        <div class='column text-center w-[10%]'>
+        <div class='column text-center w-[16%]'>
             <div class='font-semibold'>buoy</div>
             {#each $buoys as buoy}
                 {#if schedule.AM[buoy.name] != undefined || schedule.PM[buoy.name] != undefined}
                     <div 
-                        class='flex mx-2 items-center justify-between font-semibold'
+                        class='flex mx-2 sm:mx-4 items-center justify-between font-semibold'
                         style='height: {rowHeights[buoy.name].header}rem'
                     >
                     <span class='text-xl'>{buoy.name}</span>
@@ -106,7 +106,7 @@
             {/each}
         </div>
         {#each [{cur:'AM', other:'PM'}, {cur:'PM', other:'AM'}] as {cur, other}}
-            <div class='column text-center w-[45%]'>
+            <div class='column text-center w-[42%]'>
                 <div class='font-semibold'>{cur}</div>
                 {#each $buoys as { name }}
                     {#if schedule[cur][name] != undefined}
