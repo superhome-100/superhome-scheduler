@@ -1,4 +1,4 @@
-import { getXataClient } from '$lib/server/xata.js';
+import { getXataClient, getXataBranch } from '$lib/server/xata.js';
 import { checkSpaceAvailable, convertReservationTypes } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
 import { startTimes, endTimes } from '$lib/ReservationTimes.js';
@@ -7,10 +7,11 @@ import { Settings } from '$lib/server/settings.js';
 
 const xata = getXataClient();
 
-export async function getTableCsv(table) {
+export async function getTableCsv(table, branch) {
+    let client = getXataBranch(branch);
     let fields = ['user.name', 'user.nickname', 'date', 'category', 'status',
         'resType', 'numStudents', 'owTime', 'startTime', 'endTime'];
-    let records = await xata.db[table]
+    let records = await client.db[table]
         .select(fields)
         .getAll();
     let csv = fields.reduce((h,v) => h + ',' + v) + '\n';

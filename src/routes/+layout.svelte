@@ -38,14 +38,18 @@
 
     onMount(() => toast.promise(initApp(), {loading: 'loading...', error: 'Loading error'}));
 
-    function downloadReservations() {
+    function downloadReservations(branch) {
         const fn = async () => {
-            let result = await fetch('/api/getReservationsTable')
-            if (result.status == 200) {
-                let blob = await result.blob();
+            const response = await fetch('/api/getReservationsTable', {
+                method: 'POST',
+                headers: {'Content-type': 'text/csv'},
+                body: JSON.stringify({ branch })
+            });
+            if (response.status == 200) {
+                let blob = await response.blob();
                 let a = document.createElement('a');
                 a.href = window.URL.createObjectURL(blob);
-                a.download = 'reservations.csv';
+                a.download = `reservations-${branch}.csv`;
                 a.click();
                 a.remove();
                 return Promise.resolve();
@@ -351,7 +355,23 @@
                     <SidebarItem label="Logout" on:click={userLogout} />
                 {/if}
                 {#if $user && $user.privileges === 'admin'}
-                    <SidebarItem label='Download Reservations' on:click={downloadReservations}/>
+                    <SidebarDropdownWrapper label='Download Reservations'>
+                        <SidebarItem 
+                            label='main'
+                            {spanClass}
+                            on:click={() => downloadReservations('main')}
+                        />
+                        <SidebarItem 
+                            label='backup-day-1'
+                            {spanClass}
+                            on:click={() => downloadReservations('backup-day-1')}
+                        />
+                        <SidebarItem 
+                            label='backup-day-2'
+                            {spanClass}
+                            on:click={() => downloadReservations('backup-day-2')}
+                        />
+                    </SidebarDropdownWrapper>
                 {/if}
                 <SidebarItem label="My Reservations" href="/" on:click={toggleSide} active={activeUrl === `/`} />
                 <SidebarDropdownWrapper isOpen={true} label="Calendars">

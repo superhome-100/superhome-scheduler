@@ -8,3 +8,7 @@ export const getXataClient = () => {
   instance = new XataClient({ apiKey: XATA_API_KEY });
   return instance;
 };
+
+export const getXataBranch = (branch) => {
+    return new XataClient({ apiKey: XATA_API_KEY, branch });
+};

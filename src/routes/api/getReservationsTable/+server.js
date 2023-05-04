@@ -1,13 +1,13 @@
 import { getTableCsv } from '$lib/server/server.js';
 
-export async function GET() {
-    let csv = await getTableCsv('Reservations');
-
+export async function POST({ request }) {
+    let { branch } = await request.json();
+    let csv = await getTableCsv('Reservations', branch);
     return new Response(csv, {
         status: 200,
         headers: {
             'Content-type': 'text/csv',
-            'Content-Disposition': 'attachment; filename=reservations.csv',
+            'Content-Disposition': `attachment; filename=reservations-${branch}.csv`,
         },
     });
 }
