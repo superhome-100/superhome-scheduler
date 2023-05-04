@@ -29,6 +29,7 @@
     $: isFacebook = typeof window !== 'undefined' && window.navigator ? (navigator.userAgent.includes('FBAN') || navigator.userAgent.includes('FBAV')) : false;
     $: loginState = 'pending';
     let profileSrc;
+    let intervalId;
 
     $: {
         if (loginState === 'out' && $page.route.id != '/') {
@@ -69,9 +70,6 @@
     }
 
     async function refreshAppState() {
-        let now = new Date();
-        console.log('refreshing at ' + now.toLocaleString());
-        
         let data = await get('Settings');
         if (data.status === 'success') {
             $settings = data.settings;
@@ -82,6 +80,33 @@
         if (data.status === 'success') {
             $users = data.usersById;
             $reservations = data.reservations.map((rsv) => augmentRsv(rsv, $users[rsv.user.id]));
+        }
+        $user = $users[$user.id];
+        if ($user.status === 'disabled') {
+            await logout();
+        }
+    }
+
+    async function initFromUser() {
+        if ($user == null) {
+            loginState = 'out';
+        } else if ($user.status === 'active') {
+            loginState = 'in';
+            let data = await get('AppData');
+            if (data.status === 'error') {
+                throw new Error('Could not read app data from database');
+            }
+            $reservations = data.reservations.map((rsv) => augmentRsv(rsv));
+            $users = data.usersById;
+            intervalId = setInterval(refreshAppState, $settings.refreshInterval.default);
+        } else if ($user.status === 'disabled') {
+            alert(
+                'User ' + $user.name + ' does not have permission ' + 
+                'to access this app; please contact the admin for help'
+            );
+            await logout();
+        } else {
+            throw new Error('Unknown user status');
         }
     }
 
@@ -101,20 +126,9 @@
                     throw new Error('Could not get session from database');
                 }
                 $user = data.user;
-
-                if ($user == null) {
-                    loginState = 'out';
-                } else {
-                    loginState = 'in';
-                    data = await get('AppData');
-                    if (data.status === 'error') {
-                        throw new Error('Could not read app data from database');
-                    }
-                    $reservations = data.reservations.map((rsv) => augmentRsv(rsv));
-                    console.log('loaded ' + $reservations.length + ' reservations');
-                    $users = data.usersById;
-                    setInterval(refreshAppState, $settings.refreshInterval.default);
-                }
+                
+                await initFromUser();
+ 
                 return true;
 
             } catch (error) {
@@ -177,7 +191,6 @@
             version    : 'v3.2' 
         });
         FB.getLoginStatus(function(response) {
-            console.log(response);
             if (response.status === 'connected') {
                 loginState = 'in';
                 loadProfilePic();
@@ -222,25 +235,13 @@
             return Promise.reject();
         }
 
-        const record = data.record;
-        if (record.status === 'active') {
-            $user = record;
-            loginState = 'in';
-            refreshAppState();
+        $user = data.record;
+        await initFromUser();
+        
+        if ($user.status === 'active') {
             loadProfilePic();
             return Promise.resolve();
-        
         } else {
-
-            if (record.status === 'disabled') {
-                alert(
-                    'User ' + name + ' does not have permission ' + 
-                    'to access this app; please contact the admin for help'
-                );
-            } else {
-                alert('Unexpected login error; Please try again');
-            }
-            await logout();
             return Promise.reject();
         }
     }
@@ -248,6 +249,8 @@
     async function logout() {
         loginState = 'pending';
         profileSrc = undefined;
+        if (intervalId) { clearInterval(intervalId); }
+        intervalId = undefined;
         const FB = window['FB']
         FB.getLoginStatus(function(response) {
             if (response.status === 'connected') {

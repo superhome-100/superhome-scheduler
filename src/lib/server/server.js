@@ -31,7 +31,7 @@ export async function getSettings() {
 
 export async function getSession(id) {
     let records = await xata.db.Sessions
-        .select(['*', 'user.privileges', 'user.facebookId', 'user.name', 'user.nickname'])
+        .select(['*', 'user.privileges', 'user.status', 'user.facebookId', 'user.name', 'user.nickname'])
         .filter({id: id})
         .getMany();
     return records[0];
@@ -61,11 +61,8 @@ export async function getReservationsSince(minDateStr) {
     return reservations;
 }
 
-export async function getActiveUsers() {
-    let users = await xata.db.Users
-        .filter({ status: "active" })
-        .getAll();
-
+export async function getAllUsers() {
+    let users = await xata.db.Users.getAll();
     return users;
 }
 
