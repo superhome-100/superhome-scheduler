@@ -95,13 +95,20 @@
             <div class='font-semibold'>buoy</div>
             {#each $buoys as buoy}
                 {#if schedule.AM[buoy.name] != undefined || schedule.PM[buoy.name] != undefined}
-                    <div 
-                        class='flex mx-2 sm:mx-4 items-center justify-between font-semibold'
-                        style='height: {rowHeights[buoy.name].header}rem'
-                    >
-                    <span class='text-xl'>{buoy.name}</span>
-                    <span class='text-sm'>{buoyDesc(buoy)}</span>
-                </div>
+                    {#if $user.privileges === 'admin'}
+                        <div 
+                            class='flex mx-2 sm:mx-4 md:mx-8 lg:mx-16 items-center justify-between font-semibold'
+                            style='height: {rowHeights[buoy.name].header}rem'
+                        >
+                            <span class='text-xl'>{buoy.name}</span>
+                            <span class='text-sm'>{buoyDesc(buoy)}</span>
+                        </div>
+                    {:else}
+                        <div 
+                            class='flex items-center justify-center font-semibold' 
+                            style='height: {rowHeights[buoy.name].header}rem'
+                        >{buoy.name}</div>
+                    {/if}
                 {/if}
             {/each}
         </div>
