@@ -69,6 +69,13 @@
         return o;
     }, {});
 
+    const rsvClass = (rsv) => {
+        if (rsv.user.id === $user.id) {
+            return 'border border-transparent rounded bg-lime-300 text-black';
+        } else {
+            return '';
+        }
+    }
 </script>
 
 {#if Settings.get('openForBusiness', datetimeToLocalDateStr($viewedDate)) === false}
@@ -100,7 +107,7 @@
                                 <div class='block indicator w-full px-2'>
                                     <span class='rsv-indicator {badgeColor([rsv])}'/>
                                     <div 
-                                        class='overflow-hidden'
+                                        class='overflow-hidden {rsvClass(rsv)}'
                                         style='margin: {rowHeights[name].margins[i]}'
                                     >{displayTag(rsv)}</div>
                                 </div>
