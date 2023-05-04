@@ -24,10 +24,15 @@
     import { augmentRsv } from '$lib/utils.js';
     import { onMount } from 'svelte';
     import { toast, Toaster } from 'svelte-french-toast';
+    import Nprogress from "$lib/components/Nprogress.svelte";
 
     $: isFacebook = typeof window !== 'undefined' && window.navigator ? (navigator.userAgent.includes('FBAN') || navigator.userAgent.includes('FBAV')) : false;
     $: loginState = 'pending';
     let profileSrc;
+    let intervalId;
+
+    const schedulerDoc = 'https://docs.google.com/document/d/1FQ828hDuuPRnQ7QWYMykSv9bT3Lmxi0amLsFyTjnyuM/edit?usp=share_link';
+    const facilitiesDoc = 'https://docs.google.com/document/d/11YbqoY5U_sxTduhAVCYpFmPd_QdaHuC8JhXrxgE1358/edit?usp=share_link';
 
     $: {
         if (loginState === 'out' && $page.route.id != '/') {
@@ -37,14 +42,18 @@
 
     onMount(() => toast.promise(initApp(), {loading: 'loading...', error: 'Loading error'}));
 
-    function downloadReservations() {
+    function downloadReservations(branch) {
         const fn = async () => {
-            let result = await fetch('/api/getReservationsTable')
-            if (result.status == 200) {
-                let blob = await result.blob();
+            const response = await fetch('/api/getReservationsTable', {
+                method: 'POST',
+                headers: {'Content-type': 'text/csv'},
+                body: JSON.stringify({ branch })
+            });
+            if (response.status == 200) {
+                let blob = await response.blob();
                 let a = document.createElement('a');
                 a.href = window.URL.createObjectURL(blob);
-                a.download = 'reservations.csv';
+                a.download = `reservations-${branch}.csv`;
                 a.click();
                 a.remove();
                 return Promise.resolve();
@@ -64,9 +73,6 @@
     }
 
     async function refreshAppState() {
-        let now = new Date();
-        console.log('refreshing at ' + now.toLocaleString());
-        
         let data = await get('Settings');
         if (data.status === 'success') {
             $settings = data.settings;
@@ -77,6 +83,33 @@
         if (data.status === 'success') {
             $users = data.usersById;
             $reservations = data.reservations.map((rsv) => augmentRsv(rsv, $users[rsv.user.id]));
+        }
+        $user = $users[$user.id];
+        if ($user.status === 'disabled') {
+            await logout();
+        }
+    }
+
+    async function initFromUser() {
+        if ($user == null) {
+            loginState = 'out';
+        } else if ($user.status === 'active') {
+            loginState = 'in';
+            let data = await get('AppData');
+            if (data.status === 'error') {
+                throw new Error('Could not read app data from database');
+            }
+            $reservations = data.reservations.map((rsv) => augmentRsv(rsv));
+            $users = data.usersById;
+            intervalId = setInterval(refreshAppState, $settings.refreshInterval.default);
+        } else if ($user.status === 'disabled') {
+            alert(
+                'User ' + $user.name + ' does not have permission ' + 
+                'to access this app; please contact the admin for help'
+            );
+            await logout();
+        } else {
+            throw new Error('Unknown user status');
         }
     }
 
@@ -96,20 +129,9 @@
                     throw new Error('Could not get session from database');
                 }
                 $user = data.user;
-
-                if ($user == null) {
-                    loginState = 'out';
-                } else {
-                    loginState = 'in';
-                    data = await get('AppData');
-                    if (data.status === 'error') {
-                        throw new Error('Could not read app data from database');
-                    }
-                    $reservations = data.reservations.map((rsv) => augmentRsv(rsv));
-                    console.log('loaded ' + $reservations.length + ' reservations');
-                    $users = data.usersById;
-                    setInterval(refreshAppState, $settings.refreshInterval.default);
-                }
+                
+                await initFromUser();
+ 
                 return true;
 
             } catch (error) {
@@ -216,25 +238,13 @@
             return Promise.reject();
         }
 
-        const record = data.record;
-        if (record.status === 'active') {
-            $user = record;
-            loginState = 'in';
-            refreshAppState();
+        $user = data.record;
+        await initFromUser();
+        
+        if ($user.status === 'active') {
             loadProfilePic();
             return Promise.resolve();
-        
         } else {
-
-            if (record.status === 'disabled') {
-                alert(
-                    'User ' + name + ' does not have permission ' + 
-                    'to access this app; please contact the admin for help'
-                );
-            } else {
-                alert('Unexpected login error; Please try again');
-            }
-            await logout();
             return Promise.reject();
         }
     }
@@ -242,6 +252,8 @@
     async function logout() {
         loginState = 'pending';
         profileSrc = undefined;
+        if (intervalId) { clearInterval(intervalId); }
+        intervalId = undefined;
         const FB = window['FB']
         FB.getLoginStatus(function(response) {
             if (response.status === 'connected') {
@@ -304,6 +316,7 @@
 
 </script>
 
+<Nprogress/>
 <svelte:window bind:innerWidth={width} />
 
 <Navbar let:hidden let:toggle color='currentColor'>
@@ -348,7 +361,23 @@
                     <SidebarItem label="Logout" on:click={userLogout} />
                 {/if}
                 {#if $user && $user.privileges === 'admin'}
-                    <SidebarItem label='Download Reservations' on:click={downloadReservations}/>
+                    <SidebarDropdownWrapper label='Download Reservations'>
+                        <SidebarItem 
+                            label='main'
+                            {spanClass}
+                            on:click={() => downloadReservations('main')}
+                        />
+                        <SidebarItem 
+                            label='backup-day-1'
+                            {spanClass}
+                            on:click={() => downloadReservations('backup-day-1')}
+                        />
+                        <SidebarItem 
+                            label='backup-day-2'
+                            {spanClass}
+                            on:click={() => downloadReservations('backup-day-2')}
+                        />
+                    </SidebarDropdownWrapper>
                 {/if}
                 <SidebarItem label="My Reservations" href="/" on:click={toggleSide} active={activeUrl === `/`} />
                 <SidebarDropdownWrapper isOpen={true} label="Calendars">
@@ -373,6 +402,8 @@
                         active={activeUrl === '/' + $view + '/classroom'}
                     />
                 </SidebarDropdownWrapper>
+                <SidebarItem label='How to use this app' target='_blank' href={schedulerDoc}/>
+                <SidebarItem label='Facilities Guide' target='_blank' href={facilitiesDoc}/>
             </SidebarGroup>
         </SidebarWrapper>
     </Sidebar>

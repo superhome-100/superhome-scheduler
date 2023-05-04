@@ -8,7 +8,17 @@
     export let restrictModify = false;
     export let viewOnly = false;
     const maxNumStudents = 10;
-
+    const maxTimeHours = 6;
 </script>
 
-<ResFormPool resType="course" {rsv} bind:date={date} {dateFn} bind:category={category} {restrictModify} {viewOnly} {maxNumStudents}/>
+<ResFormPool
+    resType="course" 
+    {rsv} 
+    bind:date={date} 
+    {dateFn} 
+    bind:category={category} 
+    {restrictModify} 
+    {viewOnly} 
+    {maxNumStudents}
+    {maxTimeHours}
+/>

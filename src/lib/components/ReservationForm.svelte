@@ -96,6 +96,8 @@
                             alert('Reservation rejected!  You or one of your buddies has a pre-existing reservation at this time');
                         } else if (result.data.code === 'NO_SPACE_AVAILABLE') {
                             alert(result.data.message);
+                        } else if (result.data.code === 'USER_DISABLED') {
+                            alert('Reservation rejected! User does not have permission to make reservations');
                         }
                     }
                     break;

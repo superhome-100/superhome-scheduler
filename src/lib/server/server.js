@@ -1,4 +1,4 @@
-import { getXataClient } from '$lib/server/xata.js';
+import { getXataClient, getXataBranch } from '$lib/server/xata.js';
 import { checkSpaceAvailable, convertReservationTypes } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
 import { startTimes, endTimes } from '$lib/ReservationTimes.js';
@@ -7,10 +7,11 @@ import { Settings } from '$lib/server/settings.js';
 
 const xata = getXataClient();
 
-export async function getTableCsv(table) {
+export async function getTableCsv(table, branch) {
+    let client = getXataBranch(branch);
     let fields = ['user.name', 'user.nickname', 'date', 'category', 'status',
         'resType', 'numStudents', 'owTime', 'startTime', 'endTime'];
-    let records = await xata.db[table]
+    let records = await client.db[table]
         .select(fields)
         .getAll();
     let csv = fields.reduce((h,v) => h + ',' + v) + '\n';
@@ -30,7 +31,7 @@ export async function getSettings() {
 
 export async function getSession(id) {
     let records = await xata.db.Sessions
-        .select(['*', 'user.privileges', 'user.facebookId', 'user.name', 'user.nickname'])
+        .select(['*', 'user.privileges', 'user.status', 'user.facebookId', 'user.name', 'user.nickname'])
         .filter({id: id})
         .getMany();
     return records[0];
@@ -60,11 +61,8 @@ export async function getReservationsSince(minDateStr) {
     return reservations;
 }
 
-export async function getActiveUsers() {
-    let users = await xata.db.Users
-        .filter({ status: "active" })
-        .getAll();
-
+export async function getAllUsers() {
+    let users = await xata.db.Users.getAll();
     return users;
 }
 
@@ -252,6 +250,14 @@ async function querySpaceAvailable(entries, remove=[]) {
 export async function submitReservation(formData) {
     let sub = convertReservationTypes(Object.fromEntries(formData));
 
+    let user = await xata.db.Users.read(sub.user);
+    if (user.status === 'disabled') {
+        return {
+            status: 'error',
+            code: 'USER_DISABLED',
+        };
+    }
+
     let checkExisting = [sub.user, ...sub.buddies];
     let existing = await getOverlappingReservations(sub, checkExisting);
     if (existing.length > 0) {
@@ -326,7 +332,7 @@ export async function updateReservation(formData) {
         }
     }
 
-    sub.status = sub.category === 'classroom' ? 'confirmed' : 'pending';
+    sub.status = sub.category === 'openwater' ? 'pending' : 'confirmed';
 
     let buddySet = new Set(sub.buddies);
     for (let id of oldBuddies) {
