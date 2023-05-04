@@ -250,6 +250,14 @@ async function querySpaceAvailable(entries, remove=[]) {
 export async function submitReservation(formData) {
     let sub = convertReservationTypes(Object.fromEntries(formData));
 
+    let user = await xata.db.Users.read(sub.user);
+    if (user.status === 'disabled') {
+        return {
+            status: 'error',
+            code: 'USER_DISABLED',
+        };
+    }
+
     let checkExisting = [sub.user, ...sub.buddies];
     let existing = await getOverlappingReservations(sub, checkExisting);
     if (existing.length > 0) {
