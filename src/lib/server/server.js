@@ -332,7 +332,7 @@ export async function updateReservation(formData) {
         }
     }
 
-    sub.status = sub.category === 'classroom' ? 'confirmed' : 'pending';
+    sub.status = sub.category === 'openwater' ? 'pending' : 'confirmed';
 
     let buddySet = new Set(sub.buddies);
     for (let id of oldBuddies) {
