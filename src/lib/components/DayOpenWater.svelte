@@ -76,6 +76,15 @@
             return '';
         }
     }
+
+    const buoyDesc = (buoy) => {
+        let desc = '';
+        if (buoy.largeBuoy) { desc += 'L' }
+        if (buoy.pulley) { desc += 'P' }
+        if (buoy.bottomPlate) { desc += 'B' }
+        desc += buoy.maxDepth;
+        return desc;
+    }
 </script>
 
 {#if Settings.get('openForBusiness', datetimeToLocalDateStr($viewedDate)) === false}
@@ -84,12 +93,15 @@
     <div class='row'>
         <div class='column text-center w-[10%]'>
             <div class='font-semibold'>buoy</div>
-            {#each $buoys as { name }}
-                {#if schedule.AM[name] != undefined || schedule.PM[name] != undefined}
+            {#each $buoys as buoy}
+                {#if schedule.AM[buoy.name] != undefined || schedule.PM[buoy.name] != undefined}
                     <div 
-                        class='flex items-center justify-center font-semibold' 
-                        style='height: {rowHeights[name].header}rem'
-                    >{name}</div>
+                        class='flex mx-2 items-center justify-between font-semibold'
+                        style='height: {rowHeights[buoy.name].header}rem'
+                    >
+                    <span class='text-xl'>{buoy.name}</span>
+                    <span class='text-sm'>{buoyDesc(buoy)}</span>
+                </div>
                 {/if}
             {/each}
         </div>
