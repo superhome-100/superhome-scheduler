@@ -17,6 +17,7 @@
     export let viewOnly = false;
     export let restrictModify = false;
     export let maxNumStudents = 4;
+    export let maxTimeHours = 4;
 
     let disabled = viewOnly || restrictModify;
 
@@ -44,7 +45,12 @@
     let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
     $canSubmit = true;
     $: showBuddyFields = autoOrCourse === 'autonomous';
-    
+
+    const validEndTime = (startTime, endTime) => {
+        let start = timeStrToMin(startTime);
+        let end = timeStrToMin(endTime);
+        return end > start && (end-start) <= maxTimeHours*60;
+    };
 </script>
 
 <ResFormGeneric {viewOnly} {restrictModify} {showBuddyFields} bind:date={date} bind:category={category} {rsv}>
@@ -122,7 +128,7 @@
         </select></div>
         <div><select id="formEnd" {disabled} name="endTime" value={chosenEnd}>
             {#each endTimes(Settings, date, category) as t}
-                {#if timeStrToMin(chosenStart) < timeStrToMin(t)}
+                {#if validEndTime(chosenStart, t)}
                     <option value={t}>{t}</option>
                 {/if}
             {/each}

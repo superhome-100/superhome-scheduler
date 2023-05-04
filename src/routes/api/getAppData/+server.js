@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getReservationsSince, getActiveUsers } from '$lib/server/server.js';
+import { getReservationsSince, getAllUsers } from '$lib/server/server.js';
 import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
 
 export async function GET() {
@@ -11,7 +11,7 @@ export async function GET() {
     }
     try {
         const reservations = await getReservationsSince(oneWeekAgo());
-        const users = await getActiveUsers();
+        const users = await getAllUsers();
         const usersById = users.reduce((obj, user) => {
             obj[user.id] = user;
             return obj;
