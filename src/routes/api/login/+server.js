@@ -8,7 +8,9 @@ export async function POST({ cookies, request })  {
         if (record.status === 'active') {
             if (cookies.get('sessionid') === undefined) {
                 const session = await createSession(record);
-                cookies.set('sessionid', session.id, {path: '/'});
+                let expires = new Date();
+                expires.setMonth(expires.getMonth()+1);
+                cookies.set('sessionid', session.id, {path: '/', expires});
             }
         }
         return json({ status: 'success', record });
