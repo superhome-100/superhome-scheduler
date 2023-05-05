@@ -45,7 +45,7 @@ function sortBuddyGroups(buddyGrps) {
         .sort((a,b) => a[0].maxDepth < b[0].maxDepth ? 1 : -1);
 }
 
-function groupByBuoy(buddyGrps, buoys) {
+function handlePreAssignedBuoys(buddyGrps, buoys) {
     for (let grp of buddyGrps) {
         let buoy = grp.reduce((b, rsv) => rsv.buoy === 'auto' ? b : rsv.buoy, 'auto');
         grp = grp.map(rsv => { return {...rsv, buoy }});
@@ -363,7 +363,12 @@ function assignBuoyGroupsToBuoys(buoys, grps) {
 
 export function assignRsvsToBuoys(buoys, rsvs) {
 
-    let buddyGrps = sortBuddyGroups(groupByBuoy(groupByBuddy(rsvs), buoys));
+    let buddyGrps = sortBuddyGroups(
+        handlePreAssignedBuoys(
+            groupByBuddy(rsvs),
+            buoys
+        )
+    );
 
     // try to avoid assigning divers with max depths that differ by
     // more than maxDepthDiff to the same buoy; if no better option
