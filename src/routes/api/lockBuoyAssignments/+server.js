@@ -1,18 +1,24 @@
 import { getXataClient } from '$lib/server/xata.js';
-import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
+import { timeStrToMin, datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
 import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
 import { json } from '@sveltejs/kit';
+import { Settings } from '$lib/server/settings.js';
 
 const xata = getXataClient();
 
 export async function POST() {
     try {
-        let tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate()+1);
-        let tomStr = datetimeToLocalDateStr(tomorrow);
+        Settings.init();
+        let date = new Date();
+        let startTime = Settings.get('openwaterAmStartTime', datetimeToLocalDateStr(date));
+        let curMin = date.getHours()*60 + date.getMinutes();
+        if (curMin > timeStrToMin(startTime)) {
+            date.setDate(date.getDate()+1);
+        }
+        let dateStr = datetimeToLocalDateStr(date);
         let rsvs = await xata.db.Reservations
             .filter({
-                date: tomStr,
+                date: dateStr,
                 category: 'openwater',
                 status: { $any: ['pending', 'confirmed'] }
             }).getAll();
