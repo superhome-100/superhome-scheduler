@@ -2,9 +2,5 @@
     "crons": [{
         "path": "/api/backupDB",
         "schedule": "0 16 * * *"
-    },
-    {
-        "path": "/api/lockBuoyAssignments",
-        "schedule": "0 16 * * *"
-    }]
+    }
 }
