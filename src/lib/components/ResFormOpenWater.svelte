@@ -1,7 +1,7 @@
 <script>
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { canSubmit, buoys, user } from '$lib/stores.js';
-    import { adminView } from '$lib/utils.js';
+    import { adminView, buoyDesc } from '$lib/utils.js';
     import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 
     export let rsv = null;
@@ -62,7 +62,7 @@
                 >
                     <option value='auto'>Auto</option>
                     {#each $buoys as buoy}
-                        <option value={buoy.name}>{buoy.name}</option>
+                        <option value={buoy.name}>{buoy.name + ' - ' + buoyDesc(buoy)}</option>
                     {/each}
                 </select>
             </div>
