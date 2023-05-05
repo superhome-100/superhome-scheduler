@@ -496,3 +496,11 @@ export const adminView = (viewOnly) => {
         && viewOnly;
 };
 
+export const buoyDesc = (buoy) => {
+    let desc = '';
+    if (buoy.largeBuoy) { desc += 'L' }
+    if (buoy.pulley) { desc += 'P' }
+    if (buoy.bottomPlate) { desc += 'B' }
+    desc += buoy.maxDepth;
+    return desc;
+}

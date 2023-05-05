@@ -5,7 +5,7 @@
     import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
     import { getContext } from 'svelte';
     import RsvTabs from '$lib/components/RsvTabs.svelte';
-    import { badgeColor } from '$lib/utils.js';
+    import { badgeColor, buoyDesc } from '$lib/utils.js';
     import { Settings } from '$lib/settings.js';
     
     const { open } = getContext('simple-modal');
@@ -76,15 +76,7 @@
             return '';
         }
     }
-
-    const buoyDesc = (buoy) => {
-        let desc = '';
-        if (buoy.largeBuoy) { desc += 'L' }
-        if (buoy.pulley) { desc += 'P' }
-        if (buoy.bottomPlate) { desc += 'B' }
-        desc += buoy.maxDepth;
-        return desc;
-    }
+ 
 </script>
 
 {#if Settings.get('openForBusiness', datetimeToLocalDateStr($viewedDate)) === false}
