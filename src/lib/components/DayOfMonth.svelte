@@ -53,10 +53,19 @@
                 {date.getDate()}
             </p>
             {#if rsvs.length > 0}
-                <div 
-                    class='mx-auto mt-4 flex items-center justify-center text-sm rounded-xl h-6 w-10 rsv {category}'
-                >+{rsvs.reduce((n, rsv) => rsv.resType === 'course' ? n + 1 + rsv.numStudents : n + 1, 0)}
-                </div>
+                {#if category === 'openwater'}
+                    {#each ['AM', 'PM'] as owTime}
+                        <div 
+                            class='mx-auto first-of-type:mt-2 first-of-type:mb-1 flex items-center justify-center text-sm rounded-xl h-6 w-10 rsv {category}'
+                        >+{rsvs.filter(rsv => rsv.owTime === owTime).reduce((n, rsv) => rsv.resType === 'course' ? n + 1 + rsv.numStudents : n + 1, 0)}
+                        </div>
+                    {/each}
+                {:else}
+                    <div 
+                        class='mx-auto mt-4 flex items-center justify-center text-sm rounded-xl h-6 w-10 rsv {category}'
+                    >+{rsvs.reduce((n, rsv) => rsv.resType === 'course' ? n + 1 + rsv.numStudents : n + 1, 0)}
+                    </div>
+                {/if}
             {/if}
         </div>
     </a>
