@@ -54,7 +54,7 @@ export async function getUser(id) {
 export async function getReservationsSince(minDateStr) {
     let reservations = await xata.db.Reservations
         .select(["*", "user.facebookId", "user.name", 'user.nickname'])
-        .filter({ date: { $ge: minDateStr }})
+        .filter({ date: { $ge: minDateStr }, $not: { status: 'canceled' }})
         .sort("date", "asc")
         .getAll();
 
@@ -341,7 +341,7 @@ export async function updateReservation(formData) {
 
     let modify = [sub];
     let create = [];
-    let remove = [];
+    let cancel = [];
 
     if (buddySet.size > 0) {
         let existingBuddies;
@@ -376,12 +376,12 @@ export async function updateReservation(formData) {
             } else {
                 // cancel
                 let rsvId = existingBuddies.filter(rsv => rsv.user.id === bId)[0].id;
-                remove.push(rsvId);
+                cancel.push(rsvId);
             }
         }
     }
 
-    let result = await querySpaceAvailable([...modify, ...create], remove);
+    let result = await querySpaceAvailable([...modify, ...create], cancel);
     if (result.status === 'error') { return result; }
 
     let records = {
@@ -395,8 +395,8 @@ export async function updateReservation(formData) {
         let createrecs = await xata.db.Reservations.create(create);
         records.created = createrecs;
     }
-    if (remove.length > 0) {
-        let cancelrecs = await xata.db.Reservations.delete(remove);
+    if (cancel.length > 0) {
+        let cancelrecs = await xata.db.Reservations.update(cancel.map(id => { return { id, status: 'canceled' }}));
         records.canceled = cancelrecs;
     }
     return {
@@ -433,7 +433,7 @@ export async function cancelReservation(formData) {
     let data = convertReservationTypes(Object.fromEntries(formData));
 
     let save = data.buddies.filter(id => !data.delBuddies.includes(id));
-    let remove = [data.id];
+    let cancel = [data.id];
     let records = {modified:[], canceled:[]};
     if (data.buddies.length > 0) {
         let existing = await getOverlappingReservations(data, data.buddies);
@@ -448,14 +448,14 @@ export async function cancelReservation(formData) {
             records.modified = modrecs;
         }
 
-        remove = remove.concat(
+        cancel = cancel.concat(
             existing
                 .filter(rsv => !save.includes(rsv.user.id))
                 .map(rsv => rsv.id)
         );
     }
 
-    let cancelrecs = await xata.db.Reservations.delete(remove);
+    let cancelrecs = await xata.db.Reservations.update(cancel.map(id => { return { id, status: 'canceled' }}));
     records.canceled = cancelrecs;
 
     return records;
