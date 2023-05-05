@@ -8,7 +8,7 @@ const xata = getXataClient();
 
 export async function POST() {
     try {
-        Settings.init();
+        await Settings.init();
         let date = new Date();
         let startTime = Settings.get('openwaterAmStartTime', datetimeToLocalDateStr(date));
         let curMin = date.getHours()*60 + date.getMinutes();
