@@ -207,6 +207,7 @@ async function getOverlappingReservations(sub, buddies) {
         date: sub.date,
         user: { $any : buddies },
         $any: getTimeOverlapFilters(Settings, sub),
+        status: { $any : ['pending', 'confirmed'] },
     };
     let existing = await xata.db.Reservations.filter(filters).getAll();
     return existing;
@@ -217,6 +218,7 @@ async function getExistingRsvs(entries) {
     let filters = {
         date: entries[0].date,
         category: entries[0].category,
+        status: { $any : ['pending', 'confirmed'] },
     };
     if (ids.length > 0) {
         filters.$not = { $any: ids };
