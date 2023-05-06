@@ -25,7 +25,6 @@
         let schedule = {};
         let today = datetimeToLocalDateStr(datetime);
         rsvs = rsvs.filter((v) => v.status != 'rejected' && v.category === 'openwater' && v.date === today);
-        
         for (let owTime of ['AM', 'PM']) {
             let result = assignRsvsToBuoys(
                 $buoys, 
@@ -78,15 +77,39 @@
     }
 
     const buoyInUse = (sched, b) => sched.AM[b] != undefined || sched.PM[b] != undefined;
+
+    const sortByBoat = (buoys, asn) => {
+        let sorted = [...buoys];
+        sorted.sort((a,b) => {
+            if (asn[a.name]) {
+                if (asn[b.name]) { 
+                    if (parseInt(asn[a.name]) > parseInt(asn[b.name])) {
+                        return 1;
+                    } else {
+                        return -1;
+                    }
+                } else {
+                    return 1;
+                }
+            } else if (asn[b.name]) { 
+                return -1;
+            } else {
+                return 0;
+            }
+        });
+        return sorted;
+    };
+
     $: date = datetimeToLocalDateStr($viewedDate);
     $: boats = Settings.get('boats', date);
     $: assignments = $boatAssignments[date] ? $boatAssignments[date] : {}; 
     $: boatCounts = boats.reduce((bc,b) => { bc[b] = 0; return bc; }, {});
+    $: displayBuoys = sortByBoat($buoys, assignments);
 
     const getBoatCount = (schedule, assignments, boat) => {
         let count = 0;
         for (let buoy in assignments) {
-            if (assignments[buoy] === boat) {
+            if (schedule.AM[buoy] && assignments[buoy] === boat) {
                 for (let rsv of schedule.AM[buoy]) {
                     count++;
                     if (rsv.resType === 'course') {
@@ -129,7 +152,7 @@
     <div class='row'>
         <div class='column text-center w-[16%]'>
             <div class='font-semibold'>buoy</div>
-            {#each $buoys as buoy}
+            {#each displayBuoys as buoy}
                 {#if buoyInUse(schedule, buoy.name)}
                     {#if $user.privileges === 'admin'}
                         <div 
@@ -151,7 +174,7 @@
         {#if $user.privileges === 'admin'}
             <div class='column text-center w-[18%]'>
                 <div class='font-semibold'>boat</div>
-                {#each $buoys as buoy}
+                {#each displayBuoys as buoy}
                     {#if buoyInUse(schedule, buoy.name)}
                         <div
                             class='flex items-center justify-center'
@@ -177,7 +200,7 @@
         {#each [{cur:'AM', other:'PM'}, {cur:'PM', other:'AM'}] as {cur, other}}
             <div class='column text-center {owTimeColWidth()}'>
                 <div class='font-semibold'>{cur}</div>
-                {#each $buoys as { name }}
+                {#each displayBuoys as { name }}
                     {#if schedule[cur][name] != undefined}
                         <div 
                             class='rsv whitespace-nowrap overflow-hidden cursor-pointer openwater text-sm mb-1 mt-0.5'
