@@ -10,3 +10,4 @@ export const view = writable('multi-day');
 export const reservations = writable([]);
 export const settings = writable({});
 export const buoys = writable([]);
+export const boatAssignments = writable({});

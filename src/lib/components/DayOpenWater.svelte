@@ -1,5 +1,5 @@
 <script>
-    import { user, viewedDate, reservations, buoys } from '$lib/stores.js';
+    import { user, viewedDate, reservations, buoys, boatAssignments } from '$lib/stores.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { displayTag } from '$lib/utils.js';
     import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
@@ -76,9 +76,53 @@
             return '';
         }
     }
- 
-</script>
 
+    const buoyInUse = (sched, b) => sched.AM[b] != undefined || sched.PM[b] != undefined;
+    $: date = datetimeToLocalDateStr($viewedDate);
+    $: boats = Settings.get('boats', date);
+    $: assignments = $boatAssignments[date] ? $boatAssignments[date] : {}; 
+    $: boatCounts = boats.reduce((bc,b) => { bc[b] = 0; return bc; }, {});
+
+    const getBoatCount = (schedule, assignments, boat) => {
+        let count = 0;
+        for (let buoy in assignments) {
+            if (assignments[buoy] === boat) {
+                for (let rsv of schedule.AM[buoy]) {
+                    count++;
+                    if (rsv.resType === 'course') {
+                        count += rsv.numStudents
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+    const saveAssignments = async (e) => {
+        e.target.blur();
+        let response = await fetch('/api/assignBuoysToBoats', {
+            method: 'POST',
+            headers: {'Content-type': 'application/json'},
+            body: JSON.stringify({ date, assignments })
+        });
+        let data = await response.json();
+        if (data.status === 'success') {
+            $boatAssignments[date] = JSON.parse(data.record.assignments);
+        }
+    };
+
+    const owTimeColWidth = () => $user.privileges === 'admin' ? 'w-[33%]' : 'w-[42%]';
+    
+</script>
+{#if $user.privileges === 'admin'}
+    <div class='fixed xs:text-xl left-1/2 -translate-x-1/2 whitespace-nowrap w-fit top-[107px] z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1'>
+        <span>boat counts:</span>
+        {#each boats as boat}
+            <span class='font-bold'>{boat}</span>
+            <span class='me-2 bg-teal-100 border border-black px-0.5'>{getBoatCount(schedule, assignments, boat)}</span>
+        {/each}
+    </div>
+{/if}
 {#if Settings.get('openForBusiness', datetimeToLocalDateStr($viewedDate)) === false}
     <div class='font-semibold text-3xl text-center'>Closed</div>
 {:else}
@@ -86,7 +130,7 @@
         <div class='column text-center w-[16%]'>
             <div class='font-semibold'>buoy</div>
             {#each $buoys as buoy}
-                {#if schedule.AM[buoy.name] != undefined || schedule.PM[buoy.name] != undefined}
+                {#if buoyInUse(schedule, buoy.name)}
                     {#if $user.privileges === 'admin'}
                         <div 
                             class='flex mx-2 sm:mx-4 md:mx-8 lg:mx-16 items-center justify-between font-semibold'
@@ -104,8 +148,34 @@
                 {/if}
             {/each}
         </div>
+        {#if $user.privileges === 'admin'}
+            <div class='column text-center w-[18%]'>
+                <div class='font-semibold'>boat</div>
+                {#each $buoys as buoy}
+                    {#if buoyInUse(schedule, buoy.name)}
+                        <div
+                            class='flex items-center justify-center'
+                            style='height: {rowHeights[buoy.name].header}rem'
+                        >
+                            <select
+                                class='text-sm h-6 w-16 xs:text-xl xs:h-8 xs:w-16'
+                                name={buoy.name + '_boat'}
+                                id={buoy.name + '_boat'}
+                                bind:value={assignments[buoy.name]}
+                                on:change={saveAssignments}
+                            >
+                                <option value=null></option>
+                                {#each boats as boat}
+                                    <option value={boat}>{boat}</option>
+                                {/each}
+                            </select>
+                        </div>
+                    {/if}
+                {/each}
+            </div>
+        {/if}
         {#each [{cur:'AM', other:'PM'}, {cur:'PM', other:'AM'}] as {cur, other}}
-            <div class='column text-center w-[42%]'>
+            <div class='column text-center {owTimeColWidth()}'>
                 <div class='font-semibold'>{cur}</div>
                 {#each $buoys as { name }}
                     {#if schedule[cur][name] != undefined}
