@@ -92,6 +92,7 @@ const tables = [
       { name: "largeBuoy", type: "bool" },
     ],
   },
+  { name: "Boats", columns: [{ name: "assignments", type: "text" }] },
 ];
 /** @type { import('../../client/src').ClientConstructor<{}> } */
 const DatabaseClient = buildClient();
