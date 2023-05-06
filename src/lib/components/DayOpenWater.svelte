@@ -83,11 +83,16 @@
     $: assignments = $boatAssignments[date] ? $boatAssignments[date] : {}; 
     $: boatCounts = boats.reduce((bc,b) => { bc[b] = 0; return bc; }, {});
 
-    const getBoatCount = (assignments, boat) => {
+    const getBoatCount = (schedule, assignments, boat) => {
         let count = 0;
         for (let buoy in assignments) {
             if (assignments[buoy] === boat) {
-                count++;
+                for (let rsv of schedule.AM[buoy]) {
+                    count++;
+                    if (rsv.resType === 'course') {
+                        count += rsv.numStudents
+                    }
+                }
             }
         }
         return count;
@@ -114,7 +119,7 @@
         <span>boat counts:</span>
         {#each boats as boat}
             <span class='font-bold'>{boat}</span>
-            <span class='me-2 bg-teal-100 border border-black px-0.5'>{getBoatCount(assignments, boat)}</span>
+            <span class='me-2 bg-teal-100 border border-black px-0.5'>{getBoatCount(schedule, assignments, boat)}</span>
         {/each}
     </div>
 {/if}
