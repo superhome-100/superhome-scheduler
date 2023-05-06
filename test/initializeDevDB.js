@@ -24,6 +24,8 @@ async function wipeDev() {
             console.log(error);
         }
     }
+    let sessions = await dev.db.Sessions.getAll();
+    await dev.db.Sessions.delete(sessions.map(v => v.id));
 }
 
 async function copyMainToDev() {

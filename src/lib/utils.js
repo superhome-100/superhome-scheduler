@@ -322,7 +322,7 @@ export function parseSettingsTbl(settingsTbl) {
         ) {
             v = v === 'true';
         }
-        if (['poolLanes', 'classrooms'].includes(name)) {
+        if (['poolLanes', 'classrooms', 'boats', 'captains'].includes(name)) {
             v = v.split(';');
         }
 

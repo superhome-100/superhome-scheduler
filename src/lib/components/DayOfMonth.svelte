@@ -43,6 +43,16 @@
             return '';
         }
     };
+    const numDivers = (rsvs, owTime) => {
+        if (owTime) {
+            return rsvs
+                .filter(rsv => rsv.owTime === owTime)
+                .reduce((n, rsv) => rsv.resType === 'course' ? n + 1 + rsv.numStudents : n + 1, 0);
+        } else {
+            return rsvs
+                .reduce((n, rsv) => rsv.resType === 'course' ? n + 1 + rsv.numStudents : n + 1, 0);
+        }
+    }
 
 </script>
 
@@ -57,13 +67,13 @@
                     {#each ['AM', 'PM'] as owTime}
                         <div 
                             class='mx-auto first-of-type:mt-2 first-of-type:mb-1 flex items-center justify-center text-sm rounded-xl h-6 w-10 rsv {category}'
-                        >+{rsvs.filter(rsv => rsv.owTime === owTime).reduce((n, rsv) => rsv.resType === 'course' ? n + 1 + rsv.numStudents : n + 1, 0)}
+                        >+{numDivers(rsvs, owTime)}
                         </div>
                     {/each}
                 {:else}
                     <div 
                         class='mx-auto mt-4 flex items-center justify-center text-sm rounded-xl h-6 w-10 rsv {category}'
-                    >+{rsvs.reduce((n, rsv) => rsv.resType === 'course' ? n + 1 + rsv.numStudents : n + 1, 0)}
+                    >+{numDivers(rsvs)}
                     </div>
                 {/if}
             {/if}

@@ -3,16 +3,23 @@
     import { goto } from '$app/navigation';
     import DayHourly from '$lib/components/DayHourly.svelte';
     import DayOpenWater from '$lib/components/DayOpenWater.svelte';
+    import DayBoats from '$lib/components/DayBoats.svelte';
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
     import Chevron from '$lib/components/Chevron.svelte';
     import { validReservationDate, minValidDate } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr, month2idx, idx2month } from '$lib/datetimeUtils.js';
     import Modal from '$lib/components/Modal.svelte';
-    import { view, viewedDate } from '$lib/stores.js';
+    import { user, view, viewedDate } from '$lib/stores.js';
     import { Settings } from '$lib/settings.js';
+    import { CATEGORIES } from '$lib/constants.js';
 
     export let data;
-
+    
+    let categories = [...CATEGORIES];
+    $: if ($user.privileges === 'admin') {
+        categories.push('boats');
+    }
+    
     $view = 'single-day';
     $: category = data.category;
     
@@ -30,8 +37,6 @@
         next.setDate($viewedDate.getDate() + 1);
         $viewedDate = next;
     }
-
-    const categories = ['pool', 'openwater', 'classroom'];
 
     function handleKeypress(e) {
         if (!modalOpened) {
@@ -88,7 +93,7 @@
     <div class='dropdown h-8 mb-4'>
         <label tabindex='0' class='btn btn-fsh-dropdown'>{category}</label>
         <ul tabindex='0' class='dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit'>
-            {#each ['pool', 'openwater', 'classroom'] as cat}
+            {#each categories as cat}
                 {#if cat !== category}
                     <li><a 
                             class='text-xl active:bg-gray-300' 
@@ -133,6 +138,8 @@
             <DayHourly category={category} resources={resources()} resourceName={resourceName()}/>
         {:else if category == 'openwater'}
             <DayOpenWater/>
+        {:else if category == 'boats'}
+            <DayBoats/>
         {/if}
     </Modal>
 </div>

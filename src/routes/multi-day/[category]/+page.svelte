@@ -8,9 +8,15 @@
     import Chevron from '$lib/components/Chevron.svelte';
     import { minValidDateStr } from '$lib/ReservationTimes.js';
     import { idx2month } from '$lib/datetimeUtils.js';
-    import { view, viewedMonth, reservations } from '$lib/stores.js';
+    import { user, view, viewedMonth, reservations } from '$lib/stores.js';
+    import { CATEGORIES } from '$lib/constants.js';
 
     export let data;
+
+    let categories = [...CATEGORIES];
+    $: if ($user.privileges === 'admin') {
+        categories.push('boats');
+    }
 
     $view = 'multi-day';
 
@@ -47,7 +53,6 @@
         handleDateChange();
     }
 
-    const categories = ['pool', 'openwater', 'classroom'];
     function handleKeypress(e) {
         if (e.keyCode == 37) { // left arrow key
             prevMonth();
