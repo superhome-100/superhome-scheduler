@@ -88,7 +88,7 @@
 
 <div class='[&>*]:mx-auto flex items-center justify-between'>
     <div class='dropdown h-8 mb-4'>
-        <label tabindex='0' class='btn btn-fsh-dropdown'>{gCategory}</label>
+        <label tabindex='0' class='border border-gray-200 dark:border-gray-700 btn btn-fsh-dropdown'>{gCategory}</label>
         <ul tabindex='0' class='dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit'>
             {#each ['pool', 'openwater', 'classroom'] as cat}
                 {#if cat !== gCategory}
