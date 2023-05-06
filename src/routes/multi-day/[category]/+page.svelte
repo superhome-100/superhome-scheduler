@@ -14,9 +14,6 @@
     export let data;
 
     let categories = [...CATEGORIES];
-    $: if ($user.privileges === 'admin') {
-        categories.push('boats');
-    }
 
     $view = 'multi-day';
 

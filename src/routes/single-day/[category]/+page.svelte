@@ -3,7 +3,6 @@
     import { goto } from '$app/navigation';
     import DayHourly from '$lib/components/DayHourly.svelte';
     import DayOpenWater from '$lib/components/DayOpenWater.svelte';
-    import DayBoats from '$lib/components/DayBoats.svelte';
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
     import Chevron from '$lib/components/Chevron.svelte';
     import { validReservationDate, minValidDate } from '$lib/ReservationTimes.js';
@@ -16,9 +15,6 @@
     export let data;
     
     let categories = [...CATEGORIES];
-    $: if ($user.privileges === 'admin') {
-        categories.push('boats');
-    }
     
     $view = 'single-day';
     $: category = data.category;
@@ -138,8 +134,6 @@
             <DayHourly category={category} resources={resources()} resourceName={resourceName()}/>
         {:else if category == 'openwater'}
             <DayOpenWater/>
-        {:else if category == 'boats'}
-            <DayBoats/>
         {/if}
     </Modal>
 </div>

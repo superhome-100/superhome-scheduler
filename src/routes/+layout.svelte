@@ -20,7 +20,7 @@
     import { PUBLIC_FACEBOOK_APP_ID } from "$env/static/public";
     import UserIcon from '$lib/components/UserIcon.svelte';
     import Modal from '$lib/components/Modal.svelte';
-    import { settings, buoys, user, users, view, reservations } from '$lib/stores.js';
+    import { boatAssignments, settings, buoys, user, users, view, reservations } from '$lib/stores.js';
     import { augmentRsv } from '$lib/utils.js';
     import { onMount } from 'svelte';
     import { toast, Toaster } from 'svelte-french-toast';
@@ -88,6 +88,12 @@
         if ($user.status === 'disabled') {
             await logout();
         }
+        if ($user.privileges === 'admin') {
+            let data = await get('BoatAssignments');
+            if (data.status === 'success') {
+                $boatAssignments = data.assignments;
+            }
+        }
     }
 
     async function initFromUser() {
@@ -101,6 +107,12 @@
             }
             $reservations = data.reservations.map((rsv) => augmentRsv(rsv));
             $users = data.usersById;
+            if ($user.privileges === 'admin') {
+                let data = await get('BoatAssignments');
+                if (data.status === 'success') {
+                    $boatAssignments = data.assignments;
+                }
+            }
             intervalId = setInterval(refreshAppState, $settings.refreshInterval.default);
         } else if ($user.status === 'disabled') {
             alert(
