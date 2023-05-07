@@ -504,3 +504,11 @@ export const buoyDesc = (buoy) => {
     desc += buoy.maxDepth;
     return desc;
 }
+
+export const addMissingFields = (submitted, original) => {
+    for (let field in original) {
+        if (submitted[field] === undefined) {
+            submitted[field] = original[field];
+        }
+    }
+};

@@ -10,6 +10,7 @@
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { Settings } from '$lib/settings.js';
     import { 
+        addMissingFields,
         augmentRsv, 
         removeRsv, 
         validateBuddies, 
@@ -54,14 +55,6 @@
             }
         }
         return null;
-    };
-
-    const addMissingFields = (submitted, original) => {
-        for (let field in original) {
-            if (submitted[field] === undefined) {
-                submitted[field] = original[field];
-            }
-        }
     };
 
     const updateReservation = async ({ form, data, action, cancel }) => {
