@@ -1,6 +1,6 @@
 <script>
     import { user, viewMode, viewedDate, reservations, buoys, boatAssignments } from '$lib/stores.js';
-    import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
+    import { datetimeToLocalDateStr as dtToLDS } from '$lib/datetimeUtils.js';
     import { displayTag } from '$lib/utils.js';
     import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
     import { getContext } from 'svelte';
@@ -23,8 +23,11 @@
 
     function getOpenWaterSchedule(rsvs, datetime) {
         let schedule = {};
-        let today = datetimeToLocalDateStr(datetime);
-        rsvs = rsvs.filter((v) => v.status != 'rejected' && v.category === 'openwater' && v.date === today);
+        let today = dtToLDS(datetime);
+        rsvs = rsvs.filter((v) => v.date === today 
+            && v.category === 'openwater' 
+            && ['pending', 'confirmed'].includes(v.status)
+        );
         for (let owTime of ['AM', 'PM']) {
             let result = assignRsvsToBuoys(
                 $buoys, 
@@ -100,7 +103,7 @@
         return sorted;
     };
 
-    $: date = datetimeToLocalDateStr($viewedDate);
+    $: date = dtToLDS($viewedDate);
     $: boats = Settings.get('boats', date);
     $: assignments = $boatAssignments[date] ? $boatAssignments[date] : {}; 
     $: boatCounts = boats.reduce((bc,b) => { bc[b] = 0; return bc; }, {});
@@ -152,7 +155,7 @@
         {/each}
     </div>
 {/if}
-{#if Settings.get('openForBusiness', datetimeToLocalDateStr($viewedDate)) === false}
+{#if Settings.get('openForBusiness', dtToLDS($viewedDate)) === false}
     <div class='font-semibold text-3xl text-center'>Closed</div>
 {:else}
     <div class='row'>
