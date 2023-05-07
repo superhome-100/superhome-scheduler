@@ -81,8 +81,8 @@
     const sortByBoat = (buoys, asn) => {
         let sorted = [...buoys];
         sorted.sort((a,b) => {
-            if (asn[a.name]) {
-                if (asn[b.name]) { 
+            if (asn[a.name] && asn[a.name] !== 'null') {
+                if (asn[b.name] && asn[b.name] !== 'null') { 
                     if (parseInt(asn[a.name]) > parseInt(asn[b.name])) {
                         return 1;
                     } else {
@@ -91,7 +91,7 @@
                 } else {
                     return 1;
                 }
-            } else if (asn[b.name]) { 
+            } else if (asn[b.name] && asn[b.name] !== 'null') { 
                 return -1;
             } else {
                 return 0;
