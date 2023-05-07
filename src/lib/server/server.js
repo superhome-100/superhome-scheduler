@@ -1,5 +1,5 @@
 import { getXataClient, getXataBranch } from '$lib/server/xata.js';
-import { checkSpaceAvailable, convertReservationTypes } from '$lib/utils.js';
+import { addMissingFields, checkSpaceAvailable, convertReservationTypes } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
 import { startTimes, endTimes } from '$lib/ReservationTimes.js';
 import { timeStrToMin } from '$lib/datetimeUtils.js';
@@ -297,7 +297,7 @@ export async function submitReservation(formData) {
 }
 
 function buddysRsv(rsv, sub) {
-    if (sub.buddies.includes(rsv.user.id)) {
+    if (sub.buddies && sub.buddies.includes(rsv.user.id)) {
         if (['pool', 'classroom'].includes(sub.category)) {
             return rsv.category === sub.category
                 && rsv.startTime === sub.startTime
@@ -318,6 +318,7 @@ export async function updateReservation(formData) {
     oldBuddies = oldBuddies ? oldBuddies : [];
 
     let orig = await xata.db.Reservations.read(sub.id);
+    addMissingFields(sub, orig);
 
     // first check that the owner and associated buddies do not have existing
     // reservations that will overlap with the updated reservation
