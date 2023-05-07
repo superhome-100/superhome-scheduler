@@ -4,6 +4,7 @@ import { redirect } from '@sveltejs/kit';
 import { startTimes, endTimes } from '$lib/ReservationTimes.js';
 import { timeStrToMin } from '$lib/datetimeUtils.js';
 import { Settings } from '$lib/server/settings.js';
+import ObjectsToCsv from 'objects-to-csv';
 
 const xata = getXataClient();
 
@@ -14,6 +15,12 @@ export async function getTableCsv(table, branch) {
     let records = await client.db[table]
         .select(fields)
         .getAll();
+    const csv = new ObjectsToCsv(records.map(ent => {
+        let {user, date, category, status, resType, numStudents, owTime, startTime, endTime} = ent;
+        return {name: user.name, nickname: user.nickname, date, category, status, resType, numStudents, owTime, startTime, endTime};
+    }));
+    return await csv.toString();
+    /*
     let csv = fields.reduce((h,v) => h + ',' + v) + '\n';
     for (let rec of records) {
         csv += fields
@@ -21,6 +28,7 @@ export async function getTableCsv(table, branch) {
             .reduce((l, v) => v == null ? l + ',' : l + ',' + v) + '\n';
     }
     return csv;
+    */
 }
 
 export async function getSettings() {
