@@ -1,5 +1,5 @@
 <script>
-    import { user, viewedDate, reservations, buoys, boatAssignments } from '$lib/stores.js';
+    import { user, viewMode, viewedDate, reservations, buoys, boatAssignments } from '$lib/stores.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { displayTag } from '$lib/utils.js';
     import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
@@ -123,6 +123,11 @@
 
     const saveAssignments = async (e) => {
         e.target.blur();
+        for (let b in assignments) {
+            if (assignments[b] === 'null') {
+                assignments[b] = null;
+            }
+        }
         let response = await fetch('/api/assignBuoysToBoats', {
             method: 'POST',
             headers: {'Content-type': 'application/json'},
@@ -134,11 +139,12 @@
         }
     };
 
-    const owTimeColWidth = () => $user.privileges === 'admin' ? 'w-[33%]' : 'w-[42%]';
+    $: owTimeColWidth = () => $viewMode === 'admin' ? 'w-[33%]' : 'w-[42%]';
     
 </script>
-{#if $user.privileges === 'admin'}
-    <div class='fixed xs:text-xl left-1/2 -translate-x-1/2 whitespace-nowrap w-fit top-[107px] z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1'>
+{#if $viewMode === 'admin'} 
+    <div
+        class='fixed xs:text-xl left-1/2 -translate-x-1/2 whitespace-nowrap w-fit top-[20px] z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1'>
         <span>boat counts:</span>
         {#each boats as boat}
             <span class='font-bold'>{boat}</span>
@@ -154,7 +160,7 @@
             <div class='font-semibold'>buoy</div>
             {#each displayBuoys as buoy}
                 {#if buoyInUse(schedule, buoy.name)}
-                    {#if $user.privileges === 'admin'}
+                    {#if $viewMode === 'admin'}
                         <div 
                             class='flex mx-2 sm:mx-4 md:mx-8 lg:mx-16 items-center justify-between font-semibold'
                             style='height: {rowHeights[buoy.name].header}rem'
@@ -171,7 +177,7 @@
                 {/if}
             {/each}
         </div>
-        {#if $user.privileges === 'admin'}
+        {#if $viewMode === 'admin'}
             <div class='column text-center w-[18%]'>
                 <div class='font-semibold'>boat</div>
                 {#each displayBuoys as buoy}

@@ -11,3 +11,4 @@ export const reservations = writable([]);
 export const settings = writable({});
 export const buoys = writable([]);
 export const boatAssignments = writable({});
+export const viewMode = writable('normal');
