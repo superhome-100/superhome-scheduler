@@ -78,18 +78,14 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
             buddyGrps.splice(i,1);
         }
     }
-    // then add buddy groups of 3 to buoys, splitting up a group if it has more than 3
+    // then add buddy groups of 3 or more to buoys
     let i = buddyGrps.length-1;
     while (i >= 0) {
         const bg = buddyGrps[i];
-        if (bg.length == 3) {
+        if (bg.length >= 3) {
             buoyGrps.push(bg);
             buddyGrps.splice(i,1);
             i--;
-        } else if (bg.length > 3) {
-            // split top 3 deepest buddies into their own group
-            let top3 = bg.splice(0,3);
-            buoyGrps.push(top3);
         } else {
             i--;
         }
