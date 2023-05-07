@@ -328,11 +328,14 @@
 
     const lockBuoys = async () => {
         const fn = async () => {
+            console.log("locking...");
             let response = await fetch('/api/lockBuoyAssignments',
                 { method: 'POST' },
             );
             let data = await response.json();
+            console.log(data.status);
             if (data.status === 'success') {
+                console.log(data.reservations[0]);
                 for (let rsv of data.reservations) {
                     $reservations.filter(r => r.id === rsv.id)[0].buoy = rsv.buoy;
                 }
