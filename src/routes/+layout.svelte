@@ -20,7 +20,8 @@
     import { PUBLIC_FACEBOOK_APP_ID } from "$env/static/public";
     import UserIcon from '$lib/components/UserIcon.svelte';
     import Modal from '$lib/components/Modal.svelte';
-    import { boatAssignments, settings, buoys, user, users, view, reservations } from '$lib/stores.js';
+    import Toggle from '$lib/components/Toggle.svelte';
+    import { boatAssignments, settings, buoys, user, users, view, viewMode, reservations } from '$lib/stores.js';
     import { augmentRsv } from '$lib/utils.js';
     import { onMount } from 'svelte';
     import { toast, Toaster } from 'svelte-french-toast';
@@ -89,8 +90,9 @@
             await logout();
         }
         if ($user.privileges === 'admin') {
+            $viewMode = 'admin';
             let data = await get('BoatAssignments');
-            if (data.status === 'success') {
+            if (data.status === 'success') { 
                 $boatAssignments = data.assignments;
             }
         }
@@ -108,6 +110,7 @@
             $reservations = data.reservations.map((rsv) => augmentRsv(rsv));
             $users = data.usersById;
             if ($user.privileges === 'admin') {
+                $viewMode = 'admin';
                 let data = await get('BoatAssignments');
                 if (data.status === 'success') {
                     $boatAssignments = data.assignments;
@@ -326,28 +329,13 @@
     $: activeUrl = $page.url.pathname;
     let spanClass = 'pl-8 self-center text-md text-gray-900 whitespace-nowrap dark:text-white';
 
-    const lockBuoys = async () => {
-        const fn = async () => {
-            console.log("locking...");
-            let response = await fetch('/api/lockBuoyAssignments',
-                { method: 'POST' },
-            );
-            let data = await response.json();
-            console.log(data.status);
-            if (data.status === 'success') {
-                console.log(data.reservations[0]);
-                for (let rsv of data.reservations) {
-                    $reservations.filter(r => r.id === rsv.id)[0].buoy = rsv.buoy;
-                }
-                $reservations = [...$reservations];
-                return Promise.resolve();
-            } else {
-                console.error(data.error);
-                return Promise.reject();
-            }
+    const updateAdminMode = (e) => {
+        if (e.detail.checked) {
+            $viewMode = 'admin';
+        } else {
+            $viewMode = 'normal';
         }
-        toast.promise(fn(), { success: 'buoys locked', error: 'buoy lock failed'});
-    }
+    };
 
 </script>
 
@@ -396,28 +384,29 @@
                     <SidebarItem label="Logout" on:click={userLogout} />
                 {/if}
                 {#if $user && $user.privileges === 'admin'}
-                    <SidebarDropdownWrapper label='Download Reservations'>
-                        <SidebarItem 
-                            label='main'
-                            {spanClass}
-                            on:click={() => downloadReservations('main')}
-                        />
-                        <SidebarItem 
-                            label='backup-day-1'
-                            {spanClass}
-                            on:click={() => downloadReservations('backup-day-1')}
-                        />
-                        <SidebarItem 
-                            label='backup-day-2'
-                            {spanClass}
-                            on:click={() => downloadReservations('backup-day-2')}
-                        />
-                    </SidebarDropdownWrapper>
-                    <SidebarItem
-                        label='Lock Buoys'
-                        {spanClass}
-                        on:click={lockBuoys}
-                    />
+                    <div class='ms-4'>
+                        <Toggle checked={$viewMode==='admin'} on:change={updateAdminMode}/>
+                        <span>Admin Mode</span>
+                    </div>
+                    {#if $viewMode === 'admin'}
+                        <SidebarDropdownWrapper label='Download Reservations'>
+                            <SidebarItem 
+                                label='main'
+                                {spanClass}
+                                on:click={() => downloadReservations('main')}
+                            />
+                            <SidebarItem 
+                                label='backup-day-1'
+                                {spanClass}
+                                on:click={() => downloadReservations('backup-day-1')}
+                            />
+                            <SidebarItem 
+                                label='backup-day-2'
+                                {spanClass}
+                                on:click={() => downloadReservations('backup-day-2')}
+                            />
+                        </SidebarDropdownWrapper>
+                    {/if}
                 {/if}
                 <SidebarItem label="My Reservations" href="/" on:click={toggleSide} active={activeUrl === `/`} />
                 <SidebarDropdownWrapper isOpen={true} label="Calendars">
