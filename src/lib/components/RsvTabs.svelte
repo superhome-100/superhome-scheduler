@@ -17,7 +17,7 @@
     let viewOnly = (rsv) => !rsv.owner 
             || !beforeCancelCutoff(Settings, rsv.date, rsv.startTime, rsv.category) 
             || (
-                !beforeResCutoff(Settings, rsv.date, rsv.startTIme, rsv.category) 
+                !beforeResCutoff(Settings, rsv.date, rsv.startTime, rsv.category) 
                 && rsv.resType === 'autonomous'
             );
 
