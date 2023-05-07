@@ -35,7 +35,6 @@ export async function POST() {
             }
 
         }
-        console.log(updates);
         let reservations = await xata.db.Reservations.update(updates);
         return json({ status: 'success', reservations });
     } catch (error) {
