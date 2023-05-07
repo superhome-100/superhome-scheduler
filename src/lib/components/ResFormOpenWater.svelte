@@ -36,6 +36,7 @@
     checkSubmit();
 
     $: showBuddyFields = autoOrCourse === 'autonomous';
+    $: sortedBuoys = $buoys.sort((a,b) => a.maxDepth > b.maxDepth ? 1 : -1);
 
 </script>
 
@@ -61,7 +62,7 @@
                     value={rsv.buoy}
                 >
                     <option value='auto'>Auto</option>
-                    {#each $buoys as buoy}
+                    {#each sortedBuoys as buoy}
                         <option value={buoy.name}>{buoy.name + ' - ' + buoyDesc(buoy)}</option>
                     {/each}
                 </select>

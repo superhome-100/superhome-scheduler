@@ -8,14 +8,37 @@
     import { validReservationDate, minValidDate } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr, month2idx, idx2month } from '$lib/datetimeUtils.js';
     import Modal from '$lib/components/Modal.svelte';
-    import { user, view, viewedDate } from '$lib/stores.js';
+    import { user, view, viewMode, viewedDate, reservations } from '$lib/stores.js';
     import { Settings } from '$lib/settings.js';
     import { CATEGORIES } from '$lib/constants.js';
+    import { toast, Toaster } from 'svelte-french-toast';
 
     export let data;
     
     let categories = [...CATEGORIES];
-    
+
+    const checkAllBuoysAssigned = (date, rsvs) => {
+        if ($viewMode === 'admin') {
+            return rsvs
+                .filter(rsv => {
+                    return rsv.date === datetimeToLocalDateStr(date)
+                        && rsv.category === 'openwater'
+                        && ['pending', 'confirmed'].includes(rsv.status)
+                }).reduce((b,rsv) => b && rsv.buoy != 'auto', true);
+        } else {
+            return null;
+        }
+    };
+    $: buoysLocked = checkAllBuoysAssigned($viewedDate, $reservations);
+
+    const highlightButton = (lock, buoysLocked) => {
+        if ((lock && buoysLocked) || !(lock || buoysLocked)) {
+            return 'dark:bg-openwater-bg-to';
+        } else {
+            return 'dark:bg-root-bg-dark';
+        }
+    }
+
     $view = 'single-day';
     $: category = data.category;
     
@@ -81,6 +104,35 @@
         }
     };
 
+    const toggleBuoyLock = async (lock) => {
+        const fn = async () => {
+            let response = await fetch('/api/lockBuoyAssignments', { 
+                method: 'POST', 
+                headers: {'Content-type': 'application/json'},
+                body: JSON.stringify({
+                    lock,
+                    date: datetimeToLocalDateStr($viewedDate)
+                })
+            });
+            let data = await response.json();
+            if (data.status === 'success') {
+                for (let rsv of data.reservations) {
+                    $reservations.filter(r => r.id === rsv.id)[0].buoy = rsv.buoy;
+                }
+                $reservations = [...$reservations];
+                return Promise.resolve();
+            } else {
+                console.error(data.error);
+                return Promise.reject();
+            }
+        }
+        toast.promise(fn(), { 
+            error: 'buoy lock failed'
+        });
+    }
+    const lockBuoys = async () => toggleBuoyLock(true);
+    const unlockBuoys = async () => toggleBuoyLock(false);
+
 </script>
 
 <svelte:window on:keydown={handleKeypress}/>
@@ -116,12 +168,28 @@
        <Modal><ReservationDialog {category} dateFn={()=>datetimeToLocalDateStr($viewedDate)}/></Modal>
     </span>
 </div>
-<div>
+<br/>
+<div class='flex justify-between'>
     <a class='inline-flex items-center border border-solid border-transparent hover:border-black rounded-lg pl-1.5 pr-4 py-0 hover:text-white hover:bg-gray-700' href="/multi-day/{category}">
         <span><Chevron direction='left'/></span>
-        <span class='xs:text-xl pb-1'>month view</span>
+        <span class='xs:text-xl pb-1 whitespace-nowrap'>month view</span>
     </a>
+    {#if $viewMode === 'admin'}
+        <span>
+            <button 
+                on:click={lockBuoys}
+                class='{highlightButton(true, buoysLocked)} px-1 py-0 font-semibold border-black dark:border-white'>
+                Lock
+            </button>
+            <button 
+                on:click={unlockBuoys}
+                class='{highlightButton(false, buoysLocked)} px-1 py-0 font-semibold border-black dark:border-white'>
+                Unlock
+            </button>
+        </span>
+    {/if}
 </div>
+<br/>
 <div 
     class='w-full min-h-[500px]'
     use:swipe={{ timeframe: 300, minSwipeDistance: 10, touchAction: 'pan-y' }} 
@@ -138,3 +206,4 @@
     </Modal>
 </div>
 
+<Toaster/>
