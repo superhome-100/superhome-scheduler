@@ -33,9 +33,9 @@
 
     const highlightButton = (lock, buoysLocked) => {
         if ((lock && buoysLocked) || !(lock || buoysLocked)) {
-            return 'dark:bg-openwater-bg-to';
+            return 'bg-openwater-bg-to text-white';
         } else {
-            return 'dark:bg-root-bg-dark';
+            return 'bg-root-bg-light dark:bg-root-bg-dark';
         }
     }
 
