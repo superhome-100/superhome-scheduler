@@ -4,6 +4,7 @@ import { json } from '@sveltejs/kit';
 export async function GET({ cookies })  {
     try {
         let user;
+        let viewMode = 'admin';
         let session = cookies.get('sessionid');
         if (session !== undefined) {
             let record = await getSession(session);
@@ -12,15 +13,10 @@ export async function GET({ cookies })  {
                 cookies.delete('sessionid', { path: '/' });
             } else {
                 user = record.user;
-                if (user.nickname == null) {
-                    user = {
-                        ...user,
-                        nickname: user.name
-                    };
-                }
+                viewMode = record.viewMode;
             }
         }
-        return json({ status: 'success', user });
+        return json({ status: 'success', user, viewMode });
     } catch (error) {
         return json({ status: 'error', error });
     }
