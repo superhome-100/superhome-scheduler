@@ -17,8 +17,8 @@
     
     let categories = [...CATEGORIES];
 
-    const checkAllBuoysAssigned = (date, rsvs) => {
-        if ($viewMode === 'admin') {
+    const checkAllBuoysAssigned = (date, rsvs, viewMode) => {
+        if (viewMode === 'admin') {
             return rsvs
                 .filter(rsv => {
                     return rsv.date === datetimeToLocalDateStr(date)
@@ -29,7 +29,7 @@
             return null;
         }
     };
-    $: buoysLocked = checkAllBuoysAssigned($viewedDate, $reservations);
+    $: buoysLocked = checkAllBuoysAssigned($viewedDate, $reservations, $viewMode);
 
     const highlightButton = (lock, buoysLocked) => {
         if ((lock && buoysLocked) || !(lock || buoysLocked)) {
