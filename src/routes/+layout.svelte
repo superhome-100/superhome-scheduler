@@ -47,7 +47,7 @@
         const fn = async () => {
             const response = await fetch('/api/getReservationsTable', {
                 method: 'POST',
-                headers: {'Content-type': 'text/csv'},
+                headers: {'Content-type': 'application/json'},
                 body: JSON.stringify({ branch })
             });
             if (response.status == 200) {

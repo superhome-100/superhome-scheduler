@@ -6,7 +6,7 @@ export async function POST({ request }) {
     return new Response(csv, {
         status: 200,
         headers: {
-            'Content-type': 'text/csv',
+            'Content-type': 'text/csv; charset=UTF-8',
             'Content-Disposition': `attachment; filename=reservations-${branch}.csv`,
         },
     });
