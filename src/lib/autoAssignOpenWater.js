@@ -333,16 +333,19 @@ function assignBuoyGroupsToBuoys(buoys, grps) {
             };
             let optScore = candidates.reduce((c, cand) => Math.max(c, calcScore(cand)), -Infinity);
             candidates = candidates.filter(cand => calcScore(cand) == optScore);
-            // then select the one among these buoys with closest maxDepth
-            let depthScore = Infinity;
-            let best;
-            for (let cand of candidates) {
-                let dist = cand.buoy.maxDepth - grp[0].maxDepth;
-                if (dist < depthScore) {
-                    depthScore = dist;
-                    best = cand;
-                }
-            }
+            // then select the one among these buoys with fewest additional opts and closest maxDepth
+            const numOpts = (req) => buoyOpts.reduce((c,opt) => req[opt] ? c+1 : c, 0);
+            const addOpts = (buoy) => Math.max(0, numOpts(buoy) - numOpts(opts));
+            const depthDiff = (buoy) => buoy.maxDepth - grp[0].maxDepth;
+            candidates.sort((a,b) => addOpts(a.buoy) > addOpts(b.buoy)
+                ? 1
+                : addOpts(b.buoy) > addOpts(a.buoy)
+                    ? -1
+                    : depthDiff(a.buoy) > depthDiff(b.buoy)
+                        ? 1
+                        : -1
+            );
+            let best = candidates[0];
             assignments[best.buoy.name] = grp;
             grps.splice(grps.length-1,1);
             buoys.splice(best.idx,1);
