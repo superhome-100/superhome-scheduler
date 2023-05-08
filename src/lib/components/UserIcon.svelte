@@ -16,7 +16,7 @@
 <div on:click={showUpdateForm}>
     {#if profileSrc}
         <img class='rounded-[50%] w-10' alt="profilePicture" src={profileSrc}>
-    {:else}
+    {:else if $user}
         <div class='text-xs'>{$user.nickname}</div>
     {/if}
 </div>

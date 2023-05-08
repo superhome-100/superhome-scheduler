@@ -90,7 +90,6 @@
             await logout();
         }
         if ($user.privileges === 'admin') {
-            $viewMode = 'admin';
             let data = await get('BoatAssignments');
             if (data.status === 'success') { 
                 $boatAssignments = data.assignments;
@@ -98,7 +97,7 @@
         }
     }
 
-    async function initFromUser() {
+    async function initFromUser(vm='admin') {
         if ($user == null) {
             loginState = 'out';
         } else if ($user.status === 'active') {
@@ -106,11 +105,11 @@
             let data = await get('AppData');
             if (data.status === 'error') {
                 throw new Error('Could not read app data from database');
-            }
-            $reservations = data.reservations.map((rsv) => augmentRsv(rsv));
+            } 
             $users = data.usersById;
+            $reservations = data.reservations.map((rsv) => augmentRsv(rsv, $users[rsv.user.id]));
             if ($user.privileges === 'admin') {
-                $viewMode = 'admin';
+                $viewMode = vm;
                 let data = await get('BoatAssignments');
                 if (data.status === 'success') {
                     $boatAssignments = data.assignments;
@@ -144,8 +143,8 @@
                     throw new Error('Could not get session from database');
                 }
                 $user = data.user;
-                
-                await initFromUser();
+                 
+                await initFromUser(data.viewMode);
  
                 return true;
 
@@ -329,12 +328,17 @@
     $: activeUrl = $page.url.pathname;
     let spanClass = 'pl-8 self-center text-md text-gray-900 whitespace-nowrap dark:text-white';
 
-    const updateAdminMode = (e) => {
+    const updateAdminMode = async (e) => {
         if (e.detail.checked) {
             $viewMode = 'admin';
         } else {
             $viewMode = 'normal';
         }
+        await fetch('/api/updateViewMode', {
+            method: 'POST',
+            headers: {'Content-type': 'application/json'},
+            body: JSON.stringify({viewMode: $viewMode}),
+        });
     };
 
 </script>
