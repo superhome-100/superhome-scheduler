@@ -1,6 +1,6 @@
 import { startTimes, inc } from './ReservationTimes.js';
 import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils.js';
-import { reservations, user, users } from './stores.js'
+import { reservations, user, users, viewMode } from './stores.js'
 import { Settings } from './settings.js';
 import { get } from 'svelte/store';
 import { assignRsvsToBuoys } from './autoAssignOpenWater.js';
@@ -493,6 +493,7 @@ export function getDaySchedule(rsvs, datetime, category, softCapacity) {
 
 export const adminView = (viewOnly) => {
     return get(user).privileges === 'admin'
+        && get(viewMode) === 'admin'
         && viewOnly;
 };
 
