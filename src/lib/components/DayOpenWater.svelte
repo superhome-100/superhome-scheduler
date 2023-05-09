@@ -184,7 +184,7 @@
                 {#if buoyInUse(schedule, buoy.name)}
                     {#if $viewMode === 'admin'}
                         <div 
-                            class='flex mx-2 sm:mx-4 md:mx-8 lg:mx-16 items-center justify-between font-semibold'
+                            class='flex mx-2 sm:mx-4 md:mx-8 lg:mx-6 xl:mx-12 items-center justify-between font-semibold'
                             style='height: {rowHeights[buoy.name].header}rem'
                         >
                             <span class='text-xl'>{buoy.name}</span>
