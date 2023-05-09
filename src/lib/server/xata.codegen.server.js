@@ -47,7 +47,7 @@ const tables = [
       },
       { name: "facebookId", type: "string", unique: true },
       { name: "privileges", type: "string", defaultValue: "normal" },
-      { name: "nickname", type: "string" },
+      { name: "nickname", type: "string", unique: true },
     ],
   },
   {
@@ -60,6 +60,7 @@ const tables = [
         defaultValue: "now",
       },
       { name: "user", type: "link", link: { table: "Users" } },
+      { name: "viewMode", type: "string", defaultValue: "normal" },
     ],
   },
   {
