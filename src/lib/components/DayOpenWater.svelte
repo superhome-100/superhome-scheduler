@@ -83,40 +83,53 @@
 
     const sortByBoat = (buoys, asn) => {
         let sorted = [...buoys];
-        sorted.sort((a,b) => {
-            if (asn[a.name] && asn[a.name] !== 'null') {
-                if (asn[b.name] && asn[b.name] !== 'null') { 
-                    if (parseInt(asn[a.name]) > parseInt(asn[b.name])) {
-                        return 1;
+        if (asn != null) {
+            sorted.sort((a,b) => {
+                if (asn[a.name] && asn[a.name] !== 'null') {
+                    if (asn[b.name] && asn[b.name] !== 'null') { 
+                        if (parseInt(asn[a.name]) > parseInt(asn[b.name])) {
+                            return 1;
+                        } else {
+                            return -1;
+                        }
                     } else {
-                        return -1;
+                        return 1;
                     }
+                } else if (asn[b.name] && asn[b.name] !== 'null') { 
+                    return -1;
                 } else {
-                    return 1;
+                    return 0;
                 }
-            } else if (asn[b.name] && asn[b.name] !== 'null') { 
-                return -1;
-            } else {
-                return 0;
-            }
-        });
+            });
+        }
         return sorted;
     };
 
     $: date = dtToLDS($viewedDate);
     $: boats = Settings.get('boats', date);
-    $: assignments = $boatAssignments[date] ? $boatAssignments[date] : {}; 
     $: boatCounts = boats.reduce((bc,b) => { bc[b] = 0; return bc; }, {});
-    $: displayBuoys = sortByBoat($buoys, assignments);
+    $: displayBuoys = sortByBoat($buoys, $boatAssignments[date]);
+    
+    const displayValue = (assignments, date, buoy) => {
+        if (assignments[date] === undefined) {
+            assignments[date] = {};
+        }
+        if (assignments[date][buoy] === undefined) {
+            assignments[date][buoy] = null;
+        }
+        return assignments[date][buoy];
+    }
 
     const getBoatCount = (schedule, assignments, boat) => {
         let count = 0;
-        for (let buoy in assignments) {
-            if (schedule.AM[buoy] && assignments[buoy] === boat) {
-                for (let rsv of schedule.AM[buoy]) {
-                    count++;
-                    if (rsv.resType === 'course') {
-                        count += rsv.numStudents
+        if (assignments != null) {
+            for (let buoy in assignments) {
+                if (schedule.AM[buoy] && assignments[buoy] === boat) {
+                    for (let rsv of schedule.AM[buoy]) {
+                        count++;
+                        if (rsv.resType === 'course') {
+                            count += rsv.numStudents
+                        }
                     }
                 }
             }
@@ -126,19 +139,25 @@
 
     const saveAssignments = async (e) => {
         e.target.blur();
-        for (let b in assignments) {
-            if (assignments[b] === 'null') {
-                assignments[b] = null;
-            }
+        let buoy = e.target.id.split('_')[0];
+        let boat = e.target.value;
+        if (boat === 'null') {
+            boat = null;
         }
+        if ($boatAssignments[date] == null) {
+            $boatAssignments[date] = {};
+        }
+        $boatAssignments[date][buoy] = boat;
+
         let response = await fetch('/api/assignBuoysToBoats', {
             method: 'POST',
             headers: {'Content-type': 'application/json'},
-            body: JSON.stringify({ date, assignments })
+            body: JSON.stringify({ date, assignments: $boatAssignments[date] })
         });
         let data = await response.json();
         if (data.status === 'success') {
             $boatAssignments[date] = JSON.parse(data.record.assignments);
+            $boatAssignments = {...$boatAssignments};
         }
     };
 
@@ -151,7 +170,7 @@
         <span>boat counts:</span>
         {#each boats as boat}
             <span class='font-bold'>{boat}</span>
-            <span class='me-2 bg-teal-100 border border-black px-0.5'>{getBoatCount(schedule, assignments, boat)}</span>
+            <span class='me-2 bg-teal-100 border border-black px-0.5'>{getBoatCount(schedule, $boatAssignments[date], boat)}</span>
         {/each}
     </div>
 {/if}
@@ -193,8 +212,8 @@
                                 class='text-sm h-6 w-16 xs:text-xl xs:h-8 xs:w-16'
                                 name={buoy.name + '_boat'}
                                 id={buoy.name + '_boat'}
-                                bind:value={assignments[buoy.name]}
-                                on:change={saveAssignments}
+                                value={displayValue($boatAssignments, date, buoy.name)}
+                                on:input={saveAssignments}
                             >
                                 <option value=null></option>
                                 {#each boats as boat}
