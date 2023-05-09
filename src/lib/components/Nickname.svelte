@@ -1,10 +1,12 @@
 <script>
     import { enhance } from '$app/forms';
-    import { user, reservations } from '$lib/stores.js';
+    import { user, users, reservations } from '$lib/stores.js';
     import { toast, Toaster } from 'svelte-french-toast'
     import { getContext } from 'svelte';
 
     let { close } = getContext('simple-modal');
+
+    $: userNicknames = Object.values($users).map(user => user.nickname);
 
     function removeFocus(e) {
         if (e.keyCode == 13) {
@@ -15,7 +17,20 @@
     const updateNickname = async ({ form, data, action, cancel }) => {
         if (data.get('nickname').length == 0) {
             cancel();
+            close();
+            return;
         }
+        if (data.get('nickname') === $user.nickname) {
+            cancel();
+            close();
+            return;
+        }
+        if (userNicknames.includes(data.get('nickname'))) {
+            alert('That name is already taken.  Please choose a different name.');
+            cancel();
+            return;
+        }
+
         close();
         return async ({ result, update }) => {
             switch (result.type) {
