@@ -6,8 +6,6 @@
 
     let { close } = getContext('simple-modal');
 
-    $: userNicknames = Object.values($users).map(user => user.nickname);
-
     function removeFocus(e) {
         if (e.keyCode == 13) {
             this.blur();
@@ -15,6 +13,8 @@
     }
 
     const updateNickname = async ({ form, data, action, cancel }) => {
+        let userNicknames = Object.values($users).map(user => user.nickname);
+
         if (data.get('nickname').length == 0) {
             cancel();
             close();
