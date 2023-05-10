@@ -1,9 +1,7 @@
 <script>
     import { getContext } from 'svelte';
     import Nickname from '$lib/components/Nickname.svelte';
-    import { user } from '$lib/stores.js';
-
-    export let profileSrc = null;
+    import { profileSrc, user } from '$lib/stores.js';
 
     const { open } = getContext('simple-modal');
 
@@ -14,8 +12,8 @@
 </script>
 
 <div on:click={showUpdateForm}>
-    {#if profileSrc}
-        <img class='rounded-[50%] w-10' alt="profilePicture" src={profileSrc}>
+    {#if $profileSrc}
+        <img class='rounded-[50%] w-10' alt="profilePicture" src={$profileSrc}>
     {:else if $user}
         <div class='text-xs'>{$user.nickname}</div>
     {/if}

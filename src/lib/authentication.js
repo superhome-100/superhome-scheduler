@@ -1,11 +1,9 @@
-import { user, loginState } from '$lib/stores.js';
+import { user, loginState, profileSrc } from '$lib/stores.js';
 import { get } from 'svelte/store';
 import { page } from '$app/stores';
 import { goto } from '$app/navigation';
 import { PUBLIC_FACEBOOK_APP_ID } from '$env/static/public';
 import { toast } from 'svelte-french-toast';
-
-export let profileSrc;
 
 export function loadFB () {
     const script = document.createElement('script')
@@ -27,7 +25,7 @@ function loadProfilePic() {
         'GET',
         {redirect: false},
         function(response) {
-            profileSrc = response.data.url;
+            profileSrc.set(response.data.url);
         }
     );
 }
@@ -97,7 +95,7 @@ async function authenticateUser(facebookId, name, callback) {
 
 export async function logout() {
     loginState.set('pending');
-    profileSrc = undefined;
+    profileSrc.set(null);
     const FB = window['FB']
     FB.getLoginStatus(function(response) {
         if (response.status === 'connected') {

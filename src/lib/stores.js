@@ -4,6 +4,7 @@ export const buoys = writable([]);
 export const boatAssignments = writable({});
 export const canSubmit = writable(false);
 export const loginState = writable('pending');
+export const profileSrc = writable(null);
 export const reservations = writable([]);
 export const settings = writable({});
 export const user = writable(null);

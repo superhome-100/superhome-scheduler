@@ -17,7 +17,7 @@
         reservations 
     } from '$lib/stores.js';
     import { augmentRsv } from '$lib/utils.js';
-    import { loadFB, login, logout, profileSrc } from '$lib/authentication.js';
+    import { loadFB, login, logout } from '$lib/authentication.js';
     import { toast, Toaster } from 'svelte-french-toast';
 
     $: isFacebook = typeof window !== 'undefined' && window.navigator 
@@ -145,7 +145,7 @@
 </script>
 
 <Nprogress/>
-<Sidebar {profileSrc}/>
+<Sidebar/>
 <div id="app" class="flex px-1 mx-auto w-full">
     <main class="lg:ml-72 w-full mx-auto">
         {#if $user && $loginState === 'in'}
