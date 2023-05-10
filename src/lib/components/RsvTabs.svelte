@@ -6,7 +6,6 @@
     import { user } from '$lib/stores.js';
     import { beforeResCutoff, beforeCancelCutoff } from '$lib/ReservationTimes.js';
     import { Settings } from '$lib/settings.js';
-    import { Toaster } from 'svelte-french-toast';
 
     export let rsvs;
     export let hasForm;
@@ -56,4 +55,3 @@
 
 </div>
 
-<Toaster/>

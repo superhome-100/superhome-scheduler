@@ -1,7 +1,7 @@
 <script>
     import { enhance } from '$app/forms';
     import { user, users, reservations } from '$lib/stores.js';
-    import { toast, Toaster } from 'svelte-french-toast'
+    import { toast } from 'svelte-french-toast'
     import { getContext } from 'svelte';
 
     let { close } = getContext('simple-modal');
@@ -71,4 +71,3 @@
     >
 </form>
 
-<Toaster/>
