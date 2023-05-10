@@ -5,6 +5,7 @@
     import { onMount } from 'svelte';
     import Sidebar from '$lib/components/Sidebar.svelte';
     import Nprogress from "$lib/components/Nprogress.svelte";
+    import Popup from '$lib/components/Popup.svelte';
     import { 
         boatAssignments, 
         loginState, 
@@ -167,3 +168,6 @@
         <p>To use default browser. Android tap in the upper right-hand corner. iOS tap in the lower right-hand corner.</p>
     </article>
 {/if}
+
+<Popup/>
+

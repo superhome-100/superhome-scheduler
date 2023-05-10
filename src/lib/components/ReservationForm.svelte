@@ -5,6 +5,7 @@
     import ResFormPool from './ResFormPool.svelte';
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
+    import Popup, { popup } from './Popup.svelte';
     import { canSubmit, user, users, reservations, buoys } from '$lib/stores.js';
     import { beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
@@ -33,20 +34,20 @@
         let submitted = convertReservationTypes(Object.fromEntries(data));
 
         if (!Settings.get('openForBusiness', submitted.date)) {
-            alert('We are closed on this date; please choose a different date');
+            popup('We are closed on this date; please choose a different date');
             cancel();
             return;
         }
 
         const q = categoryIsBookable(submitted);
         if (q.result == false) {
-            alert(q.message);
+            popup(q.message);
             cancel();
             return;
         }
 
         if (!beforeResCutoff(Settings, submitted.date, submitted.startTime, submitted.category)) {
-            alert(
+            popup(
                 'The submission window for this reservation date/time has expired; ' + 
                 'please choose a later date'
             );
@@ -55,9 +56,9 @@
         }
 
         if (checkDuplicateRsv(submitted, $reservations)) {
-            alert(
-                'You have an existing reservation that overlaps with this date/time; ' +
-                'please either cancel that reservation or choose a different date/time'
+            popup(
+                'You have an existing reservation that overlaps with this date/time. ' +
+                'Please either cancel that reservation or choose a different date/time'
             );
             cancel();
             return;
@@ -65,20 +66,20 @@
 
         let result = checkSpaceAvailable(Settings, $buoys, submitted, $reservations); 
         if (result.status === 'error') {
-            alert(result.message);
+            popup(result.message);
             cancel();
             return;
         }
         
         result = validateBuddies(submitted);
         if (result.status === 'error') {
-            alert(result.msg);
+            popup(result.msg);
             cancel();
             return;
         }
 
         close();
-        
+
         return async ({ result, update }) => {
             switch(result.type) {
                 case 'success':
@@ -93,11 +94,17 @@
                         toast.success('Reservation submitted!');
                     } else if (result.data.status === 'error') {
                         if (result.data.code === 'RSV_EXISTS') {
-                            alert('Reservation rejected!  You or one of your buddies has a pre-existing reservation at this time');
+                            popup(
+                                'Reservation rejected!  You or one of your buddies has a ' +
+                                'pre-existing reservation at this time'
+                            );
                         } else if (result.data.code === 'NO_SPACE_AVAILABLE') {
-                            alert(result.data.message);
+                            popup(result.data.message);
                         } else if (result.data.code === 'USER_DISABLED') {
-                            alert('Reservation rejected! User does not have permission to make reservations');
+                            popup(
+                                'Reservation rejected! User does not have permission to ' +
+                                'make reservations'
+                            );
                         }
                     }
                     break;
@@ -108,7 +115,7 @@
             }
         };
     };
-    
+
 </script>
 
 {#if hasForm}
@@ -120,11 +127,23 @@
             use:enhance={submitReservation}
         >
             {#if category === 'pool'}
-                <ResFormPool bind:date={date} dateFn={()=>dateFn(Settings, 'pool')} bind:category={category}/>
+                <ResFormPool 
+                    bind:date={date} 
+                    dateFn={()=>dateFn(Settings, 'pool')} 
+                    bind:category={category}
+                />
             {:else if category === 'openwater'}
-                <ResFormOpenWater bind:date={date} dateFn={()=>dateFn(Settings, 'openwater')} bind:category={category}/>
+                <ResFormOpenWater 
+                    bind:date={date} 
+                    dateFn={()=>dateFn(Settings, 'openwater')} 
+                    bind:category={category}
+                />
             {:else if category === 'classroom'}
-                <ResFormClassroom bind:date={date} dateFn={()=>dateFn(Settings, 'classroom')} bind:category={category}/>
+                <ResFormClassroom 
+                    bind:date={date} 
+                    dateFn={()=>dateFn(Settings, 'classroom')} 
+                    bind:category={category}
+                />
             {/if}
        </form>
     </div>
