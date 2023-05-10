@@ -7,7 +7,7 @@
     import { popup } from './Popup.svelte';
     import { reservations, user, users } from '$lib/stores.js';
     import { adminView } from '$lib/utils.js';
-    import { toast, Toaster } from 'svelte-french-toast';
+    import { toast } from 'svelte-french-toast';
 
     export let hasForm = false;
     export let rsv;

@@ -11,7 +11,7 @@
     import { user, view, viewMode, viewedDate, reservations } from '$lib/stores.js';
     import { Settings } from '$lib/settings.js';
     import { CATEGORIES } from '$lib/constants.js';
-    import { toast, Toaster } from 'svelte-french-toast';
+    import { toast } from 'svelte-french-toast';
 
     export let data;
     
@@ -215,4 +215,3 @@
     </Modal>
 </div>
 
-<Toaster/>
