@@ -4,7 +4,7 @@
     import { user, users, reservations } from '$lib/stores.js';
     import { beforeCancelCutoff } from '$lib/ReservationTimes.js';
     import { Settings } from '$lib/settings.js';
-    import { toast, Toaster } from 'svelte-french-toast';
+    import { toast } from 'svelte-french-toast';
     import { augmentRsv, removeRsv } from '$lib/utils.js';
 
     export let rsv;
@@ -92,4 +92,3 @@
     </div>
 {/if}
 
-<Toaster/>

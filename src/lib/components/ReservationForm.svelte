@@ -1,6 +1,6 @@
 <script>
     import { getContext } from 'svelte';
-    import { toast, Toaster } from 'svelte-french-toast';
+    import { toast } from 'svelte-french-toast';
     import { enhance } from '$app/forms';
     import ResFormPool from './ResFormPool.svelte';
     import ResFormClassroom from './ResFormClassroom.svelte';
@@ -130,4 +130,3 @@
     </div>
 {/if}
 
-<Toaster/>
