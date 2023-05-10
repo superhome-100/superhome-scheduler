@@ -4,6 +4,7 @@
     import ResFormPool from './ResFormPool.svelte';
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
+    import { popup } from './Popup.svelte';
     import { reservations, user, users } from '$lib/stores.js';
     import { adminView } from '$lib/utils.js';
     import { toast, Toaster } from 'svelte-french-toast';
@@ -65,12 +66,12 @@
                 (data.get('lane1') === 'auto' && data.get('lane2') !== 'auto')
                 || (data.get('lane1') !== 'auto' && data.get('lane2') === 'auto')
             ) {
-                alert('Either both lanes must be assigned or both must be auto');
+                popup('Either both lanes must be assigned or both must be auto');
                 cancel();
                 return;
             }
             if (data.get('lane1') !== 'auto' && data.get('lane1') === data.get('lane2')) {
-                alert('Cannot assign same value for 1st and 2nd Lane');
+                popup('Cannot assign same value for 1st and 2nd Lane');
                 cancel();
                 return;
             }

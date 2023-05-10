@@ -3,6 +3,7 @@
     import { user, users, reservations } from '$lib/stores.js';
     import { toast, Toaster } from 'svelte-french-toast'
     import { getContext } from 'svelte';
+    import { popup } from '$lib/components/Popup.svelte';
 
     let { close } = getContext('simple-modal');
 
@@ -26,7 +27,7 @@
             return;
         }
         if (userNicknames.includes(data.get('nickname'))) {
-            alert('That name is already taken.  Please choose a different name.');
+            popup('That name is already taken.  Please choose a different name.');
             cancel();
             return;
         }

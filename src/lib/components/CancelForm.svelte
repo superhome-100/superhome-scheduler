@@ -6,6 +6,7 @@
     import { Settings } from '$lib/settings.js';
     import { toast, Toaster } from 'svelte-french-toast';
     import { augmentRsv, removeRsv } from '$lib/utils.js';
+    import { popup } from '$lib/components/Popup.svelte';
 
     export let rsv;
     export let hasForm = false;
@@ -14,7 +15,7 @@
     
     const cancelReservation = async ({ form, data, action, cancel }) => {
         if (!beforeCancelCutoff(Settings, rsv.date, rsv.startTime, rsv.category)) {
-            alert(
+            popup(
                 `The cancelation window for this reservation has expired; 
                 this reservation can no longer be canceled`
             );
