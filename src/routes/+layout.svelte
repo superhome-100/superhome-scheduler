@@ -5,7 +5,7 @@
     import { onMount } from 'svelte';
     import Sidebar from '$lib/components/Sidebar.svelte';
     import Nprogress from "$lib/components/Nprogress.svelte";
-    import Popup from '$lib/components/Popup.svelte';
+    import Popup, { popup } from '$lib/components/Popup.svelte';
     import { 
         boatAssignments, 
         loginState, 
@@ -86,7 +86,7 @@
             }
             intervalId = setInterval(refreshAppState, $settings.refreshInterval.default);
         } else if ($user.status === 'disabled') {
-            alert(
+            popup(
                 'User ' + $user.name + ' does not have permission ' + 
                 'to access this app; please contact the admin for help'
             );

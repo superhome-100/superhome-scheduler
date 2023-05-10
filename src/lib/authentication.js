@@ -4,6 +4,7 @@ import { page } from '$app/stores';
 import { goto } from '$app/navigation';
 import { PUBLIC_FACEBOOK_APP_ID } from '$env/static/public';
 import { toast } from 'svelte-french-toast';
+import { popup } from '$lib/components/Popup.svelte';
 
 export let profileSrc;
 
@@ -67,7 +68,7 @@ export async function login (callback) {
                 );
             });
         } else {
-            alert('Facebook login returned status "' + response.status + '"');
+            popup('Facebook login returned status "' + response.status + '"');
             loginState.set('out');
         }
     }, { scope: 'email,public_profile' });

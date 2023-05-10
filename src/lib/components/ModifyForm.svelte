@@ -5,6 +5,7 @@
     import ResFormPool from './ResFormPool.svelte';
     import ResFormClassroom from './ResFormClassroom.svelte';
     import ResFormOpenWater from './ResFormOpenWater.svelte';
+    import { popup } from './Popup.svelte';
     import { canSubmit, user, users, reservations, buoys } from '$lib/stores.js';
     import { beforeCancelCutoff, beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
@@ -65,14 +66,14 @@
         addMissingFields(submitted, rsv);
 
         if (!Settings.get('openForBusiness', submitted.date)) {
-            alert('We are closed on this date; please choose a different date');
+            popup('We are closed on this date; please choose a different date');
             cancel();
             return;
         }
 
         const q = categoryIsBookable(submitted);
         if (q.result == false) {
-            alert(q.message);
+            popup(q.message);
             cancel();
             return;
         }
@@ -87,14 +88,14 @@
         data.append('oldBuddies', JSON.stringify(rsv.buddies));
 
         if (!beforeCancelCutoff(Settings, submitted.date, submitted.startTime, submitted.category)) {
-            alert(`The modification window for this reservation has expired; 
+            popup(`The modification window for this reservation has expired; 
                 this reservation can no longer be modified`
             );
             cancel();
         }
  
         if (checkDuplicateRsv(submitted, $reservations)) {
-            alert(
+            popup(
                 'You have an existing reservation that overlaps with this date/time; ' +
                 'please either cancel that reservation, or choose a different date/time'
             );
@@ -104,14 +105,14 @@
 
         let result = checkSpaceAvailable(Settings, $buoys, submitted, $reservations); 
         if (result.status === 'error') {
-            alert(result.message);
+            popup(result.message);
             cancel();
             return;
         }
         
         result = validateBuddies(submitted);
         if (result.status == 'error') {
-            alert(result.msg);
+            popup(result.msg);
             cancel();
             return;
         }
@@ -141,9 +142,12 @@
                         toast.success('Reservation updated!');
                     } else if (result.data.status === 'error') {
                         if (result.data.code === 'RSV_EXISTS') {
-                            alert('Reservation rejected!  You or one of your buddies has a pre-existing reservation at this time');
+                            popup(
+                                'Reservation rejected!  You or one of your ' +
+                                'buddies has a pre-existing reservation at this time'
+                            );
                         } else if (result.data.code === 'NO_SPACE_AVAILABLE') {
-                            alert(result.data.message);
+                            popup(result.data.message);
                         }
                     }
                     break;
