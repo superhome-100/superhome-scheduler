@@ -243,7 +243,7 @@ export function validateBuddies(rsv) {
             return {status: 'error', msg: 'Cannot add yourself as a buddy'};
         }
         if (!userIds.includes(buddy)) {
-            return {status: 'error', msg: `Unknown user: ${buddy}`};
+            return {status: 'error', msg: 'Unknown user in buddy field'};
         }
         if (validBuddies.includes(buddy)) {
             return {status: 'error', msg: `Duplicate buddies not allowed (${buddy})`};
