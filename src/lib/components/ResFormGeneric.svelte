@@ -65,7 +65,7 @@
     
     function matchUser() {
         hiLiteIndex = 0;
-        let currentBuddies = buddyFields.map((bf) => bf.name);
+        let currentBuddies = buddyFields.filter(bf => bf.id != currentBF.id).map((bf) => bf.name);
         currentBF.matches = [];
         if (currentBF.name.length > 0) {
             let buddyName = currentBF.name.toLowerCase();
@@ -78,6 +78,10 @@
                     }
                 }
             }
+        }
+
+        if (currentBF.matches.length == 1 && currentBF.name === currentBF.matches[0].nickname) {
+            setInputVal(currentBF.matches[0]);
         }
         buddyFields = [...buddyFields];
     }

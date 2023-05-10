@@ -17,22 +17,31 @@
     
     let categories = [...CATEGORIES];
 
-    const checkAllBuoysAssigned = (date, rsvs, viewMode) => {
+    const getBuoyState = (date, rsvs, viewMode) => {
         if (viewMode === 'admin') {
-            return rsvs
-                .filter(rsv => {
-                    return rsv.date === datetimeToLocalDateStr(date)
-                        && rsv.category === 'openwater'
-                        && ['pending', 'confirmed'].includes(rsv.status)
-                }).reduce((b,rsv) => b && rsv.buoy != 'auto', true);
+            rsvs = rsvs.filter(rsv => {
+                return rsv.date === datetimeToLocalDateStr(date)
+                    && rsv.category === 'openwater'
+                    && ['pending', 'confirmed'].includes(rsv.status)
+            });
+            let auto = true;
+            let notAuto = true;
+            for (let rsv of rsvs) {
+                if (rsv.buoy === 'auto') {
+                    notAuto = false;
+                } else {
+                    auto = false;
+                }
+            }
+            return auto ? 'unlocked' : notAuto ? 'locked' : 'mixed';
         } else {
             return null;
         }
     };
-    $: buoysLocked = checkAllBuoysAssigned($viewedDate, $reservations, $viewMode);
+    $: buoyState = getBuoyState($viewedDate, $reservations, $viewMode);
 
-    const highlightButton = (lock, buoysLocked) => {
-        if ((lock && buoysLocked) || !(lock || buoysLocked)) {
+    const highlightButton = (lock, buoyState) => {
+        if ((lock && buoyState === 'locked') || (!lock && buoyState === 'unlocked')) {
             return 'bg-openwater-bg-to text-white';
         } else {
             return 'bg-root-bg-light dark:bg-root-bg-dark';
@@ -178,12 +187,12 @@
         <span>
             <button 
                 on:click={lockBuoys}
-                class='{highlightButton(true, buoysLocked)} px-1 py-0 font-semibold border-black dark:border-white'>
+                class='{highlightButton(true, buoyState)} px-1 py-0 font-semibold border-black dark:border-white'>
                 Lock
             </button>
             <button 
                 on:click={unlockBuoys}
-                class='{highlightButton(false, buoysLocked)} px-1 py-0 font-semibold border-black dark:border-white'>
+                class='{highlightButton(false, buoyState)} px-1 py-0 font-semibold border-black dark:border-white'>
                 Unlock
             </button>
         </span>
