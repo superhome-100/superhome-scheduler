@@ -13,9 +13,9 @@
     import ExclamationCircle from './ExclamationCircle.svelte';
 
     const closePopup = (e) => {
-        if (window.location.hash === '#alertMsg') {
+        let span = document.getElementById('alertText');
+        if (span != null) {
             e.stopPropagation();
-            let span = document.getElementById('alertText');
             span.innerHTML = '';
             let a = document.createElement('a');
             a.href = '#';

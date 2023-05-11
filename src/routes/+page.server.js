@@ -41,5 +41,9 @@ export const actions = {
         const record = await updateNickname(data.get('id'), data.get('nickname'));
         return record;
     },
+    submitReceipt: async ({ request }) => {
+        const data = await request.formData();
+        console.log(data.get('accept'));
+    },
 }
 

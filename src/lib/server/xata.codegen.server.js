@@ -94,6 +94,24 @@ const tables = [
     ],
   },
   { name: "Boats", columns: [{ name: "assignments", type: "text" }] },
+  {
+    name: "Notifications",
+    columns: [
+      { name: "startDate", type: "string" },
+      { name: "endDate", type: "string" },
+      { name: "message", type: "text" },
+      { name: "checkboxMessage", type: "text" },
+      { name: "allUsers", type: "bool", defaultValue: "false" },
+      { name: "specificUsers", type: "multiple" },
+    ],
+  },
+  {
+    name: "NotificationReceipts",
+    columns: [
+      { name: "user", type: "link", link: { table: "Users" } },
+      { name: "notification", type: "link", link: { table: "Notifications" } },
+    ],
+  },
 ];
 /** @type { import('../../client/src').ClientConstructor<{}> } */
 const DatabaseClient = buildClient();

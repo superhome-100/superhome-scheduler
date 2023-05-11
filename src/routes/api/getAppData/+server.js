@@ -1,8 +1,12 @@
 import { json } from '@sveltejs/kit';
-import { getReservationsSince, getAllUsers } from '$lib/server/server.js';
+import {
+    getReservationsSince,
+    getUserActiveNotifications,
+    getAllUsers
+} from '$lib/server/server.js';
 import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
 
-export async function GET() {
+export async function POST({ request }) {
     const oneWeekAgo = () => {
         let now = new Date();
         let d = new Date();
@@ -10,13 +14,20 @@ export async function GET() {
         return datetimeToLocalDateStr(d);
     }
     try {
+        let { user } = await request.json();
+        let notifications = await getUserActiveNotifications(user);
         const reservations = await getReservationsSince(oneWeekAgo());
         const users = await getAllUsers();
         const usersById = users.reduce((obj, user) => {
             obj[user.id] = user;
             return obj;
         }, {});
-        return json({ status: 'success', reservations, usersById });
+        return json({
+            status: 'success',
+            notifications,
+            reservations,
+            usersById
+        });
     } catch (error) {
         return json({ status: 'error', error });
     }
