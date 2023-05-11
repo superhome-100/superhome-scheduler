@@ -1,0 +1,44 @@
+<script>
+    import { user } from '$lib/stores.js';
+    import { enhance } from '$app/forms';
+    import { getContext } from 'svelte';
+
+    export let ntf;
+
+    const { close } = getContext('simple-modal');
+
+    const submitReceipt = async ({ form, data, action, cancel }) => {
+        close();
+        return async ({ result, update }) => {
+            switch(result.type) {
+                case 'success':
+                    break;
+                default:
+                    console.error(result);
+                    break;
+            }
+        }
+    }
+</script>
+
+{#if $user && ntf}
+    <span class='table mx-auto mb-4'>{ntf.message}</span>
+    <form
+        method='POST'
+        action='/?/submitReceipt'
+        use:enhance={submitReceipt}
+    >
+        <input type='hidden' name='notificationId' value={ntf.id}>
+        <input type='hidden' name='userId' value={$user.id}>
+        <div class='flex mb-2 justify-between'>
+            <div class='mx-4'>
+                <input id='ntfAccept' type='checkbox' name='accept'>
+                <label for='ntfAccept'>{ntf.checkboxMessage}</label>
+            </div>
+            <button 
+                type="submit" 
+                class='me-4 bg-gray-100 disabled:text-gray-400 px-3 py-1'
+            >OK</button>
+        </div>
+    </form>
+{/if}
