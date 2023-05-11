@@ -71,9 +71,12 @@
             let buddyName = currentBF.name.toLowerCase();
             for (let id in $users) {
                 let record = $users[id];
-                if (record.id != $user.id && !currentBuddies.includes(record.nickname)) {
-                    let rec = record.nickname.slice(0, buddyName.length).toLowerCase(); 
-                    if (buddyName === rec) {
+                if (record.status !== 'disabled' 
+                    && record.id !== $user.id 
+                    && !currentBuddies.includes(record.nickname)
+                ) {
+                    let nameFrag = record.nickname.slice(0, buddyName.length).toLowerCase(); 
+                    if (buddyName === nameFrag) {
                         currentBF.matches.push(record);
                     }
                 }
