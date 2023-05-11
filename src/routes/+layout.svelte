@@ -6,18 +6,21 @@
     import Sidebar from '$lib/components/Sidebar.svelte';
     import Nprogress from "$lib/components/Nprogress.svelte";
     import Popup, { popup } from '$lib/components/Popup.svelte';
+    import Notification, { notification } from '$lib/components/Notification.svelte';
     import { 
         boatAssignments, 
-        loginState, 
-        settings, 
         buoys, 
+        loginState, 
+        notifications,
+        reservations, 
+        settings, 
         user, 
         users, 
         view, 
-        viewMode, 
-        reservations 
+        viewMode
     } from '$lib/stores.js';
     import { augmentRsv } from '$lib/utils.js';
+    import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { loadFB, login, logout } from '$lib/authentication.js';
     import { toast, Toaster } from 'svelte-french-toast';
 
@@ -42,21 +45,38 @@
         await logout();
     }
 
+    $: activeNtf = null;
+
+    function checkForNotifications() {
+        let today = datetimeToLocalDateStr(new Date());
+        for (let i=$notifications.length-1; i >= 0; i--) {
+            let ntf = $notifications[i];
+            if ((ntf.startDate === 'default' || ntf.startDate <= today) 
+                && (ntf.endDate === 'default' || ntf.endDate >= today)
+            ) {
+                console.log(ntf);
+                activeNtf = ntf;
+                notification(ntf.message, ntf.checkboxMessage);
+            }
+        }
+    }
+
     async function refreshAppState() {
         let data = await get('Settings');
         if (data.status === 'success') {
             $settings = data.settings;
             $buoys = data.buoys;
         }
-
-        data = await get('AppData');
-        if (data.status === 'success') {
-            $users = data.usersById;
-            $reservations = data.reservations.map((rsv) => augmentRsv(rsv, $users[rsv.user.id]));
-        }
         $user = $users[$user.id];
         if ($user.status === 'disabled') {
             await callLogout();
+        }
+        data = await post('getAppData', { user: $user.id });
+        if (data.status === 'success') {
+            $notifications = data.notifications;
+            checkForNotifications();
+            $users = data.usersById;
+            $reservations = data.reservations.map((rsv) => augmentRsv(rsv, $users[rsv.user.id]));
         }
         if ($user.privileges === 'admin') {
             let data = await get('BoatAssignments');
@@ -71,12 +91,13 @@
             $loginState = 'out';
         } else if ($user.status === 'active') {
             $loginState = 'in';
-            let data = await get('AppData');
+            let data = await post('getAppData', { user: $user.id });
             if (data.status === 'error') {
                 throw new Error('Could not read app data from database');
             } 
             $users = data.usersById;
             $reservations = data.reservations.map((rsv) => augmentRsv(rsv, $users[rsv.user.id]));
+            $notifications = data.notifications;
             if ($user.privileges === 'admin') {
                 $viewMode = vm;
                 let data = await get('BoatAssignments');
@@ -84,6 +105,7 @@
                     $boatAssignments = data.assignments;
                 }
             }
+            checkForNotifications();
             intervalId = setInterval(refreshAppState, $settings.refreshInterval.default);
         } else if ($user.status === 'disabled') {
             popup(
@@ -143,6 +165,16 @@
         return data;
     }
 
+    async function post(endpoint, params) {
+        const response = await fetch('/api/' + endpoint, {
+            method: 'POST',
+            headers: {'Content-type': 'application/json'},
+            body: JSON.stringify(params)
+        });
+        let data = await response.json();
+        return data;
+    }
+
 </script>
 
 <Nprogress/>
@@ -170,4 +202,5 @@
 {/if}
 
 <Popup/>
+<Notification ntf={activeNtf}/>
 

@@ -74,16 +74,6 @@ export async function getAllUsers() {
     return users;
 }
 
-export async function getUserReservations(userId) {
-    let reservations = await xata.db.Reservations
-        .filter({
-            "user.facebookId": userId})
-        .sort("date", "asc")
-        .getAll();
-
-    return reservations;
-}
-
 export async function addUser(userId, userName) {
     const record = await xata.db.Users.create({
         "facebookId": userId,
@@ -480,4 +470,14 @@ export function checkSessionActive(route, cookies) {
             throw redirect(307, '/');
         }
     }
+}
+
+export async function getUserActiveNotifications(user) {
+    const receipts = await xata.db.NotificationReceipts.filter({ user }).getAll();
+    const notifications = await xata.db.Notifications.getAll();
+    return notifications.filter(ntf => {
+        return receipts.filter(rpt => {
+            return rpt.notification.id === ntf.id && rpt.user.id === user;
+        }).length == 0;
+    });
 }
