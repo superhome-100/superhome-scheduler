@@ -22,7 +22,11 @@
 </script>
 
 {#if $user && ntf}
-    <span class='table mx-auto mb-4'>{ntf.message}</span>
+    <span class='table text-center mx-auto mb-4'>
+        {#each ntf.message.split('\n') as msg}
+            <p>{msg}</p>
+        {/each}
+    </span>
     <form
         method='POST'
         action='/?/submitReceipt'
