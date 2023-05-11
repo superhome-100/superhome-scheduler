@@ -6,7 +6,8 @@
     import Sidebar from '$lib/components/Sidebar.svelte';
     import Nprogress from "$lib/components/Nprogress.svelte";
     import Popup, { popup } from '$lib/components/Popup.svelte';
-    import Notification, { notification } from '$lib/components/Notification.svelte';
+    import Modal from '$lib/components/Modal.svelte';
+    import Notification from '$lib/components/Notification.svelte';
     import { 
         boatAssignments, 
         buoys, 
@@ -45,22 +46,6 @@
         await logout();
     }
 
-    $: activeNtf = null;
-
-    function checkForNotifications() {
-        let today = datetimeToLocalDateStr(new Date());
-        for (let i=$notifications.length-1; i >= 0; i--) {
-            let ntf = $notifications[i];
-            if ((ntf.startDate === 'default' || ntf.startDate <= today) 
-                && (ntf.endDate === 'default' || ntf.endDate >= today)
-            ) {
-                console.log(ntf);
-                activeNtf = ntf;
-                notification(ntf.message, ntf.checkboxMessage);
-            }
-        }
-    }
-
     async function refreshAppState() {
         let data = await get('Settings');
         if (data.status === 'success') {
@@ -74,7 +59,6 @@
         data = await post('getAppData', { user: $user.id });
         if (data.status === 'success') {
             $notifications = data.notifications;
-            checkForNotifications();
             $users = data.usersById;
             $reservations = data.reservations.map((rsv) => augmentRsv(rsv, $users[rsv.user.id]));
         }
@@ -105,7 +89,6 @@
                     $boatAssignments = data.assignments;
                 }
             }
-            checkForNotifications();
             intervalId = setInterval(refreshAppState, $settings.refreshInterval.default);
         } else if ($user.status === 'disabled') {
             popup(
@@ -202,5 +185,12 @@
 {/if}
 
 <Popup/>
-<Notification ntf={activeNtf}/>
+<Modal 
+    closeOnEsc={false}
+    closeOnOuterClick={false}
+    closeButton={false} 
+    styleWindow={{width: 'fit-content', 'min-width': '300px'}}
+>
+    <Notification/>
+</Modal>
 

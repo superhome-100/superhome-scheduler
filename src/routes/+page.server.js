@@ -4,6 +4,7 @@ import {
     cancelReservation,
     adminUpdate,
     updateNickname,
+    insertNotificationReceipt,
 } from '$lib/server/server.js';
 
 const adminUpdateGeneric = async ({ request }) => {
@@ -43,7 +44,10 @@ export const actions = {
     },
     submitReceipt: async ({ request }) => {
         const data = await request.formData();
-        console.log(data.get('accept'));
+        const { notificationId, userId, accept } = Object.fromEntries(data);
+        if (accept === 'on') {
+            await insertNotificationReceipt(notificationId, userId);
+        }
     },
 }
 

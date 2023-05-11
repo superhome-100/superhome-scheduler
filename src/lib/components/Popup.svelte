@@ -14,7 +14,7 @@
 
     const closePopup = (e) => {
         let span = document.getElementById('alertText');
-        if (span != null) {
+        if (span.innerHTML !== '') {
             e.stopPropagation();
             span.innerHTML = '';
             let a = document.createElement('a');

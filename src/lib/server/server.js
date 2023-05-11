@@ -481,3 +481,8 @@ export async function getUserActiveNotifications(user) {
         }).length == 0;
     });
 }
+
+export async function insertNotificationReceipt(notification, user) {
+    let record = await xata.db.NotificationReceipts.create({ user, notification });
+    return record;
+}
