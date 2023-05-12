@@ -79,7 +79,7 @@ export async function addUser(userId, userName) {
         "facebookId": userId,
         "name": userName,
         "nickname": userName,
-        "status": "active"
+        "status": "disabled"
     });
     return record;
 }
