@@ -3,7 +3,7 @@ import {
     startTimes,
 } from '$lib/ReservationTimes.js';
 import { timeStrToMin } from '$lib/datetimeUtils.js';
-import { nOccupants } from '$lib/utils.js';
+import { nOccupants } from '$lib/validationUtils.js';
 import { Settings } from '$lib/settings.js';
 
 // priority rules:
@@ -166,7 +166,7 @@ function insertUnAssigned(spacesByTimes, blk) {
     return { status: 'success' }
 }
 
-export function assignSpaces(rsvs, dateStr) {
+export function assignPoolSpaces(rsvs, dateStr) {
     let incT = inc(Settings, dateStr);
     let sTs = startTimes(Settings, dateStr, 'pool');
     let nTimes = sTs.length;

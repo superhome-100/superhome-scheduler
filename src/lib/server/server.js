@@ -1,5 +1,6 @@
 import { getXataClient, getXataBranch } from '$lib/server/xata.js';
-import { addMissingFields, checkSpaceAvailable, convertReservationTypes } from '$lib/utils.js';
+import { addMissingFields, convertReservationTypes } from '$lib/utils.js';
+import { buddysRsv, checkSpaceAvailable } from '$lib/validationUtils.js';
 import { redirect } from '@sveltejs/kit';
 import { startTimes, endTimes } from '$lib/ReservationTimes.js';
 import { timeStrToMin } from '$lib/datetimeUtils.js';
@@ -228,7 +229,7 @@ async function getExistingRsvs(entries) {
 async function querySpaceAvailable(entries, remove=[]) {
     let existing = await getExistingRsvs([...entries, ...remove]);
     let buoys;
-    let [sub, ...buddies] = entries;
+    let sub = entries[0];
     if (sub.category === 'openwater') {
         buoys = await xata.db.Buoys.getAll();
     }
@@ -292,23 +293,6 @@ export async function submitReservation(formData) {
         status: 'success',
         records
     };
-}
-
-function buddysRsv(rsv, sub) {
-    if (sub.buddies && sub.buddies.includes(rsv.user.id)) {
-        if (['pool', 'classroom'].includes(sub.category)) {
-            return rsv.category === sub.category
-                && rsv.startTime === sub.startTime
-                && rsv.endTime === sub.endTime;
-        } else if (sub.category === 'openwater') {
-            return rsv.category === sub.category
-                && rsv.owTime === sub.owTime;
-        } else {
-            throw new Error();
-        }
-    } else {
-        return false;
-    }
 }
 
 export async function updateReservation(formData) {
