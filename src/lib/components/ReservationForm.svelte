@@ -10,12 +10,15 @@
     import { beforeResCutoff } from '$lib/ReservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { Settings } from '$lib/settings.js';
+    import {
+        checkNoOverlappingRsvs,
+        checkSpaceAvailable,
+        validateBuddies
+    } from '$lib/validationUtils.js';
+
     import { 
         augmentRsv, 
         updateReservationFormData, 
-        validateBuddies, 
-        checkSpaceAvailable,
-        checkDuplicateRsv,
         convertReservationTypes,
         categoryIsBookable,
     } from '$lib/utils.js';
@@ -48,36 +51,34 @@
 
         if (!beforeResCutoff(Settings, submitted.date, submitted.startTime, submitted.category)) {
             popup(
-                'The submission window for this reservation date/time has expired; ' + 
-                'please choose a later date'
+                'The submission window for this reservation date/time has expired. ' + 
+                'Please choose a later date.'
             );
-            cancel();
-            return;
-        }
-
-        if (checkDuplicateRsv(submitted, $reservations)) {
-            popup(
-                'You have an existing reservation that overlaps with this date/time. ' +
-                'Please either cancel that reservation or choose a different date/time'
-            );
-            cancel();
-            return;
-        }
-
-        let result = checkSpaceAvailable(Settings, $buoys, submitted, $reservations); 
-        if (result.status === 'error') {
-            popup(result.message);
             cancel();
             return;
         }
         
-        result = validateBuddies(submitted);
+        let result = validateBuddies(submitted, $reservations);
         if (result.status === 'error') {
             popup(result.msg);
             cancel();
             return;
         }
 
+        result = checkNoOverlappingRsvs(Settings, submitted, $reservations)
+        if (result.status === 'error') {
+            popup(result.msg);
+            cancel();
+            return;
+        }
+        
+        result = checkSpaceAvailable(Settings, $buoys, submitted, $reservations); 
+        if (result.status === 'error') {
+            popup(result.message);
+            cancel();
+            return;
+        }
+        
         close();
 
         return async ({ result, update }) => {
