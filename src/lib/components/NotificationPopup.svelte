@@ -22,7 +22,7 @@
 </script>
 
 {#if $user && ntf}
-    <span class='table text-center mx-auto mb-4 dark:text-white'>
+    <span class='table text-left mx-auto mb-4 dark:text-white'>
         {#each ntf.message.split('\n') as msg}
             <p>{msg}</p>
         {/each}
