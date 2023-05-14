@@ -4,7 +4,6 @@ import { reservations, user, viewMode } from './stores.js'
 import { Settings } from './settings.js';
 import { get } from 'svelte/store';
 import { assignPoolSpaces, patchSchedule } from './autoAssignPool.js';
-
 export function monthArr(year, month, reservations) {
     let daysInMonth = new Date(year, month+1, 0).getDate();
     let firstDay = new Date(year, month, 1);
@@ -95,6 +94,8 @@ export function convertReservationTypes(data) {
             data[f] = JSON.parse(data[f]);
         }
     }
+    data.price = parseInt(data.price);
+
     return data;
 }
 

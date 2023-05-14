@@ -33,6 +33,7 @@ const tables = [
       { name: "O2OnBuoy", type: "bool" },
       { name: "buoy", type: "string", defaultValue: "auto" },
       { name: "room", type: "string", defaultValue: "auto" },
+      { name: "price", type: "int" },
     ],
   },
   {
@@ -48,6 +49,11 @@ const tables = [
       { name: "facebookId", type: "string", unique: true },
       { name: "privileges", type: "string", defaultValue: "normal" },
       { name: "nickname", type: "string", unique: true },
+      {
+        name: "priceTemplate",
+        type: "link",
+        link: { table: "PriceTemplates" },
+      },
     ],
   },
   {
@@ -97,12 +103,8 @@ const tables = [
   {
     name: "Notifications",
     columns: [
-      { name: "startDate", type: "string" },
-      { name: "endDate", type: "string" },
       { name: "message", type: "text" },
       { name: "checkboxMessage", type: "text" },
-      { name: "allUsers", type: "bool", defaultValue: "false" },
-      { name: "specificUsers", type: "multiple" },
     ],
   },
   {
@@ -110,6 +112,17 @@ const tables = [
     columns: [
       { name: "user", type: "link", link: { table: "Users" } },
       { name: "notification", type: "link", link: { table: "Notifications" } },
+    ],
+  },
+  {
+    name: "PriceTemplates",
+    columns: [
+      { name: "coachOW", type: "int" },
+      { name: "coachPool", type: "int" },
+      { name: "coachClassroom", type: "int" },
+      { name: "autoOW", type: "int" },
+      { name: "autoPool", type: "int" },
+      { name: "template", type: "string", unique: true },
     ],
   },
 ];

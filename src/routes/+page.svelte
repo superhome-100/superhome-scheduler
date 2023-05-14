@@ -19,7 +19,7 @@
         
         <TabList>
             <Tab>Upcoming</Tab>
-            <Tab>Previous 7 Days</Tab>
+            <Tab>Completed</Tab>
         </TabList>
         
         <TabPanel>

@@ -40,7 +40,7 @@ export async function getSettings() {
 
 export async function getSession(id) {
     let records = await xata.db.Sessions
-        .select(['*', 'user.privileges', 'user.status', 'user.facebookId', 'user.name', 'user.nickname'])
+        .select(['*', 'user'])
         .filter({id: id})
         .getMany();
     return records[0];

@@ -2,7 +2,7 @@
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { minuteOfDay, beforeCancelCutoff } from '$lib/ReservationTimes.js';
     import { timeStrToMin, idx2month } from '$lib/datetimeUtils.js';
-    import { user, reservations } from '$lib/stores.js';
+    import { user, userPastReservations, reservations } from '$lib/stores.js';
     import { getContext } from 'svelte';
     import Modal from './Modal.svelte';
     import CancelDialog from './CancelDialog.svelte';
@@ -107,8 +107,7 @@
         );
     };
 
-    const getMyReservations = (rsvs, resType) => {
-        rsvs = rsvs.filter((rsv) => rsv.user.id === $user.id && getResType(rsv) === resType);
+    const sortChronologically = (rsvs) => {
         return rsvs.sort((a,b) => {
             if (a.date > b.date) {
                 return 1;
@@ -119,7 +118,11 @@
             }
         });
     };
-    
+
+    $: rsvs = resType === 'upcoming'
+        ? $reservations.filter((rsv) => rsv.user.id === $user.id && getResType(rsv) === resType)
+        : $userPastReservations;
+
     const textColor = (status) => status === 'confirmed' 
         ? 'text-status-confirmed' : status === 'pending'
         ? 'text-status-pending' : status === 'rejected'
@@ -133,7 +136,7 @@
 {#if $user}
     <table class="m-auto border-separate border-spacing-y-1">
         <tbody>
-            {#each getMyReservations($reservations, resType) as rsv (rsv.id)}
+            {#each sortChronologically(rsvs) as rsv (rsv.id)}
                 <tr 
                     on:click={showViewRsv(rsv)} on:keypress={showViewRsv(rsv)} 
                     class='[&>td]:w-24 h-10 bg-gradient-to-br {bgColorFrom(rsv.category)} {bgColorTo(rsv.category)} cursor-pointer'
@@ -155,7 +158,11 @@
                             </Modal>
                         </td>
                     {:else}
-                        <td class='rounded-e-xl'/>
+                        <td class='text-white text-sm font-semibold rounded-e-xl'>
+                            {#if rsv.price}
+                                ₱{rsv.price}
+                            {/if}
+                        </td>
                     {/if}
                 </tr>
             {/each}
