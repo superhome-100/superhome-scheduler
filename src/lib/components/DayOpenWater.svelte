@@ -110,14 +110,14 @@
     $: boatCounts = boats.reduce((bc,b) => { bc[b] = 0; return bc; }, {});
     $: displayBuoys = sortByBoat($buoys, $boatAssignments[date]);
     
-    const displayValue = (assignments, date, buoy) => {
-        if (assignments[date] === undefined) {
-            assignments[date] = {};
+    const displayValue = (buoy) => {
+        if ($boatAssignments[date] === undefined) {
+            $boatAssignments[date] = {};
         }
-        if (assignments[date][buoy] === undefined) {
-            assignments[date][buoy] = null;
+        if ($boatAssignments[date][buoy] === undefined) {
+            $boatAssignments[date][buoy] = null;
         }
-        return assignments[date][buoy];
+        return $boatAssignments[date][buoy];
     }
 
     const getBoatCount = (schedule, assignments, boat) => {
@@ -180,7 +180,7 @@
     <div class='row'>
         <div class='column text-center w-[16%]'>
             <div class='font-semibold'>buoy</div>
-            {#each displayBuoys as buoy}
+            {#each displayBuoys as buoy (buoy.name)}
                 {#if buoyInUse(schedule, buoy.name)}
                     {#if $viewMode === 'admin'}
                         <div 
@@ -202,7 +202,7 @@
         {#if $viewMode === 'admin'}
             <div class='column text-center w-[18%]'>
                 <div class='font-semibold'>boat</div>
-                {#each displayBuoys as buoy}
+                {#each displayBuoys as buoy (buoy.name)}
                     {#if buoyInUse(schedule, buoy.name)}
                         <div
                             class='flex items-center justify-center'
@@ -212,7 +212,7 @@
                                 class='text-sm h-6 w-16 xs:text-xl xs:h-8 xs:w-16'
                                 name={buoy.name + '_boat'}
                                 id={buoy.name + '_boat'}
-                                value={displayValue($boatAssignments, date, buoy.name)}
+                                value={displayValue(buoy.name)}
                                 on:input={saveAssignments}
                             >
                                 <option value=null></option>
