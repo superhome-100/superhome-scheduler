@@ -49,11 +49,6 @@ const tables = [
       { name: "facebookId", type: "string", unique: true },
       { name: "privileges", type: "string", defaultValue: "normal" },
       { name: "nickname", type: "string", unique: true },
-      {
-        name: "priceTemplate",
-        type: "link",
-        link: { table: "PriceTemplates" },
-      },
     ],
   },
   {
@@ -122,7 +117,19 @@ const tables = [
       { name: "coachClassroom", type: "int" },
       { name: "autoOW", type: "int" },
       { name: "autoPool", type: "int" },
-      { name: "template", type: "string", unique: true },
+    ],
+  },
+  {
+    name: "UserPriceTemplates",
+    columns: [
+      { name: "user", type: "link", link: { table: "Users" } },
+      {
+        name: "priceTemplate",
+        type: "link",
+        link: { table: "PriceTemplates" },
+      },
+      { name: "startDate", type: "string", defaultValue: "default" },
+      { name: "endDate", type: "string", defaultValue: "default" },
     ],
   },
 ];
