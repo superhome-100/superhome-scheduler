@@ -1,8 +1,8 @@
-import { getTableCsv } from '$lib/server/server.js';
+import { getReservationsCsv } from '$lib/server/server.js';
 
 export async function POST({ request }) {
     let { branch } = await request.json();
-    let csv = await getTableCsv('Reservations', branch);
+    let csv = await getReservationsCsv(branch);
     return new Response(csv, {
         status: 200,
         headers: {
