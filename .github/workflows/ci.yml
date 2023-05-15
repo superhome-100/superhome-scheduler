@@ -1,12 +1,6 @@
 name: "test"
 on:
   pull_request:
-  workflow_dispatch:
-    inputs:
-      run_optional_build_desktop:
-        description: 'Run the optional build_desktop job (yes/no)'
-        required: true
-        default: 'no'
 
 jobs:
   test:
