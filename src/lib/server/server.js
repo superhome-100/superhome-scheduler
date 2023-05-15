@@ -8,13 +8,30 @@ import ObjectsToCsv from 'objects-to-csv';
 
 const xata = getXataClient();
 
-export async function getTableCsv(table, branch) {
+export async function getReservationsCsv(branch) {
     let client = getXataBranch(branch);
     let fields = ['user.name', 'user.nickname', 'date', 'category', 'status',
         'resType', 'numStudents', 'owTime', 'startTime', 'endTime'];
-    let records = await client.db[table]
+    let records = await client.db.Reservations
         .select(fields)
         .getAll();
+
+    records = records.map(rsv => {
+        let numStudents = rsv.numStudents;
+        if (numStudents == null) {
+            numStudents = 1;
+        }
+        let owTime = rsv.owTime;
+        if (owTime == null) {
+            if (timeStrToMin(rsv.startTime) < 720) {
+                owTime = 'AM';
+            } else {
+                owTime = 'PM';
+            }
+        }
+        return {...rsv, owTime, numStudents};
+    });
+
     const csv = new ObjectsToCsv(records.map(ent => {
         let {user, date, category, status, resType, numStudents, owTime, startTime, endTime} = ent;
         return {name: user.name, nickname: user.nickname, date, category, status, resType, numStudents, owTime, startTime, endTime};
