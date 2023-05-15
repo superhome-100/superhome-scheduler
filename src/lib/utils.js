@@ -417,7 +417,15 @@ function assignClassrooms(rsvs, dateStr) {
                     let r = rooms.indexOf(rsv.room)
                     let curBlk = lastBlk(r);
                     if (curBlk.cls == 'rsv') {
-                        curBlk.nSlots++;
+                        if (curBlk.data[0].id === rsv.id) {
+                            curBlk.nSlots++;
+                        } else {
+                            schedule[r].push({
+                                nSlots: 1,
+                                cls: 'rsv',
+                                data: [rsv]
+                            });
+                        }
                     } else {
                         schedule[r].push({
                             nSlots: 1,
