@@ -159,7 +159,7 @@
                         </td>
                     {:else}
                         <td class='text-white text-sm font-semibold rounded-e-xl'>
-                            {#if rsv.price}
+                            {#if rsv.price != null}
                                 ₱{rsv.price}
                             {/if}
                         </td>
