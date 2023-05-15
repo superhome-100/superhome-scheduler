@@ -1,10 +1,11 @@
 import { XataClient } from '../../../lib/server/xata.codegen.server.js';
 
 const XATA_API_KEY='xau_9xJINLTWEBX1d0EyWIi7YL9QinLT2TEv1';
-
 const xata = new XataClient({ apiKey: XATA_API_KEY, branch: 'dev' });
 
 //import { getXataClient } from '../../../lib/server/xata.js';
+//const xata = getXataClient();
+
 import {
     datetimeToDateStr,
     datetimeInPanglao,
@@ -12,8 +13,6 @@ import {
     firstOfMonthStr,
 } from '../../../lib//datetimeUtils.js';
 import { Settings } from '../../../lib/server/settings.js';
-
-//const xata = getXataClient();
 
 const unpackTemplate = (uT) => {
     return {
@@ -63,9 +62,9 @@ async function getOldAndNewRsvs(date) {
 
 async function getTemplates(newRsvs) {
     let uIds = Array.from(new Set(newRsvs.map(rsv => rsv.user.id)));
-    let userTemplates = await xata.db.Users
-        .filter({ id: { $any : uIds }})
-        .select(['*', 'priceTemplate'])
+    let userTemplates = await xata.db.UserPriceTemplates
+        .filter({ user: { $any : uIds }})
+        .select(['user', 'priceTemplate'])
         .getAll();
     return userTemplates;
 }
@@ -106,15 +105,15 @@ export async function POST() {
 
             for (let uT of userTemplates) {
                 let tmp = unpackTemplate(uT);
-                let nAutoOW = calcNAutoOW(uT.id, oldRsvs);
-                let rsvs = newRsvs.filter(rsv => rsv.user.id === uT.id);
+                let nAutoOW = calcNAutoOW(uT.user.id, oldRsvs);
+                let rsvs = newRsvs.filter(rsv => rsv.user.id === uT.user.id);
                 for (let rsv of rsvs) {
                     let start = getStart(rsv, amOWStart, pmOWStart);
-                    if (rsv.date <= date && start <= time) {
+                    if (rsv.date < date || (rsv.date === date && start <= time)) {
                         let price;
                         if (
                             rsv.category === 'openwater'
-                            && rsv.resType === 'auotnomous'
+                            && rsv.resType === 'autonomous'
                         ) {
                             nAutoOW++;
                             if (nAutoOW > maxChgbl) {
