@@ -82,7 +82,7 @@
         <div>
             <select 
                 id="formResType" 
-                {disabled} 
+                disabled={disabled || rsv != null} 
                 bind:value={autoOrCourse} 
                 name="resType"
             >
