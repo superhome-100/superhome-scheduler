@@ -16,6 +16,7 @@
         reservations, 
         settings, 
         user, 
+        userPastReservations,
         users, 
         view, 
         viewMode
@@ -31,18 +32,13 @@
     
     let intervalId;
 
-    $: {
-        if ($loginState === 'out' && $page.route.id != '/') {
-            goto('/');
-        }
-    }
+    $: if ($loginState === 'out' && $page.route.id != '/') { goto('/'); }
 
     onMount(() => toast.promise(initApp(), {loading: 'loading...', error: 'Loading error'}));
 
     async function callLogout() {
         if (intervalId) { clearInterval(intervalId); }
         intervalId = undefined;
-        drawerHidden = true;
         await logout();
     }
 
@@ -52,16 +48,25 @@
             $settings = data.settings;
             $buoys = data.buoys;
         }
-        $user = $users[$user.id];
-        if ($user.status === 'disabled') {
-            await callLogout();
-        }
-        data = await post('getAppData', { user: $user.id });
+    
+        let minDateStr = datetimeToLocalDateStr(new Date());
+        data = await post('getAppData', { user: $user.id, minDateStr });
         if (data.status === 'success') {
-            $notifications = data.notifications;
             $users = data.usersById;
-            $reservations = data.reservations.map((rsv) => augmentRsv(rsv, $users[rsv.user.id]));
+            $user = $users[$user.id];
+            if ($user.status === 'disabled') {
+                await callLogout();
+                return;
+            }
+            $notifications = data.notifications;
+            // keep unchanged rsvs and update changed/add new ones
+            let rsvById = $reservations.reduce((obj,rsv) => {obj[rsv.id] = rsv; return obj;},{});
+            data.reservations.forEach((rsv) => {
+                rsvById[rsv.id] = augmentRsv(rsv, $users[rsv.user.id])
+            });
+            $reservations = Object.values(rsvById);
         }
+         
         if ($user.privileges === 'admin') {
             let data = await get('BoatAssignments');
             if (data.status === 'success') { 
@@ -70,18 +75,34 @@
         }
     }
 
+    const oneWeekAgo = () => {
+        let d = new Date();
+        d.setDate(d.getDate() - 7);
+        return datetimeToLocalDateStr(d);
+    }
+
     async function initFromUser(vm='admin') {
         if ($user == null) {
             $loginState = 'out';
         } else if ($user.status === 'active') {
             $loginState = 'in';
-            let data = await post('getAppData', { user: $user.id });
+            let minDateStr = oneWeekAgo();
+            let data = await post('getAppData', { user: $user.id, minDateStr });
             if (data.status === 'error') {
                 throw new Error('Could not read app data from database');
             } 
             $users = data.usersById;
-            $reservations = data.reservations.map((rsv) => augmentRsv(rsv, $users[rsv.user.id]));
+            $reservations = data.reservations.map(rsv => augmentRsv(rsv, $users[rsv.user.id]));
             $notifications = data.notifications;
+
+            let maxDateStr = datetimeToLocalDateStr(new Date());
+            data = await post('getUserPastReservations', { user: $user.id, maxDateStr });
+            if (data.status === 'success') {
+                $userPastReservations = data.userPastReservations.map(rsv => {
+                    return augmentRsv(rsv, $user);
+                });
+            }
+
             if ($user.privileges === 'admin') {
                 $viewMode = vm;
                 let data = await get('BoatAssignments');
@@ -89,7 +110,9 @@
                     $boatAssignments = data.assignments;
                 }
             }
+
             intervalId = setInterval(refreshAppState, $settings.refreshInterval.default);
+
         } else if ($user.status === 'disabled') {
             popup(
                 'User ' + $user.name + ' does not have permission ' + 
@@ -97,6 +120,7 @@
             );
             await callLogout();
         } else {
+            await callLogout();
             throw new Error('Unknown user status');
         }
     }
@@ -117,7 +141,6 @@
                     throw new Error('Could not get session from database');
                 }
                 $user = data.user;
-                 
                 await initFromUser(data.viewMode);
  
                 return true;
@@ -185,6 +208,7 @@
 {/if}
 
 <Popup/>
+
 <Modal 
     closeOnEsc={false}
     closeOnOuterClick={false}

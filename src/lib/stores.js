@@ -9,6 +9,7 @@ export const profileSrc = writable(null);
 export const reservations = writable([]);
 export const settings = writable({});
 export const user = writable(null);
+export const userPastReservations = writable([]);
 export const users = writable([]);
 export const view = writable('multi-day');
 export const viewedDate = writable(new Date());
