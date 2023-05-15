@@ -11,8 +11,9 @@ async function getAll(xata) {
     let Users = await xata.db.Users.getAll();
     let Reservations = await xata.db.Reservations.getAll();
     let Boats = await xata.db.Boats.getAll();
+    let UserPriceTemplates = await xata.db.UserPriceTemplates.getAll();
     Reservations = Reservations.map(rsv => { return {...rsv, user: rsv.user.id}});
-    return { Settings, Buoys, Boats, Users, Reservations };
+    return { Settings, Buoys, Boats, Users, Reservations, UserPriceTemplates };
 }
 
 async function wipeDev() {

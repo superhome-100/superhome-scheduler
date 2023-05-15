@@ -39,7 +39,6 @@
     async function callLogout() {
         if (intervalId) { clearInterval(intervalId); }
         intervalId = undefined;
-        drawerHidden = true;
         await logout();
     }
 
@@ -115,11 +114,11 @@
             intervalId = setInterval(refreshAppState, $settings.refreshInterval.default);
 
         } else if ($user.status === 'disabled') {
-            await callLogout();
             popup(
                 'User ' + $user.name + ' does not have permission ' + 
                 'to access this app; please contact the admin for help'
             );
+            await callLogout();
         } else {
             await callLogout();
             throw new Error('Unknown user status');
