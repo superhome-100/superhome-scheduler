@@ -32,16 +32,28 @@ export const monthFromDateStr = (dateStr) => {
     return /[0-9]+-([0-9]+)-[0-9]+/.exec(dateStr)[0];
 }
 
-export function datetimeToLocalMonth(datetime) {
-    let rexp = /([0-9]+)\/([0-9]+)\/([0-9]+).*/
-    let m = rexp.exec(datetime.toLocaleDateString('en-US'));
-    return parseInt(m[1]) + 1;
+export const firstOfMonthStr = (dateStr) => {
+    let m = /([0-9]+-[0-9]+-)[0-9]+/.exec(dateStr);
+    return m[1] + '01';
 }
 
 export function datetimeToLocalDateStr(datetime) {
     let rexp = /([0-9]+)\/([0-9]+)\/([0-9]+).*/
     let m = rexp.exec(datetime.toLocaleDateString('en-US'));
     return m[3] + "-" + m[1].padStart(2,'0') + "-" + m[2].padStart(2,'0');
+}
+
+export function datetimeToDateStr(dt) {
+    let year = dt.getFullYear();
+    let month = dt.getMonth() + 1;
+    let day = dt.getDate();
+    return year + "-" + month.toString().padStart(2,'0') + "-" + day.toString().padStart(2,'0');
+}
+
+export function datetimeInPanglao() {
+    const PhilippinesOffset = -480;
+    let d = new Date();
+    return new Date(d.getTime() - (d.getTimezoneOffset() - PhilippinesOffset) * 60000);
 }
 
 export const minToTimeStr = (min) => `${Math.floor(min/60)}:` + `${(min % 60)}`.padStart(2,'0');

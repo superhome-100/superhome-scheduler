@@ -99,7 +99,9 @@
             let maxDateStr = datetimeToLocalDateStr(new Date());
             data = await post('getUserPastReservations', { user: $user.id, maxDateStr });
             if (data.status === 'success') {
-                $userPastReservations = data.userPastReservations;
+                $userPastReservations = data.userPastReservations.map(rsv => {
+                    return augmentRsv(rsv, $user);
+                });
             }
 
             if ($user.privileges === 'admin') {

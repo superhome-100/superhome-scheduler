@@ -2,5 +2,9 @@
     "crons": [{
         "path": "/api/backupDB",
         "schedule": "0 16 * * *"
+    },
+    {
+        "path": "/api/updatePrices",
+        "schedule": "1,31 * * * *"
     }]
 }
