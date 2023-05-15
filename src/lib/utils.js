@@ -1,10 +1,9 @@
 import { startTimes, inc } from './ReservationTimes.js';
 import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils.js';
-import { reservations, user, users, viewMode } from './stores.js'
+import { reservations, user, viewMode } from './stores.js'
 import { Settings } from './settings.js';
 import { get } from 'svelte/store';
-import { assignRsvsToBuoys } from './autoAssignOpenWater.js';
-import { assignSpaces, patchSchedule } from './autoAssignPool.js';
+import { assignPoolSpaces, patchSchedule } from './autoAssignPool.js';
 
 export function monthArr(year, month, reservations) {
     let daysInMonth = new Date(year, month+1, 0).getDate();
@@ -31,15 +30,15 @@ export function monthArr(year, month, reservations) {
     return month_a;
 };
 
-export function sortUserReservations(newRsvs, id, sorted={'past': [], 'upcoming': []}) {
-    let now = datetimeToLocalDateStr(new Date());
-    for (let rsv of newRsvs) {
-        if (rsv.user.id === id) {
-            let view = rsv.date >= now ? 'upcoming' : 'past';
-            sorted[view].push(rsv);
+export function removeRsv(id) {
+    let rsvs = get(reservations);
+    for (let i=0; i < rsvs.length; i++) {
+        if (id === rsvs[i].id) {
+            rsvs.splice(i,1);
+            reservations.set(rsvs);
+            break;
         }
     }
-    return sorted;
 }
 
 export function augmentRsv(rsv, user=null) {
@@ -96,161 +95,9 @@ export function convertReservationTypes(data) {
             data[f] = JSON.parse(data[f]);
         }
     }
+    data.price = parseInt(data.price);
+
     return data;
-}
-
-export function timeOverlap(startA, endA, startB, endB) {
-    return (startA >= startB && startA < endB)
-        || (endA <= endB && endA > startB)
-        || (startA < startB && endA > endB);
-}
-
-function rsvOverlap(rsvA, rsvB) {
-    let startA = timeStrToMin(rsvA.startTime);
-    let endA = timeStrToMin(rsvA.endTime);
-    let startB = timeStrToMin(rsvB.startTime);
-    let endB = timeStrToMin(rsvB.endTime);
-    return timeOverlap(startA, endA, startB, endB);
-}
-
-function getExistingRsvs(thisRsv, rsvs) {
-    if (thisRsv.category === 'openwater') {
-        return rsvs.filter((rsv) => {
-            if (rsv.id != thisRsv.id
-                && rsv.category === 'openwater'
-                && rsv.date === thisRsv.date
-                && rsv.owTime === thisRsv.owTime) {
-                return true;
-            } else {
-                return false;
-            }
-        });
-    } else if (['pool', 'classroom'].includes(thisRsv.category)) {
-        return rsvs.filter((rsv) => {
-            if (rsv.id != thisRsv.id
-                && rsv.category === thisRsv.category
-                && rsv.date === thisRsv.date
-                && rsvOverlap(thisRsv, rsv)) {
-                return true;
-            } else {
-                return false;
-            }
-        });
-    }
-}
-
-export function checkDuplicateRsv(thisRsv, rsvs) {
-    let existingRsvs = getExistingRsvs(thisRsv, rsvs);
-    return existingRsvs.filter((rsv) => thisRsv.user === rsv.user.id).length > 0;
-}
-
-export const nOccupants = (rsvs, maxOccPerLane) => rsvs.reduce((n, rsv) => {
-    if (rsv.category === 'classroom') {
-        return n + rsv.numStudents;
-    } else {
-        return rsv.resType === 'course'
-            ? n + 2*Math.ceil(rsv.numStudents/maxOccPerLane)
-            : n + 1;
-    }
-}, 0);
-
-function checkPoolSpaceAvailable(thisRsv, rsvs, settings) {
-    let startTs = startTimes(settings, thisRsv.date, thisRsv.category);
-    for (let i=startTs.indexOf(thisRsv.startTime); i < startTs.indexOf(thisRsv.endTime); i++) {
-        let time = timeStrToMin(startTs[i]);
-        let overlap = rsvs.filter(rsv => {
-            let start = timeStrToMin(rsv.startTime);
-            let end = timeStrToMin(rsv.endTime);
-            let notMe = thisRsv.id != rsv.id;
-            let notMyBuddy = !thisRsv.buddies.includes(rsv.user.id);
-            return notMe && notMyBuddy && start <= time && end > time;
-        });
-        let mpl = settings.get('maxOccupantsPerLane', thisRsv.date);
-        let numDivers = nOccupants([thisRsv], mpl)
-            + thisRsv.buddies.length
-            + nOccupants(overlap, mpl);
-        let nLanes = settings.get('poolLanes', thisRsv.date).length;
-        if (numDivers > nLanes*mpl) {
-            return false;
-        }
-    }
-    return true;
-}
-
-function simulateOWBuddies(rsv, existing) {
-    let owner = {...rsv};
-    let simId = -1;
-    owner.buoy = 'auto';
-    owner.id = simId--;
-    owner.user = {id: owner.user};
-    let simBuds = [];
-    for (let id of rsv.buddies) {
-        if (existing.filter(rsv => rsv.user.id === id).length == 0) {
-            let buddies = [owner.user.id, ...owner.buddies.filter(thisId => thisId != id)];
-            simBuds.push({
-                ...owner,
-                id: simId--,
-                user: {id},
-                buddies,
-            });
-        }
-    }
-    return [owner, ...simBuds];
-}
-
-export function checkSpaceAvailable(settings, buoys, thisRsv, rsvs) {
-    let existingRsvs = getExistingRsvs(thisRsv, rsvs);
-    if (thisRsv.category === 'openwater') {
-        let [owner, ...buddies] = simulateOWBuddies(thisRsv, existingRsvs);
-        let result = assignRsvsToBuoys(buoys, [...existingRsvs, ...buddies, owner]);
-        if (result.status === 'error') {
-            return {
-                status: 'error',
-                message: 'All buoys are fully booked at this time.  ' +
-                         'Please either check back later or try a different date/time'
-            };
-        } else {
-            return result;
-        }
-    } else if (thisRsv.category === 'pool') {
-        if (checkPoolSpaceAvailable(thisRsv, existingRsvs, settings)) {
-            return { status: 'success' };
-        } else {
-            return {
-                status: 'error',
-                message: 'All pool lanes are booked at this time.  ' +
-                         'Please either check back later or try a different date/time'
-            };
-        }
-    } else if (thisRsv.category === 'classroom') {
-        if (existingRsvs.length >= settings.get('classrooms', thisRsv.date).length) {
-            return {
-                status: 'error',
-                message: 'All classrooms are booked at this time.  ' +
-                         'Please either check back later or try a different date/time'
-            };
-        } else {
-            return { status: 'success' };
-        }
-    }
-}
-
-export function validateBuddies(rsv) {
-    let userIds = Object.keys(get(users));
-    let validBuddies = [];
-    for (let buddy of rsv.buddies) {
-        if (rsv.user.id === buddy) {
-            return {status: 'error', msg: 'Cannot add yourself as a buddy'};
-        }
-        if (!userIds.includes(buddy)) {
-            return {status: 'error', msg: 'Unknown user in buddy field'};
-        }
-        if (validBuddies.includes(buddy)) {
-            return {status: 'error', msg: `Duplicate buddies not allowed (${buddy})`};
-        }
-        validBuddies.push(buddy);
-    }
-    return {status: 'success'};
 }
 
 export function updateReservationFormData(formData) {
@@ -282,17 +129,6 @@ export const displayTag = (rsv) => {
     return tag;
 };
 
-export function removeRsv(id) {
-    let rsvs = get(reservations);
-    for (let i=0; i < rsvs.length; i++) {
-        if (id === rsvs[i].id) {
-            rsvs.splice(i,1);
-            reservations.set(rsvs);
-            break;
-        }
-    }
-}
-
 export function parseSettingsTbl(settingsTbl) {
     let settings = {}
     let fields = new Set(settingsTbl.map((e) => e.name));
@@ -302,6 +138,7 @@ export function parseSettingsTbl(settingsTbl) {
         let v = e.value;
         if ([
                 'maxOccupantsPerLane',
+                'maxChargeableOWPerMonth',
                 'refreshIntervalSeconds',
                 'reservationLeadTimeDays'
             ].includes(name)
@@ -479,17 +316,19 @@ function assignClassrooms(rsvs, dateStr) {
     };
 }
 
-export function getDaySchedule(rsvs, datetime, category, softCapacity) {
+export function getDaySchedule(rsvs, datetime, category) {
     let today = datetimeToLocalDateStr(datetime);
     rsvs = rsvs.filter((v) =>
-        v.status != 'rejected'
+        ['pending', 'confirmed'].includes(v.status)
         && v.category === category
         && v.date === today
     );
     let result;
     if (category === 'pool') {
-        result = assignSpaces(rsvs, today);
+        result = assignPoolSpaces(rsvs, today);
         if (result.status === 'success') {
+            // format data according to old assignment algorithm
+            // so display code doesn't have to change
             result.schedule = patchSchedule(result.schedule);
         }
     } else if (category === 'classroom') {

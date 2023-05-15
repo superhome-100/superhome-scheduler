@@ -24,7 +24,7 @@
         );
     };
 
-    $: assignmentAttempt = getDaySchedule($reservations, $viewedDate, category, resources.length);
+    $: assignmentAttempt = getDaySchedule($reservations, $viewedDate, category);
 
     const rowHeight = 3;
     const blkMgn = 0.1875; // dependent on tailwind margin styling

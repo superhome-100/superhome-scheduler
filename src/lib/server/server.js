@@ -1,5 +1,6 @@
 import { getXataClient, getXataBranch } from '$lib/server/xata.js';
-import { addMissingFields, checkSpaceAvailable, convertReservationTypes } from '$lib/utils.js';
+import { addMissingFields, convertReservationTypes } from '$lib/utils.js';
+import { buddysRsv, checkSpaceAvailable } from '$lib/validationUtils.js';
 import { redirect } from '@sveltejs/kit';
 import { startTimes, endTimes } from '$lib/ReservationTimes.js';
 import { timeStrToMin } from '$lib/datetimeUtils.js';
@@ -56,7 +57,7 @@ export async function getSettings() {
 
 export async function getSession(id) {
     let records = await xata.db.Sessions
-        .select(['*', 'user.privileges', 'user.status', 'user.facebookId', 'user.name', 'user.nickname'])
+        .select(['*', 'user'])
         .filter({id: id})
         .getMany();
     return records[0];
@@ -98,6 +99,7 @@ export async function addUser(userId, userName) {
         "nickname": userName,
         "status": "disabled"
     });
+    await xata.db.UserPriceTemplates.create({ user: record.id, priceTemplate: 'regular' });
     return record;
 }
 
@@ -245,7 +247,7 @@ async function getExistingRsvs(entries) {
 async function querySpaceAvailable(entries, remove=[]) {
     let existing = await getExistingRsvs([...entries, ...remove]);
     let buoys;
-    let [sub, ...buddies] = entries;
+    let sub = entries[0];
     if (sub.category === 'openwater') {
         buoys = await xata.db.Buoys.getAll();
     }
@@ -309,23 +311,6 @@ export async function submitReservation(formData) {
         status: 'success',
         records
     };
-}
-
-function buddysRsv(rsv, sub) {
-    if (sub.buddies && sub.buddies.includes(rsv.user.id)) {
-        if (['pool', 'classroom'].includes(sub.category)) {
-            return rsv.category === sub.category
-                && rsv.startTime === sub.startTime
-                && rsv.endTime === sub.endTime;
-        } else if (sub.category === 'openwater') {
-            return rsv.category === sub.category
-                && rsv.owTime === sub.owTime;
-        } else {
-            throw new Error();
-        }
-    } else {
-        return false;
-    }
 }
 
 export async function updateReservation(formData) {
