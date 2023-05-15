@@ -22,7 +22,7 @@
 </script>
 
 {#if $user && ntf}
-    <span class='table text-center mx-auto mb-4'>
+    <span class='table text-left mx-auto mb-4 dark:text-white'>
         {#each ntf.message.split('\n') as msg}
             <p>{msg}</p>
         {/each}
@@ -37,7 +37,7 @@
         <div class='flex mb-2 justify-between'>
             <div class='mx-4'>
                 <input id='ntfAccept' type='checkbox' name='accept'>
-                <label for='ntfAccept'>{ntf.checkboxMessage}</label>
+                <label for='ntfAccept' class='dark:text-white'>{ntf.checkboxMessage}</label>
             </div>
             <button 
                 type="submit" 
