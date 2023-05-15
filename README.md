@@ -36,3 +36,16 @@ npm run build
 You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+
+
+
+# Dependencies
+
+[`tea/cli`] will automagically make these available to your environment.
+
+| Project                           |  Version  |
+|-----------------------------------|-----------|
+| nodejs.org                        | =18.15.0  |
+| npmjs.com                         | =8.19.3   |
+
+[`tea/cli`]: https://github.com/teaxyz/cli
