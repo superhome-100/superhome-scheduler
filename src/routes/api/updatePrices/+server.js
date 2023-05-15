@@ -1,9 +1,9 @@
-import { XataClient } from '../../../lib/server/xata.codegen.server.js';
+import { XataClient } from '$lib/server/xata.codegen.server.js';
 
 const XATA_API_KEY='xau_9xJINLTWEBX1d0EyWIi7YL9QinLT2TEv1';
 const xata = new XataClient({ apiKey: XATA_API_KEY, branch: 'dev' });
 
-//import { getXataClient } from '../../../lib/server/xata.js';
+//import { getXataClient } from '$lib/server/xata.js';
 //const xata = getXataClient();
 
 import {
@@ -11,8 +11,8 @@ import {
     datetimeInPanglao,
     timeStrToMin,
     firstOfMonthStr,
-} from '../../../lib//datetimeUtils.js';
-import { Settings } from '../../../lib/server/settings.js';
+} from '$lib/datetimeUtils.js';
+import { Settings } from '$lib/server/settings.js';
 
 const unpackTemplate = (uT) => {
     return {
