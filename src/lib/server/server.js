@@ -99,6 +99,7 @@ export async function addUser(userId, userName) {
         "nickname": userName,
         "status": "disabled"
     });
+    await xata.db.UserPriceTemplates.create({ user: record.id, priceTemplate: 'regular' });
     return record;
 }
 
