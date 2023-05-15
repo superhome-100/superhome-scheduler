@@ -25,9 +25,9 @@
                 rsvMin = timeStrToMin(rsv.endTime);
             } else if (rsv.category === 'openwater') {
                 if (rsv.owTime === 'AM') {
-                    rsvMin = 11*60; // 11am end time
+                    rsvMin = timeStrToMin(Settings.get('openwaterAmEndTime', rsv.date));
                 } else if (rsv.owTime === 'PM') {
-                    rsvMin = 16*60; // 4pm end time
+                    rsvMin = timeStrToMin(Settings.get('openwaterPmEndTime', rsv.date));
                 }
             }
             view = rsvMin >= minuteOfDay(today) ? 'upcoming' : 'past';
@@ -120,8 +120,8 @@
     };
 
     $: rsvs = resType === 'upcoming'
-        ? $reservations.filter((rsv) => rsv.user.id === $user.id && getResType(rsv) === resType)
-        : $userPastReservations;
+        ? $reservations.filter(rsv => rsv.user.id === $user.id && getResType(rsv) === resType)
+        : $userPastReservations.filter(rsv => getResType(rsv) === resType);
 
     const textColor = (status) => status === 'confirmed' 
         ? 'text-status-confirmed' : status === 'pending'
