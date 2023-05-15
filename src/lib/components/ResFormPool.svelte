@@ -135,7 +135,7 @@
         </select></div>
         <div><select 
                 id="formResType" 
-                disabled={disabled || resType != null} 
+                disabled={disabled || resType != null || rsv != null} 
                 bind:value={autoOrCourse} 
                 name="resType"
             >
