@@ -91,7 +91,7 @@ function getTimeOverlapFilters(settings, rsv) {
         }
         filters.push(rsv =>
                ['pool', 'classroom'].includes(rsv.category)
-            && timeFilt.reduce((b, f) => b || f(rsv), true)
+            && timeFilt.reduce((b, f) => b || f(rsv), false)
         );
     }
     return filters;
@@ -102,7 +102,7 @@ export function getOverlappingReservations(settings, sub, rsvs) {
         return rsv.date === sub.date
             && ['pending', 'confirmed'].includes(rsv.status)
             && getTimeOverlapFilters(settings, sub)
-                .reduce((b,f) => b || f(rsv), true);
+                .reduce((b,f) => b || f(rsv), false);
     };
 
     return rsvs.filter(rsv => filters(rsv));
