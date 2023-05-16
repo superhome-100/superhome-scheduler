@@ -1,14 +1,10 @@
-import { XataClient } from '$lib/server/xata.codegen.server.js';
+import { getXataClient } from '$lib/server/xata.js';
 
-const XATA_API_KEY='xau_9xJINLTWEBX1d0EyWIi7YL9QinLT2TEv1';
-const xata = new XataClient({ apiKey: XATA_API_KEY, branch: 'dev' });
-
-//import { getXataClient } from '$lib/server/xata.js';
-//const xata = getXataClient();
+const xata = getXataClient();
 
 import {
     datetimeToDateStr,
-    datetimeInPanglao,
+    datetimeInPanglaoFromServer,
     timeStrToMin,
     firstOfMonthStr,
 } from '$lib/datetimeUtils.js';
@@ -30,6 +26,11 @@ const unpackTemplate = (uT) => {
     };
 }
 
+/*
+ * This fn could be used as an optimization if the cron job
+ * were to actually run more than once a day (but that would
+ * require upgarding to a paid vercel account)
+
 function currentTimeActive(settings, date, time) {
     let starts = [
         settings.get('minPoolStartTime', date),
@@ -47,6 +48,7 @@ function currentTimeActive(settings, date, time) {
     return starts.reduce((b,tm) => b || time >= tm, false)
         && ends.reduce((b, tm) => b || time <= tm, false);
 }
+*/
 
 async function getOldAndNewRsvs(date) {
     let reservations = await xata.db.Reservations
@@ -91,7 +93,7 @@ export async function POST() {
     try {
         await Settings.init();
 
-        let d = datetimeInPanglao();
+        let d = datetimeInPanglaoFromServer();
         let date = datetimeToDateStr(d);
         let time = d.getHours()*60 + d.getMinutes();
         let maxChgbl = Settings.get('maxChargeableOWPerMonth', date);
@@ -135,9 +137,9 @@ export async function POST() {
                 await xata.db.Reservations.update(updates);
             }
         }
-        //return new Response('prices updated', { status: 200 });
+        return new Response('prices updated', { status: 200 });
     } catch (error) {
         console.log(error);
-        //return new Response(error, { status: 500 });
+        return new Response(error, { status: 500 });
     }
 }
