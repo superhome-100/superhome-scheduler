@@ -50,10 +50,10 @@ export function datetimeToDateStr(dt) {
     return year + "-" + month.toString().padStart(2,'0') + "-" + day.toString().padStart(2,'0');
 }
 
-export function datetimeInPanglao() {
+export function datetimeInPanglaoFromServer() {
     const PhilippinesOffset = -480;
     let d = new Date();
-    return new Date(d.getTime() - (d.getTimezoneOffset() - PhilippinesOffset) * 60000);
+    return new Date(d.getTime() - PhilippinesOffset*60000);
 }
 
 export const minToTimeStr = (min) => `${Math.floor(min/60)}:` + `${(min % 60)}`.padStart(2,'0');
