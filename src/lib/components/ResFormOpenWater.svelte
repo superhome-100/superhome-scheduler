@@ -1,6 +1,6 @@
 <script>
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
-    import { canSubmit, buoys, user } from '$lib/stores.js';
+    import { canSubmit, buoys, reservations, user } from '$lib/stores.js';
     import { adminView, buoyDesc } from '$lib/utils.js';
     import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 
@@ -38,6 +38,14 @@
     $: showBuddyFields = autoOrCourse === 'autonomous';
     $: sortedBuoys = $buoys.sort((a,b) => a.maxDepth > b.maxDepth ? 1 : -1);
 
+    const buoyIsAssigned = (name) => { 
+        return $reservations.filter(other => other.date === rsv.date 
+            && other.category === rsv.category 
+            && other.owTime === rsv.owTime 
+            && other.buoy === name
+        ).length > 0 ? '*' : '';
+    };
+
 </script>
 
 <ResFormGeneric {viewOnly} {restrictModify} {showBuddyFields} bind:date={date} bind:category={category} {rsv}>
@@ -63,7 +71,7 @@
                 >
                     <option value='auto'>Auto</option>
                     {#each sortedBuoys as buoy}
-                        <option value={buoy.name}>{buoy.name + ' - ' + buoyDesc(buoy)}</option>
+                        <option value={buoy.name}>{buoyIsAssigned(buoy.name)}{buoy.name + ' - ' + buoyDesc(buoy)}</option>
                     {/each}
                 </select>
             </div>
