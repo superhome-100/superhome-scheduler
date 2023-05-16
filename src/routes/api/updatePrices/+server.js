@@ -89,7 +89,7 @@ const getStart = (rsv, amOWTime, pmOWTime) => {
             : undefined;
 };
 
-export async function POST() {
+export async function GET() {
     try {
         await Settings.init();
 
