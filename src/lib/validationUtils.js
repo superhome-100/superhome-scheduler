@@ -230,7 +230,7 @@ export function checkNoOverlappingRsvs(settings, sub, existing) {
         if (rsv.id != sub.id && !buddysRsv(rsv, sub) && userIds.includes(rsv.user.id)) {
             return {
                 status: 'error',
-                msg: 'Your or one of your buddies has an existing reservation at this time'
+                msg: 'You or one of your buddies has an existing reservation at this time'
             };
         }
     }
