@@ -6,7 +6,7 @@
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
     import Modal from '$lib/components/Modal.svelte';
     import Chevron from '$lib/components/Chevron.svelte';
-    import { minValidDateStr } from '$lib/ReservationTimes.js';
+    import { minValidDateStr } from '$lib/reservationTimes.js';
     import { idx2month } from '$lib/datetimeUtils.js';
     import { user, view, viewedMonth, reservations } from '$lib/stores.js';
     import { CATEGORIES } from '$lib/constants.js';

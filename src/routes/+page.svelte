@@ -1,9 +1,9 @@
 <script lang="js">
     import Modal from '$lib/components/Modal.svelte';
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
-    import MyReservationsTable from '$lib/components/MyReservationsTable.svelte';
+    import MyReservations from '$lib/components/MyReservations.svelte';
     import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs.js';
-    import { minValidDateStr } from '$lib/ReservationTimes.js';
+    import { minValidDateStr } from '$lib/reservationTimes.js';
     import { Settings } from '$lib/settings.js';
     import { user } from '$lib/stores.js';
 
@@ -24,12 +24,12 @@
         
         <TabPanel>
             <Modal>
-                <MyReservationsTable resType='upcoming'/>
+                <MyReservations resPeriod='upcoming'/>
             </Modal>
         </TabPanel>
         <TabPanel>
             <Modal>
-                <MyReservationsTable resType='past'/>
+                <MyReservations resPeriod='past'/>
             </Modal>
         </TabPanel>
     

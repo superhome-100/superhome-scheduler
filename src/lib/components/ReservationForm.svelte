@@ -7,7 +7,7 @@
     import ResFormOpenWater from './ResFormOpenWater.svelte';
     import { popup } from './Popup.svelte';
     import { canSubmit, user, users, reservations, buoys } from '$lib/stores.js';
-    import { beforeResCutoff } from '$lib/ReservationTimes.js';
+    import { beforeResCutoff } from '$lib/reservationTimes.js';
     import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { Settings } from '$lib/settings.js';
     import {

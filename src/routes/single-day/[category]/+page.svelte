@@ -5,7 +5,7 @@
     import DayOpenWater from '$lib/components/DayOpenWater.svelte';
     import ReservationDialog from '$lib/components/ReservationDialog.svelte';
     import Chevron from '$lib/components/Chevron.svelte';
-    import { validReservationDate, minValidDate } from '$lib/ReservationTimes.js';
+    import { validReservationDate, minValidDate } from '$lib/reservationTimes.js';
     import { datetimeToLocalDateStr, month2idx, idx2month } from '$lib/datetimeUtils.js';
     import Modal from '$lib/components/Modal.svelte';
     import { user, view, viewMode, viewedDate, reservations } from '$lib/stores.js';

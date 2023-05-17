@@ -28,8 +28,9 @@ export const idx2month = [
     'December'
 ];
 
-export const monthFromDateStr = (dateStr) => {
-    return /[0-9]+-([0-9]+)-[0-9]+/.exec(dateStr)[0];
+export const monthIdxFromDateStr = (dateStr) => {
+    let mStr = /[0-9]+-([0-9]+)-[0-9]+/.exec(dateStr)[1];
+    return parseInt(mStr) - 1;
 }
 
 export const firstOfMonthStr = (dateStr) => {
