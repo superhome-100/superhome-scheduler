@@ -108,7 +108,7 @@ export function getOverlappingReservations(settings, sub, rsvs) {
     return rsvs.filter(rsv => filters(rsv));
 }
 
-export const nOccupants = (rsvs, maxOccPerLane) => rsvs.reduce((n, rsv) => {
+export const nOccupants = (rsvs) => rsvs.reduce((n, rsv) => {
     if (rsv.category === 'classroom') {
         return n + rsv.numStudents;
     } else {
@@ -130,9 +130,9 @@ function checkPoolSpaceAvailable(sub, rsvs, settings) {
             return notMe && notMyBuddy && start <= time && end > time;
         });
         let mpl = settings.get('maxOccupantsPerLane', sub.date);
-        let numDivers = nOccupants([sub], mpl)
+        let numDivers = nOccupants([sub])
             + sub.buddies.length
-            + nOccupants(overlap, mpl);
+            + nOccupants(overlap);
         let nLanes = settings.get('poolLanes', sub.date).length;
         if (numDivers > nLanes*mpl) {
             return false;
