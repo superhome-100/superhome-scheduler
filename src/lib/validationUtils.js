@@ -1,5 +1,5 @@
 import { timeStrToMin } from '$lib/datetimeUtils.js';
-import { startTimes, endTimes } from '$lib/ReservationTimes.js';
+import { startTimes, endTimes } from '$lib/reservationTimes.js';
 import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
 import { get } from 'svelte/store';
 import { users } from '$lib/stores.js';

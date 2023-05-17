@@ -1,6 +1,6 @@
 <script>
     import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
-    import { startTimes, endTimes, minuteOfDay } from '$lib/ReservationTimes.js';
+    import { startTimes, endTimes, minuteOfDay } from '$lib/reservationTimes.js';
     import { timeStrToMin, datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
     import { canSubmit, user } from '$lib/stores.js';
     import { Settings } from '$lib/settings.js';

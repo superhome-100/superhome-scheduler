@@ -1,4 +1,4 @@
-import { startTimes, inc } from './ReservationTimes.js';
+import { startTimes, inc } from './reservationTimes.js';
 import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils.js';
 import { reservations, user, viewMode } from './stores.js'
 import { Settings } from './settings.js';

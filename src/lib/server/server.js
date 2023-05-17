@@ -2,7 +2,7 @@ import { getXataClient, getXataBranch } from '$lib/server/xata.js';
 import { addMissingFields, convertReservationTypes } from '$lib/utils.js';
 import { buddysRsv, checkSpaceAvailable } from '$lib/validationUtils.js';
 import { redirect } from '@sveltejs/kit';
-import { startTimes, endTimes } from '$lib/ReservationTimes.js';
+import { startTimes, endTimes } from '$lib/reservationTimes.js';
 import { timeStrToMin } from '$lib/datetimeUtils.js';
 import { Settings } from '$lib/server/settings.js';
 import ObjectsToCsv from 'objects-to-csv';

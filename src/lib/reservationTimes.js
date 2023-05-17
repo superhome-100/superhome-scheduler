@@ -1,24 +1,18 @@
 import * as dtu from './datetimeUtils.js';
 
-export let minPoolStart = (stns, date) => dtu.timeStrToMin(stns.get('minPoolStartTime', date));
-export let maxPoolEnd = (stns, date) => dtu.timeStrToMin(stns.get('maxPoolEndTime', date));
-export let minClassroomStart = (stns, date) => dtu.timeStrToMin(stns.get('minClassroomStartTime', date));
-export let maxClassroomEnd = (stns, date) => dtu.timeStrToMin(stns.get('maxClassroomEndTime', date));
-export let resCutoff = (stns, date) => dtu.timeStrToMin(stns.get('reservationCutOffTime', date));
-export let cancelCutoff = (stns, cat, date) => {
+export const minPoolStart = (stns, date) => dtu.timeStrToMin(stns.get('minPoolStartTime', date));
+export const maxPoolEnd = (stns, date) => dtu.timeStrToMin(stns.get('maxPoolEndTime', date));
+export const minClassroomStart = (stns, date) => dtu.timeStrToMin(stns.get('minClassroomStartTime', date));
+export const maxClassroomEnd = (stns, date) => dtu.timeStrToMin(stns.get('maxClassroomEndTime', date));
+export const resCutoff = (stns, date) => dtu.timeStrToMin(stns.get('reservationCutOffTime', date));
+export const cancelCutoff = (stns, cat, date) => {
     if (cat === 'classroom') {
         return 0;
     } else {
         return dtu.timeStrToMin(stns.get('cancelationCutOffTime', date));
     }
 };
-export let inc = (stns, date) => dtu.timeStrToMin(stns.get('reservationIncrement', date));
-
-/*
-if ((inc < 60 && 60 % inc !== 0) || (inc > 60 && inc % 60 !== 0)) {
-    throw "reservation time increment must evenly divide, or be a multiple of, 60 minutes";
-}
-*/
+export const inc = (stns, date) => dtu.timeStrToMin(stns.get('reservationIncrement', date));
 
 export const minuteOfDay = (date) => date.getHours()*60 + date.getMinutes();
 

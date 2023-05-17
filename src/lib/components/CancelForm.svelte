@@ -2,7 +2,7 @@
     import { getContext } from 'svelte';
     import { enhance } from '$app/forms';
     import { user, users, reservations } from '$lib/stores.js';
-    import { beforeCancelCutoff } from '$lib/ReservationTimes.js';
+    import { beforeCancelCutoff } from '$lib/reservationTimes.js';
     import { Settings } from '$lib/settings.js';
     import { toast } from 'svelte-french-toast';
     import { augmentRsv, removeRsv } from '$lib/utils.js';

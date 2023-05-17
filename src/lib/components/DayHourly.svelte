@@ -1,5 +1,5 @@
 <script>
-    import { startTimes, endTimes } from '$lib/ReservationTimes.js';
+    import { startTimes, endTimes } from '$lib/reservationTimes.js';
     import { user, viewedDate, reservations } from '$lib/stores.js';
     import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils.js';
     import { getContext } from 'svelte';

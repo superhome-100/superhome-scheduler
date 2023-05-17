@@ -3,7 +3,7 @@
 	import ReservationForm from './ReservationForm.svelte';
     import ReservationButton from './ReservationButton.svelte';
     import { reservations } from '$lib/stores.js';
-    import { minValidDateStr } from '$lib/ReservationTimes.js';
+    import { minValidDateStr } from '$lib/reservationTimes.js';
     import { Settings } from '$lib/settings.js';
 
     export let category = 'openwater';
