@@ -113,7 +113,7 @@ export const nOccupants = (rsvs, maxOccPerLane) => rsvs.reduce((n, rsv) => {
         return n + rsv.numStudents;
     } else {
         return rsv.resType === 'course'
-            ? n + 2*Math.ceil(rsv.numStudents/maxOccPerLane)
+            ? n + 2*Math.ceil(rsv.numStudents/2)
             : n + 1;
     }
 }, 0);
