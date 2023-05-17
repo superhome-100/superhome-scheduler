@@ -107,7 +107,7 @@
 
     const resourceName = () => {
         if (category === 'pool') {
-            return 'lane';
+            return 'slot';
         } else if (category === 'classroom') {
             return 'classroom';
         }
