@@ -47,12 +47,12 @@ function sortByPriority(rsvs) {
     return { pre: sorted(preAssigned), un: sorted(unAssigned) };
 }
 
-function getMinBreaksPath(spacesByTimes, width, startTime, endTime) {
-    let { path } = getMinBreaksPathRec(spacesByTimes, width, startTime, endTime, { breaks: 0, path: [] });
+function getMinBreaksPath(spacesByTimes, laneWidth, width, startTime, endTime) {
+    let { path } = getMinBreaksPathRec(spacesByTimes, laneWidth, width, startTime, endTime, { breaks: 0, path: [] });
     return path;
 }
 
-function getMinBreaksPathRec(spacesByTimes, width, curTime, endTime, pathObj) {
+function getMinBreaksPathRec(spacesByTimes, laneWidth, width, curTime, endTime, pathObj) {
     if (curTime === endTime) {
         return pathObj;
     }
@@ -64,7 +64,7 @@ function getMinBreaksPathRec(spacesByTimes, width, curTime, endTime, pathObj) {
         }, true);
     };
     const sharedLane = (space) => {
-        if (width == 1) {
+        if (laneWidth > 1 && width == 1) {
             if (space % 2 == 0) {
                 return spacesByTimes[space+1][curTime] != null;
             } else {
@@ -88,6 +88,7 @@ function getMinBreaksPathRec(spacesByTimes, width, curTime, endTime, pathObj) {
     for (let step of sortedSteps) {
         let thisPath = getMinBreaksPathRec(
             spacesByTimes,
+            laneWidth,
             width,
             curTime+1,
             endTime,
@@ -148,8 +149,8 @@ function insertPreAssigned(spacesByTimes, blk) {
     }
 }
 
-function insertUnAssigned(spacesByTimes, blk) {
-    let bestPath = getMinBreaksPath(spacesByTimes, blk.width, blk.startTime, blk.endTime);
+function insertUnAssigned(spacesByTimes, laneWidth, blk) {
+    let bestPath = getMinBreaksPath(spacesByTimes, laneWidth, blk.width, blk.startTime, blk.endTime);
     if (bestPath) {
         for (let time=blk.startTime; time < blk.endTime; time++) {
             let space = bestPath[time-blk.startTime];
@@ -171,7 +172,8 @@ export function assignPoolSpaces(rsvs, dateStr) {
     let sTs = startTimes(Settings, dateStr, 'pool');
     let nTimes = sTs.length;
     let minTime = timeStrToMin(sTs[0]);
-    let nSpaces = Settings.get('maxOccupantsPerLane') * Settings.get('poolLanes').length
+    let laneWidth = Settings.get('maxOccupantsPerLane');
+    let nSpaces = laneWidth * Settings.get('poolLanes').length
     let spacesByTimes = Array(nSpaces)
         .fill()
         .map(() => Array(nTimes).fill());
@@ -187,7 +189,7 @@ export function assignPoolSpaces(rsvs, dateStr) {
         insertPreAssigned(spacesByTimes, rsvToBlock(rsv, minTime, incT, resourceNames));
     }
     for (let rsv of un) {
-        let thisResult = insertUnAssigned(spacesByTimes, rsvToBlock(rsv, minTime, incT, resourceNames));
+        let thisResult = insertUnAssigned(spacesByTimes, laneWidth, rsvToBlock(rsv, minTime, incT, resourceNames));
         if (thisResult.status === 'error') {
             result.status = 'error'
             result.code = thisResult.code;
@@ -211,17 +213,21 @@ function dataAreDifferent(A, B) {
     return false;
 }
 
-function patchData(spaces) {
+function patchData(sByT, i, t, laneWidth) {
     let data = [];
-    if (spaces[0] != null) {
-        data.push(spaces[0]);
-        if (spaces[0].buddyRsvs.length > 0) {
-            data.push(...spaces[0].buddyRsvs);
-        } else if (spaces[1] != null && spaces[1].id != spaces[0].id) {
-            data.push(spaces[1]);
+    let s0 = sByT[i][t];
+    if (s0 != null) {
+        data.push(s0);
+        if (laneWidth > 1) {
+            let s1 = sByT[i+1][t];
+            if (s0.buddyRsvs.length > 0) {
+                data.push(...s0.buddyRsvs);
+            } else if (s1 != null && s1.id != s0.id) {
+                data.push(s1);
+            }
         }
-    } else if (spaces[1] != null) {
-        data.push(spaces[1]);
+    } else if (laneWidth > 1 && sByT[i+1][t] != null) {
+        data.push(sByT[i+1][t]);
     }
     return data;
 }
@@ -240,7 +246,7 @@ export function patchSchedule(sByT) {
     for (let t=0; t<nSlots; t++) {
         for (let lane=0; lane<schedule.length; lane++) {
             let i = lane*laneWidth;
-            let data = patchData([sByT[i][t], sByT[i+1][t]]);
+            let data = patchData(sByT, i, t, laneWidth);
             let cls = data.length == 0 ? 'filler' : 'rsv';
             let curBlk = schedule[lane][schedule[lane].length-1];
             if (curBlk.cls != cls) {
