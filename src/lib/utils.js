@@ -95,7 +95,9 @@ export function convertReservationTypes(data) {
             data[f] = JSON.parse(data[f]);
         }
     }
-    data.price = parseInt(data.price);
+    if (data.price != null) {
+        data.price = parseInt(data.price);
+    }
 
     return data;
 }

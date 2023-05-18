@@ -133,6 +133,9 @@
                 {/if}
             {/each}
         </select></div>
+        {#if disabled || resType != null || rsv != null}
+            <input type='hidden' name='resType' value={autoOrCourse}/>
+        {/if}
         <div><select 
                 id="formResType" 
                 disabled={disabled || resType != null || rsv != null} 
