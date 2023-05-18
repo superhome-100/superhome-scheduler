@@ -7,8 +7,7 @@
     import { badgeColor, getDaySchedule } from '$lib/utils.js';
     import { Settings } from '$lib/settings.js';
 
-    export let resources;
-    export let resourceName;
+    export let resInfo;
     export let category;
 
     const { open } = getContext('simple-modal');
@@ -24,10 +23,10 @@
         );
     };
 
-    $: assignmentAttempt = getDaySchedule($reservations, $viewedDate, category);
+    $: assignment = getDaySchedule($reservations, $viewedDate, category);
 
     const rowHeight = 3;
-    const blkMgn = 0.1875; // dependent on tailwind margin styling
+    const blkMgn = 0.25; // dependent on tailwind margin styling
 
     const slotsPerHr = (date, category) => {
         let st = startTimes(Settings, date, category);
@@ -55,71 +54,105 @@
         return hrs;
     };
 
-    const formatTag = (rsvs, nSlots) => {
-        let names = rsvs.map((rsv) => {
-            return rsv.resType === 'course' 
-                ? rsv.user.nickname + ' +' + rsv.numStudents 
-                : rsv.user.nickname
-        });
-        let fmt = [];
-        while (names.length > 0 && fmt.length < nSlots) {
-            for (name of names.splice(0,1)[0].split(' ')) {
-                fmt.push(name);
-            }
-            if (names.length > 0) {
-                fmt.push('and');
+    const formatTag = (rsvs, nSlots, width, slotWidthPx) => {
+        let tag='';
+        if (rsvs[0].resType === 'course') {
+            tag = rsvs[0].user.nickname + ' +' + rsvs[0].numStudents;
+        } else {
+            for (let i=0; i<rsvs.length; i++) {
+                tag += rsvs[i].user.nickname;
+                if (i < rsvs.length-1) {
+                    tag += ' and ';
+                }
             }
         }
-        if (names.length > 0) {
-            fmt.push(names.join(' and '));
+        let lines = [];
+        let start = 0;
+        for (let i=0; i<nSlots; i++) {
+            let pxPerChar = (i == 0 ? 12 : 11) - 2*width;
+            let maxChar = Math.floor(width*slotWidthPx/pxPerChar);
+            if (start < tag.length) {
+                let nChar = Math.min(tag.length-start, maxChar);
+                lines.push(tag.substr(start, nChar));
+                start += nChar;
+            }
         }
-        return fmt;
+        return lines;
     };
+
+    const spaceStyling = (width, relSpace) => {
+        if (width === 1) {
+            return 'mx-0.5 rounded-lg';
+        } else {
+            if (relSpace == 0) {
+                return 'ms-0.5 rounded-s-xl';
+            } else if (relSpace == width-1) {
+                return 'me-0.5 rounded-e-xl';
+            } else {
+                return 'rounded-none';
+            }
+        }
+    }
+
+    $: innerWidth = 0;
+    $: slotWidthPx = parseInt(innerWidth * 88 / (resInfo.occupancy * resInfo.resources.length) / 100);
 
 </script>
 
+<svelte:window bind:innerWidth/>
+
 {#if Settings.get('openForBusiness', datetimeToLocalDateStr($viewedDate)) === false}
     <div class='font-semibold text-3xl text-center'>Closed</div>
-{:else if assignmentAttempt.status === 'error'}
+{:else if assignment.status === 'error'}
     <div class='font-semibold text-red-600 text-xl text-center mt-4'>Error assigning reservations!</div>
     <div class='text-sm text-center mt-2'>Please report this error to the admin</div>
 {:else}
-    <div class="row text-xs xs:text-base">
+    <div class="row text-xs sm:text-base">
         <div class="column w-[12%] m-0 text-center">
             <div style='height: 1lh'/>
             {#each displayTimes($viewedDate, category) as t}
                 <div class='font-semibold' style='height: {rowHeight}rem'>{t}</div>
             {/each}
         </div>
-        {#each resources as resource, i}
+        {#each resInfo.resources as resource, i}
             <div  
                 class="column text-center" 
-                style='width: {88/resources.length}%'
+                style='width: {88/resInfo.resources.length}%'
             >
-                <div class='font-semibold'>{resourceName} {resource}</div>
-                {#if assignmentAttempt.status === 'success'}
-                    {#if assignmentAttempt.schedule[i]}
-                        <div style='height: 0.5rem'/>
-                        {#each assignmentAttempt.schedule[i] as { nSlots, cls, data }}
-                            {#if cls === 'rsv'}
-                                <div 
-                                    class='{cls} {category} mb-1 text-sm cursor-pointer hover:font-semibold' 
-                                    style="height: {rowHeight*(nSlots/slotDiv) - (cls === 'rsv' ? blkMgn : 0)}rem"
-                                    on:click={cls === 'rsv' ? showViewRsvs(data) : ()=>{}}
-                                >
-                                    <div class='block indicator w-full'>
-                                        <span class='rsv-indicator {badgeColor(data)}'/>
-                                        {#each formatTag(data, nSlots) as line}
-                                            <span class='mx-0.5 inline-block'>{line}</span>
-                                        {/each}
-                                    </div>
-                                </div>
-                            {:else}
-                                <div style="height: {rowHeight*(nSlots/slotDiv)}rem"></div>
+                <div class='font-semibold'>{resInfo.name} {resource}</div>
+                <div class='row'>
+                    {#each [...Array(resInfo.occupancy).keys()] as j}
+                        <div class='column' style='width: {100/resInfo.occupancy}%'>
+                            {#if assignment.status === 'success'}
+                                {#if assignment.schedule[i*resInfo.occupancy + j]}
+                                    <div style='height: 0.5rem'/>
+                                    {#each assignment.schedule[i*resInfo.occupancy + j] as { nSlots, cls, data, width, relativeSpace }}
+                                        {#if cls === 'rsv'}
+                                            <div 
+                                                class='rsv {category} bg-fixed {spaceStyling(width, relativeSpace)} mb-1 text-sm cursor-pointer hover:font-semibold' 
+                                                style="height: {rowHeight*(nSlots/slotDiv) - blkMgn}rem"
+                                                on:click={showViewRsvs(data)}
+                                            >
+                                                <div class='block indicator w-full'>
+                                                    {#if relativeSpace === width-1}
+                                                        <span class='rsv-indicator {badgeColor(data)}'/>
+                                                    {/if}
+                                                    {#if relativeSpace == 0}
+                                                        {#each formatTag(data, nSlots, width, slotWidthPx) as line}
+                                                            <div>{line}</div>
+                                                        {/each}
+                                                    {/if}
+                                                </div>
+                                            </div>
+                                        {:else}
+                                            <div style="height: {rowHeight*(nSlots/slotDiv)}rem"></div>
+                                        {/if}
+                                    {/each}
+                                {/if}
                             {/if}
-                        {/each}
-                    {/if}
-                {/if}
+                        </div>
+                    {/each}
+                </div>
             </div>
         {/each}
     </div>

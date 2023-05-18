@@ -262,14 +262,18 @@ function assignClassrooms(rsvs, dateStr) {
                             schedule[r].push({
                                 nSlots: 1,
                                 cls: 'rsv',
-                                data: [rsv]
+                                data: [rsv],
+                                relativeSpace: 0,
+                                width: 1
                             });
                         }
                     } else {
                         schedule[r].push({
                             nSlots: 1,
                             cls: 'rsv',
-                            data: [rsv]
+                            data: [rsv],
+                            relativeSpace: 0,
+                            width: 1
                         });
                     }
                     unassigned[r] = false;
@@ -288,7 +292,9 @@ function assignClassrooms(rsvs, dateStr) {
                                 end,
                                 nSlots: 1,
                                 cls: 'rsv',
-                                data: [rsv]
+                                data: [rsv],
+                                relativeSpace: 0,
+                                width: 1
                             });
                             unassigned[r] = false;
                             break;
