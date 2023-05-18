@@ -96,20 +96,15 @@
         }
     }
 
-    const resources = () => {
+    const resInfo = () => {
         let dateStr = datetimeToLocalDateStr($viewedDate);
         if (category === 'pool') {
-            return Settings.get('poolLanes', dateStr); 
+            let lanes = Settings.get('poolLanes', dateStr); 
+            let occ = Settings.get('maxOccupantsPerLane', dateStr);
+            return {resources: [...Array(occ*lanes.length).keys()].map(v=>v+1), occupancy: 1, name: ''};
         } else if (category === 'classroom') {
-            return Settings.get('classrooms', dateStr);
-        }
-    };
-
-    const resourceName = () => {
-        if (category === 'pool') {
-            return 'slot';
-        } else if (category === 'classroom') {
-            return 'classroom';
+            let rooms = Settings.get('classrooms', dateStr);
+            return {resources: rooms, occupancy: 1, name: 'classroom'};
         }
     };
 
@@ -206,9 +201,15 @@
 >
     <Modal on:open={() => modalOpened = true} on:close={() => modalOpened = false}>
         {#if category === 'pool'}
-            <DayHourly category={category} resources={resources()} resourceName={resourceName()}/>
+            <DayHourly 
+                {category} 
+                resInfo={resInfo()} 
+            />
         {:else if category === 'classroom'}
-            <DayHourly category={category} resources={resources()} resourceName={resourceName()}/>
+            <DayHourly 
+                {category} 
+                resInfo={resInfo()}
+            />
         {:else if category == 'openwater'}
             <DayOpenWater/>
         {/if}

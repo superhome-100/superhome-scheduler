@@ -80,7 +80,7 @@ function getMinBreaksPathRec(spacesByTimes, laneWidth, width, curTime, endTime, 
     for (let i=0; i <= spacesByTimes.length - width; i+=width) {
         if (allNull(i)) {
             let thisBreak = startSpace == null ? 0 : i == startSpace ? 0 : 1;
-            thisBreak += sharedLane(i) ? 1 : 0;
+            thisBreak += sharedLane(i) ? 0.5 : 0;
             sortedSteps.push({i,thisBreak});
         }
     }
@@ -115,11 +115,13 @@ function getMinBreaksPathRec(spacesByTimes, laneWidth, width, curTime, endTime, 
     return pathObj;
 }
 
+const getWidth = rsv => nOccupants([rsv]) + rsv.buddies.length;
+
 function rsvToBlock(rsv, minTime, inc, resourceNames) {
     let startTime = (timeStrToMin(rsv.startTime) - minTime) / inc;
     let endTime = (timeStrToMin(rsv.endTime) - minTime) / inc;
     let occ = Settings.get('maxOccupantsPerLane');
-    let width = nOccupants([rsv], occ) + rsv.buddies.length;
+    let width = getWidth(rsv);
     let startSpaces;
     if (rsv.category === 'pool') {
         startSpaces = rsv.lanes[0] !== 'auto'
@@ -139,9 +141,8 @@ function rsvToBlock(rsv, minTime, inc, resourceNames) {
 }
 
 function insertPreAssigned(spacesByTimes, blk) {
-    let width = blk.width / Settings.get('maxOccupantsPerLane');
     for (let startSpace of blk.startSpaces) {
-        for (let i=startSpace; i < startSpace + width; i++) {
+        for (let i=startSpace; i < startSpace + blk.width; i++) {
             for (let j=blk.startTime; j < blk.endTime; j++) {
                 spacesByTimes[i][j] = blk.rsv;
             }
@@ -213,62 +214,70 @@ function dataAreDifferent(A, B) {
     return false;
 }
 
-function patchData(sByT, i, t, laneWidth) {
+function patchData(space) {
     let data = [];
-    let s0 = sByT[i][t];
-    if (s0 != null) {
-        data.push(s0);
-        if (laneWidth > 1) {
-            let s1 = sByT[i+1][t];
-            if (s0.buddyRsvs.length > 0) {
-                data.push(...s0.buddyRsvs);
-            } else if (s1 != null && s1.id != s0.id) {
-                data.push(s1);
-            }
-        }
-    } else if (laneWidth > 1 && sByT[i+1][t] != null) {
-        data.push(sByT[i+1][t]);
+    if (space != null) {
+        data.push(space);
+        data.push(...space.buddyRsvs);
     }
     return data;
 }
 
+function setRelativeSpace(sByT, space, t, blk) {
+    if (space === 0) {
+        blk.relativeSpace = 0;
+    } else {
+        let relSpace = 0;
+        for (let s = space-1; s >= 0; s--) {
+            let pre = sByT[s][t];
+            if (pre != null && pre.id === blk.data[0].id) {
+                relSpace++;
+            } else {
+                break;
+            }
+        }
+        blk.relativeSpace = relSpace;
+    }
+}
+
 export function patchSchedule(sByT) {
-    let schedule = Array(Settings.get('poolLanes').length).fill().map(()=> {
-        return [{
-            nSlots: 0,
-            cls: 'filler',
-            data: [],
-        }];
+    let schedule = Array(sByT.length).fill().map(()=> {
+        return [];
     });
-    let laneWidth = Settings.get('maxOccupantsPerLane');
     let nSlots = sByT[0].length;
 
     for (let t=0; t<nSlots; t++) {
-        for (let lane=0; lane<schedule.length; lane++) {
-            let i = lane*laneWidth;
-            let data = patchData(sByT, i, t, laneWidth);
+        for (let space=0; space < schedule.length; space++) {
+            let data = patchData(sByT[space][t]);
             let cls = data.length == 0 ? 'filler' : 'rsv';
-            let curBlk = schedule[lane][schedule[lane].length-1];
-            if (curBlk.cls != cls) {
+            let width = cls == 'filler' ? 0 : getWidth(data[0]);
+            let curBlk = t == 0 ? null : schedule[space][schedule[space].length-1];
+            if (curBlk == null || curBlk.cls != cls) {
                 let blk = {
                     nSlots: 1,
                     cls,
-                    data
+                    data,
+                    width
                 };
-                schedule[lane].push(blk);
+                schedule[space].push(blk);
             } else if (cls === 'rsv') {
                 if (dataAreDifferent(data, curBlk.data)) {
                     let blk = {
                         nSlots: 1,
                         cls,
-                        data
+                        data,
+                        width
                     };
-                    schedule[lane].push(blk)
+                    schedule[space].push(blk)
                 } else {
                     curBlk.nSlots += 1;
                 }
             } else {
                 curBlk.nSlots += 1;
+            }
+            let lastBlk = schedule[space][schedule[space].length-1];
+            if (cls === 'rsv' && lastBlk.nSlots == 1) {
+                setRelativeSpace(sByT, space, t, lastBlk);
             }
         }
     }

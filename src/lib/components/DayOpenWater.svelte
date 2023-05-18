@@ -231,7 +231,7 @@
                 {#each displayBuoys as { name }}
                     {#if schedule[cur][name] != undefined}
                         <div 
-                            class='rsv whitespace-nowrap overflow-hidden cursor-pointer openwater text-sm mb-1 mt-0.5'
+                            class='rsv whitespace-nowrap rounded-2xl overflow-hidden cursor-pointer openwater text-sm mb-1 mt-0.5'
                             style='height: {rowHeights[name].buoy}rem'
                             on:click={showViewRsvs(schedule[cur][name])}
                         >
