@@ -64,7 +64,7 @@
             data.reservations.forEach((rsv) => {
                 rsvById[rsv.id] = augmentRsv(rsv, $users[rsv.user.id])
             });
-            $reservations = Object.values(rsvById);
+            $reservations = Object.values(rsvById).filter(rsv => rsv.status !== 'canceled');
         }
          
         if ($user.privileges === 'admin') {
