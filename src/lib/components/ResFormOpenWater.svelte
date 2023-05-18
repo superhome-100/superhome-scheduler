@@ -87,6 +87,9 @@
                 <option value='PM'>PM</option>
             </select>
         </div>
+        {#if disabled || rsv != null}
+            <input type='hidden' name='resType' value={autoOrCourse}/>
+        {/if}
         <div>
             <select 
                 id="formResType" 

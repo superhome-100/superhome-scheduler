@@ -11,7 +11,7 @@ const xata = getXataClient();
 
 export async function getReservationsCsv(branch) {
     let client = getXataBranch(branch);
-    let fields = ['user.name', 'user.nickname', 'date', 'category', 'status',
+    let fields = ['user.name', 'user.nickname', 'date', 'category', 'price', 'status',
         'resType', 'numStudents', 'owTime', 'startTime', 'endTime'];
     let records = await client.db.Reservations
         .select(fields)
@@ -34,8 +34,8 @@ export async function getReservationsCsv(branch) {
     });
 
     const csv = new ObjectsToCsv(records.map(ent => {
-        let {user, date, category, status, resType, numStudents, owTime, startTime, endTime} = ent;
-        return {name: user.name, nickname: user.nickname, date, category, status, resType, numStudents, owTime, startTime, endTime};
+        let {user, date, category, price, status, resType, numStudents, owTime, startTime, endTime} = ent;
+        return {name: user.name, nickname: user.nickname, date, category, price, status, resType, numStudents, owTime, startTime, endTime};
     }));
     return await csv.toString();
     /*
