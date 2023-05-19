@@ -50,6 +50,7 @@ export async function GET() {
                 updateLinks(records);
                 await to.db[tbl].create(records);
             } catch (error ) {
+                console.log(error);
                 errors.push(error);
             }
         }
