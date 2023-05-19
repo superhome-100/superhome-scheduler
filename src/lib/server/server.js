@@ -78,9 +78,13 @@ export async function getUser(id) {
 }
 
 export async function getReservationsSince(minDateStr) {
+    //note: we include rejected and canceled rsvs here so that:
+    //  - [rejected rsvs]: users can see which of their rsvs have been rejected in MyReservations page
+    //  - [canceled rsvs]: in refreshAppState fn, clients can detect when other users have canceled an
+    //      rsv and remove it from their cache
     let reservations = await xata.db.Reservations
-        .select(["*", "user.facebookId", "user.name", 'user.nickname'])
-        .filter({ date: { $ge: minDateStr }, $not: { status: 'canceled' }})
+        .select(["*", "user"])
+        .filter({ date: { $ge: minDateStr }})
         .sort("date", "asc")
         .getAll();
 

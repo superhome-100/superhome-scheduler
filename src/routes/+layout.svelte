@@ -92,7 +92,9 @@
                 throw new Error('Could not read app data from database');
             } 
             $users = data.usersById;
-            $reservations = data.reservations.map(rsv => augmentRsv(rsv, $users[rsv.user.id]));
+            $reservations = data.reservations
+                .filter(rsv => rsv.status != 'canceled')
+                .map(rsv => augmentRsv(rsv, $users[rsv.user.id]));
             $notifications = data.notifications;
 
             let maxDateStr = datetimeToLocalDateStr(new Date());
