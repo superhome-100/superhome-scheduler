@@ -10,7 +10,7 @@ const updateLinks = (entries) => {
         let links = Object.keys(entries[0])
             .filter(fld => {
                 let el = entries[0][fld];
-                return typeof el == 'object' && Object.keys(el).includes('id');
+                return el != null && typeof el == 'object' && Object.keys(el).includes('id');
             });
         for (let i=0; i < entries.length; i++) {
             let ent = entries[i];
