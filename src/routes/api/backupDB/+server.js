@@ -58,6 +58,7 @@ export async function GET() {
             }
         }
     }
+    console.log(errors.length);
     if (errors.length == 0) {
         return new Response('back up completed at ' + new Date(), {ok: true, status: 200});
     } else {
