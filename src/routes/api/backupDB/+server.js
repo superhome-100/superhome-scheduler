@@ -33,13 +33,14 @@ export async function GET() {
                 updateLinks(records);
                 await to.db[tbl].createOrUpdate(records);
             } catch (error ) {
+                console.log(error);
                 errors.push(error);
             }
         }
     }
     if (errors.length == 0) {
-        return Response('back up completed at ' + new Date(), {ok: true, status: 200});
+        return new Response('back up completed at ' + new Date(), {ok: true, status: 200});
     } else {
-        return Response(errors.toString(), {ok: false, status: 500});
+        return new Response(errors.toString(), {ok: false, status: 500});
     }
 }
