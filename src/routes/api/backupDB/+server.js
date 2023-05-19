@@ -5,8 +5,7 @@ const updateLinks = (entries) => {
     if (entries.length > 0) {
 
         let links = Object.keys(entries[0])
-            .filter(fld => fld.endsWith('.id'))
-            .map(fld => fld.slice(0,-3));
+            .filter(fld => typeof entries[0][fld] == 'object');
         console.log(links);
         for (let i=0; i < entries.length; i++) {
             let ent = entries[i];
