@@ -12,6 +12,7 @@ const updateLinks = (entries) => {
             let update = {...ent};
             for (let link of links) {
                 let el = ent[link];
+                console.log(el);
                 update[link] = el.id;
             }
             entries[i] = update;
@@ -40,6 +41,7 @@ export async function GET() {
         for (let tbl of tables) {
             try {
                 let records = await from.db[tbl].getAll();
+                console.log(tbl);
                 updateLinks(records);
                 await to.db[tbl].createOrUpdate(records);
             } catch (error ) {
