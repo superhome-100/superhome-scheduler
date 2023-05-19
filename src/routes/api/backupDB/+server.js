@@ -45,7 +45,7 @@ export async function GET() {
     for (let [from, to] of [[backup1, backup2], [main, backup1]]) {
         for (let tbl of tables) {
             try {
-                deleteAll(to, tbl);
+                await deleteAll(to, tbl);
                 let records = await from.db[tbl].getAll();
                 updateLinks(records);
                 await to.db[tbl].create(records);
