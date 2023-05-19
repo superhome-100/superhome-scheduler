@@ -7,7 +7,7 @@ const updateLinks = (entries) => {
         let links = Object.keys(entries[0])
             .filter(fld => fld.endsWith('.id'))
             .map(fld => fld.slice(0,-3));
-
+        console.log(links);
         for (let i=0; i < entries.length; i++) {
             let ent = entries[i];
             let update = {...ent};
