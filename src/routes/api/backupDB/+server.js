@@ -1,12 +1,14 @@
 import { XataClient } from '$lib/server/xata.codegen.server.js';
 import { XATA_API_KEY } from '$env/static/private';
 
+const main = new XataClient({ apiKey: XATA_API_KEY, branch: 'main' });
+const backup1 = new XataClient({ apiKey: XATA_API_KEY, branch: 'backup-day-1' });
+const backup2 = new XataClient({ apiKey: XATA_API_KEY, branch: 'backup-day-2' });
+
 const updateLinks = (entries) => {
     if (entries.length > 0) {
-
         let links = Object.keys(entries[0])
             .filter(fld => typeof entries[0][fld] == 'object');
-        console.log(links);
         for (let i=0; i < entries.length; i++) {
             let ent = entries[i];
             let update = {...ent};
@@ -19,11 +21,15 @@ const updateLinks = (entries) => {
     }
 };
 
-export async function GET() {
-    const main = new XataClient({ apiKey: XATA_API_KEY, branch: 'main' });
-    const backup1 = new XataClient({ apiKey: XATA_API_KEY, branch: 'backup-day-1' });
-    const backup2 = new XataClient({ apiKey: XATA_API_KEY, branch: 'backup-day-2' });
+const deleteAll = async (branch, tbl) => {
+    if (branch != main) {
+        let data = await branch.db[tbl].getAll();
+        let ids = data.map(rec => rec.id);
+        await branch.db[tbl].delete(ids);
+    }
+};
 
+export async function GET() {
     let errors = [];
     let tables = [
         'Users',
@@ -39,12 +45,11 @@ export async function GET() {
     for (let [from, to] of [[backup1, backup2], [main, backup1]]) {
         for (let tbl of tables) {
             try {
+                deleteAll(to, tbl);
                 let records = await from.db[tbl].getAll();
-                console.log(tbl);
                 updateLinks(records);
-                await to.db[tbl].createOrUpdate(records);
+                await to.db[tbl].create(records);
             } catch (error ) {
-                console.log(error);
                 errors.push(error);
             }
         }
