@@ -1,25 +1,45 @@
 import { XataClient } from '$lib/server/xata.codegen.server.js';
 import { XATA_API_KEY } from '$env/static/private';
 
-export async function GET() {
-    try {
-        const main = new XataClient({ apiKey: XATA_API_KEY, branch: 'main' });
-        const backup1 = new XataClient({ apiKey: XATA_API_KEY, branch: 'backup-day-1' });
-        const backup2 = new XataClient({ apiKey: XATA_API_KEY, branch: 'backup-day-2' });
+const updateLinks = (entries) => {
+    if (entries.length > 0) {
 
-        for (let [from, to] of [[backup1, backup2], [main, backup1]]) {
-            let users = await from.db.Users.getAll();
-            await to.db.Users.createOrUpdate(users);
+        let links = Object.keys(entries[0])
+            .filter(fld => fld.endsWith('.id'))
+            .map(fld => fld.slice(0,-3));
 
-            let reservations = await from.db.Reservations.getAll();
-            for (let i=0; i<reservations.length; i++) {
-                let {user, ...rest} = reservations[i];
-                reservations[i] = {...rest, user: user.id};
+        for (let i=0; i < entries.length; i++) {
+            let ent = entries[i];
+            let update = {...ent};
+            for (let link of links) {
+                let el = ent[link];
+                update[link] = el.id;
             }
-            await to.db.Reservations.createOrUpdate(reservations);
+            entries[i] = update;
         }
+    }
+};
+
+export async function GET() {
+    const main = new XataClient({ apiKey: XATA_API_KEY, branch: 'main' });
+    const backup1 = new XataClient({ apiKey: XATA_API_KEY, branch: 'backup-day-1' });
+    const backup2 = new XataClient({ apiKey: XATA_API_KEY, branch: 'backup-day-2' });
+
+    let errors = [];
+    for (let [from, to] of [[backup1, backup2], [main, backup1]]) {
+        for (let tbl of Object.keys(from.db)) {
+            try {
+                let records = await from.db[tbl].getAll();
+                updateLinks(records);
+                await to.db[tbl].createOrUpdate(records);
+            } catch (error ) {
+                errors.push(error);
+            }
+        }
+    }
+    if (errors.length == 0) {
         return Response('back up completed at ' + new Date(), {ok: true, status: 200});
-    } catch (error) {
-        return Response(error, {ok: false, status: 500});
+    } else {
+        return Response(errors.toString(), {ok: false, status: 500});
     }
 }

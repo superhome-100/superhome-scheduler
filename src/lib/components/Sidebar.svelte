@@ -55,18 +55,20 @@
     $: activeUrl = $page.url.pathname;
     let spanClass = 'pl-8 self-center text-md text-gray-900 whitespace-nowrap dark:text-white';
 
-    function downloadReservations(branch) {
+    function downloadDatabase(branch) {
         const fn = async () => {
-            const response = await fetch('/api/getReservationsTable', {
+            const response = await fetch('/api/downloadDatabase', {
                 method: 'POST',
                 headers: {'Content-type': 'application/json'},
                 body: JSON.stringify({ branch })
             });
             if (response.status == 200) {
+                let disp = await response.headers.get('Content-Disposition');
+                let fn = /attachment; filename=(.*)/.exec(disp)[1];
                 let blob = await response.blob();
                 let a = document.createElement('a');
                 a.href = window.URL.createObjectURL(blob);
-                a.download = `reservations-${branch}.csv`;
+                a.download = fn;
                 a.click();
                 a.remove();
                 return Promise.resolve();
@@ -159,21 +161,21 @@
                         <span>Admin Mode</span>
                     </div>
                     {#if $viewMode === 'admin'}
-                        <SidebarDropdownWrapper label='Download Reservations'>
+                        <SidebarDropdownWrapper label='Download DBs'>
                             <SidebarItem 
-                                label='main'
+                                label='Reservations'
                                 {spanClass}
-                                on:click={() => downloadReservations('main')}
+                                on:click={() => downloadDatabase('main')}
                             />
                             <SidebarItem 
                                 label='backup-day-1'
                                 {spanClass}
-                                on:click={() => downloadReservations('backup-day-1')}
+                                on:click={() => downloadDatabase('backup-day-1')}
                             />
                             <SidebarItem 
                                 label='backup-day-2'
                                 {spanClass}
-                                on:click={() => downloadReservations('backup-day-2')}
+                                on:click={() => downloadDatabase('backup-day-2')}
                             />
                         </SidebarDropdownWrapper>
                     {/if}
