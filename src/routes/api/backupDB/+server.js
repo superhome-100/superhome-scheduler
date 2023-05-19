@@ -8,16 +8,15 @@ const backup2 = new XataClient({ apiKey: XATA_API_KEY, branch: 'backup-day-2' })
 const updateLinks = (entries) => {
     if (entries.length > 0) {
         let links = Object.keys(entries[0])
-            .filter(fld => typeof entries[0][fld] == 'object');
+            .filter(fld => {
+                let el = entries[0][fld];
+                return typeof el == 'object' && Object.keys(el).includes('id');
+            });
         for (let i=0; i < entries.length; i++) {
             let ent = entries[i];
             let update = {...ent};
             for (let link of links) {
                 let el = ent[link];
-                if (el == null) {
-                    console.log(link);
-                    console.log(ent);
-                }
                 update[link] = el.id;
             }
             entries[i] = update;
