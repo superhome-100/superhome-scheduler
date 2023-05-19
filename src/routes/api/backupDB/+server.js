@@ -33,13 +33,13 @@ export async function GET() {
     let errors = [];
     let tables = [
         'Users',
-        /*'PriceTemplates',
+        'PriceTemplates',
         'Notifications',
         'Reservations',
         'UserPriceTemplates',
         'NotificationReceipts',
         'Settings',
-        'Buoys'*/
+        'Buoys'
     ];
 
     for (let [from, to] of [[backup1, backup2], [main, backup1]]) {
@@ -50,7 +50,6 @@ export async function GET() {
                 updateLinks(records);
                 await to.db[tbl].create(records);
             } catch (error ) {
-                console.log(error);
                 errors.push(error);
             }
         }
