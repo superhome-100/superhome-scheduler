@@ -27,13 +27,13 @@ export async function GET() {
     let errors = [];
     let tables = [
         'Users',
-        'PriceTemplates',
+        /*'PriceTemplates',
         'Notifications',
         'Reservations',
         'UserPriceTemplates',
         'NotificationReceipts',
         'Settings',
-        'Buoys'
+        'Buoys'*/
     ];
 
     for (let [from, to] of [[backup1, backup2], [main, backup1]]) {
@@ -42,10 +42,6 @@ export async function GET() {
                 let records = await from.db[tbl].getAll();
                 console.log(tbl);
                 updateLinks(records);
-                if (tbl === 'NotificationReceipts') {
-                    console.log('71: ');
-                    console.log(records[71]);
-                }
                 await to.db[tbl].createOrUpdate(records);
             } catch (error ) {
                 console.log(error);
