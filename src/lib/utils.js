@@ -65,12 +65,7 @@ export function augmentRsv(rsv, user=null) {
     };
 
     if (user) {
-        newRsv.user = {
-            id: user.id,
-            facebookId: user.facebookId,
-            name: user.name,
-            nickname: user.nickname,
-        };
+        newRsv.user = user;
     }
 
     return newRsv;

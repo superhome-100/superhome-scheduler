@@ -62,7 +62,7 @@
             // keep unchanged rsvs and update changed/add new ones
             let rsvById = $reservations.reduce((obj,rsv) => {obj[rsv.id] = rsv; return obj;},{});
             data.reservations.forEach((rsv) => {
-                rsvById[rsv.id] = augmentRsv(rsv, $users[rsv.user.id])
+                rsvById[rsv.id] = augmentRsv(rsv);
             });
             $reservations = Object.values(rsvById).filter(rsv => rsv.status !== 'canceled');
         }
@@ -94,7 +94,7 @@
             $users = data.usersById;
             $reservations = data.reservations
                 .filter(rsv => rsv.status != 'canceled')
-                .map(rsv => augmentRsv(rsv, $users[rsv.user.id]));
+                .map(rsv => augmentRsv(rsv));
             $notifications = data.notifications;
 
             let maxDateStr = datetimeToLocalDateStr(new Date());
