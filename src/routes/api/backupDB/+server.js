@@ -14,6 +14,9 @@ const updateLinks = (entries) => {
             let update = {...ent};
             for (let link of links) {
                 let el = ent[link];
+                if (el == null) {
+                    console.log(ent);
+                }
                 update[link] = el.id;
             }
             entries[i] = update;
