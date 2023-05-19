@@ -26,8 +26,19 @@ export async function GET() {
     const backup2 = new XataClient({ apiKey: XATA_API_KEY, branch: 'backup-day-2' });
 
     let errors = [];
+    let tables = [
+        'Users',
+        'PriceTemplates',
+        'Notifications',
+        'Reservations',
+        'UserPriceTemplates',
+        'NotificationReceipts',
+        'Settings',
+        'Buoys'
+    ];
+
     for (let [from, to] of [[backup1, backup2], [main, backup1]]) {
-        for (let tbl of Object.keys(from.db)) {
+        for (let tbl of tables) {
             try {
                 let records = await from.db[tbl].getAll();
                 updateLinks(records);
