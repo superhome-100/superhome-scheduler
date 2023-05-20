@@ -16,7 +16,7 @@
             {
                 rsvs, 
                 hasForm: true,
-                disableModify: $user.privileges === 'admin',
+                disableModify: $viewMode === 'admin',
             }
         );
     };

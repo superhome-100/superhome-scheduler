@@ -101,7 +101,7 @@
         if (category === 'pool') {
             let lanes = Settings.get('poolLanes', dateStr); 
             let occ = Settings.get('maxOccupantsPerLane', dateStr);
-            return {resources: [...Array(occ*lanes.length).keys()].map(v=>v+1), occupancy: 1, name: ''};
+            return {resources: lanes, occupancy: occ, name: ''};
         } else if (category === 'classroom') {
             let rooms = Settings.get('classrooms', dateStr);
             return {resources: rooms, occupancy: 1, name: 'classroom'};
