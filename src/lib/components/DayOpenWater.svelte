@@ -175,9 +175,9 @@
 
 	const boatCountPos = (profileSrc) => {
 		if (profileSrc != null) {
-			return 'top-[50px] lg:top-[110px]';
+			return 'top-[50px] sm:top-[120px] md:top-[110px]';
 		} else {
-			return 'top-[40px] lg:top-[100px]';
+			return 'top-[100px] xs:top-[110px] lg:top-[100px]';
 		}
 	};
 </script>
