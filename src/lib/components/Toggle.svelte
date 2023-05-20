@@ -1,14 +1,14 @@
 <script>
-    import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
 
-    const dispatch = createEventDispatcher();
+	const dispatch = createEventDispatcher();
 
-    export let checked = false;
+	export let checked = false;
 
-    $: dispatch('change', { checked });
+	$: dispatch('change', { checked });
 
-    const switchStyle = "relative inline-block w-14 h-8";
-    const sliderStyle = `
+	const switchStyle = 'relative inline-block w-14 h-8';
+	const sliderStyle = `
         absolute 
         cursor-pointer 
         top-0 
@@ -20,7 +20,7 @@
         duration-300 
         rounded-2xl 
     `;
-    const sliderBeforeStyle = `
+	const sliderBeforeStyle = `
         before:absolute 
         before:content-[""] 
         before:h-6 
@@ -35,22 +35,22 @@
 </script>
 
 <label class={switchStyle}>
-    <input bind:checked={checked} class='opacity-0 w-0 h-0' type="checkbox">
-    <span class='slider {sliderStyle} {sliderBeforeStyle}'></span>
+	<input bind:checked class="opacity-0 w-0 h-0" type="checkbox" />
+	<span class="slider {sliderStyle} {sliderBeforeStyle}" />
 </label>
 
 <style>
-    input:checked + .slider {
-      background-color: #2196F3;
-    }
+	input:checked + .slider {
+		background-color: #2196f3;
+	}
 
-    input:focus + .slider {
-      box-shadow: 0 0 1px #2196F3;
-    }
+	input:focus + .slider {
+		box-shadow: 0 0 1px #2196f3;
+	}
 
-    input:checked + .slider:before {
-      -webkit-transform: translateX(24px);
-      -ms-transform: translateX(24px);
-      transform: translateX(24px);
-    }
+	input:checked + .slider:before {
+		-webkit-transform: translateX(24px);
+		-ms-transform: translateX(24px);
+		transform: translateX(24px);
+	}
 </style>

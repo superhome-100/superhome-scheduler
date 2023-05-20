@@ -1,61 +1,61 @@
 <script lang="ts">
-	import { tweened } from 'svelte/motion'
-	import { cubicOut } from 'svelte/easing'
-	import { navigating } from '$app/stores'
-	import { fade } from 'svelte/transition'
+	import { tweened } from 'svelte/motion';
+	import { cubicOut } from 'svelte/easing';
+	import { navigating } from '$app/stores';
+	import { fade } from 'svelte/transition';
 	import { onMount } from 'svelte';
 
-  let hideInitial = false;
+	let hideInitial = false;
 	// progress bar value
 	const p = tweened(0, {
 		duration: 200,
-		easing: cubicOut,
-	})
+		easing: cubicOut
+	});
 
-	let isVisible = false
+	let isVisible = false;
 
 	function increase() {
 		if ($p >= 0 && $p < 0.2) {
-			p.update((_) => _ + 0.04)
+			p.update((_) => _ + 0.04);
 		} else if ($p >= 0.2 && $p < 0.5) {
-			p.update((_) => _ + 0.02)
+			p.update((_) => _ + 0.02);
 		} else if ($p >= 0.5 && $p < 0.8) {
-			p.update((_) => _ + 0.002)
+			p.update((_) => _ + 0.002);
 		} else if ($p >= 0.8 && $p < 0.99) {
-			p.update((_) => _ + 0.0005)
+			p.update((_) => _ + 0.0005);
 		} else {
-			p.set(0)
+			p.set(0);
 		}
 
 		if ($navigating) {
-			const rand = Math.round(Math.random() * (300 - 50)) + 50
+			const rand = Math.round(Math.random() * (300 - 50)) + 50;
 			setTimeout(function () {
-				increase()
-			}, rand)
+				increase();
+			}, rand);
 		}
 	}
 
 	$: {
 		if ($navigating) {
-			increase()
-			isVisible = true
+			increase();
+			isVisible = true;
 		}
 		if (!$navigating) {
-			p.update((_) => _ + 0.3)
+			p.update((_) => _ + 0.3);
 			setTimeout(function () {
-				p.set(1)
+				p.set(1);
 				setTimeout(function () {
-					isVisible = false
-					p.set(0)
-				}, 100)
-			}, 100)
+					isVisible = false;
+					p.set(0);
+				}, 100);
+			}, 100);
 		}
 	}
-  onMount(()  => {
-    setTimeout(() => {
-      hideInitial = true;
-    }, 1000);
-  });
+	onMount(() => {
+		setTimeout(() => {
+			hideInitial = true;
+		}, 1000);
+	});
 </script>
 
 <progress value={50} class="animate-pulse" class:hidden={hideInitial} />
