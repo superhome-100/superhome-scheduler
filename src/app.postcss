@@ -4,103 +4,110 @@
 @tailwind utilities;
 
 @layer base {
-    :root {
-        font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-        line-height: 1.5;
-        font-weight: 400;
+	:root {
+		font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+		line-height: 1.5;
+		font-weight: 400;
 
-        color-scheme: light dark;
-        color: #000;
-        @apply bg-root-bg-light;
-        font-synthesis: none;
-        text-rendering: optimizeLegibility;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        -webkit-text-size-adjust: 100%;
-    }   
-    @media (prefers-color-scheme: dark) {
-        :root {
-            color: rgba(255, 255, 255, 0.87);
-            background-color: #242420;
-        }
-        button, input[type=submit] {
-            background-color: #1a1a1a;
-        }
-    }
+		color-scheme: light dark;
+		color: #000;
+		@apply bg-root-bg-light;
+		font-synthesis: none;
+		text-rendering: optimizeLegibility;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		-webkit-text-size-adjust: 100%;
+	}
+	@media (prefers-color-scheme: dark) {
+		:root {
+			color: rgba(255, 255, 255, 0.87);
+			background-color: #242420;
+		}
+		button,
+		input[type='submit'] {
+			background-color: #1a1a1a;
+		}
+	}
 }
 
-
 @layer components {
-    button {
-        @apply rounded-lg border border-solid border-transparent py-2 px-4 font-sans cursor-pointer bg-gray-100 ease-in duration-100;
-    }
+	button {
+		@apply rounded-lg border border-solid border-transparent py-2 px-4 font-sans cursor-pointer bg-gray-100 ease-in duration-100;
+	}
 
-    button:hover {
-        @apply border-openwater-bg-to;
-    }
+	button:hover {
+		@apply border-openwater-bg-to;
+	}
 
-    button:focus, button:focus-visible {
-        @apply outline-4; 
-    }
+	button:focus,
+	button:focus-visible {
+		@apply outline-4;
+	}
 
-    .column {
-        @apply float-left m-auto;
-    }
+	.column {
+		@apply float-left m-auto;
+	}
 
-    .row:after {
-        @apply content-none table clear-both;
-    }
+	.row:after {
+		@apply content-none table clear-both;
+	}
 
-    .rsv {
-        @apply text-center whitespace-nowrap mx-auto px-1 sm:px-2;
-    }
-    
-    .rsv {
-        &.pool {
-            @apply bg-gradient-to-br from-pool-bg-from to-pool-bg-to text-pool-fg;
-        }
-        &.openwater {
-            @apply bg-gradient-to-br from-openwater-bg-from to-openwater-bg-to text-openwater-fg;
-        }
-        &.classroom {
-            @apply bg-gradient-to-br from-classroom-bg-from to-classroom-bg-to text-classroom-fg;
-        }
-    }
+	.rsv {
+		@apply text-center whitespace-nowrap mx-auto px-1 sm:px-2;
+	}
 
-    .rsv-indicator {
-        @apply m-0 right-0.5 top-2 indicator-item badge h-2 w-2 p-0 border-transparent;
-    }
+	.rsv {
+		&.pool {
+			@apply bg-gradient-to-br from-pool-bg-from to-pool-bg-to text-pool-fg;
+		}
+		&.openwater {
+			@apply bg-gradient-to-br from-openwater-bg-from to-openwater-bg-to text-openwater-fg;
+		}
+		&.classroom {
+			@apply bg-gradient-to-br from-classroom-bg-from to-classroom-bg-to text-classroom-fg;
+		}
+	}
 
-    .form-label {
-        @apply flex items-center justify-end text-sm xs:text-base dark:text-white;
-    }
+	.rsv-indicator {
+		@apply m-0 right-0.5 top-2 indicator-item badge h-2 w-2 p-0 border-transparent;
+	}
 
-    .form-title {
-        @apply text-center text-lg xs:text-2xl font-semibold mb-4 mt-2 dark:text-white; 
-    }
+	.form-label {
+		@apply flex items-center justify-end text-sm xs:text-base dark:text-white;
+	}
 
-    * {
-        input[type], select, option, textarea {
-            @apply align-middle ps-0.5 pe-0 py-0 ml-1 xs:ml-2 mb-0.5 text-xl text-black dark:text-white rounded bg-white dark:bg-root-bg-dark disabled:text-gray-500 dark:disabled:text-gray-300 dark:disabled:bg-gray-500;
-        }
-    }
+	.form-title {
+		@apply text-center text-lg xs:text-2xl font-semibold mb-4 mt-2 dark:text-white;
+	}
 
-    input[type], select, option {
-        @apply h-8;
-    }
+	* {
+		input[type],
+		select,
+		option,
+		textarea {
+			@apply align-middle ps-0.5 pe-0 py-0 ml-1 xs:ml-2 mb-0.5 text-xl text-black dark:text-white rounded bg-white dark:bg-root-bg-dark disabled:text-gray-500 dark:disabled:text-gray-300 dark:disabled:bg-gray-500;
+		}
+	}
 
-    input[type=radio], input[type=checkbox] {
-        @apply dark:checked:bg-gray-800 focus:ring-0 w-8;
-    }
+	input[type],
+	select,
+	option {
+		@apply h-8;
+	}
 
-    .btn-fsh-dropdown {
-        @apply lowercase font-normal text-2xl text-black dark:text-white hover:text-white bg-root-bg-light dark:bg-root-bg-dark hover:bg-gray-700 border-transparent m-0;
-    } 
-    
-    .category-btn {
-        @apply text-lg sm:text-lg py-0 px-0.5 border border-r-0 last:border-r border-solid border-black dark:border-white rounded-none first:rounded-l last:rounded-r bg-white dark:bg-root-bg-dark dark:text-white hover:bg-gray-700 dark:hover:bg-gray-300 hover:text-white dark:hover:text-black hover:border-black dark:hover:border-white
-    }
-    .category-btn.selected {
-        @apply bg-gray-700 text-white dark:bg-gray-300 dark:text-black;
-    }
+	input[type='radio'],
+	input[type='checkbox'] {
+		@apply dark:checked:bg-gray-800 focus:ring-0 w-8;
+	}
+
+	.btn-fsh-dropdown {
+		@apply lowercase font-normal text-2xl text-black dark:text-white hover:text-white bg-root-bg-light dark:bg-root-bg-dark hover:bg-gray-700 border-transparent m-0;
+	}
+
+	.category-btn {
+		@apply text-lg sm:text-lg py-0 px-0.5 border border-r-0 last:border-r border-solid border-black dark:border-white rounded-none first:rounded-l last:rounded-r bg-white dark:bg-root-bg-dark dark:text-white hover:bg-gray-700 dark:hover:bg-gray-300 hover:text-white dark:hover:text-black hover:border-black dark:hover:border-white;
+	}
+	.category-btn.selected {
+		@apply bg-gray-700 text-white dark:bg-gray-300 dark:text-black;
+	}
 }
