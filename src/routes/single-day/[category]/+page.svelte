@@ -107,10 +107,12 @@
 		if (category === 'pool') {
 			let lanes = Settings.get('poolLanes', dateStr);
 			let occ = Settings.get('maxOccupantsPerLane', dateStr);
-			return { resources: lanes, occupancy: occ, name: '' };
+            let label = Settings.get('poolLabel', dateStr);
+			return { resources: lanes, occupancy: occ, name: label };
 		} else if (category === 'classroom') {
 			let rooms = Settings.get('classrooms', dateStr);
-			return { resources: rooms, occupancy: 1, name: 'classroom' };
+            let label = Settings.get('classroomLabel', dateStr);
+			return { resources: rooms, occupancy: 1, name: label };
 		}
 	};
 
