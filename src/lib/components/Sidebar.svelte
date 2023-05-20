@@ -57,12 +57,12 @@
 	$: activeUrl = $page.url.pathname;
 	let spanClass = 'pl-8 self-center text-md text-gray-900 whitespace-nowrap dark:text-white';
 
-	function downloadDatabase(branch) {
+	function downloadDatabase(branch, table = null) {
 		const fn = async () => {
 			const response = await fetch('/api/downloadDatabase', {
 				method: 'POST',
 				headers: { 'Content-type': 'application/json' },
-				body: JSON.stringify({ branch })
+				body: JSON.stringify({ branch, table })
 			});
 			if (response.status == 200) {
 				let disp = await response.headers.get('Content-Disposition');
@@ -145,7 +145,10 @@
 	divClass="overflow-y-auto z-50 p-4 bg-white dark:bg-[#252515]"
 >
 	<div class="flex items-center">
-		<CloseButton on:click={() => (drawerHidden = true)} class="mb-4 dark:text-white lg:hidden" />
+		<CloseButton
+			on:click={() => (drawerHidden = true)}
+			class="mb-4 dark:text-white lg:hidden"
+		/>
 	</div>
 	<Sidebar asideClass="w-54">
 		<SidebarWrapper divClass="overflow-y-auto py-4 px-3 rounded">
@@ -162,6 +165,11 @@
 						<SidebarDropdownWrapper label="Download DBs">
 							<SidebarItem
 								label="Reservations"
+								{spanClass}
+								on:click={() => downloadDatabase('main', 'Reservations')}
+							/>
+							<SidebarItem
+								label="main"
 								{spanClass}
 								on:click={() => downloadDatabase('main')}
 							/>

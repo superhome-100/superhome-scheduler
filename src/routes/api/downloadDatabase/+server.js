@@ -1,8 +1,8 @@
 import { getReservationsCsv, getBackUpZip } from '$lib/server/server.js';
 
 export async function POST({ request }) {
-	let { branch } = await request.json();
-	if (branch === 'main') {
+	let { branch, table } = await request.json();
+	if (table === 'Reservations') {
 		let csv = await getReservationsCsv(branch);
 		return new Response(csv, {
 			status: 200,
