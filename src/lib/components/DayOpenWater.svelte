@@ -1,5 +1,13 @@
 <script>
-	import { user, viewMode, viewedDate, reservations, buoys, boatAssignments } from '$lib/stores.js';
+	import {
+		buoys,
+		boatAssignments,
+		reservations,
+		profileSrc,
+		user,
+		viewMode,
+		viewedDate
+	} from '$lib/stores.js';
 	import { datetimeToLocalDateStr as dtToLDS } from '$lib/datetimeUtils.js';
 	import { displayTag } from '$lib/utils.js';
 	import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
@@ -164,11 +172,21 @@
 	};
 
 	$: owTimeColWidth = () => ($viewMode === 'admin' ? 'w-[33%]' : 'w-[42%]');
+
+	const boatCountPos = (profileSrc) => {
+		if (profileSrc != null) {
+			return 'top-[50px] lg:top-[110px]';
+		} else {
+			return 'top-[40px] lg:top-[100px]';
+		}
+	};
 </script>
 
 {#if $viewMode === 'admin'}
 	<div
-		class="fixed xs:text-xl left-1/2 lg:left-2/3 -translate-x-1/2 whitespace-nowrap w-fit top-[57px] opacity-70 z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1"
+		class="fixed sm:text-xl left-1/2 lg:left-2/3 -translate-x-1/2 whitespace-nowrap w-fit {boatCountPos(
+			$profileSrc
+		)} opacity-70 z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1"
 	>
 		<span>boat counts:</span>
 		{#each boats as boat}
