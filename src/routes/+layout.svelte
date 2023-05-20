@@ -34,7 +34,7 @@
 
     $: if ($loginState === 'out' && $page.route.id != '/') { goto('/'); }
 
-    onMount(() => toast.promise(initApp(), {loading: 'loading...', error: 'Loading error'}));
+    onMount(() => isFacebook ? void(0) : toast.promise(initApp(), {loading: 'loading...', error: 'Loading error'}));
 
     async function callLogout() {
         if (intervalId) { clearInterval(intervalId); }
@@ -203,9 +203,14 @@
 <Toaster/>
 
 {#if isFacebook}
-    <article class="fixed top-0 w-full h-full bg-orange-400 p-20">
-        <h1>Please don't use facebook browser</h1>
-        <p>To use default browser. Android tap in the upper right-hand corner. iOS tap in the lower right-hand corner.</p>
+    <article class="fixed text-center top-0 w-full h-full bg-orange-400 p-20">
+        <h1 class='font-bold'>Please don't use Facebook browser</h1>
+        <br/>
+        <p>To use default browser:</p>
+        <ul>
+            <li><b>Android -</b> tap in the upper right-hand corner</li>
+            <li><b>iOS -</b> tap in the lower right-hand corner</li>
+        </ul>
     </article>
 {/if}
 

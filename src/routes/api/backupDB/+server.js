@@ -34,6 +34,7 @@ const deleteAll = async (branch, tbl) => {
 
 export async function GET() {
     let errors = [];
+    //tables that are linked in other tables need to be backed up first
     let tables = [
         'Users',
         'PriceTemplates',
@@ -53,12 +54,11 @@ export async function GET() {
                 updateLinks(records);
                 await to.db[tbl].create(records);
             } catch (error ) {
-                console.log(error);
+                console.error(error);
                 errors.push(error);
             }
         }
     }
-    console.log(errors.length);
     if (errors.length == 0) {
         return new Response('back up completed at ' + new Date(), {ok: true, status: 200});
     } else {
