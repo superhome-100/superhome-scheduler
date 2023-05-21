@@ -398,7 +398,7 @@ export async function updateReservation(formData) {
 
 	if (buddySet.size > 0) {
 		let existingBuddies;
-		let { user, buddies, ...common } = sub;
+		let { user, buddies, id, ...common } = sub;
 		if (oldBuddies.length > 0) {
 			existingBuddies = await getOverlappingReservations(orig, oldBuddies);
 		}
