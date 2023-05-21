@@ -14,7 +14,6 @@
 	const { close } = getContext('simple-modal');
 
 	let viewOnly = (rsv) =>
-		!rsv.owner ||
 		!beforeCancelCutoff(Settings, rsv.date, rsv.startTime, rsv.category) ||
 		(!beforeResCutoff(Settings, rsv.date, rsv.startTime, rsv.category) &&
 			rsv.resType === 'autonomous');

@@ -25,13 +25,11 @@
 		data.append('buddies', JSON.stringify(rsv.buddies));
 
 		let delBuddies = [];
-		if (rsv.owner) {
-			for (let i = 0; i < rsv.buddies.length; i++) {
-				if (data.get('buddy-' + i) === 'on') {
-					delBuddies.push(rsv.buddies[i]);
-				}
-				data.delete('buddy-' + i);
+		for (let i = 0; i < rsv.buddies.length; i++) {
+			if (data.get('buddy-' + i) === 'on') {
+				delBuddies.push(rsv.buddies[i]);
 			}
+			data.delete('buddy-' + i);
 		}
 		data.append('delBuddies', JSON.stringify(delBuddies));
 
@@ -74,16 +72,14 @@
 				<span>Really cancel {rsv.category} reservation on</span>
 				<span>{rsv.date}?</span>
 			</div>
-			{#if rsv.owner}
-				{#each rsv.buddies as buddy, i}
-					<div>
-						<label class="dark:text-white"
-							>Also cancel {$users[buddy].nickname}'s reservation
-							<input type="checkbox" name={'buddy-' + i} />
-						</label>
-					</div>
-				{/each}
-			{/if}
+			{#each rsv.buddies as buddy, i}
+				<div>
+					<label class="dark:text-white"
+						>Also cancel {$users[buddy].nickname}'s reservation
+						<input type="checkbox" name={'buddy-' + i} />
+					</label>
+				</div>
+			{/each}
 			<button class="dark:text-white dark:border-white mb-2" type="submit">Confirm</button>
 		</form>
 	</div>
