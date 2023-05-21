@@ -392,7 +392,8 @@ export async function updateReservation(formData) {
 		buddySet.add(id);
 	}
 
-	let modify = [sub];
+	let createdAt = new Date();
+	let modify = [{ ...sub, createdAt }];
 	let create = [];
 	let cancel = [];
 
@@ -410,6 +411,7 @@ export async function updateReservation(formData) {
 				let bg = [user, ...buddies.filter((bIdp) => bIdp != bId)];
 				let entry = {
 					...common,
+					createdAt,
 					id: rsvId,
 					user: bId,
 					buddies: bg,
@@ -421,6 +423,7 @@ export async function updateReservation(formData) {
 				let bg = [user, ...buddies.filter((bIdp) => bIdp != bId)];
 				let entry = {
 					...common,
+					createdAt,
 					user: bId,
 					buddies: bg,
 					owner: false
@@ -537,7 +540,12 @@ export async function getUserActiveNotifications(user) {
 	return notifications.filter((ntf) => {
 		return (
 			receipts.filter((rpt) => {
-				return rpt.user != null && rpt.notification != null && rpt.notification.id === ntf.id && rpt.user.id === user;
+				return (
+					rpt.user != null &&
+					rpt.notification != null &&
+					rpt.notification.id === ntf.id &&
+					rpt.user.id === user
+				);
 			}).length == 0
 		);
 	});
