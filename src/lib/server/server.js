@@ -537,7 +537,7 @@ export async function getUserActiveNotifications(user) {
 	return notifications.filter((ntf) => {
 		return (
 			receipts.filter((rpt) => {
-				return rpt.notification.id === ntf.id && rpt.user.id === user;
+				return rpt.user != null && rpt.notification != null && rpt.notification.id === ntf.id && rpt.user.id === user;
 			}).length == 0
 		);
 	});
