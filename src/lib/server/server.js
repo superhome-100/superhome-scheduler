@@ -506,6 +506,12 @@ export async function cancelReservation(formData) {
 				return { ...rsv, buddies };
 			});
 		if (modify.length > 0) {
+			if (modify.reduce((b, rsv) => b || rsv.owner, false) == false) {
+				// make sure one of the existing rsvs is the owner
+				// doesn't matter which, as long as there is exactly
+				// one owner
+				modify[0].owner = true;
+			}
 			let modrecs = await xata.db.Reservations.update(modify);
 			records.modified = modrecs;
 		}
