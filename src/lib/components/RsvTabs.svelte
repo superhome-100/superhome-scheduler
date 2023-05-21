@@ -16,7 +16,7 @@
 	let viewOnly = (rsv) =>
 		!beforeCancelCutoff(Settings, rsv.date, rsv.startTime, rsv.category) ||
 		(!beforeResCutoff(Settings, rsv.date, rsv.startTime, rsv.category) &&
-			rsv.resType === 'autonomous');
+			['autonomous', 'cbs'].includes(rsv.resType));
 
 	let tabIndex = 0;
 	const handleAdminSubmit = (event) => {

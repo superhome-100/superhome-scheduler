@@ -48,9 +48,9 @@ function sortBuddyGroups(buddyGrps) {
 function handlePreAssignedBuoys(buddyGrps, buoys) {
 	for (let grp of buddyGrps) {
 		let buoy = grp.reduce((b, rsv) => (rsv.buoy === 'auto' ? b : rsv.buoy), 'auto');
-		grp = grp.map((rsv) => {
-			return { ...rsv, buoy };
-		});
+		for (let i = 0; i < grp.length; i++) {
+			grp[i] = { ...grp[i], buoy };
+		}
 	}
 	let asn = buoys.reduce((a, b) => {
 		a[b.name] = [];
@@ -100,8 +100,13 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
 		return bg0[bg0.length - 1].maxDepth - bg1[0].maxDepth >= tooFar;
 	};
 	// helper to make sure buddies with pre-assigned buoys are consistent
-	const buoysMatch = (bg0, bg1) =>
-		bg0[0].buoy === 'auto' || bg1[0].buoy === 'auto' || bg0[0].buoy === bg1[0].buoy;
+	const buoysMatch = (bg0, bg1) => {
+		if ([bg0[0].buoy, bg1[0].buoy].includes('CBS')) {
+			return bg0[0].buoy === bg1[0].buoy;
+		} else {
+			return bg0[0].buoy === 'auto' || bg1[0].buoy === 'auto' || bg0[0].buoy === bg1[0].buoy;
+		}
+	};
 
 	// helper for creating a buoy group from buddy groups and removing from buddyGrps
 	const update = (bgs, idx) => {
