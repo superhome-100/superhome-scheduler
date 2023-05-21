@@ -17,7 +17,7 @@
 	date =
 		rsv == null ? (date == null ? dateFn() : datetimeToLocalDateStr(new Date(date))) : rsv.date;
 
-	let autoOrCourse = rsv == null ? 'autonomous' : rsv.resType;
+	let resType = rsv == null ? 'autonomous' : rsv.resType;
 	let maxDepth = rsv == null || rsv.maxDepth == null ? null : rsv.maxDepth;
 	let owTime = rsv == null ? 'AM' : rsv.owTime;
 	let comments = rsv == null ? null : rsv.comments;
@@ -33,7 +33,7 @@
 	}
 	checkSubmit();
 
-	$: showBuddyFields = autoOrCourse === 'autonomous';
+	$: showBuddyFields = resType === 'autonomous';
 	$: sortedBuoys = $buoys.sort((a, b) => (a.maxDepth > b.maxDepth ? 1 : -1));
 
 	const buoyIsAssigned = (name) => {
@@ -56,7 +56,7 @@
 		{/if}
 		<div><label for="formOwTime">Time</label></div>
 		<div><label for="formResType">Type</label></div>
-		{#if autoOrCourse === 'course'}
+		{#if resType === 'course'}
 			<div><label for="formNumStudents"># Students</label></div>
 		{/if}
 		<div><label for="formMaxDepth">Max Depth</label></div>
@@ -82,13 +82,13 @@
 			</select>
 		</div>
 		{#if disabled || rsv != null}
-			<input type="hidden" name="resType" value={autoOrCourse} />
+			<input type="hidden" name="resType" value={resType} />
 		{/if}
 		<div>
 			<select
 				id="formResType"
 				disabled={disabled || rsv != null}
-				bind:value={autoOrCourse}
+				bind:value={resType}
 				name="resType"
 			>
 				<option value="autonomous">Autonomous</option>
@@ -98,9 +98,14 @@
 				{/if}
 			</select>
 		</div>
-		{#if autoOrCourse == 'course'}
+		{#if resType == 'course'}
 			<div>
-				<select id="formNumStudents" disabled={viewOnly} name="numStudents" value={numStudents}>
+				<select
+					id="formNumStudents"
+					disabled={viewOnly}
+					name="numStudents"
+					value={numStudents}
+				>
 					{#each [...Array(restrictModify ? numStudents : 4).keys()] as n}
 						<option value={n + 1}>{n + 1}</option>
 					{/each}
@@ -127,7 +132,7 @@
 		slot="categoryOptionals"
 	>
 		<div>
-			{#if autoOrCourse === 'autonomous'}
+			{#if resType === 'autonomous'}
 				{#if disabled}
 					<input type="hidden" name="pulley" value={pulley ? 'on' : 'off'} />
 				{/if}
@@ -140,7 +145,7 @@
 					tabindex="5"
 				/>
 				<label for="formPulley">pulley</label>
-			{:else if autoOrCourse === 'course'}
+			{:else if resType === 'course'}
 				{#if disabled}
 					<input
 						type="hidden"
@@ -148,7 +153,14 @@
 						value={pulley == null ? null : pulley ? 'on' : 'off'}
 					/>
 				{/if}
-				<input type="radio" id="formPulley" name="pulley" value="on" checked={pulley} {disabled} />
+				<input
+					type="radio"
+					id="formPulley"
+					name="pulley"
+					value="on"
+					checked={pulley}
+					{disabled}
+				/>
 				<label for="formPulley">pulley</label>
 				<input
 					type="radio"
@@ -161,48 +173,54 @@
 				<label for="formNoPulley">no pulley</label>
 			{/if}
 		</div>
-		<div>
-			{#if disabled}
-				<input type="hidden" name="extraBottomWeight" value={extraBottomWeight ? 'on' : 'off'} />
-			{/if}
-			<input
-				type="checkbox"
-				id="formBottomWeight"
-				name="extraBottomWeight"
-				checked={extraBottomWeight}
-				{disabled}
-				tabindex="5"
-			/>
-			<label for="formBottomWeight">extra bottom weight</label>
-		</div>
-		<div>
-			{#if disabled}
-				<input type="hidden" name="bottomPlate" value={bottomPlate ? 'on' : 'off'} />
-			{/if}
-			<input
-				type="checkbox"
-				id="formBottomPlate"
-				name="bottomPlate"
-				checked={bottomPlate}
-				{disabled}
-				tabindex="5"
-			/>
-			<label for="formBottomPlate">bottom plate</label>
-		</div>
-		<div>
-			{#if disabled}
-				<input type="hidden" name="largeBuoy" value={largeBuoy ? 'on' : 'off'} />
-			{/if}
-			<input
-				type="checkbox"
-				id="formLargeBuoy"
-				name="largeBuoy"
-				checked={largeBuoy}
-				{disabled}
-				tabindex="5"
-			/>
-			<label for="formLargeBuoy">large buoy</label>
-		</div>
+		{#if resType !== 'cbs'}
+			<div>
+				{#if disabled}
+					<input
+						type="hidden"
+						name="extraBottomWeight"
+						value={extraBottomWeight ? 'on' : 'off'}
+					/>
+				{/if}
+				<input
+					type="checkbox"
+					id="formBottomWeight"
+					name="extraBottomWeight"
+					checked={extraBottomWeight}
+					{disabled}
+					tabindex="5"
+				/>
+				<label for="formBottomWeight">extra bottom weight</label>
+			</div>
+			<div>
+				{#if disabled}
+					<input type="hidden" name="bottomPlate" value={bottomPlate ? 'on' : 'off'} />
+				{/if}
+				<input
+					type="checkbox"
+					id="formBottomPlate"
+					name="bottomPlate"
+					checked={bottomPlate}
+					{disabled}
+					tabindex="5"
+				/>
+				<label for="formBottomPlate">bottom plate</label>
+			</div>
+			<div>
+				{#if disabled}
+					<input type="hidden" name="largeBuoy" value={largeBuoy ? 'on' : 'off'} />
+				{/if}
+				<input
+					type="checkbox"
+					id="formLargeBuoy"
+					name="largeBuoy"
+					checked={largeBuoy}
+					{disabled}
+					tabindex="5"
+				/>
+				<label for="formLargeBuoy">large buoy</label>
+			</div>
+		{/if}
 		<div>
 			{#if disabled}
 				<input type="hidden" name="O2OnBuoy" value={o2OnBuoy ? 'on' : 'off'} />
