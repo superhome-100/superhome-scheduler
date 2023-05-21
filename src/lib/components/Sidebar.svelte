@@ -145,10 +145,7 @@
 	divClass="overflow-y-auto z-50 p-4 bg-white dark:bg-[#252515]"
 >
 	<div class="flex items-center">
-		<CloseButton
-			on:click={() => (drawerHidden = true)}
-			class="mb-4 dark:text-white lg:hidden"
-		/>
+		<CloseButton on:click={() => (drawerHidden = true)} class="mb-4 dark:text-white lg:hidden" />
 	</div>
 	<Sidebar asideClass="w-54">
 		<SidebarWrapper divClass="overflow-y-auto py-4 px-3 rounded">
@@ -168,11 +165,7 @@
 								{spanClass}
 								on:click={() => downloadDatabase('main', 'Reservations')}
 							/>
-							<SidebarItem
-								label="main"
-								{spanClass}
-								on:click={() => downloadDatabase('main')}
-							/>
+							<SidebarItem label="main" {spanClass} on:click={() => downloadDatabase('main')} />
 							<SidebarItem
 								label="backup-day-1"
 								{spanClass}

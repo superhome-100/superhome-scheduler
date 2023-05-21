@@ -2,6 +2,7 @@
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
 	import { canSubmit, buoys, reservations, user } from '$lib/stores.js';
 	import { adminView, buoyDesc } from '$lib/utils.js';
+	import { Settings } from '$lib/settings.js';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 
 	export let rsv = null;
@@ -92,6 +93,9 @@
 			>
 				<option value="autonomous">Autonomous</option>
 				<option value="course">Course/Coaching</option>
+				{#if Settings.get('cbsAvailable', date)}
+					<option value="cbs">CBS</option>
+				{/if}
 			</select>
 		</div>
 		{#if autoOrCourse == 'course'}

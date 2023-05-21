@@ -151,7 +151,7 @@ function simulateDiveGroup(sub, existing) {
 	// add fields that db normally adds to this submission and its buddies
 	let owner = { ...sub };
 	let simId = -1;
-	owner.buoy = 'auto';
+	owner.buoy = owner.resType === 'cbs' ? 'CBS' : 'auto';
 	owner.id = simId--;
 	owner.user = { id: owner.user };
 	let simBuds = [];

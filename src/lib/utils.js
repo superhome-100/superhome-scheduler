@@ -150,11 +150,12 @@ export function parseSettingsTbl(settingsTbl) {
 		}
 		if (
 			[
-				'openForBusiness',
-				'poolBookable',
+				'cbsAvailable',
 				'classroomBookable',
+				'openForBusiness',
 				'openwaterAmBookable',
-				'openwaterPmBookable'
+				'openwaterPmBookable',
+				'poolBookable'
 			].includes(name)
 		) {
 			v = v === 'true';

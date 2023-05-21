@@ -247,10 +247,7 @@ function getTimeOverlapFilters(settings, rsv) {
 		}
 		if (slots.beforeStart.length > 0 && slots.afterEnd.length > 0) {
 			timeFilt.push({
-				$all: [
-					{ startTime: { $any: slots.beforeStart } },
-					{ endTime: { $any: slots.afterEnd } }
-				]
+				$all: [{ startTime: { $any: slots.beforeStart } }, { endTime: { $any: slots.afterEnd } }]
 			});
 		}
 		filters.push({
@@ -336,6 +333,10 @@ export async function submitReservation(formData) {
 	// openwater bookings require the admin to manually confirm
 	sub.status = sub.category === 'openwater' ? 'pending' : 'confirmed';
 
+	if (sub.resType === 'cbs') {
+		sub.buoy = 'CBS';
+	}
+
 	// since lanes is of type 'multiple' in the db, it cant have a
 	// default value, so we set the default here
 	sub.lanes = ['auto'];
@@ -385,7 +386,7 @@ export async function updateReservation(formData) {
 
 	sub.owner = true; // the submitter assumes ownership
 	sub.status = sub.category === 'openwater' ? 'pending' : 'confirmed';
-	sub.buoy = 'auto'; // assignment reverts to auto when rsv is modified
+	sub.buoy = sub.resType === 'cbs' ? 'CBS' : 'auto'; // assignment reverts to auto when rsv is modified
 
 	let buddySet = new Set(sub.buddies);
 	for (let id of oldBuddies) {
