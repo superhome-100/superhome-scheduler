@@ -247,7 +247,10 @@ function getTimeOverlapFilters(settings, rsv) {
 		}
 		if (slots.beforeStart.length > 0 && slots.afterEnd.length > 0) {
 			timeFilt.push({
-				$all: [{ startTime: { $any: slots.beforeStart } }, { endTime: { $any: slots.afterEnd } }]
+				$all: [
+					{ startTime: { $any: slots.beforeStart } },
+					{ endTime: { $any: slots.afterEnd } }
+				]
 			});
 		}
 		filters.push({
@@ -362,9 +365,10 @@ export async function updateReservation(formData) {
 	oldBuddies = oldBuddies ? oldBuddies : [];
 
 	let orig = await xata.db.Reservations.read(sub.id);
+
 	addMissingFields(sub, orig);
 
-	// first check that the owner and associated buddies do not have existing
+	// first check that the submitter and associated buddies do not have existing
 	// reservations that will overlap with the updated reservation
 	let checkExisting = [sub.user, ...sub.buddies];
 	let existing = await getOverlappingReservations(sub, checkExisting);
@@ -379,8 +383,9 @@ export async function updateReservation(formData) {
 		}
 	}
 
+	sub.owner = true; // the submitter assumes ownership
 	sub.status = sub.category === 'openwater' ? 'pending' : 'confirmed';
-	sub.buoy = 'auto';
+	sub.buoy = 'auto'; // assignment reverts to auto when rsv is modified
 
 	let buddySet = new Set(sub.buddies);
 	for (let id of oldBuddies) {
@@ -393,7 +398,7 @@ export async function updateReservation(formData) {
 
 	if (buddySet.size > 0) {
 		let existingBuddies;
-		let { user, buddies, id, ...common } = sub;
+		let { user, buddies, ...common } = sub;
 		if (oldBuddies.length > 0) {
 			existingBuddies = await getOverlappingReservations(orig, oldBuddies);
 		}
