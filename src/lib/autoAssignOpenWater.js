@@ -48,8 +48,8 @@ function sortBuddyGroups(buddyGrps) {
 function handlePreAssignedBuoys(buddyGrps, buoys) {
 	for (let grp of buddyGrps) {
 		let buoy = grp.reduce((b, rsv) => (rsv.buoy === 'auto' ? b : rsv.buoy), 'auto');
-		for (let i = 0; i < grp.length; i++) {
-			grp[i] = { ...grp[i], buoy };
+		for (let rsv of grp) {
+			rsv.buoy = buoy;
 		}
 	}
 	let asn = buoys.reduce((a, b) => {
