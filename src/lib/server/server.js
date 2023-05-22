@@ -247,7 +247,10 @@ function getTimeOverlapFilters(settings, rsv) {
 		}
 		if (slots.beforeStart.length > 0 && slots.afterEnd.length > 0) {
 			timeFilt.push({
-				$all: [{ startTime: { $any: slots.beforeStart } }, { endTime: { $any: slots.afterEnd } }]
+				$all: [
+					{ startTime: { $any: slots.beforeStart } },
+					{ endTime: { $any: slots.afterEnd } }
+				]
 			});
 		}
 		filters.push({
@@ -285,7 +288,11 @@ async function getExistingRsvs(entries) {
 		filters.$not = { $any: ids };
 	}
 
-	return await xata.db.Reservations.filter(filters).getAll();
+	let existing = await xata.db.Reservations.filter(filters).getAll();
+	// remove const
+	return existing.map((rsv) => {
+		return { ...rsv };
+	});
 }
 
 async function querySpaceAvailable(entries, remove = []) {
