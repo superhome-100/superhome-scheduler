@@ -1,45 +1,31 @@
-# create-svelte
+# SuperHOME Scheduler 
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
+[Production Site](https://superhome-scheduler.vercel.app)
 
-## Creating a project
+Built with [sveltekit](https://kit.svelte.dev/) and [tailwind](https://tailwindcss.com)
 
-If you're seeing this, you've probably already done this step. Congrats!
+Uses [Facebook Login](https://developers.facebook.com/docs/facebook-login/web/)
+
+Serverless hosting on [vercel](https://vercel.com)
+
+Database on [xata](https://xata.io)
+
+## Install 
 
 ```bash
-# create a new project in the current directory
-npm create svelte@latest
-
-# create a new project in my-app
-npm create svelte@latest my-app
+cd superhome-scheduler
+npm install
 ```
+
+Facebook Login requires https.  Additional dependencies may need to be installed to enable this in your dev environment.
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
 ```bash
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
-
-To create a production version of your app:
-
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
-
-
-
-# Dependencies
+## Dependencies
 
 [`tea/cli`] will automagically make these available to your environment.
 
@@ -49,3 +35,14 @@ You can preview the production build with `npm run preview`.
 | npmjs.com                         | =8.19.3   |
 
 [`tea/cli`]: https://github.com/teaxyz/cli
+
+## Documentation
+
+The scheduler supports three `categories` of reservations: pool, openwater, and classroom.
+
+Additionally there are three possible reservation types, or `resTypes`: autonomous, course, and cbs.
+
+Client-side code consists of three pages: root, multi-day, and single-day.  
+- root displays the user's own reservations
+- multi-day displays a monthly calendar view, with a separate display for each `category`, showing the number of reservations booked on each day of the month.
+- single-day displays a detailed view of the reservations on a given day
