@@ -12,6 +12,8 @@ export async function POST({ request }) {
 			category: 'openwater',
 			status: { $any: ['pending', 'confirmed'] }
 		}).getAll();
+        // remove const
+        rsvs = rsvs.map(rsv => { return {...rsv}});
 		let updates = [];
 		if (lock) {
 			let buoys = await xata.db.Buoys.getAll();
