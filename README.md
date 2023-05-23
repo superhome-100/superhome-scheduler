@@ -10,6 +10,8 @@ Database on [xata](https://xata.io)
 
 ## Install 
 
+Setup [tea/cli](https://tea.xyz) first.
+
 ```bash
 cd superhome-scheduler
 npm install
