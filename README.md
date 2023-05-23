@@ -1,7 +1,5 @@
 # SuperHOME Scheduler 
 
-[Production Site](https://superhome-scheduler.vercel.app)
-
 Built with [sveltekit](https://kit.svelte.dev/) and [tailwind](https://tailwindcss.com)
 
 Uses [Facebook Login](https://developers.facebook.com/docs/facebook-login/web/)
