@@ -100,12 +100,7 @@
 		</div>
 		{#if resType == 'course'}
 			<div>
-				<select
-					id="formNumStudents"
-					disabled={viewOnly}
-					name="numStudents"
-					value={numStudents}
-				>
+				<select id="formNumStudents" disabled={viewOnly} name="numStudents" value={numStudents}>
 					{#each [...Array(restrictModify ? numStudents : 4).keys()] as n}
 						<option value={n + 1}>{n + 1}</option>
 					{/each}
@@ -153,14 +148,7 @@
 						value={pulley == null ? null : pulley ? 'on' : 'off'}
 					/>
 				{/if}
-				<input
-					type="radio"
-					id="formPulley"
-					name="pulley"
-					value="on"
-					checked={pulley}
-					{disabled}
-				/>
+				<input type="radio" id="formPulley" name="pulley" value="on" checked={pulley} {disabled} />
 				<label for="formPulley">pulley</label>
 				<input
 					type="radio"
@@ -176,11 +164,7 @@
 		{#if resType !== 'cbs'}
 			<div>
 				{#if disabled}
-					<input
-						type="hidden"
-						name="extraBottomWeight"
-						value={extraBottomWeight ? 'on' : 'off'}
-					/>
+					<input type="hidden" name="extraBottomWeight" value={extraBottomWeight ? 'on' : 'off'} />
 				{/if}
 				<input
 					type="checkbox"

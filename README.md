@@ -1,4 +1,4 @@
-# SuperHOME Scheduler 
+# SuperHOME Scheduler
 
 Built with [sveltekit](https://kit.svelte.dev/) and [tailwind](https://tailwindcss.com)
 
@@ -8,7 +8,7 @@ Serverless hosting on [vercel](https://vercel.com)
 
 Database on [xata](https://xata.io)
 
-## Install 
+## Install
 
 Setup [tea/cli](https://tea.xyz) first.
 
@@ -17,7 +17,7 @@ cd superhome-scheduler
 npm install
 ```
 
-Facebook Login requires https.  Additional dependencies may need to be installed to enable this in your dev environment.
+Facebook Login requires https. Additional dependencies may need to be installed to enable this in your dev environment.
 
 ## Developing
 
@@ -29,10 +29,10 @@ npm run dev
 
 [`tea/cli`] will automagically make these available to your environment.
 
-| Project                           |  Version  |
-|-----------------------------------|-----------|
-| nodejs.org                        | =18.15.0  |
-| npmjs.com                         | =8.19.3   |
+| Project    | Version  |
+| ---------- | -------- |
+| nodejs.org | =18.15.0 |
+| npmjs.com  | =8.19.3  |
 
 [`tea/cli`]: https://github.com/teaxyz/cli
 
@@ -42,7 +42,8 @@ The scheduler supports three `categories` of reservations: pool, openwater, and 
 
 Additionally there are three possible reservation types, or `resTypes`: autonomous, course, and cbs.
 
-Client-side code consists of three pages: root, multi-day, and single-day.  
+Client-side code consists of three pages: root, multi-day, and single-day.
+
 - root displays the user's own reservations
 - multi-day displays a monthly calendar view, with a separate display for each `category`, showing the number of reservations booked on each day of the month.
 - single-day displays a detailed view of the reservations on a given day
