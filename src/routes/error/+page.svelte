@@ -10,7 +10,7 @@
 </script>
 
 <p style="text-align: center">
-	Sorry! Seems we're having trouble communicating with the server right now. Please try again later.
+	Sorry! We're having trouble communicating with the server right now. Please try again later.
 </p>
 <div style="width: 100%; text-align: center">
 	<a href="/">
