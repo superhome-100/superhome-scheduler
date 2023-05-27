@@ -60,7 +60,7 @@
 
 		let minDateStr = datetimeToLocalDateStr(new Date());
 		data = await post('getAppData', { user: $user.id, minDateStr });
-		console.log('getAppData: ', data);
+
 		if (data.status === 'success') {
 			$users = data.usersById;
 			$user = $users[$user.id];
@@ -101,7 +101,7 @@
 			$loginState = 'in';
 			let minDateStr = oneWeekAgo();
 			let data = await post('getAppData', { user: $user.id, minDateStr });
-			console.log('getAppData: ', data);
+
 			if (data.status === 'error') {
 				throw new Error('Could not read app data from database');
 			}
