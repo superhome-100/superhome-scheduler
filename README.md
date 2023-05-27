@@ -25,6 +25,19 @@ Facebook Login requires https. Additional dependencies may need to be installed 
 npm run dev
 ```
 
+## Tasks
+
+# Setup
+
+This will configure your connection to the database
+
+```sh
+npm install -g @xata.io/cli@latest
+npm install
+xata auth login
+xata init
+```
+
 ## Dependencies
 
 [`tea/cli`] will automagically make these available to your environment.
