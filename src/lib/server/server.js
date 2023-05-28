@@ -1,4 +1,4 @@
-import { getXataClient, getXataBranch } from '$lib/server/xata.js';
+import { getXataClient, getXataBranch } from '$lib/server/xata-old';
 import { addMissingFields, convertReservationTypes } from '$lib/utils.js';
 import { buddysRsv, checkSpaceAvailable } from '$lib/validationUtils.js';
 import { redirect } from '@sveltejs/kit';
@@ -24,71 +24,6 @@ export async function getBackUpZip(branch) {
 	return zip;
 }
 
-export async function getReservationsCsv(branch) {
-	let client = getXataBranch(branch);
-	let fields = [
-		'user.name',
-		'user.nickname',
-		'date',
-		'category',
-		'price',
-		'status',
-		'resType',
-		'numStudents',
-		'owTime',
-		'startTime',
-		'endTime'
-	];
-	let records = await client.db.Reservations.select(fields).getAll();
-
-	records = records.map((rsv) => {
-		let numStudents = rsv.numStudents;
-		if (numStudents == null) {
-			numStudents = 1;
-		}
-		let owTime = rsv.owTime;
-		if (owTime == null) {
-			if (timeStrToMin(rsv.startTime) < 720) {
-				owTime = 'AM';
-			} else {
-				owTime = 'PM';
-			}
-		}
-		return { ...rsv, owTime, numStudents };
-	});
-
-	const csv = new ObjectsToCsv(
-		records.map((ent) => {
-			let {
-				user,
-				date,
-				category,
-				price,
-				status,
-				resType,
-				numStudents,
-				owTime,
-				startTime,
-				endTime
-			} = ent;
-			return {
-				name: user.name,
-				nickname: user.nickname,
-				date,
-				category,
-				price,
-				status,
-				resType,
-				numStudents,
-				owTime,
-				startTime,
-				endTime
-			};
-		})
-	);
-	return await csv.toString();
-}
-
 export async function getSettings() {
 	let settingsTbl = await xata.db.Settings.getAll();
 	let buoys = await xata.db.Buoys.getAll();
@@ -108,20 +43,6 @@ export async function createSession(user) {
 	return await xata.db.Sessions.create({
 		user: user.id
 	});
-}
-
-export async function getReservationsSince(minDateStr) {
-	//note: we include rejected and canceled rsvs here so that:
-	//  - [rejected rsvs]: users can see which of their rsvs have been rejected
-	//  in MyReservations page
-	//  - [canceled rsvs]: in refreshAppState fn, clients can detect when other
-	//  users have canceled an rsv and remove it from their cache
-	let reservations = await xata.db.Reservations.select(['*', 'user'])
-		.filter({ date: { $ge: minDateStr } })
-		.sort('date', 'asc')
-		.getAll();
-
-	return reservations;
 }
 
 function getTimeSlots(settings, date, category, start, end) {

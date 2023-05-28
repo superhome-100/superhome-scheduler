@@ -1,4 +1,5 @@
-import { getReservationsCsv, getBackUpZip } from '$lib/server/server.js';
+import { getBackUpZip } from '$lib/server/server.js';
+import { getReservationsCsv } from '$lib/server/reservation';
 
 export async function POST({ request }) {
 	let { branch, table } = await request.json();
