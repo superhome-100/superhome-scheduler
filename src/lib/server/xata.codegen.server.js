@@ -33,7 +33,13 @@ const tables = [
 			{ name: 'O2OnBuoy', type: 'bool' },
 			{ name: 'buoy', type: 'string', defaultValue: 'auto' },
 			{ name: 'room', type: 'string', defaultValue: 'auto' },
-			{ name: 'price', type: 'int' }
+			{ name: 'price', type: 'int' },
+			{
+				name: 'updatedAt',
+				type: 'datetime',
+				notNull: true,
+				defaultValue: 'now'
+			}
 		]
 	},
 	{
@@ -116,7 +122,8 @@ const tables = [
 			{ name: 'coachPool', type: 'int' },
 			{ name: 'coachClassroom', type: 'int' },
 			{ name: 'autoOW', type: 'int' },
-			{ name: 'autoPool', type: 'int' }
+			{ name: 'autoPool', type: 'int' },
+			{ name: 'cbsOW', type: 'int' }
 		]
 	},
 	{
@@ -136,7 +143,8 @@ const tables = [
 /** @type { import('../../client/src').ClientConstructor<{}> } */
 const DatabaseClient = buildClient();
 const defaultOptions = {
-	databaseURL: 'https://Michael-Horgan-s-workspace-pmg7q5.us-west-2.xata.sh/db/superhome-scheduler'
+	databaseURL:
+		'https://Michael-Horgan-s-workspace-pmg7q5.us-west-2.xata.sh/db/superhome-scheduler'
 };
 /** @typedef { import('./types').DatabaseSchema } DatabaseSchema */
 /** @extends DatabaseClient<DatabaseSchema> */
