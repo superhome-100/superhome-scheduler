@@ -8,6 +8,8 @@ import { Settings } from '$lib/server/settings.js';
 import ObjectsToCsv from 'objects-to-csv';
 import JSZip from 'jszip';
 
+import { getUserById } from './user';
+
 const xata = getXataClient();
 
 export async function getBackUpZip(branch) {
@@ -108,10 +110,6 @@ export async function createSession(user) {
 	});
 }
 
-export async function getUser(id) {
-	return await xata.db.Users.read(id);
-}
-
 export async function getReservationsSince(minDateStr) {
 	//note: we include rejected and canceled rsvs here so that:
 	//  - [rejected rsvs]: users can see which of their rsvs have been rejected
@@ -124,41 +122,6 @@ export async function getReservationsSince(minDateStr) {
 		.getAll();
 
 	return reservations;
-}
-
-export async function getAllUsers() {
-	let users = await xata.db.Users.getAll();
-	return users;
-}
-
-export async function addUser(userId, userName) {
-	const record = await xata.db.Users.create({
-		facebookId: userId,
-		name: userName,
-		nickname: userName,
-		status: 'disabled'
-	});
-	await xata.db.UserPriceTemplates.create({ user: record.id, priceTemplate: 'regular' });
-	return record;
-}
-
-export async function updateNickname(userId, nickname) {
-	const record = await xata.db.Users.update(userId, { nickname });
-	return record;
-}
-
-export async function authenticateUser(userId, userName) {
-	let record;
-	let records = await xata.db.Users.filter({ facebookId: userId }).getMany({
-		pagination: { size: 1 }
-	});
-	if (records.length == 0) {
-		/* user does not exist yet */
-		record = await addUser(userId, userName);
-	} else {
-		record = records[0];
-	}
-	return record;
 }
 
 function getTimeSlots(settings, date, category, start, end) {
@@ -317,8 +280,8 @@ async function querySpaceAvailable(entries, remove = []) {
 export async function submitReservation(formData) {
 	let sub = convertReservationTypes(Object.fromEntries(formData));
 
-	let user = await xata.db.Users.read(sub.user);
-	if (user.status === 'disabled') {
+	const user = await getUserById(sub.user);
+	if (user && user.status === 'disabled') {
 		return {
 			status: 'error',
 			code: 'USER_DISABLED'
