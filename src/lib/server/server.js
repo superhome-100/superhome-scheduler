@@ -1,4 +1,5 @@
-import { getXataClient, getXataBranch } from '$lib/server/xata-old';
+import {  getXataBranch } from '$lib/server/xata-old';
+import { getXataClient } from '$lib/server/xata';
 import { addMissingFields, convertReservationTypes } from '$lib/utils.js';
 import { buddysRsv, checkSpaceAvailable } from '$lib/validationUtils.js';
 import { redirect } from '@sveltejs/kit';
