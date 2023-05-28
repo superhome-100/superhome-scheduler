@@ -210,7 +210,10 @@ function getTimeOverlapFilters(settings, rsv) {
 		}
 		if (slots.beforeStart.length > 0 && slots.afterEnd.length > 0) {
 			timeFilt.push({
-				$all: [{ startTime: { $any: slots.beforeStart } }, { endTime: { $any: slots.afterEnd } }]
+				$all: [
+					{ startTime: { $any: slots.beforeStart } },
+					{ endTime: { $any: slots.afterEnd } }
+				]
 			});
 		}
 		filters.push({
@@ -360,14 +363,19 @@ export async function updateReservation(formData) {
 		buddySet.add(id);
 	}
 
-	let createdAt = new Date();
-	let modify = [{ ...sub, createdAt }];
+	let updatedAt = new Date();
+	let modify = [{ ...sub, updatedAt }];
 	let create = [];
 	let cancel = [];
 
 	if (buddySet.size > 0) {
 		let existingBuddies;
-		let { user, buddies, id, ...common } = sub;
+		let { user, buddies, ...common } = sub;
+
+		delete common.id;
+		delete common.createdAt;
+		delete common.updatedAt;
+
 		if (oldBuddies.length > 0) {
 			existingBuddies = await getOverlappingReservations(orig, oldBuddies);
 		}
@@ -379,7 +387,7 @@ export async function updateReservation(formData) {
 				let bg = [user, ...buddies.filter((bIdp) => bIdp != bId)];
 				let entry = {
 					...common,
-					createdAt,
+					updatedAt,
 					id: rsvId,
 					user: bId,
 					buddies: bg,
@@ -391,7 +399,8 @@ export async function updateReservation(formData) {
 				let bg = [user, ...buddies.filter((bIdp) => bIdp != bId)];
 				let entry = {
 					...common,
-					createdAt,
+					updatedAt,
+					createdAt: updatedAt,
 					user: bId,
 					buddies: bg,
 					owner: false
