@@ -3,9 +3,10 @@ import {
 	updateReservation,
 	cancelReservation,
 	adminUpdate,
-	updateNickname,
 	insertNotificationReceipt
 } from '$lib/server/server.js';
+
+import { updateNickname } from '$lib/server/user';
 
 const adminUpdateGeneric = async ({ request }) => {
 	const data = await request.formData();

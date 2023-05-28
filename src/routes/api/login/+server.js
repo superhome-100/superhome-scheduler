@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { authenticateUser, createSession } from '$lib/server/server.js';
+import { createSession } from '$lib/server/server.js';
+import { authenticateUser } from '$lib/server/user';
 
 export async function POST({ cookies, request }) {
 	try {
