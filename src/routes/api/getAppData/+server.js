@@ -1,8 +1,7 @@
 import { json } from '@sveltejs/kit';
-import { getReservationsSince, getUserActiveNotifications } from '$lib/server/server.js';
-
+import { getUserActiveNotifications } from '$lib/server/server.js';
+import { getReservationsSince } from '$lib/server/reservation';
 import { getAllUsers } from '../../../lib/server/user';
-import { notifications, reservations } from '../../../lib/stores';
 
 export async function POST({ request }) {
 	try {
