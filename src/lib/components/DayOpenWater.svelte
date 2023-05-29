@@ -267,7 +267,7 @@
 										class="overflow-hidden {rsvClass(rsv)}"
 										style="margin: {rowHeights[name].margins[i]}"
 									>
-										{displayTag(rsv)}
+										{displayTag(rsv, $viewMode === 'admin')}
 									</div>
 								</div>
 							{/each}
