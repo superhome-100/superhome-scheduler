@@ -116,12 +116,12 @@ export function updateReservationFormData(formData) {
 	formData.set('buddies', JSON.stringify(buddies));
 }
 
-export const displayTag = (rsv) => {
+export const displayTag = (rsv, admin) => {
 	let tag = rsv.user.nickname;
 	if (rsv.resType === 'course') {
 		tag += ' +' + rsv.numStudents;
 	}
-	if (rsv.category === 'openwater') {
+	if (rsv.category === 'openwater' && admin) {
 		tag += ' - ' + rsv.maxDepth + 'm';
 	}
 	return tag;
