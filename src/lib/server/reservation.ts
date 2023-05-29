@@ -11,6 +11,7 @@ const client = getXataClient();
 export async function getReservationsCsv(branch: string) {
 	const client = getXataBranch(branch);
 	const fields = [
+		'user.id',
 		'user.name',
 		'user.nickname',
 		'date',
@@ -45,7 +46,7 @@ export async function getReservationsCsv(branch: string) {
 		records.map((ent) => {
 			return {
 				..._.omit(ent, ['user']),
-				name: ent.user?.name || 'no name',
+				name: ent.user?.name || ent.user.id,
 				nickname: ent.user?.nickname || 'no nickname'
 			};
 		})
