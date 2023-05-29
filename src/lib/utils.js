@@ -116,7 +116,7 @@ export function updateReservationFormData(formData) {
 	formData.set('buddies', JSON.stringify(buddies));
 }
 
-export const displayTag = (rsv, admin = false) => {
+export const displayTag = (rsv, admin) => {
 	let tag = rsv.user.nickname;
 	if (rsv.resType === 'course') {
 		tag += ' +' + rsv.numStudents;
