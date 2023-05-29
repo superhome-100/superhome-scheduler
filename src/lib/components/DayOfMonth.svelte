@@ -6,28 +6,9 @@
 	export let rsvs;
 	export let category;
 
-	const nDisplay = 3;
-
 	function handleClick() {
 		$viewedDate = date;
 		goto('/single-day/{category}');
-	}
-
-	function getDisplayTags(rsvs) {
-		let tags = [];
-		let N = rsvs.length > nDisplay + 1 ? nDisplay : rsvs.length;
-		for (let i = 0; i < N; i++) {
-			let tag = rsvs[i].user.name;
-			if (rsvs[i].resType === 'course') {
-				tag += ' +' + rsvs[i].numStudents;
-			}
-			tags.push(tag);
-		}
-		if (rsvs.length > N) {
-			let lastTag = '+ ' + (rsvs.length - N) + ' more...';
-			tags.push(lastTag);
-		}
-		return tags;
 	}
 
 	const catBg = (cat) =>
