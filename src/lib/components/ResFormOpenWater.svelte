@@ -59,7 +59,9 @@
 		{#if resType === 'course'}
 			<div><label for="formNumStudents"># Students</label></div>
 		{/if}
-		<div><label for="formMaxDepth">Max Depth</label></div>
+		{#if !viewOnly || adminView(viewOnly)}
+			<div><label for="formMaxDepth">Max Depth</label></div>
+		{/if}
 	</div>
 
 	<div slot="categoryInputs">
@@ -100,27 +102,34 @@
 		</div>
 		{#if resType == 'course'}
 			<div>
-				<select id="formNumStudents" disabled={viewOnly} name="numStudents" value={numStudents}>
+				<select
+					id="formNumStudents"
+					disabled={viewOnly}
+					name="numStudents"
+					value={numStudents}
+				>
 					{#each [...Array(restrictModify ? numStudents : 4).keys()] as n}
 						<option value={n + 1}>{n + 1}</option>
 					{/each}
 				</select>
 			</div>
 		{/if}
-		<div>
-			<input
-				{disabled}
-				type="number"
-				id="formMaxDepth"
-				class="w-14 valid:border-gray-500 required:border-red-500"
-				min="1"
-				max={$buoys.reduce((maxv, b) => Math.max(maxv, b.maxDepth), 0)}
-				bind:value={maxDepth}
-				on:input={checkSubmit}
-				name="maxDepth"
-				required={maxDepth == undefined}
-			/><span class="ml-1 text-sm dark:text-white">meters</span>
-		</div>
+		{#if !viewOnly || adminView(viewOnly)}
+			<div>
+				<input
+					{disabled}
+					type="number"
+					id="formMaxDepth"
+					class="w-14 valid:border-gray-500 required:border-red-500"
+					min="1"
+					max={$buoys.reduce((maxv, b) => Math.max(maxv, b.maxDepth), 0)}
+					bind:value={maxDepth}
+					on:input={checkSubmit}
+					name="maxDepth"
+					required={maxDepth == undefined}
+				/><span class="ml-1 text-sm dark:text-white">meters</span>
+			</div>
+		{/if}
 	</div>
 	<div
 		class="[&>div]:whitespace-nowrap [&>div]:ml-[20%] [&>div]:sm:ml-[30%] [&>div]:xs:mr-4 [&>div]:mr-2 [&>div]:text-sm [&>div]:dark:text-white text-left block-inline"
@@ -148,7 +157,14 @@
 						value={pulley == null ? null : pulley ? 'on' : 'off'}
 					/>
 				{/if}
-				<input type="radio" id="formPulley" name="pulley" value="on" checked={pulley} {disabled} />
+				<input
+					type="radio"
+					id="formPulley"
+					name="pulley"
+					value="on"
+					checked={pulley}
+					{disabled}
+				/>
 				<label for="formPulley">pulley</label>
 				<input
 					type="radio"
@@ -164,7 +180,11 @@
 		{#if resType !== 'cbs'}
 			<div>
 				{#if disabled}
-					<input type="hidden" name="extraBottomWeight" value={extraBottomWeight ? 'on' : 'off'} />
+					<input
+						type="hidden"
+						name="extraBottomWeight"
+						value={extraBottomWeight ? 'on' : 'off'}
+					/>
 				{/if}
 				<input
 					type="checkbox"
