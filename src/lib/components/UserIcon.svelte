@@ -10,7 +10,8 @@
 	};
 </script>
 
-<div on:click={showUpdateForm}>
+<!--div on:click={showUpdateForm}-->
+<div>
 	{#if $profileSrc}
 		<img class="rounded-[50%] w-10" alt="profilePicture" src={$profileSrc} />
 	{:else if $user}
