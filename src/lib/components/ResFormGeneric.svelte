@@ -1,5 +1,7 @@
-<script>
-	import { canSubmit, user, users } from '$lib/stores.js';
+<script lang="ts">
+	import type { ReservationData } from '$types';
+	import { ReservationType } from '$types';
+	import { canSubmit, user, users } from '$lib/stores';
 	import { Settings } from '$lib/settings.js';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes.js';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
@@ -8,9 +10,9 @@
 	import PlusIcon from '$lib/components/PlusIcon.svelte';
 	import DeleteIcon from '$lib/components/DeleteIcon.svelte';
 
-	export let rsv = null;
-	export let date;
-	export let category;
+	export let rsv: ReservationData;
+	export let date: string = rsv.date || new Date().toString();
+	export let category: ReservationType = rsv.category.toString() || ReservationType.pool;
 	export let viewOnly = false;
 	export let showBuddyFields = true;
 	export let restrictModify = false;
@@ -19,8 +21,6 @@
 
 	let status = rsv == null ? 'pending' : rsv.status;
 	let comments = rsv == null ? null : rsv.comments;
-	date = rsv == null ? date : rsv.date;
-	category = rsv == null ? category : rsv.category;
 
 	$: maxBuddies =
 		category === 'openwater'
