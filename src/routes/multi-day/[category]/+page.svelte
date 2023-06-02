@@ -8,7 +8,7 @@
 	import Chevron from '$lib/components/Chevron.svelte';
 	import { minValidDateStr } from '$lib/reservationTimes.js';
 	import { idx2month } from '$lib/datetimeUtils.js';
-	import { user, view, viewedMonth, reservations } from '$lib/stores.js';
+	import { user, view, viewedMonth, reservations } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants.js';
 
 	export let data;

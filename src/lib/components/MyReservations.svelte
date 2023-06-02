@@ -2,7 +2,7 @@
 	import { datetimeToLocalDateStr, monthIdxFromDateStr } from '$lib/datetimeUtils.js';
 	import { minuteOfDay, beforeCancelCutoff } from '$lib/reservationTimes.js';
 	import { timeStrToMin, idx2month } from '$lib/datetimeUtils.js';
-	import { user, userPastReservations, reservations } from '$lib/stores.js';
+	import { user, userPastReservations, reservations } from '$lib/stores';
 	import { getContext } from 'svelte';
 	import Modal from './Modal.svelte';
 	import CancelDialog from './CancelDialog.svelte';

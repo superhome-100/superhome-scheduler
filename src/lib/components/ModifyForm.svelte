@@ -6,7 +6,7 @@
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { popup } from './Popup.svelte';
-	import { canSubmit, user, users, reservations, buoys } from '$lib/stores.js';
+	import { canSubmit, user, users, reservations, buoys } from '$lib/stores';
 	import { beforeCancelCutoff, beforeResCutoff } from '$lib/reservationTimes.js';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
 	import { Settings } from '$lib/settings.js';

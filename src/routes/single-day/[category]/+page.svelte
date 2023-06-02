@@ -8,7 +8,7 @@
 	import { validReservationDate, minValidDate } from '$lib/reservationTimes.js';
 	import { datetimeToLocalDateStr, month2idx, idx2month } from '$lib/datetimeUtils.js';
 	import Modal from '$lib/components/Modal.svelte';
-	import { user, view, viewMode, viewedDate, reservations } from '$lib/stores.js';
+	import { user, view, viewMode, viewedDate, reservations } from '$lib/stores';
 	import { Settings } from '$lib/settings.js';
 	import { CATEGORIES } from '$lib/constants.js';
 	import { toast } from 'svelte-french-toast';

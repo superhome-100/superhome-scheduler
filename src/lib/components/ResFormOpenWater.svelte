@@ -1,6 +1,6 @@
 <script>
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
-	import { canSubmit, buoys, reservations, user } from '$lib/stores.js';
+	import { canSubmit, buoys, reservations, user } from '$lib/stores';
 	import { adminView, buoyDesc } from '$lib/utils.js';
 	import { Settings } from '$lib/settings.js';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
