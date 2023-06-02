@@ -1,7 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 	import Nickname from '$lib/components/Nickname.svelte';
-	import { profileSrc, user } from '$lib/stores.js';
+	import { profileSrc, user } from '$lib/stores';
 
 	const { open } = getContext('simple-modal');
 

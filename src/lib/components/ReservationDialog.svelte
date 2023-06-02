@@ -2,7 +2,7 @@
 	import { getContext } from 'svelte';
 	import ReservationForm from './ReservationForm.svelte';
 	import ReservationButton from './ReservationButton.svelte';
-	import { reservations } from '$lib/stores.js';
+	import { reservations } from '$lib/stores';
 	import { minValidDateStr } from '$lib/reservationTimes.js';
 	import { Settings } from '$lib/settings.js';
 

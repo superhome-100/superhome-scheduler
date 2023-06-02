@@ -1,7 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { user, users, reservations } from '$lib/stores.js';
+	import { user, users, reservations } from '$lib/stores';
 	import { beforeCancelCutoff } from '$lib/reservationTimes.js';
 	import { Settings } from '$lib/settings.js';
 	import { toast } from 'svelte-french-toast';

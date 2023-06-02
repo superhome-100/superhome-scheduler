@@ -17,7 +17,7 @@
 	import UserIcon from '$lib/components/UserIcon.svelte';
 	import Toggle from '$lib/components/Toggle.svelte';
 	import { sineIn } from 'svelte/easing';
-	import { loginState, user, view, viewMode } from '$lib/stores.js';
+	import { loginState, user, view, viewMode } from '$lib/stores';
 	import { toast } from 'svelte-french-toast';
 	import { logout } from '$lib/authentication.js';
 	import { page } from '$app/stores';

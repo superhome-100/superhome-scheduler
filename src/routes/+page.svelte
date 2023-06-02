@@ -5,7 +5,7 @@
 	import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs.js';
 	import { minValidDateStr } from '$lib/reservationTimes.js';
 	import { Settings } from '$lib/settings.js';
-	import { user } from '$lib/stores.js';
+	import { user } from '$lib/stores';
 </script>
 
 {#if $user != null}

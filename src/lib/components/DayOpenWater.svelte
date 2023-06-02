@@ -7,7 +7,7 @@
 		user,
 		viewMode,
 		viewedDate
-	} from '$lib/stores.js';
+	} from '$lib/stores';
 	import { datetimeToLocalDateStr as dtToLDS } from '$lib/datetimeUtils.js';
 	import { displayTag } from '$lib/utils.js';
 	import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';

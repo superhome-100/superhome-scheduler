@@ -1,6 +1,6 @@
 <script>
 	import { getContext } from 'svelte';
-	import { notifications } from '$lib/stores.js';
+	import { notifications } from '$lib/stores';
 	import NotificationPopup from '$lib/components/NotificationPopup.svelte';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
 

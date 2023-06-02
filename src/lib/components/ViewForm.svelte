@@ -5,7 +5,7 @@
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { popup } from './Popup.svelte';
-	import { reservations, user, users } from '$lib/stores.js';
+	import { reservations, user, users } from '$lib/stores';
 	import { adminView } from '$lib/utils.js';
 	import { toast } from 'svelte-french-toast';
 
