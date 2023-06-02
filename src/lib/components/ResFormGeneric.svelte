@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { ReservationData } from '$types';
-	import { ReservationType } from '$types';
+	import { ReservationCategory } from '$types';
 	import { canSubmit, user, users } from '$lib/stores';
 	import { Settings } from '$lib/settings.js';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes.js';
@@ -12,7 +12,7 @@
 
 	export let rsv: ReservationData;
 	export let date: string = rsv.date || new Date().toString();
-	export let category: ReservationType = rsv.category.toString() || ReservationType.pool;
+	export let category: ReservationCategory | string = rsv.category.toString() || ReservationCategory.pool;
 	export let viewOnly = false;
 	export let showBuddyFields = true;
 	export let restrictModify = false;
