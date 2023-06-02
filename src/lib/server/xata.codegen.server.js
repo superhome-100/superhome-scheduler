@@ -143,8 +143,7 @@ const tables = [
 /** @type { import('../../client/src').ClientConstructor<{}> } */
 const DatabaseClient = buildClient();
 const defaultOptions = {
-	databaseURL:
-		'https://Michael-Horgan-s-workspace-pmg7q5.us-west-2.xata.sh/db/superhome-scheduler'
+	databaseURL: 'https://Michael-Horgan-s-workspace-pmg7q5.us-west-2.xata.sh/db/superhome-scheduler'
 };
 /** @typedef { import('./types').DatabaseSchema } DatabaseSchema */
 /** @extends DatabaseClient<DatabaseSchema> */
