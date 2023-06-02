@@ -132,10 +132,7 @@ function getTimeOverlapFilters(settings, rsv) {
 		}
 		if (slots.beforeStart.length > 0 && slots.afterEnd.length > 0) {
 			timeFilt.push({
-				$all: [
-					{ startTime: { $any: slots.beforeStart } },
-					{ endTime: { $any: slots.afterEnd } }
-				]
+				$all: [{ startTime: { $any: slots.beforeStart } }, { endTime: { $any: slots.afterEnd } }]
 			});
 		}
 		filters.push({
