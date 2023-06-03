@@ -1,5 +1,4 @@
-import { getXataBranch } from '$lib/server/xata-old';
-import { getXataClient } from '$lib/server/xata';
+import { getXataClient } from '$lib/server/xata-old';
 import { addMissingFields, convertReservationTypes } from '$lib/utils.js';
 import { buddysRsv, checkSpaceAvailable } from '$lib/validationUtils.js';
 import { redirect } from '@sveltejs/kit';
@@ -15,7 +14,7 @@ const xata = getXataClient();
 
 export async function getBackUpZip(branch) {
 	let zip = new JSZip();
-	let client = getXataBranch(branch);
+	let client = getXataClient(branch);
 	for (let tbl of Object.keys(client.db)) {
 		const records = await client.db[tbl].getAll();
 		const csv = new ObjectsToCsv(records);
