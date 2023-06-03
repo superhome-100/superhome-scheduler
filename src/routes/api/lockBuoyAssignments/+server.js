@@ -1,4 +1,4 @@
-import { getXataClient } from '$lib/server/xata';
+import { getXataClient } from '$lib/server/xata-old';
 import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
 import { json } from '@sveltejs/kit';
 
