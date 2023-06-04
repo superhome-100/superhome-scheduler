@@ -1,15 +1,14 @@
 import { timeStrToMin } from '$lib/datetimeUtils';
-import { getXataBranch } from '$lib/server/xata-old';
+import { getXataClient } from '$lib/server/xata-old';
 import type { SelectableColumn } from '@xata.io/client';
 import type { ReservationsRecord } from './xata';
-import { getXataClient } from './xata';
 import ObjectsToCsv from 'objects-to-csv';
 import _ from 'lodash';
 
 const client = getXataClient();
 
 export async function getReservationsCsv(branch: string) {
-	const client = getXataBranch(branch);
+	const client = getXataClient(branch);
 	const fields = [
 		'user.id',
 		'user.name',

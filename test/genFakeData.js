@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { XataClient } from '../src/lib/server/xata.codegen.server.js';
 import { datetimeToLocalDateStr } from '../src/lib/datetimeUtils.js';
 import { startTimes, endTimes, minValidDate } from '../src/lib/ReservationTimes.js';
-import { settings } from '../src/lib/stores.js';
+import { settings } from '../src/lib/stores';
 import { parseSettingsTbl, checkSpaceAvailable } from '../src/lib/utils.js';
 import fs from 'fs';
 

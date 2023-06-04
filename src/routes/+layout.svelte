@@ -20,7 +20,7 @@
 		users,
 		view,
 		viewMode
-	} from '$lib/stores.js';
+	} from '$lib/stores';
 	import { augmentRsv } from '$lib/utils.js';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
 	import { loadFB, login, logout } from '$lib/authentication.js';

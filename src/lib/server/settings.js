@@ -1,5 +1,5 @@
 import { getOn } from '$lib/settings.js';
-import { getXataClient } from '$lib/server/xata';
+import { getXataClient } from '$lib/server/xata-old';
 import { parseSettingsTbl } from '$lib/utils.js';
 
 const xata = getXataClient();
