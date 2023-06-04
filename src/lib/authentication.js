@@ -1,4 +1,4 @@
-import { user, loginState, profileSrc } from '$lib/stores.js';
+import { user, loginState, profileSrc } from '$lib/stores';
 import { get } from 'svelte/store';
 import { page } from '$app/stores';
 import { goto } from '$app/navigation';

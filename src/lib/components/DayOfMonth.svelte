@@ -1,6 +1,6 @@
 <script>
 	import { goto } from '$app/navigation';
-	import { view, viewedDate } from '$lib/stores.js';
+	import { view, viewedDate } from '$lib/stores';
 
 	export let date;
 	export let rsvs;
