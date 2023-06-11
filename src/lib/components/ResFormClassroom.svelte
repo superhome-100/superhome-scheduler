@@ -2,7 +2,7 @@
 	import ResFormPool from '$lib/components/ResFormPool.svelte';
 	import type { ReservationData } from '$types';
 
-	export let rsv: ReservationData;
+	export let rsv: ReservationData | null = null;
 	export let category = 'classroom';
 	export let date: Date | null = null;
 	export let dateFn = null;
