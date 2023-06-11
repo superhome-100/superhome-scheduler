@@ -8,7 +8,7 @@
 	import { popup } from './Popup.svelte';
 	import { canSubmit, user, users, reservations, buoys } from '$lib/stores';
 	import { beforeCancelCutoff, beforeResCutoff } from '$lib/reservationTimes.js';
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
+	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { Settings } from '$lib/settings.js';
 	import {
 		checkNoOverlappingRsvs,

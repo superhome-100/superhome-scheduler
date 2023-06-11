@@ -1,4 +1,4 @@
-import * as dtu from './datetimeUtils.js';
+import * as dtu from './datetimeUtils';
 
 export const minPoolStart = (stns, date) => dtu.timeStrToMin(stns.get('minPoolStartTime', date));
 export const maxPoolEnd = (stns, date) => dtu.timeStrToMin(stns.get('maxPoolEndTime', date));

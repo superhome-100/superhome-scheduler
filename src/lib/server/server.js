@@ -3,7 +3,7 @@ import { addMissingFields, convertReservationTypes } from '$lib/utils.js';
 import { buddysRsv, checkSpaceAvailable } from '$lib/validationUtils.js';
 import { redirect } from '@sveltejs/kit';
 import { startTimes, endTimes } from '$lib/reservationTimes.js';
-import { timeStrToMin } from '$lib/datetimeUtils.js';
+import { timeStrToMin } from '$lib/datetimeUtils';
 import { Settings } from '$lib/server/settings.js';
 import ObjectsToCsv from 'objects-to-csv';
 import JSZip from 'jszip';
@@ -131,10 +131,7 @@ function getTimeOverlapFilters(settings, rsv) {
 		}
 		if (slots.beforeStart.length > 0 && slots.afterEnd.length > 0) {
 			timeFilt.push({
-				$all: [
-					{ startTime: { $any: slots.beforeStart } },
-					{ endTime: { $any: slots.afterEnd } }
-				]
+				$all: [{ startTime: { $any: slots.beforeStart } }, { endTime: { $any: slots.afterEnd } }]
 			});
 		}
 		filters.push({
