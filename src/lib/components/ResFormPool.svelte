@@ -1,19 +1,20 @@
-<script>
+<script lang="ts">
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 	import { startTimes, endTimes, minuteOfDay } from '$lib/reservationTimes.js';
-	import { timeStrToMin, datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
+	import { timeStrToMin, datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { canSubmit, user } from '$lib/stores';
 	import { Settings } from '$lib/settings.js';
 	import { adminView } from '$lib/utils.js';
+	import type { ReservationData } from '$types';
 
 	const lanes = () => Settings.get('poolLanes');
 	const rooms = () => Settings.get('classrooms');
 
-	export let rsv = null;
+	export let rsv: ReservationData;
 	export let category = 'pool';
-	export let date;
+	export let date: Date | null = null;
 	export let dateFn = null;
-	export let resType = null;
+	export let resType: null | 'course' | 'autonomous' = null;
 	export let viewOnly = false;
 	export let restrictModify = false;
 	export let maxNumStudents = 4;
@@ -54,7 +55,7 @@
 	<div class="[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5" slot="categoryLabels">
 		{#if adminView(viewOnly)}
 			{#if category === 'pool'}
-				{#if rsv.resType === 'course' && rsv.numStudents > Settings.get('maxOccupantsPerLane')}
+				{#if rsv.resType === 'course' && (rsv?.numStudents || 1) > Settings.get('maxOccupantsPerLane')}
 					<div><label for="formLane1">1st Lane</label></div>
 					<div><label for="formLane2">2nd Lane</label></div>
 				{:else}

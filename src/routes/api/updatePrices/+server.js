@@ -7,7 +7,7 @@ import {
 	datetimeInPanglaoFromServer,
 	timeStrToMin,
 	firstOfMonthStr
-} from '$lib/datetimeUtils.js';
+} from '$lib/datetimeUtils';
 import { Settings } from '$lib/server/settings.js';
 
 const unpackTemplate = (uT) => {
