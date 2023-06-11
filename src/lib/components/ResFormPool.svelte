@@ -10,10 +10,10 @@
 	const lanes = () => Settings.get('poolLanes');
 	const rooms = () => Settings.get('classrooms');
 
-	export let rsv: ReservationData;
+	export let rsv: ReservationData | null = null;
 	export let category = 'pool';
-	export let date: Date | null = null;
-	export let dateFn = null;
+	export let date: string | null = null;
+	export let dateFn: null | (() => Date) = null;
 	export let resType: null | 'course' | 'autonomous' = null;
 	export let viewOnly = false;
 	export let restrictModify = false;
@@ -23,9 +23,14 @@
 	let disabled = viewOnly || restrictModify;
 
 	date =
-		rsv == null ? (date == null ? dateFn() : datetimeToLocalDateStr(new Date(date))) : rsv.date;
+		!rsv || !rsv?.date ? 
+			(
+				date || !dateFn || (rsv === null) ?
+					datetimeToLocalDateStr(date ? new Date(date) : new Date()) :
+					datetimeToLocalDateStr(dateFn())
+			) : rsv.date;
 
-	const getStartTimes = (date, category) => {
+	const getStartTimes = (date: string, category: string) => {
 		let startTs = startTimes(Settings, date, category);
 		let today = new Date();
 		if (!disabled && date === datetimeToLocalDateStr(today)) {
@@ -44,7 +49,7 @@
 	$canSubmit = true;
 	$: showBuddyFields = autoOrCourse === 'autonomous';
 
-	const validEndTime = (startTime, endTime) => {
+	const validEndTime = (startTime: string, endTime: string) => {
 		let start = timeStrToMin(startTime);
 		let end = timeStrToMin(endTime);
 		return end > start && end - start <= maxTimeHours * 60;
@@ -55,7 +60,7 @@
 	<div class="[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5" slot="categoryLabels">
 		{#if adminView(viewOnly)}
 			{#if category === 'pool'}
-				{#if rsv.resType === 'course' && (rsv?.numStudents || 1) > Settings.get('maxOccupantsPerLane')}
+				{#if rsv?.resType === 'course' && (rsv?.numStudents || 1) > Settings.get('maxOccupantsPerLane')}
 					<div><label for="formLane1">1st Lane</label></div>
 					<div><label for="formLane2">2nd Lane</label></div>
 				{:else}
@@ -77,7 +82,7 @@
 		{#if adminView(viewOnly)}
 			{#if category === 'pool'}
 				<div>
-					<select id="formLane1" name="lane1" value={rsv.lanes[0]}>
+					<select id="formLane1" name="lane1" value={rsv?.lanes?[0]}>
 						<option value="auto">Auto</option>
 						{#each lanes() as lane}
 							<option value={lane}>{lane}</option>
