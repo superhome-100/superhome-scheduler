@@ -5,8 +5,6 @@
 	import { canSubmit, user, users } from '$lib/stores';
 	import { Settings } from '$lib/settings.js';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes.js';
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
-	import { adminView } from '$lib/utils.js';
 	import BuddyMatch from '$lib/components/BuddyMatch.svelte';
 	import PlusIcon from '$lib/components/PlusIcon.svelte';
 	import DeleteIcon from '$lib/components/DeleteIcon.svelte';
