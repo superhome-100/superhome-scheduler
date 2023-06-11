@@ -82,7 +82,7 @@
 		{#if adminView(viewOnly)}
 			{#if category === 'pool'}
 				<div>
-					<select id="formLane1" name="lane1" value={rsv?.lanes?[0]}>
+					<select id="formLane1" name="lane1" value={rsv?.lanes[0]}>
 						<option value="auto">Auto</option>
 						{#each lanes() as lane}
 							<option value={lane}>{lane}</option>
