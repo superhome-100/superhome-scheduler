@@ -13,7 +13,7 @@
 	export let rsv: ReservationData | null = null;
 	export let category = 'pool';
 	export let date: string | null = null;
-	export let dateFn: null | (() => Date) = null;
+	export let dateFn: null | ((string) => string) = null;
 	export let resType: null | 'course' | 'autonomous' = null;
 	export let viewOnly = false;
 	export let restrictModify = false;
@@ -22,13 +22,7 @@
 
 	let disabled = viewOnly || restrictModify;
 
-	date =
-		!rsv || !rsv?.date ? 
-			(
-				date || !dateFn || (rsv === null) ?
-					datetimeToLocalDateStr(date ? new Date(date) : new Date()) :
-					datetimeToLocalDateStr(dateFn())
-			) : rsv.date;
+	date = !rsv || !rsv?.date ? (date ? date : dateFn(category)) : rsv.date;
 
 	const getStartTimes = (date: string, category: string) => {
 		let startTs = startTimes(Settings, date, category);
