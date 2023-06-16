@@ -23,12 +23,11 @@
 	let disabled = viewOnly || restrictModify;
 
 	date =
-		!rsv || !rsv?.date ? 
-			(
-				date || !dateFn || (rsv === null) ?
-					datetimeToLocalDateStr(date ? new Date(date) : new Date()) :
-					datetimeToLocalDateStr(dateFn())
-			) : rsv.date;
+		!rsv || !rsv?.date
+			? date || !dateFn || rsv === null
+				? datetimeToLocalDateStr(date ? new Date(date) : new Date())
+				: datetimeToLocalDateStr(dateFn())
+			: rsv.date;
 
 	const getStartTimes = (date: string, category: string) => {
 		let startTs = startTimes(Settings, date, category);
