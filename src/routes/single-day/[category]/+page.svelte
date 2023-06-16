@@ -6,7 +6,7 @@
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
 	import { validReservationDate, minValidDate } from '$lib/reservationTimes.js';
-	import { datetimeToLocalDateStr, month2idx, idx2month } from '$lib/datetimeUtils.js';
+	import { datetimeToLocalDateStr, month2idx, idx2month } from '$lib/datetimeUtils';
 	import Modal from '$lib/components/Modal.svelte';
 	import { user, view, viewMode, viewedDate, reservations } from '$lib/stores';
 	import { Settings } from '$lib/settings.js';
@@ -179,7 +179,7 @@
 	</div>
 	<span class="mr-2">
 		<Modal
-			><ReservationDialog {category} dateFn={() => datetimeToLocalDateStr($viewedDate)} /></Modal
+			><ReservationDialog {category} dateFn={(cat) => datetimeToLocalDateStr($viewedDate)} /></Modal
 		>
 	</span>
 </div>
