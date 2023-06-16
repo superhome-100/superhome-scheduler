@@ -1,6 +1,5 @@
 <script>
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
-	import { canSubmit, buoys, reservations, user } from '$lib/stores';
+	import { canSubmit, buoys, reservations } from '$lib/stores';
 	import { adminView, buoyDesc } from '$lib/utils.js';
 	import { Settings } from '$lib/settings.js';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
@@ -15,12 +14,11 @@
 	let disabled = viewOnly || restrictModify;
 
 	date =
-		rsv == null ? (date == null ? dateFn() : datetimeToLocalDateStr(new Date(date))) : rsv.date;
+		rsv == null ? (date == null ? dateFn(category) : date) : rsv.date;
 
 	let resType = rsv == null ? 'autonomous' : rsv.resType;
 	let maxDepth = rsv == null || rsv.maxDepth == null ? null : rsv.maxDepth;
 	let owTime = rsv == null ? 'AM' : rsv.owTime;
-	let comments = rsv == null ? null : rsv.comments;
 	let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
 	let pulley = rsv == null ? null : rsv.pulley;
 	let extraBottomWeight = rsv == null ? false : rsv.extraBottomWeight;
