@@ -30,6 +30,7 @@ export const idx2month = [
 
 export const monthIdxFromDateStr = (dateStr: string): number => {
 	const mdy = /[0-9]+-([0-9]+)-[0-9]+/.exec(dateStr);
+	if (mdy === null) throw new Error('monthIdxFromDateStr: invalid date string');
 	return mdy ? parseInt(mdy[1]) - 1 : 0;
 };
 
