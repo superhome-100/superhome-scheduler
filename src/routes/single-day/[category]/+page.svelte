@@ -179,7 +179,7 @@
 	</div>
 	<span class="mr-2">
 		<Modal
-			><ReservationDialog {category} dateFn={() => datetimeToLocalDateStr($viewedDate)} /></Modal
+			><ReservationDialog {category} dateFn={(cat) => datetimeToLocalDateStr($viewedDate)} /></Modal
 		>
 	</span>
 </div>
