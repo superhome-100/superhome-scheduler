@@ -5,16 +5,14 @@
 	import { canSubmit, user, users } from '$lib/stores';
 	import { Settings } from '$lib/settings.js';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes.js';
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
-	import { adminView } from '$lib/utils.js';
 	import BuddyMatch from '$lib/components/BuddyMatch.svelte';
 	import PlusIcon from '$lib/components/PlusIcon.svelte';
 	import DeleteIcon from '$lib/components/DeleteIcon.svelte';
 
-	export let rsv: ReservationData;
-	export let date: string = rsv.date || new Date().toString();
+	export let rsv: ReservationData | null;
+	export let date: string | null = rsv?.date || new Date().toString();
 	export let category: ReservationCategory | string =
-		rsv.category.toString() || ReservationCategory.pool;
+		rsv?.category.toString() || ReservationCategory.pool;
 	export let viewOnly = false;
 	export let showBuddyFields = true;
 	export let restrictModify = false;
@@ -188,8 +186,8 @@
 	</div>
 	<div class="column inputs text-left w-[67%]">
 		{#if viewOnly}
-			<div class={statusStyle(rsv.status?.toString() || ReservationStatus.pending.toString())}>
-				{rsv.status}
+			<div class={statusStyle(rsv?.status?.toString() || ReservationStatus.pending.toString())}>
+				{rsv?.status}
 			</div>
 		{/if}
 		<div>

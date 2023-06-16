@@ -2,7 +2,7 @@
 	import { getContext } from 'svelte';
 	import { notifications } from '$lib/stores';
 	import NotificationPopup from '$lib/components/NotificationPopup.svelte';
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
+	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 
 	const { open } = getContext('simple-modal');
 

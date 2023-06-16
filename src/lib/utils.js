@@ -1,5 +1,5 @@
 import { startTimes, inc } from './reservationTimes.js';
-import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils.js';
+import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils';
 import { reservations, user, viewMode } from './stores';
 import { Settings } from './settings.js';
 import { get } from 'svelte/store';

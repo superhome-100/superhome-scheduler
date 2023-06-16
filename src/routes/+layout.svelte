@@ -22,7 +22,7 @@
 		viewMode
 	} from '$lib/stores';
 	import { augmentRsv } from '$lib/utils.js';
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
+	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { loadFB, login, logout } from '$lib/authentication.js';
 	import { toast, Toaster } from 'svelte-french-toast';
 

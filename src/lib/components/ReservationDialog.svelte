@@ -2,9 +2,6 @@
 	import { getContext } from 'svelte';
 	import ReservationForm from './ReservationForm.svelte';
 	import ReservationButton from './ReservationButton.svelte';
-	import { reservations } from '$lib/stores';
-	import { minValidDateStr } from '$lib/reservationTimes.js';
-	import { Settings } from '$lib/settings.js';
 
 	export let category = 'openwater';
 
@@ -12,7 +9,7 @@
     might depend on values from the database, which may not have
     loaded by the time the page renders, e.g. immediately after 
     a refresh */
-	export let dateFn = minValidDateStr;
+	export let dateFn;
 
 	const { open } = getContext('simple-modal');
 
