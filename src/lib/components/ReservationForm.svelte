@@ -101,8 +101,7 @@
 							popup(result.data.message);
 						} else if (result.data.code === 'USER_DISABLED') {
 							popup(
-								'Reservation rejected! User does not have permission to ' +
-									'make reservations'
+								'Reservation rejected! User does not have permission to ' + 'make reservations'
 							);
 						}
 					}

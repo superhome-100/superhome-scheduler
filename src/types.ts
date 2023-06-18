@@ -3,6 +3,7 @@ import type { Reservations } from './lib/server/xata';
 export type ReservationData = Omit<Reservations, 'category' | 'status'> & {
 	category: ReservationCategory;
 	status: ReservationStatus;
+	endTime: string;
 };
 
 export enum ReservationCategory {
@@ -23,3 +24,5 @@ export enum ReservationStatus {
 	confirmed,
 	rejected
 }
+
+export type ReservationPeriod = 'upcoming' | 'past';

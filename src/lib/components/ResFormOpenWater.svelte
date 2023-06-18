@@ -13,8 +13,7 @@
 
 	let disabled = viewOnly || restrictModify;
 
-	date =
-		rsv == null ? (date == null ? dateFn(category) : date) : rsv.date;
+	date = rsv == null ? (date == null ? dateFn(category) : date) : rsv.date;
 
 	let resType = rsv == null ? 'autonomous' : rsv.resType;
 	let maxDepth = rsv == null || rsv.maxDepth == null ? null : rsv.maxDepth;
