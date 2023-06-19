@@ -40,15 +40,15 @@
 	}
 
 	const bgColorByCategoryFrom = {
-		[ReservationCategory.pool]: 'from-pool-bg-from',
-		[ReservationCategory.openwater]: 'from-openwater-bg-from',
-		[ReservationCategory.classroom]: 'from-classroom-bg-from'
+		[ReservationCategory[ReservationCategory.pool]]: 'from-pool-bg-from',
+		[ReservationCategory[ReservationCategory.openwater]]: 'from-openwater-bg-from',
+		[ReservationCategory[ReservationCategory.classroom]]: 'from-classroom-bg-from'
 	};
 
 	const bgColorByCategoryTo = {
-		[ReservationCategory.pool]: 'to-pool-bg-to',
-		[ReservationCategory.openwater]: 'to-openwater-bg-to',
-		[ReservationCategory.classroom]: 'to-classroom-bg-to'
+		[ReservationCategory[ReservationCategory.pool]]: 'to-pool-bg-to',
+		[ReservationCategory[ReservationCategory.openwater]]: 'to-openwater-bg-to',
+		[ReservationCategory[ReservationCategory.classroom]]: 'to-classroom-bg-to'
 	};
 
 	const catDesc = (rsv: ReservationData) => {
@@ -151,9 +151,9 @@
 	$: rsvGroups = groupRsvs(resPeriod, $reservations, $userPastReservations);
 
 	const statusTextColor = {
-		[ReservationStatus.confirmed]: 'text-status-confirmed',
-		[ReservationStatus.pending]: 'text-status-pending',
-		[ReservationStatus.rejected]: 'text-status-rejected'
+		[ReservationStatus[ReservationStatus.confirmed]]: 'text-status-confirmed',
+		[ReservationStatus[ReservationStatus.pending]]: 'text-status-pending',
+		[ReservationStatus[ReservationStatus.rejected]]: 'text-status-rejected'
 	};
 
 	const totalThisMonth = (rsvs: ReservationData[]): number => {
@@ -179,7 +179,7 @@
 						<td class="text-white text-sm font-semibold">{catDesc(rsv)}</td>
 						<td class="text-white text-sm font-semibold">{timeDesc(rsv)}</td>
 						<td class="text-white text-sm font-semibold">
-							<div class="align-middle m-auto w-fit rounded-lg ${statusTextColor[rsv.status]}">
+							<div class="align-middle m-auto w-fit rounded-lg {statusTextColor[rsv.status]}">
 								{rsv.status}
 							</div>
 						</td>
