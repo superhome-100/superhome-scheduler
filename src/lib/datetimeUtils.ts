@@ -28,12 +28,6 @@ export const idx2month = [
 	'December'
 ];
 
-export const monthIdxFromDateStr = (dateStr: string): number => {
-	const mdy = /[0-9]+-([0-9]+)-[0-9]+/.exec(dateStr);
-	if (mdy === null) throw new Error('monthIdxFromDateStr: invalid date string');
-	return mdy ? parseInt(mdy[1]) - 1 : 0;
-};
-
 export const firstOfMonthStr = (dateStr: string) => {
 	let m = /([0-9]+-[0-9]+-)[0-9]+/.exec(dateStr);
 	return m[1] + '01';
@@ -65,14 +59,15 @@ export const minToTimeStr = (min: number) =>
 
 const timeStrRE = /([0-9]*[0-9]):([0-9][0-9])/;
 
-const parseHM = (timeStr: string) => {
+const parseHM = (timeStr: string): { hour: number; min: number } => {
 	let m = timeStrRE.exec(timeStr);
-	let hour = parseInt(m[1]);
-	let min = parseInt(m[2]);
+	if (!m) throw new Error('Invalid time string');
+	const hour = parseInt(m[1]);
+	const min = parseInt(m[2]);
 	return { hour, min };
 };
 
-export function timeStrToMin(timeStr: string) {
+export function timeStrToMin(timeStr: string): number {
 	let p = parseHM(timeStr);
 	return 60 * p.hour + p.min;
 }
