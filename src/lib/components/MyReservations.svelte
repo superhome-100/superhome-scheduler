@@ -179,7 +179,7 @@
 						<td class="text-white text-sm font-semibold">{catDesc(rsv)}</td>
 						<td class="text-white text-sm font-semibold">{timeDesc(rsv)}</td>
 						<td class="text-white text-sm font-semibold">
-							<div class="align-middle m-auto w-fit rounded-lg ${statusTextColor[rsv.status]}">
+							<div class="align-middle m-auto w-fit rounded-lg {statusTextColor[rsv.status]}">
 								{rsv.status}
 							</div>
 						</td>
