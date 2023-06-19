@@ -7,9 +7,9 @@ export type ReservationData = Omit<Reservations, 'category' | 'status'> & {
 };
 
 export enum ReservationCategory {
-	openwater,
-	pool,
-	classroom
+	openwater = 'openwater',
+	pool = 'pool',
+	classroom = 'classroom'
 }
 
 export interface BuddyData {
@@ -20,9 +20,9 @@ export interface BuddyData {
 }
 
 export enum ReservationStatus {
-	pending,
-	confirmed,
-	rejected
+	pending = 'pending',
+	confirmed = 'confirmed',
+	rejected = 'rejected'
 }
 
 export type ReservationPeriod = 'upcoming' | 'past';
