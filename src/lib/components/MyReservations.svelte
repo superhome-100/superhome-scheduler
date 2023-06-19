@@ -39,10 +39,16 @@
 		return view;
 	}
 
-	const bgColorByCategory = {
+	const bgColorByCategoryFrom = {
 		[ReservationCategory.pool]: 'from-pool-bg-from',
 		[ReservationCategory.openwater]: 'from-openwater-bg-from',
 		[ReservationCategory.classroom]: 'from-classroom-bg-from'
+	};
+
+	const bgColorByCategoryTo = {
+		[ReservationCategory.pool]: 'to-pool-bg-to',
+		[ReservationCategory.openwater]: 'to-openwater-bg-to',
+		[ReservationCategory.classroom]: 'to-classroom-bg-to'
 	};
 
 	const catDesc = (rsv: ReservationData) => {
@@ -163,9 +169,9 @@
 					<tr
 						on:click={() => showViewRsv(rsv)}
 						on:keypress={() => showViewRsv(rsv)}
-						class="[&>td]:w-24 h-10 bg-gradient-to-br {bgColorByCategory[
+						class="[&>td]:w-24 h-10 bg-gradient-to-br {bgColorByCategoryFrom[
 							rsv.category
-						]} {bgColorByCategory[rsv.category]} cursor-pointer"
+						]} {bgColorByCategoryTo[rsv.category]} cursor-pointer"
 					>
 						<td class="rounded-s-xl text-white text-sm font-semibold"
 							>{dayjs(rsv.date).format('D MMM')}</td
