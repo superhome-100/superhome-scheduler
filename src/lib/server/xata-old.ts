@@ -1,5 +1,5 @@
 import { XATA_API_KEY, XATA_BRANCH } from '$env/static/private';
-import { XataClient } from './xata';
+import { XataClient } from './xata.codegen';
 
 const instances: { [branch: string]: XataClient } = {};
 

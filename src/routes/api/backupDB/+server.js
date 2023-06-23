@@ -1,4 +1,4 @@
-import { XataClient } from '$lib/server/xata.codegen.server.js';
+import { XataClient } from '$lib/server/xata.codegen';
 import { XATA_API_KEY } from '$env/static/private';
 
 const main = new XataClient({ apiKey: XATA_API_KEY, branch: 'main' });

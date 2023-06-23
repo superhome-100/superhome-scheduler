@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { XataClient } from '../src/lib/server/xata.codegen.server.js';
+import { XataClient } from '../src/lib/server/xata.codegen';
 import { datetimeToLocalDateStr } from '../src/lib/datetimeUtils';
 import { startTimes, endTimes, minValidDate } from '../src/lib/ReservationTimes.js';
 import { settings } from '../src/lib/stores';

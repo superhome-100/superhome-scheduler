@@ -1,4 +1,4 @@
-import type { Reservations } from './lib/server/xata';
+import type { Reservations } from './lib/server/xata.codegen';
 
 export type ReservationData = Omit<Reservations, 'category' | 'status'> & {
 	category: ReservationCategory;
