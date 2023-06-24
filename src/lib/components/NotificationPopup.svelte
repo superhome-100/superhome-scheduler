@@ -1,5 +1,5 @@
 <script>
-	import { user } from '$lib/stores.js';
+	import { user } from '$lib/stores';
 	import { enhance } from '$app/forms';
 	import { getContext } from 'svelte';
 

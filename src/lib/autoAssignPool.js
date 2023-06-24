@@ -1,5 +1,5 @@
 import { inc, startTimes } from '$lib/reservationTimes.js';
-import { timeStrToMin } from '$lib/datetimeUtils.js';
+import { timeStrToMin } from '$lib/datetimeUtils';
 import { nOccupants } from '$lib/validationUtils.js';
 import { Settings } from '$lib/settings.js';
 

@@ -1,18 +1,20 @@
-import { getXataClient, getXataBranch } from '$lib/server/xata.js';
+import { getXataClient } from '$lib/server/xata-old';
 import { addMissingFields, convertReservationTypes } from '$lib/utils.js';
 import { buddysRsv, checkSpaceAvailable } from '$lib/validationUtils.js';
 import { redirect } from '@sveltejs/kit';
 import { startTimes, endTimes } from '$lib/reservationTimes.js';
-import { timeStrToMin } from '$lib/datetimeUtils.js';
+import { timeStrToMin } from '$lib/datetimeUtils';
 import { Settings } from '$lib/server/settings.js';
 import ObjectsToCsv from 'objects-to-csv';
 import JSZip from 'jszip';
+
+import { getUserById } from './user';
 
 const xata = getXataClient();
 
 export async function getBackUpZip(branch) {
 	let zip = new JSZip();
-	let client = getXataBranch(branch);
+	let client = getXataClient(branch);
 	for (let tbl of Object.keys(client.db)) {
 		const records = await client.db[tbl].getAll();
 		const csv = new ObjectsToCsv(records);
@@ -20,71 +22,6 @@ export async function getBackUpZip(branch) {
 		zip.file(branch + '/' + tbl + '.csv', csvStr);
 	}
 	return zip;
-}
-
-export async function getReservationsCsv(branch) {
-	let client = getXataBranch(branch);
-	let fields = [
-		'user.name',
-		'user.nickname',
-		'date',
-		'category',
-		'price',
-		'status',
-		'resType',
-		'numStudents',
-		'owTime',
-		'startTime',
-		'endTime'
-	];
-	let records = await client.db.Reservations.select(fields).getAll();
-
-	records = records.map((rsv) => {
-		let numStudents = rsv.numStudents;
-		if (numStudents == null) {
-			numStudents = 1;
-		}
-		let owTime = rsv.owTime;
-		if (owTime == null) {
-			if (timeStrToMin(rsv.startTime) < 720) {
-				owTime = 'AM';
-			} else {
-				owTime = 'PM';
-			}
-		}
-		return { ...rsv, owTime, numStudents };
-	});
-
-	const csv = new ObjectsToCsv(
-		records.map((ent) => {
-			let {
-				user,
-				date,
-				category,
-				price,
-				status,
-				resType,
-				numStudents,
-				owTime,
-				startTime,
-				endTime
-			} = ent;
-			return {
-				name: user.name,
-				nickname: user.nickname,
-				date,
-				category,
-				price,
-				status,
-				resType,
-				numStudents,
-				owTime,
-				startTime,
-				endTime
-			};
-		})
-	);
-	return await csv.toString();
 }
 
 export async function getSettings() {
@@ -106,59 +43,6 @@ export async function createSession(user) {
 	return await xata.db.Sessions.create({
 		user: user.id
 	});
-}
-
-export async function getUser(id) {
-	return await xata.db.Users.read(id);
-}
-
-export async function getReservationsSince(minDateStr) {
-	//note: we include rejected and canceled rsvs here so that:
-	//  - [rejected rsvs]: users can see which of their rsvs have been rejected
-	//  in MyReservations page
-	//  - [canceled rsvs]: in refreshAppState fn, clients can detect when other
-	//  users have canceled an rsv and remove it from their cache
-	let reservations = await xata.db.Reservations.select(['*', 'user'])
-		.filter({ date: { $ge: minDateStr } })
-		.sort('date', 'asc')
-		.getAll();
-
-	return reservations;
-}
-
-export async function getAllUsers() {
-	let users = await xata.db.Users.getAll();
-	return users;
-}
-
-export async function addUser(userId, userName) {
-	const record = await xata.db.Users.create({
-		facebookId: userId,
-		name: userName,
-		nickname: userName,
-		status: 'disabled'
-	});
-	await xata.db.UserPriceTemplates.create({ user: record.id, priceTemplate: 'regular' });
-	return record;
-}
-
-export async function updateNickname(userId, nickname) {
-	const record = await xata.db.Users.update(userId, { nickname });
-	return record;
-}
-
-export async function authenticateUser(userId, userName) {
-	let record;
-	let records = await xata.db.Users.filter({ facebookId: userId }).getMany({
-		pagination: { size: 1 }
-	});
-	if (records.length == 0) {
-		/* user does not exist yet */
-		record = await addUser(userId, userName);
-	} else {
-		record = records[0];
-	}
-	return record;
 }
 
 function getTimeSlots(settings, date, category, start, end) {
@@ -320,8 +204,8 @@ async function querySpaceAvailable(entries, remove = []) {
 export async function submitReservation(formData) {
 	let sub = convertReservationTypes(Object.fromEntries(formData));
 
-	let user = await xata.db.Users.read(sub.user);
-	if (user.status === 'disabled') {
+	const user = await getUserById(sub.user);
+	if (user && user.status === 'disabled') {
 		return {
 			status: 'error',
 			code: 'USER_DISABLED'

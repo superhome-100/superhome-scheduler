@@ -1,4 +1,4 @@
-import { XataClient } from '../src/lib/server/xata.codegen.server.js';
+import { XataClient } from '../src/lib/server/xata.codegen';
 
 const XATA_API_KEY = 'xau_9xJINLTWEBX1d0EyWIi7YL9QinLT2TEv1';
 

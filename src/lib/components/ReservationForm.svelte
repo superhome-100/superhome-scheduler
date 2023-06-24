@@ -6,9 +6,8 @@
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { popup } from './Popup.svelte';
-	import { canSubmit, user, users, reservations, buoys } from '$lib/stores.js';
+	import { users, reservations, buoys } from '$lib/stores';
 	import { beforeResCutoff } from '$lib/reservationTimes.js';
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
 	import { Settings } from '$lib/settings.js';
 	import {
 		checkNoOverlappingRsvs,
@@ -121,11 +120,11 @@
 		<div class="form-title">reservation request</div>
 		<form method="POST" action="/?/submitReservation" use:enhance={submitReservation}>
 			{#if category === 'pool'}
-				<ResFormPool bind:date dateFn={() => dateFn(Settings, 'pool')} bind:category />
+				<ResFormPool bind:date {dateFn} bind:category />
 			{:else if category === 'openwater'}
-				<ResFormOpenWater bind:date dateFn={() => dateFn(Settings, 'openwater')} bind:category />
+				<ResFormOpenWater bind:date {dateFn} bind:category />
 			{:else if category === 'classroom'}
-				<ResFormClassroom bind:date dateFn={() => dateFn(Settings, 'classroom')} bind:category />
+				<ResFormClassroom bind:date {dateFn} bind:category />
 			{/if}
 		</form>
 	</div>

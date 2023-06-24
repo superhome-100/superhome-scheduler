@@ -1,4 +1,4 @@
-import { settings } from './stores.js';
+import { settings } from './stores';
 import { get } from 'svelte/store';
 
 export const getOn = (setting, date) => {

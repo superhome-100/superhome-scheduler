@@ -1,66 +1,57 @@
-<script>
-	import { datetimeToLocalDateStr, monthIdxFromDateStr } from '$lib/datetimeUtils.js';
+<script lang="ts">
+	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { minuteOfDay, beforeCancelCutoff } from '$lib/reservationTimes.js';
-	import { timeStrToMin, idx2month } from '$lib/datetimeUtils.js';
-	import { user, userPastReservations, reservations } from '$lib/stores.js';
+	import { timeStrToMin } from '$lib/datetimeUtils';
+	import { user, userPastReservations, reservations } from '$lib/stores';
 	import { getContext } from 'svelte';
 	import Modal from './Modal.svelte';
 	import CancelDialog from './CancelDialog.svelte';
 	import RsvTabs from './RsvTabs.svelte';
 	import { Settings } from '$lib/settings.js';
 
-	export let resPeriod; /* past or upcoming */
+	import type { ReservationData, ReservationPeriod } from '$types';
+	import { ReservationCategory, ReservationStatus } from '$types';
+	import dayjs from 'dayjs';
 
-	function getResPeriod(rsv) {
+	export let resPeriod: ReservationPeriod = 'upcoming';
+
+	function getResPeriod(rsv: ReservationData) {
 		let view;
 		let today = new Date();
 		let todayStr = datetimeToLocalDateStr(today);
-		if (rsv.date > todayStr) {
+		if (rsv.date && rsv.date > todayStr) {
 			view = 'upcoming';
-		} else if (rsv.date < todayStr) {
+		} else if (rsv.date && rsv.date < todayStr) {
 			view = 'past';
 		} else {
-			let rsvMin;
-			if (['pool', 'classroom'].includes(rsv.category)) {
-				rsvMin = timeStrToMin(rsv.endTime);
-			} else if (rsv.category === 'openwater') {
+			let rsvMin: number = 0;
+			if (rsv.category === ReservationCategory.openwater) {
 				if (rsv.owTime === 'AM') {
 					rsvMin = timeStrToMin(Settings.get('openwaterAmEndTime', rsv.date));
 				} else if (rsv.owTime === 'PM') {
 					rsvMin = timeStrToMin(Settings.get('openwaterPmEndTime', rsv.date));
 				}
+			} else {
+				rsvMin = timeStrToMin(rsv.endTime);
 			}
-			view = rsvMin >= minuteOfDay(today) ? 'upcoming' : 'past';
+			view = rsvMin && rsvMin >= minuteOfDay(today) ? 'upcoming' : 'past';
 		}
 		return view;
 	}
 
-	const shortDate = (dateStr) => {
-		let re = /[0-9]+-([0-9]+)-[0]*([0-9]+)/;
-		let m = re.exec(dateStr);
-		let shortM = idx2month[parseInt(m[1]) - 1].slice(0, 3);
-		return m[2] + ' ' + shortM;
+	const bgColorByCategoryFrom = {
+		[ReservationCategory.pool]: 'from-pool-bg-from',
+		[ReservationCategory.openwater]: 'from-openwater-bg-from',
+		[ReservationCategory.classroom]: 'from-classroom-bg-from'
 	};
 
-	const bgColorFrom = (category) =>
-		category === 'pool'
-			? 'from-pool-bg-from'
-			: category === 'openwater'
-			? 'from-openwater-bg-from'
-			: category === 'classroom'
-			? 'from-classroom-bg-from'
-			: undefined;
+	const bgColorByCategoryTo = {
+		[ReservationCategory.pool]: 'to-pool-bg-to',
+		[ReservationCategory.openwater]: 'to-openwater-bg-to',
+		[ReservationCategory.classroom]: 'to-classroom-bg-to'
+	};
 
-	const bgColorTo = (category) =>
-		category === 'pool'
-			? 'to-pool-bg-to'
-			: category === 'openwater'
-			? 'to-openwater-bg-to'
-			: category === 'classroom'
-			? 'to-classroom-bg-to'
-			: undefined;
-
-	const catDesc = (rsv) => {
+	const catDesc = (rsv: ReservationData) => {
 		let desc = [rsv.categoryPretty];
 		if (rsv.resType === 'course') {
 			desc += ' +' + rsv.numStudents;
@@ -68,7 +59,7 @@
 		return desc;
 	};
 
-	const timeDesc = (rsv) => {
+	const timeDesc = (rsv: ReservationData) => {
 		const fmt = (time) => {
 			let rx = /([0-9]+):([0-9]+)/;
 			let m = rx.exec(time);
@@ -95,16 +86,16 @@
 		return desc;
 	};
 
-	const { open } = getContext('simple-modal');
+	const { open } = getContext('simple-modal') as { open: (component: any, props: any) => void };
 
-	const showViewRsv = (rsv) => {
+	const showViewRsv = (rsv: ReservationData) => {
 		open(RsvTabs, {
 			rsvs: [rsv],
 			hasForm: true
 		});
 	};
 
-	const sortChronologically = (rsvs, resPeriod) => {
+	const sortChronologically = (rsvs: ReservationData[], resPeriod: ReservationPeriod) => {
 		let sign = resPeriod === 'upcoming' ? 1 : -1;
 		return rsvs.sort((a, b) => {
 			if (a.date > b.date) {
@@ -117,50 +108,56 @@
 		});
 	};
 
-	const groupRsvs = (resPeriod, allRsvs, userPastRsvs) => {
-		let rsvs;
+	type ReservationsByMonth = {
+		month?: string;
+		rsvs: ReservationData[];
+	};
+
+	const groupRsvs = (
+		resPeriod: ReservationPeriod,
+		allRsvs: ReservationData[],
+		userPastRsvs: ReservationData[]
+	): ReservationsByMonth[] => {
+		let rsvs: ReservationData[] = [];
 		if (resPeriod === 'upcoming') {
 			rsvs = allRsvs.filter((rsv) => {
-				return rsv.user.id === $user.id && getResPeriod(rsv) === resPeriod;
+				return rsv?.user?.id === $user.id && getResPeriod(rsv) === resPeriod;
 			});
 		} else if (resPeriod === 'past') {
 			rsvs = userPastRsvs.filter((rsv) => getResPeriod(rsv) === resPeriod);
 		}
 
-		let sorted = sortChronologically(rsvs, resPeriod);
+		const sorted = sortChronologically(rsvs, resPeriod);
 
 		if (resPeriod === 'upcoming') {
 			return [{ rsvs: sorted }];
-		} else if (resPeriod === 'past') {
-			let curM;
+		} else {
 			return sorted.reduce((grps, rsv) => {
-				let m = monthIdxFromDateStr(rsv.date);
-				if (m === curM) {
-					grps[grps.length - 1].rsvs.push(rsv);
+				const month = dayjs(rsv.date).format('MMMM');
+				const monthGroup = grps.find((g) => g.month === month);
+				if (monthGroup) {
+					monthGroup.rsvs.push(rsv);
 				} else {
-					curM = m;
-					grps.push({ month: idx2month[curM], rsvs: [rsv] });
+					grps.push({
+						month: month,
+						rsvs: [rsv]
+					});
 				}
 				return grps;
-			}, []);
+			}, [] as ReservationsByMonth[]);
 		}
 	};
 
 	$: rsvGroups = groupRsvs(resPeriod, $reservations, $userPastReservations);
 
-	const textColor = (status) =>
-		status === 'confirmed'
-			? 'text-status-confirmed'
-			: status === 'pending'
-			? 'text-status-pending'
-			: status === 'rejected'
-			? 'text-status-rejected'
-			: undefined;
+	const statusTextColor = {
+		[ReservationStatus.confirmed]: 'text-status-confirmed',
+		[ReservationStatus.pending]: 'text-status-pending',
+		[ReservationStatus.rejected]: 'text-status-rejected'
+	};
 
-	const statusStyle = (status) => 'align-middle m-auto w-fit ' + 'rounded-lg ' + textColor(status);
-
-	const totalThisMonth = (rsvs) => {
-		return rsvs.reduce((t, rsv) => (rsv.price !== null ? t + rsv.price : t), 0);
+	const totalThisMonth = (rsvs: ReservationData[]): number => {
+		return rsvs.reduce((t, rsv) => (rsv.price ? t + rsv.price : t), 0);
 	};
 </script>
 
@@ -170,17 +167,21 @@
 			{#each rsvGroups as { month, rsvs }}
 				{#each rsvs as rsv (rsv.id)}
 					<tr
-						on:click={showViewRsv(rsv)}
-						on:keypress={showViewRsv(rsv)}
-						class="[&>td]:w-24 h-10 bg-gradient-to-br {bgColorFrom(rsv.category)} {bgColorTo(
+						on:click={() => showViewRsv(rsv)}
+						on:keypress={() => showViewRsv(rsv)}
+						class="[&>td]:w-24 h-10 bg-gradient-to-br {bgColorByCategoryFrom[
 							rsv.category
-						)} cursor-pointer"
+						]} {bgColorByCategoryTo[rsv.category]} cursor-pointer"
 					>
-						<td class="rounded-s-xl text-white text-sm font-semibold">{shortDate(rsv.date)}</td>
+						<td class="rounded-s-xl text-white text-sm font-semibold"
+							>{dayjs(rsv.date).format('D MMM')}</td
+						>
 						<td class="text-white text-sm font-semibold">{catDesc(rsv)}</td>
 						<td class="text-white text-sm font-semibold">{timeDesc(rsv)}</td>
 						<td class="text-white text-sm font-semibold">
-							<div class={statusStyle(rsv.status)}>{rsv.status}</div>
+							<div class="align-middle m-auto w-fit rounded-lg {statusTextColor[rsv.status]}">
+								{rsv.status}
+							</div>
 						</td>
 						{#if beforeCancelCutoff(Settings, rsv.date, rsv.startTime, rsv.category)}
 							<td

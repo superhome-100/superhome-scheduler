@@ -13,7 +13,8 @@
 		"strict": true,
 		"types": ["vitest/globals", "@testing-library/jest-dom"],
 		"paths": {
-			"$lib/*": ["./src/lib/*"]
+			"$lib/*": ["./src/lib/*"],
+			"$types": ["./src/types.ts"]
 		},
 		"typeRoots": ["./node_modules/@types", "./types"]
 	},

@@ -7,8 +7,8 @@
 		user,
 		viewMode,
 		viewedDate
-	} from '$lib/stores.js';
-	import { datetimeToLocalDateStr as dtToLDS } from '$lib/datetimeUtils.js';
+	} from '$lib/stores';
+	import { datetimeToLocalDateStr as dtToLDS } from '$lib/datetimeUtils';
 	import { displayTag } from '$lib/utils.js';
 	import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
 	import { getContext } from 'svelte';

@@ -1,19 +1,20 @@
-<script>
+<script lang="ts">
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 	import { startTimes, endTimes, minuteOfDay } from '$lib/reservationTimes.js';
-	import { timeStrToMin, datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
-	import { canSubmit, user } from '$lib/stores.js';
+	import { timeStrToMin, datetimeToLocalDateStr } from '$lib/datetimeUtils';
+	import { canSubmit, user } from '$lib/stores';
 	import { Settings } from '$lib/settings.js';
 	import { adminView } from '$lib/utils.js';
+	import type { ReservationData } from '$types';
 
 	const lanes = () => Settings.get('poolLanes');
 	const rooms = () => Settings.get('classrooms');
 
-	export let rsv = null;
+	export let rsv: ReservationData | null = null;
 	export let category = 'pool';
-	export let date;
-	export let dateFn = null;
-	export let resType = null;
+	export let date: string | null = null;
+	export let dateFn: null | ((arg0: string) => string) = null;
+	export let resType: null | 'course' | 'autonomous' = null;
 	export let viewOnly = false;
 	export let restrictModify = false;
 	export let maxNumStudents = 4;
@@ -21,10 +22,9 @@
 
 	let disabled = viewOnly || restrictModify;
 
-	date =
-		rsv == null ? (date == null ? dateFn() : datetimeToLocalDateStr(new Date(date))) : rsv.date;
+	date = !rsv || !rsv?.date ? (date ? date : dateFn(category)) : rsv.date;
 
-	const getStartTimes = (date, category) => {
+	const getStartTimes = (date: string, category: string) => {
 		let startTs = startTimes(Settings, date, category);
 		let today = new Date();
 		if (!disabled && date === datetimeToLocalDateStr(today)) {
@@ -43,7 +43,7 @@
 	$canSubmit = true;
 	$: showBuddyFields = autoOrCourse === 'autonomous';
 
-	const validEndTime = (startTime, endTime) => {
+	const validEndTime = (startTime: string, endTime: string) => {
 		let start = timeStrToMin(startTime);
 		let end = timeStrToMin(endTime);
 		return end > start && end - start <= maxTimeHours * 60;
@@ -54,7 +54,7 @@
 	<div class="[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5" slot="categoryLabels">
 		{#if adminView(viewOnly)}
 			{#if category === 'pool'}
-				{#if rsv.resType === 'course' && rsv.numStudents > Settings.get('maxOccupantsPerLane')}
+				{#if rsv?.resType === 'course' && (rsv?.numStudents || 1) > Settings.get('maxOccupantsPerLane')}
 					<div><label for="formLane1">1st Lane</label></div>
 					<div><label for="formLane2">2nd Lane</label></div>
 				{:else}
@@ -76,7 +76,7 @@
 		{#if adminView(viewOnly)}
 			{#if category === 'pool'}
 				<div>
-					<select id="formLane1" name="lane1" value={rsv.lanes[0]}>
+					<select id="formLane1" name="lane1" value={rsv?.lanes[0]}>
 						<option value="auto">Auto</option>
 						{#each lanes() as lane}
 							<option value={lane}>{lane}</option>

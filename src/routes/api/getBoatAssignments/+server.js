@@ -1,4 +1,4 @@
-import { getXataClient } from '$lib/server/xata.js';
+import { getXataClient } from '$lib/server/xata-old';
 import { json } from '@sveltejs/kit';
 
 const xata = getXataClient();

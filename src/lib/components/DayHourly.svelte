@@ -1,7 +1,7 @@
 <script>
 	import { startTimes, endTimes } from '$lib/reservationTimes.js';
-	import { user, viewedDate, reservations } from '$lib/stores.js';
-	import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils.js';
+	import { user, viewedDate, reservations } from '$lib/stores';
+	import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils';
 	import { getContext } from 'svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { badgeColor, getDaySchedule } from '$lib/utils.js';
