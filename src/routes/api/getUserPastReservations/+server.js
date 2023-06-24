@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getXataClient } from '$lib/server/xata.js';
+import { getXataClient } from '$lib/server/xata-old';
 
 const xata = getXataClient();
 

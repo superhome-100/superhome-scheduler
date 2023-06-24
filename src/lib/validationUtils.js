@@ -1,8 +1,8 @@
-import { timeStrToMin } from '$lib/datetimeUtils.js';
+import { timeStrToMin } from '$lib/datetimeUtils';
 import { startTimes, endTimes } from '$lib/reservationTimes.js';
 import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
 import { get } from 'svelte/store';
-import { users } from '$lib/stores.js';
+import { users } from '$lib/stores';
 
 function getTimeSlots(settings, date, category, start, end) {
 	let sTs = startTimes(settings, date, category);

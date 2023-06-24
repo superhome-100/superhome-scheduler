@@ -1,16 +1,18 @@
-<script>
-	import { canSubmit, user, users } from '$lib/stores.js';
+<script lang="ts">
+	import type { ReservationData, BuddyData } from '$types';
+	import { ReservationStatus } from '$types';
+	import { ReservationCategory } from '$types';
+	import { canSubmit, user, users } from '$lib/stores';
 	import { Settings } from '$lib/settings.js';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes.js';
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils.js';
-	import { adminView } from '$lib/utils.js';
 	import BuddyMatch from '$lib/components/BuddyMatch.svelte';
 	import PlusIcon from '$lib/components/PlusIcon.svelte';
 	import DeleteIcon from '$lib/components/DeleteIcon.svelte';
 
-	export let rsv = null;
-	export let date;
-	export let category;
+	export let rsv: ReservationData | null;
+	export let date: string | null = rsv?.date || new Date().toString();
+	export let category: ReservationCategory | string =
+		rsv?.category.toString() || ReservationCategory.pool;
 	export let viewOnly = false;
 	export let showBuddyFields = true;
 	export let restrictModify = false;
@@ -19,24 +21,23 @@
 
 	let status = rsv == null ? 'pending' : rsv.status;
 	let comments = rsv == null ? null : rsv.comments;
-	date = rsv == null ? date : rsv.date;
-	category = rsv == null ? category : rsv.category;
 
 	$: maxBuddies =
 		category === 'openwater'
-			? 2
+			? 3 
 			: category === 'pool'
 			? 1
 			: category === 'classroom'
 			? 0
 			: undefined;
 
-	const initBF = () => {
-		let buddyFields = [];
+	const initBF = (): BuddyData[] => {
+		let buddyFields: BuddyData[] = [];
 		if (rsv != null && rsv.buddies != null) {
 			for (let i = 0; i < rsv.buddies.length; i++) {
 				buddyFields.push({
-					name: $users[rsv.buddies[i]].nickname,
+					// @ts-ignore - add proper user type to $users
+					name: $users[rsv.buddies[i]].nickname as string,
 					userId: rsv.buddies[i],
 					id: i,
 					matches: []
@@ -48,13 +49,13 @@
 
 	$: buddyFields = initBF();
 
-	$: currentBF = { name: '', matches: [] };
+	$: currentBF = { name: '', matches: [] } as BuddyData;
 
 	const addBuddyField = () => {
 		buddyFields = [...buddyFields, { name: '', matches: [], id: buddyFields.length }];
 	};
 
-	const removeBuddyField = (bf) => {
+	const removeBuddyField = (bf: BuddyData) => {
 		for (let i = 0; i < buddyFields.length; i++) {
 			if (bf.id === buddyFields[i].id) {
 				buddyFields.splice(i, 1);
@@ -94,26 +95,27 @@
 		buddyFields = [...buddyFields];
 	}
 
-	const focus = (el) => (rsv == null ? el.focus() : null);
+	const focus = (el: HTMLElement) => (rsv == null ? el.focus() : null);
 
 	$: if (!currentBF.name) {
 		currentBF.matches = [];
 		hiLiteIndex = 0;
 	}
 
-	const setInputVal = (match) => {
+	const setInputVal = (match: any) => {
 		currentBF.name = match.nickname;
 		currentBF.userId = match.id;
 		currentBF.matches = [];
 		buddyFields = [...buddyFields];
 		hiLiteIndex = 0;
+		// @ts-ignore - sveltekit doesn't like this
 		document.querySelector('#buddy' + currentBF.id + '-input').focus();
 	};
 
 	let hiLiteIndex = 0;
 
-	const navigateList = (e) => {
-		if (currentBF && currentBF.matches.length > 0) {
+	const navigateList = (e: any) => {
+		if (currentBF?.matches && currentBF?.matches.length > 0) {
 			if (e.key === 'ArrowDown' && hiLiteIndex <= currentBF.matches.length - 1) {
 				hiLiteIndex === null ? (hiLiteIndex = 0) : (hiLiteIndex += 1);
 			} else if (e.key === 'ArrowUp' && hiLiteIndex !== null) {
@@ -130,30 +132,18 @@
 	const autocompUlStyle =
 		'relative ml-2 top-0 border border-solid border-bg-gray-300 ' + 'rounded text-sm';
 
-	const ringColor = (status) =>
-		status === 'confirmed'
-			? 'ring-status-confirmed focus:ring-status-confirmed'
-			: status === 'pending'
-			? 'ring-status-pending focus:ring-status-pending'
-			: status === 'rejected'
-			? 'ring-status-rejected focus:ring-status-rejected'
-			: undefined;
+	const bdColor: { [k: string]: string } = {
+		confirmed: 'border-status-confirmed',
+		pending: 'border-status-pending',
+		rejected: 'border-status-rejected'
+	};
 
-	const bdColor = (status) =>
-		status === 'confirmed'
-			? 'border-status-confirmed'
-			: status === 'pending'
-			? 'border-status-pending'
-			: status === 'rejected'
-			? 'border-status-rejected'
-			: undefined;
-
-	const statusStyle = (status) =>
+	const statusStyle = (status: string) =>
 		'align-middle px-2 py-0 pb-1 mb-1 ml-2 w-fit ' +
 		'text-xl text-gray-500 dark:text-gray-300 ' +
 		'bg-white dark:bg-gray-500 ' +
 		'rounded-lg border ' +
-		bdColor(status) +
+		bdColor[status] +
 		' ' +
 		'ring-1 ring-gray-500 dark:ring-gray-300';
 </script>
@@ -196,8 +186,8 @@
 	</div>
 	<div class="column inputs text-left w-[67%]">
 		{#if viewOnly}
-			<div class={statusStyle(rsv.status)}>
-				{rsv.status}
+			<div class={statusStyle(rsv?.status?.toString() || ReservationStatus.pending.toString())}>
+				{rsv?.status}
 			</div>
 		{/if}
 		<div>
@@ -257,14 +247,14 @@
 									class="dark:text-white p-0"
 									style="vertical-align:inherit"
 									type="button"
-									on:click={removeBuddyField(bf)}
+									on:click={() => removeBuddyField(bf)}
 									{disabled}
 									tabindex="3"><DeleteIcon svgStyle={'h-6 w-6'} /></button
 								>
 							{/if}
 						</div>
 					</div>
-					{#if bf.matches.length > 0}
+					{#if bf?.matches && bf?.matches?.length > 0}
 						<ul class={autocompUlStyle}>
 							{#each bf.matches as m, i}
 								<BuddyMatch

@@ -7,9 +7,10 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
 	import { minValidDateStr } from '$lib/reservationTimes.js';
-	import { idx2month } from '$lib/datetimeUtils.js';
-	import { user, view, viewedMonth, reservations } from '$lib/stores.js';
+	import { idx2month } from '$lib/datetimeUtils';
+	import { view, viewedMonth, reservations } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants.js';
+	import { Settings } from '$lib/settings.js';
 
 	export let data;
 
@@ -118,7 +119,12 @@
 		<span class="text-2xl">{idx2month[gMonth]}</span>
 	</div>
 	<span class="">
-		<Modal><ReservationDialog category={gCategory} dateFn={minValidDateStr} /></Modal>
+		<Modal
+			><ReservationDialog
+				category={gCategory}
+				dateFn={(cat) => minValidDateStr(Settings, cat)}
+			/></Modal
+		>
 	</span>
 </div>
 <div

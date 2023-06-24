@@ -1,4 +1,4 @@
-import { getXataClient } from '$lib/server/xata.js';
+import { getXataClient } from '$lib/server/xata-old';
 
 const xata = getXataClient();
 
@@ -7,7 +7,7 @@ import {
 	datetimeInPanglaoFromServer,
 	timeStrToMin,
 	firstOfMonthStr
-} from '$lib/datetimeUtils.js';
+} from '$lib/datetimeUtils';
 import { Settings } from '$lib/server/settings.js';
 
 const unpackTemplate = (uT) => {
