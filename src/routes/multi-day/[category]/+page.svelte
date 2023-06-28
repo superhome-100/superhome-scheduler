@@ -52,31 +52,37 @@
 		handleDateChange();
 	}
 
+	let modalOpened = false;
+
 	function handleKeypress(e) {
-		if (e.keyCode == 37) {
-			// left arrow key
-			prevMonth();
-		} else if (e.keyCode == 39) {
-			// right arrow key
-			nextMonth();
-		} else if (e.keyCode == 40) {
-			// down arrow
-			let i = categories.indexOf(gCategory);
-			i = (i + 1) % categories.length;
-			goto(`/multi-day/${categories[i]}`);
-		} else if (e.keyCode == 38) {
-			// up arrow
-			let i = categories.indexOf(gCategory);
-			i = (categories.length + i - 1) % categories.length;
-			goto(`/multi-day/${categories[i]}`);
+		if (!modalOpened) {
+			if (e.keyCode == 37) {
+				// left arrow key
+				prevMonth();
+			} else if (e.keyCode == 39) {
+				// right arrow key
+				nextMonth();
+			} else if (e.keyCode == 40) {
+				// down arrow
+				let i = categories.indexOf(gCategory);
+				i = (i + 1) % categories.length;
+				goto(`/multi-day/${categories[i]}`);
+			} else if (e.keyCode == 38) {
+				// up arrow
+				let i = categories.indexOf(gCategory);
+				i = (categories.length + i - 1) % categories.length;
+				goto(`/multi-day/${categories[i]}`);
+			}
 		}
 	}
 
 	function swipeHandler(event) {
-		if (event.detail.direction === 'left') {
-			nextMonth();
-		} else if (event.detail.direction === 'right') {
-			prevMonth();
+		if (!modalOpened) {
+			if (event.detail.direction === 'left') {
+				nextMonth();
+			} else if (event.detail.direction === 'right') {
+				prevMonth();
+			}
 		}
 	}
 	const catStyle = (cat) => {
@@ -119,7 +125,7 @@
 		<span class="text-2xl">{idx2month[gMonth]}</span>
 	</div>
 	<span class="">
-		<Modal
+		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}
 			><ReservationDialog
 				category={gCategory}
 				dateFn={(cat) => minValidDateStr(Settings, cat)}
@@ -147,7 +153,9 @@
 			{#each gMonthArr() as week}
 				<tr>
 					{#each week as { date, rsvs }}
-						<td class="{catStyle(gCategory)} align-top h-20 xs:h-24 border border-solid">
+						<td
+							class="{catStyle(gCategory)} align-top h-20 xs:h-24 border border-solid"
+						>
 							<DayOfMonth {date} category={gCategory} {rsvs} />
 						</td>
 					{/each}
