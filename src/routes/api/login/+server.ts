@@ -1,10 +1,10 @@
-import { json } from '@sveltejs/kit';
-import { createSession } from '$lib/server/server.js';
+import { json, type RequestEvent } from '@sveltejs/kit';
+import { createSession } from '$lib/server/session';
 import { authenticateUser } from '$lib/server/user';
 
-export async function POST({ cookies, request }) {
+export async function POST({ cookies, request }: RequestEvent) {
 	try {
-		const { userId, userName } = await request.json();
+		const { userId, userName } = await request.json() as { userId: string; userName: string };
 		const record = await authenticateUser(userId, userName);
 		if (record.status === 'active') {
 			if (cookies.get('sessionid') === undefined) {
