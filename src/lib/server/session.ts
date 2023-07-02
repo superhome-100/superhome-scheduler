@@ -16,6 +16,8 @@ export async function deleteSession(id: string) {
 }
 
 export async function createSession(user: UsersRecord) {
+	// how this works?
+	// it seems to be linking the user/user.id to the users collection/table
 	return await xata.db.Sessions.create({
 		user: user.id
 	});

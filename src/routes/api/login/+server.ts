@@ -4,7 +4,11 @@ import { authenticateUser } from '$lib/server/user';
 
 export async function POST({ cookies, request }: RequestEvent) {
 	try {
-		const { userId, userName } = await request.json() as { userId: string; userName: string };
+		const { userId, userName, accessToken } = (await request.json()) as {
+			userId: string;
+			userName: string;
+			accessToken: string;
+		};
 		const record = await authenticateUser(userId, userName);
 		if (record.status === 'active') {
 			if (cookies.get('sessionid') === undefined) {
@@ -12,6 +16,7 @@ export async function POST({ cookies, request }: RequestEvent) {
 				let expires = new Date();
 				expires.setMonth(expires.getMonth() + 1);
 				cookies.set('sessionid', session.id, { path: '/', expires });
+				cookies.set('accesstoken', accessToken, { path: '/', expires });
 			}
 		}
 		return json({ status: 'success', record });

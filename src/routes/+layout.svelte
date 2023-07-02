@@ -8,7 +8,8 @@
 	import Popup, { popup } from '$lib/components/Popup.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Notification from '$lib/components/Notification.svelte';
-	import { PUBLIC_FACEBOOK_APP_ID } from '$env/static/public';	
+	import { PUBLIC_FACEBOOK_APP_ID } from '$env/static/public';
+	import dayjs from 'dayjs';
 	import {
 		boatAssignments,
 		buoys,
@@ -27,19 +28,31 @@
 	import { login, logout } from '$lib/authentication';
 	import { toast, Toaster } from 'svelte-french-toast';
 	import { FacebookAuth } from '@beyonk/svelte-social-auth';
-	import { P } from 'flowbite-svelte';
-	import { getAppData, getBoatAssignments, getSession, getSettings, getUserPastReservations } from '$lib/api';
+	import {
+		getAppData,
+		getBoatAssignments,
+		getSession,
+		getSettings,
+		getUserPastReservations,
+		getUserNotifications
+	} from '$lib/api';
 	import { onMount } from 'svelte';
+
+	typeof window !== 'undefined' && window.navigator
+		? navigator.userAgent.includes('FBAN') || navigator.userAgent.includes('FBAV')
+		: false;
+
+	let intervalId: number | undefined;
+
+	$: if ($loginState === 'out' && $page.route.id != '/') {
+		goto('/');
+	}
 	$: isFacebook =
 		typeof window !== 'undefined' && window.navigator
 			? navigator.userAgent.includes('FBAN') || navigator.userAgent.includes('FBAV')
 			: false;
 
-	let intervalId:number | undefined;
-
-	$: if ($loginState === 'out' && $page.route.id != '/') {
-		goto('/');
-	}
+	let isLoading = false;
 
 	async function callLogout() {
 		if (intervalId) {
@@ -49,42 +62,38 @@
 		await logout();
 	}
 
-	async function refreshAppState() {
-		// TODO: this is expensive
-		const resSettings = await getSettings();
-		if (resSettings.status === 'success') {
-			$settings = resSettings.settings;
-			$buoys = resSettings.buoys;
-		}
+	async function initializeUserSessionData(setViewMode = 'admin') {
+		if (!$user || $user.status !== 'active') {
+			$loginState = 'out';
 
-		// TODO: cleanup
-		if (!$user) {
-			return callLogout();
-		};
-
-		let minDateStr = datetimeToLocalDateStr(new Date());
-		const resAppData = await getAppData($user.id, minDateStr);
-
-		if (resAppData.status === 'success') {
-			$users = resAppData.usersById!;
-			$user = $users[$user.id];
 			if ($user && $user.status === 'disabled') {
-				await callLogout();
-				return;
+				popup(
+					'User ' +
+						$user.name +
+						' does not have permission ' +
+						'to access this app; please contact the admin for help'
+				);
 			}
-			$notifications = resAppData.notifications!;
-			// keep unchanged rsvs and update changed/add new ones
-			let rsvById = $reservations.reduce((obj, rsv) => {
-				obj[rsv.id] = rsv;
-				return obj;
-			}, {});
-			(resAppData.reservations || []).forEach((rsv) => {
-				rsvById[rsv.id] = augmentRsv(rsv);
+			callLogout();
+			return;
+		}
+		$loginState = 'in';
+
+		const maxDateStr = datetimeToLocalDateStr(new Date());
+		const [userNotifications, reqReservations] = await Promise.all([
+			getUserNotifications(),
+			getUserPastReservations($user.id, maxDateStr)
+		]);
+		$notifications = userNotifications;
+
+		if (reqReservations.status === 'success') {
+			$userPastReservations = (reqReservations.userPastReservations || []).map((rsv) => {
+				return augmentRsv(rsv, $user);
 			});
-			$reservations = Object.values(rsvById).filter((rsv) => rsv.status !== 'canceled');
 		}
 
-		if ($user && $user.privileges === 'admin') {
+		if ($user.privileges === 'admin') {
+			$viewMode = setViewMode;
 			let data = await getBoatAssignments();
 			if (data.status === 'success') {
 				$boatAssignments = data.assignments;
@@ -92,97 +101,85 @@
 		}
 	}
 
-	const oneWeekAgo = () => {
-		let d = new Date();
-		d.setDate(d.getDate() - 7);
-		return datetimeToLocalDateStr(d);
-	};
-
-	async function initFromUser(vm = 'admin') {
-		if ($user == null) {
-			$loginState = 'out';
-		} else if ($user.status === 'active') {
-			$loginState = 'in';
-			let minDateStr = oneWeekAgo();
-			let appData = await getAppData($user.id, minDateStr);
-
-			if (appData.status === 'error') {
-				throw new Error('Could not read app data from database');
-			}
-			$users = appData.usersById!;
-			$reservations = (appData.reservations || [])
-				.filter((rsv) => rsv.status != 'canceled')
-				.map((rsv) => augmentRsv(rsv));
-
-			$notifications = appData.notifications!;
-
-			let maxDateStr = datetimeToLocalDateStr(new Date());
-			const reqReservations = await getUserPastReservations($user.id, maxDateStr);
-			if (reqReservations.status === 'success') {
-				$userPastReservations = (reqReservations.userPastReservations || []).map((rsv) => {
-					return augmentRsv(rsv, $user);
-				});
-			}
-
-			if ($user.privileges === 'admin') {
-				$viewMode = vm;
-				let data = await getBoatAssignments();
-				if (data.status === 'success') {
-					$boatAssignments = data.assignments;
-				}
-			}
-
-			intervalId = setInterval(refreshAppState, $settings.refreshInterval.default);
-		} else if ($user.status === 'disabled') {
-			popup(
-				'User ' +
-					$user.name +
-					' does not have permission ' +
-					'to access this app; please contact the admin for help'
-			);
-			await callLogout();
-		} else {
-			await callLogout();
-			throw new Error('Unknown user status');
-		}
-	}
-
 	async function initApp() {
-		const resSettings = await getSettings();
-		if (resSettings.status === 'error') {
-			throw new Error('Could not get settings from database');
+		if (isLoading) {
+			// prevent overloading our server
+			return;
 		}
-		$settings = resSettings.settings;
-		$buoys = resSettings.buoys;
+		try {
+			isLoading = true;
+			const oneWeekAgo = dayjs().locale('en-US').subtract(7, 'day').format('YYYY-MM-DD');
+			// TODO: this is super slow
+			const [resSettings, resAppData] = await Promise.all([
+				getSettings(),
+				getAppData(oneWeekAgo),
+				getSession().then((res) => {
+					// try to make things faster
+					if (res.status !== 'success') {
+						throw new Error('Could not get session from database');
+					} else {
+						$user = res.user || null;
+						initializeUserSessionData(res.viewMode);
+						if (res.accessToken && $user) {
+							login($user.id, res.accessToken, false);
+						}
+					}
+				})
+			]);
+			if (resSettings.status === 'error') {
+				throw new Error('Could not get settings from database');
+			}
 
-		const resSession = await getSession();
-		if (resSession.status === 'error') {
-			throw new Error('Could not get session from database');
+			$settings = resSettings.settings;
+			$buoys = resSettings.buoys;
+			$users = resAppData.usersById!;
+
+			const rsvById: { [id: string]: any } = $reservations.reduce((obj, rsv) => {
+				obj[rsv.id] = rsv;
+				return obj;
+			}, {});
+			(resAppData.reservations || []).forEach((rsv) => {
+				rsvById[rsv.id] = augmentRsv(rsv);
+			});
+			$reservations = Object.values(rsvById).filter((rsv) => rsv.status !== 'canceled');
+
+			if (!intervalId) {
+				intervalId = setInterval(initApp, $settings.refreshInterval.default);
+			}
+		} catch (error) {
+			console.error(error);
+		} finally {
+			isLoading = false;
 		}
-		$user = resSession.user!;
-		await initFromUser(resSession.viewMode);
 	}
 
-	const getUserFromAuth = (e: any) => {
+	const getUserFromAuth = async (e: any) => {
 		const uid = _.get(e, 'detail.userId', '');
 		const accessToken = _.get(e, 'detail.accessToken', '');
 		if (uid) {
-			console.log("uid:", uid);
+			console.log('uid:', uid);
 			$loginState = 'in';
-			login(uid, accessToken);
+			await login(uid, accessToken, true);
+			await initializeUserSessionData();
 		} else {
 			$loginState = 'out';
 		}
-	}
+	};
 
 	onMount(() => {
 		if (!isFacebook) {
 			// @ts-ignore
 			toast.promise(initApp(), {
 				loading: 'loading...',
-				error: 'Loading error',
+				error: 'Loading error'
 			});
 		}
+
+		return () => {
+			if (intervalId) {
+				clearInterval(intervalId);
+			}
+		};
 	});
 </script>
 
@@ -190,14 +187,14 @@
 <Sidebar />
 <div id="app" class="flex px-1 mx-auto w-full">
 	<main class="lg:ml-72 w-full mx-auto">
-		{#if $user && $loginState === 'in'}
+		{#if $loginState === 'in'}
 			<slot />
 		{:else}
 			<div class="m-auto flex items-center justify-center pt-10">
 				<FacebookAuth
-					appId="{PUBLIC_FACEBOOK_APP_ID}"
+					appId={PUBLIC_FACEBOOK_APP_ID}
 					on:auth-success={getUserFromAuth}
-					on:auth-info={getUserFromAuth}	
+					on:auth-info={getUserFromAuth}
 				/>
 			</div>
 		{/if}
