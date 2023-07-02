@@ -1,13 +1,12 @@
-import { json } from '@sveltejs/kit';
-import { getUserActiveNotifications } from '$lib/server/server.js';
+import { json, type RequestEvent } from '@sveltejs/kit';
 import { getReservationsSince } from '$lib/server/reservation';
 import { getAllUsers } from '../../../lib/server/user';
 
-export async function POST({ request }) {
+// TODO: break this apart into separate functions
+export async function POST({ request }: RequestEvent) {
 	try {
-		let { user, minDateStr } = await request.json();
-		const [notifications, reservations, users] = await Promise.all([
-			getUserActiveNotifications(user),
+		let { minDateStr } = await request.json();
+		const [reservations, users] = await Promise.all([
 			getReservationsSince(minDateStr),
 			getAllUsers()
 		]);
@@ -15,10 +14,10 @@ export async function POST({ request }) {
 		const usersById = users.reduce((obj, user) => {
 			obj[user.id] = user;
 			return obj;
-		}, {});
+		}, {} as { [uid: string]: any });
+
 		return json({
 			status: 'success',
-			notifications,
 			reservations,
 			usersById
 		});
