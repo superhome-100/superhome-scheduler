@@ -5,6 +5,7 @@
 	import { page } from '$app/stores';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import Nprogress from '$lib/components/Nprogress.svelte';
+	import Spinner from '$lib/components/spinner.svelte';
 	import Popup, { popup } from '$lib/components/Popup.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Notification from '$lib/components/Notification.svelte';
@@ -37,10 +38,6 @@
 		getUserNotifications
 	} from '$lib/api';
 	import { onMount } from 'svelte';
-
-	typeof window !== 'undefined' && window.navigator
-		? navigator.userAgent.includes('FBAN') || navigator.userAgent.includes('FBAV')
-		: false;
 
 	let intervalId: number | undefined;
 
@@ -189,6 +186,10 @@
 	<main class="lg:ml-72 w-full mx-auto">
 		{#if $loginState === 'in'}
 			<slot />
+		{:else if $loginState === 'pending'}
+			<div class="m-auto flex items-center justify-center pt-10">
+				<Spinner/>
+			</div>
 		{:else}
 			<div class="m-auto flex items-center justify-center pt-10">
 				<FacebookAuth
