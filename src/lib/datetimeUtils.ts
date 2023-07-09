@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 export const month2idx: { [key: string]: number } = {
 	January: 0,
 	February: 1,
@@ -34,11 +35,7 @@ export const firstOfMonthStr = (dateStr: string) => {
 };
 
 export function datetimeToLocalDateStr(datetime: Date) {
-	let rexp = /([0-9]+)\/([0-9]+)\/([0-9]+).*/;
-	let m = rexp.exec(datetime.toLocaleDateString('en-US'));
-	if (!m) throw new Error('Invalid date string');
-
-	return m[3] + '-' + m[1].padStart(2, '0') + '-' + m[2].padStart(2, '0');
+	return dayjs(datetime).locale('en-US').format('YYYY-MM-DD');
 }
 
 export function datetimeToDateStr(dt: Date) {

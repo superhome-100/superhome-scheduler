@@ -24,7 +24,7 @@
 
 	$: maxBuddies =
 		category === 'openwater'
-			? 3 
+			? 3
 			: category === 'pool'
 			? 1
 			: category === 'classroom'
