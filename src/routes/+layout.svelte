@@ -21,8 +21,8 @@
 		user,
 		userPastReservations,
 		users,
-		view,
-		viewMode
+		viewMode,
+		profileSrc
 	} from '$lib/stores';
 	import { augmentRsv } from '$lib/utils.js';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
@@ -113,13 +113,12 @@
 				getSession().then((res) => {
 					// try to make things faster
 					if (res.status !== 'success') {
+						$loginState = 'out';
 						throw new Error('Could not get session from database');
 					} else {
 						$user = res.user || null;
 						initializeUserSessionData(res.viewMode);
-						if (res.accessToken && $user) {
-							login($user.id, res.accessToken, false);
-						}
+						$profileSrc = res.photoURL || '';
 					}
 				})
 			]);
@@ -188,7 +187,7 @@
 			<slot />
 		{:else if $loginState === 'pending'}
 			<div class="m-auto flex items-center justify-center pt-10">
-				<Spinner/>
+				<Spinner />
 			</div>
 		{:else}
 			<div class="m-auto flex items-center justify-center pt-10">

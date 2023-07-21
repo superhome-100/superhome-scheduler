@@ -120,9 +120,7 @@
 			if (e.key === 'ArrowDown' && hiLiteIndex <= currentBF.matches.length - 1) {
 				hiLiteIndex === null ? (hiLiteIndex = 0) : (hiLiteIndex += 1);
 			} else if (e.key === 'ArrowUp' && hiLiteIndex !== null) {
-				hiLiteIndex === 0
-					? (hiLiteIndex = currentBF.matches.length - 1)
-					: (hiLiteIndex -= 1);
+				hiLiteIndex === 0 ? (hiLiteIndex = currentBF.matches.length - 1) : (hiLiteIndex -= 1);
 			} else if (e.key === 'Enter') {
 				e.preventDefault();
 				setInputVal(currentBF.matches[hiLiteIndex]);
@@ -189,9 +187,7 @@
 	</div>
 	<div class="column inputs text-left w-[67%]">
 		{#if viewOnly}
-			<div
-				class={statusStyle(rsv?.status?.toString() || ReservationStatus.pending.toString())}
-			>
+			<div class={statusStyle(rsv?.status?.toString() || ReservationStatus.pending.toString())}>
 				{rsv?.status}
 			</div>
 		{/if}

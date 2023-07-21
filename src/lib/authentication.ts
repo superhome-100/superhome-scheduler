@@ -18,20 +18,20 @@ export async function login(uid: string, accessToken: string, authenticate = fal
 				};
 			};
 		};
-
-		profileSrc.set(data.picture.data.url);
-		if (authenticate) await authenticateUser(uid, data.name, accessToken);
+		const photoURL = data.picture.data.url;
+		profileSrc.set(photoURL);
+		if (authenticate) await authenticateUser(uid, data.name, photoURL);
 	} catch (e) {
 		console.log(e);
-		loginState.set('out');
+		// loginState.set('out');
 	}
 }
 
-async function authenticateUser(facebookId: string, name: string, accessToken: string) {
+async function authenticateUser(facebookId: string, name: string, photoURL: string) {
 	const response = await fetch('/api/login', {
 		method: 'POST',
 		headers: { 'Content-type': 'application/json' },
-		body: JSON.stringify({ userId: facebookId, userName: name, accessToken })
+		body: JSON.stringify({ userId: facebookId, userName: name, photoURL })
 	});
 	const data = (await response.json()) as {
 		status: 'success' | 'error';

@@ -12,7 +12,6 @@ export async function GET({ cookies }: RequestEvent) {
 			if (record == undefined) {
 				// cookie is invalid -> delete it
 				cookies.delete('sessionid', { path: '/' });
-				cookies.delete('accessToken', { path: '/*' });
 			} else {
 				user = record.user!;
 				viewMode = record.viewMode!;
@@ -22,7 +21,7 @@ export async function GET({ cookies }: RequestEvent) {
 			status: 'success',
 			user,
 			viewMode,
-			accessToken: cookies.get('accesstoken')
+			photoURL: cookies.get('photo_url')
 		});
 	} catch (error) {
 		return json({ status: 'error', error });

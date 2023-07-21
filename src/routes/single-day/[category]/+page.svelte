@@ -179,10 +179,7 @@
 	</div>
 	<span class="mr-2">
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}
-			><ReservationDialog
-				{category}
-				dateFn={(cat) => datetimeToLocalDateStr($viewedDate)}
-			/></Modal
+			><ReservationDialog {category} dateFn={(cat) => datetimeToLocalDateStr($viewedDate)} /></Modal
 		>
 	</span>
 </div>

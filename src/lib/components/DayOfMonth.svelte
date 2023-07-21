@@ -28,10 +28,7 @@
 		if (owTime) {
 			return rsvs
 				.filter((rsv) => rsv.owTime === owTime)
-				.reduce(
-					(n, rsv) => (rsv.resType === 'course' ? n + 1 + rsv.numStudents : n + 1),
-					0
-				);
+				.reduce((n, rsv) => (rsv.resType === 'course' ? n + 1 + rsv.numStudents : n + 1), 0);
 		} else {
 			return rsvs.reduce(
 				(n, rsv) => (rsv.resType === 'course' ? n + 1 + rsv.numStudents : n + 1),
