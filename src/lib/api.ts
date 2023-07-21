@@ -22,7 +22,7 @@ export const getSession = async () => {
 
 	const data = (await response.json()) as {
 		status: 'success' | 'error';
-		accessToken?: string;
+		photoURL?: string;
 		user?: UsersRecord;
 		viewMode?: string;
 		error?: string;

@@ -4,10 +4,10 @@ import { authenticateUser } from '$lib/server/user';
 
 export async function POST({ cookies, request }: RequestEvent) {
 	try {
-		const { userId, userName, accessToken } = (await request.json()) as {
+		const { userId, userName, photoURL } = (await request.json()) as {
 			userId: string;
 			userName: string;
-			accessToken: string;
+			photoURL: string;
 		};
 		const record = await authenticateUser(userId, userName);
 		if (record.status === 'active') {
@@ -16,7 +16,7 @@ export async function POST({ cookies, request }: RequestEvent) {
 				let expires = new Date();
 				expires.setMonth(expires.getMonth() + 1);
 				cookies.set('sessionid', session.id, { path: '/', expires });
-				cookies.set('accesstoken', accessToken, { path: '/', expires });
+				cookies.set('photo_url', photoURL, { path: '/', expires });
 			}
 		}
 		return json({ status: 'success', record });
