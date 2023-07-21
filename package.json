@@ -41,6 +41,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@beyonk/svelte-social-auth": "^3.0.0",
 		"@xata.io/client": "^0.22.4",
 		"daisyui": "^2.51.5",
 		"dayjs": "^1.11.9",

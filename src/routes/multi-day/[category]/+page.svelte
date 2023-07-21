@@ -153,9 +153,7 @@
 			{#each gMonthArr() as week}
 				<tr>
 					{#each week as { date, rsvs }}
-						<td
-							class="{catStyle(gCategory)} align-top h-20 xs:h-24 border border-solid"
-						>
+						<td class="{catStyle(gCategory)} align-top h-20 xs:h-24 border border-solid">
 							<DayOfMonth {date} category={gCategory} {rsvs} />
 						</td>
 					{/each}
