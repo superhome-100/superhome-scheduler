@@ -22,7 +22,7 @@
 		viewMode
 	} from '$lib/stores';
 	import { augmentRsv } from '$lib/utils.js';
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
+	import { datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
 	import { loadFB, login, logout } from '$lib/authentication.js';
 	import { toast, Toaster } from 'svelte-french-toast';
 
@@ -58,7 +58,7 @@
 			$buoys = data.buoys;
 		}
 
-		let minDateStr = datetimeToLocalDateStr(new Date());
+		let minDateStr = datetimeToLocalDateStr(PanglaoDate());
 		data = await post('getAppData', { user: $user.id, minDateStr });
 
 		if (data.status === 'success') {
@@ -89,7 +89,7 @@
 	}
 
 	const oneWeekAgo = () => {
-		let d = new Date();
+		let d = PanglaoDate();
 		d.setDate(d.getDate() - 7);
 		return datetimeToLocalDateStr(d);
 	};
