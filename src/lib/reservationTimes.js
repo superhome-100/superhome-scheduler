@@ -23,8 +23,8 @@ export function validReservationDate(stns, date, category) {
 }
 
 export function beforeResCutoff(stns, dateStr, startTime, category) {
-	let now = new Date();
-	let tomorrow = new Date();
+	let now = dtu.PanglaoDate();
+	let tomorrow = dtu.PanglaoDate();
 	tomorrow.setDate(now.getDate() + 1);
 	let tomStr = dtu.datetimeToLocalDateStr(tomorrow);
 
@@ -40,7 +40,7 @@ export function beforeResCutoff(stns, dateStr, startTime, category) {
 }
 
 export function beforeCancelCutoff(stns, dateStr, startTime, category) {
-	let now = new Date();
+	let now = dtu.PanglaoDate();
 	let today = dtu.datetimeToLocalDateStr(now);
 	if (dateStr > today) {
 		return true;
@@ -81,9 +81,9 @@ export const endTimes = (stns, dateStr, cat) =>
 		.map((v, i) => dtu.minToTimeStr(minStart(stns, dateStr, cat) + (i + 1) * inc(stns, dateStr)));
 
 export function minValidDate(stns, category) {
-	let today = new Date();
+	let today = dtu.PanglaoDate();
 	let todayStr = dtu.datetimeToLocalDateStr(today);
-	let d = new Date();
+	let d = dtu.PanglaoDate();
 	if (category === 'classroom') {
 		let sTs = startTimes(stns, todayStr, category);
 		let lastSlot = dtu.timeStrToMin(sTs[sTs.length - 1]);
@@ -106,9 +106,9 @@ export function minValidDateStr(stns, category) {
 }
 
 export function maxValidDate(stns) {
-	let today = new Date();
+	let today = dtu.PanglaoDate();
 	let todayStr = dtu.datetimeToLocalDateStr(today);
-	let maxDay = new Date();
+	let maxDay = dtu.PanglaoDate();
 	maxDay.setDate(today.getDate() + stns.get('reservationLeadTimeDays', todayStr));
 	return maxDay;
 }

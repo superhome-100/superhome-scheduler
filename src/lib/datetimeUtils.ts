@@ -1,3 +1,10 @@
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 export const month2idx: { [key: string]: number } = {
 	January: 0,
 	February: 1,
@@ -33,6 +40,10 @@ export const firstOfMonthStr = (dateStr: string) => {
 	return m[1] + '01';
 };
 
+const PhilippinesTimezoneOffset = -480;
+
+export const PanglaoDate = () => new Date(dayjs().tz('Asia/Manila').$d);
+
 export function datetimeToLocalDateStr(datetime: Date) {
 	let rexp = /([0-9]+)\/([0-9]+)\/([0-9]+).*/;
 	let m = rexp.exec(datetime.toLocaleDateString('en-US'));
@@ -48,10 +59,10 @@ export function datetimeToDateStr(dt: Date) {
 	return year + '-' + month.toString().padStart(2, '0') + '-' + day.toString().padStart(2, '0');
 }
 
+// the server's local time is always UTC regardless of its physical location
 export function datetimeInPanglaoFromServer() {
-	const PhilippinesOffset = -480;
 	let d = new Date();
-	return new Date(d.getTime() - PhilippinesOffset * 60000);
+	return new Date(d.getTime() - PhilippinesTimezoneOffset * 60000);
 }
 
 export const minToTimeStr = (min: number) =>
