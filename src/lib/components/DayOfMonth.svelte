@@ -1,6 +1,7 @@
 <script>
 	import { goto } from '$app/navigation';
-	import { view, viewedDate } from '$lib/stores';
+	import { viewedDate } from '$lib/stores';
+	import { PanglaoDate } from '$lib/datetimeUtils';
 
 	export let date;
 	export let rsvs;
@@ -11,17 +12,8 @@
 		goto('/single-day/{category}');
 	}
 
-	const catBg = (cat) =>
-		cat === 'pool'
-			? 'bg-pool-bg-to'
-			: cat === 'openwater'
-			? 'bg-openwater-bg-to'
-			: cat === 'classroom'
-			? 'bg-classroom-bg-to'
-			: undefined;
-
 	const dateStyle = (date) => {
-		let today = new Date();
+		let today = PanglaoDate();
 		if (
 			date.getFullYear() == today.getFullYear() &&
 			date.getMonth() == today.getMonth() &&
@@ -36,7 +28,10 @@
 		if (owTime) {
 			return rsvs
 				.filter((rsv) => rsv.owTime === owTime)
-				.reduce((n, rsv) => (rsv.resType === 'course' ? n + 1 + rsv.numStudents : n + 1), 0);
+				.reduce(
+					(n, rsv) => (rsv.resType === 'course' ? n + 1 + rsv.numStudents : n + 1),
+					0
+				);
 		} else {
 			return rsvs.reduce(
 				(n, rsv) => (rsv.resType === 'course' ? n + 1 + rsv.numStudents : n + 1),
