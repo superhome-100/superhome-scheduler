@@ -1,3 +1,10 @@
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 export const month2idx: { [key: string]: number } = {
 	January: 0,
 	February: 1,
@@ -35,20 +42,11 @@ export const firstOfMonthStr = (dateStr: string) => {
 
 const PhilippinesTimezoneOffset = -480;
 
-export const toPanglaoTimezone = (dt: Date) => {
-    let local = dt.getTimezoneOffset();
-    if (local == PhilippinesTimezoneOffset) {
-        return dt;
-    } else {
-        return new Date(dt.getTime() - (PhilippinesTimezoneOffset - local) * 60000);
-    }
-}
-
-export const PanglaoDate = () => toPanglaoTimezone(new Date());
+export const PanglaoDate = () => new Date(dayjs().tz('Asia/Manila').$d);
 
 export function datetimeToLocalDateStr(datetime: Date) {
 	let rexp = /([0-9]+)\/([0-9]+)\/([0-9]+).*/;
-	let m = rexp.exec(toPanglaoTimezone(datetime).toLocaleDateString('en-US'));
+	let m = rexp.exec(datetime.toLocaleDateString('en-US'));
 	if (!m) throw new Error('Invalid date string');
 
 	return m[3] + '-' + m[1].padStart(2, '0') + '-' + m[2].padStart(2, '0');
