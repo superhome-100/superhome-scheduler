@@ -30,21 +30,6 @@ export async function getSettings() {
 	return { settingsTbl, buoys };
 }
 
-export async function getSession(id) {
-	let records = await xata.db.Sessions.select(['*', 'user']).filter({ id: id }).getMany();
-	return records[0];
-}
-
-export async function deleteSession(id) {
-	return await xata.db.Sessions.delete(id);
-}
-
-export async function createSession(user) {
-	return await xata.db.Sessions.create({
-		user: user.id
-	});
-}
-
 function getTimeSlots(settings, date, category, start, end) {
 	let sTs = startTimes(settings, date, category);
 	let eTs = endTimes(settings, date, category);
@@ -131,10 +116,7 @@ function getTimeOverlapFilters(settings, rsv) {
 		}
 		if (slots.beforeStart.length > 0 && slots.afterEnd.length > 0) {
 			timeFilt.push({
-				$all: [
-					{ startTime: { $any: slots.beforeStart } },
-					{ endTime: { $any: slots.afterEnd } }
-				]
+				$all: [{ startTime: { $any: slots.beforeStart } }, { endTime: { $any: slots.afterEnd } }]
 			});
 		}
 		filters.push({

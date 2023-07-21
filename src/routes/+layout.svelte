@@ -1,13 +1,16 @@
-<script lang="js">
+<script lang="ts">
 	import '../app.postcss';
+	import _ from 'lodash';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import Nprogress from '$lib/components/Nprogress.svelte';
+	import Spinner from '$lib/components/spinner.svelte';
 	import Popup, { popup } from '$lib/components/Popup.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Notification from '$lib/components/Notification.svelte';
+	import { PUBLIC_FACEBOOK_APP_ID } from '$env/static/public';
+	import dayjs from 'dayjs';
 	import {
 		boatAssignments,
 		buoys,
@@ -18,30 +21,35 @@
 		user,
 		userPastReservations,
 		users,
-		view,
-		viewMode
+		viewMode,
+		profileSrc
 	} from '$lib/stores';
 	import { augmentRsv } from '$lib/utils.js';
-	import { datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
-	import { loadFB, login, logout } from '$lib/authentication.js';
+	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
+	import { login, logout } from '$lib/authentication';
 	import { toast, Toaster } from 'svelte-french-toast';
+	import { FacebookAuth } from '@beyonk/svelte-social-auth';
+	import {
+		getAppData,
+		getBoatAssignments,
+		getSession,
+		getSettings,
+		getUserPastReservations,
+		getUserNotifications
+	} from '$lib/api';
+	import { onMount } from 'svelte';
 
+	let intervalId: number | undefined;
+
+	$: if ($loginState === 'out' && $page.route.id != '/') {
+		goto('/');
+	}
 	$: isFacebook =
 		typeof window !== 'undefined' && window.navigator
 			? navigator.userAgent.includes('FBAN') || navigator.userAgent.includes('FBAV')
 			: false;
 
-	let intervalId;
-
-	$: if ($loginState === 'out' && $page.route.id != '/') {
-		goto('/');
-	}
-
-	onMount(() =>
-		isFacebook
-			? void 0
-			: toast.promise(initApp(), { loading: 'loading...', error: 'Loading error' })
-	);
+	let isLoading = false;
 
 	async function callLogout() {
 		if (intervalId) {
@@ -51,165 +59,144 @@
 		await logout();
 	}
 
-	async function refreshAppState() {
-		let data = await get('Settings');
-		if (data.status === 'success') {
-			$settings = data.settings;
-			$buoys = data.buoys;
-		}
+	async function initializeUserSessionData(setViewMode = 'admin') {
+		if (!$user || $user.status !== 'active') {
+			$loginState = 'out';
 
-		let minDateStr = datetimeToLocalDateStr(PanglaoDate());
-		data = await post('getAppData', { user: $user.id, minDateStr });
-
-		if (data.status === 'success') {
-			$users = data.usersById;
-			$user = $users[$user.id];
-			if ($user.status === 'disabled') {
-				await callLogout();
-				return;
+			if ($user && $user.status === 'disabled') {
+				popup(
+					'User ' +
+						$user.name +
+						' does not have permission ' +
+						'to access this app; please contact the admin for help'
+				);
 			}
-			$notifications = data.notifications;
-			// keep unchanged rsvs and update changed/add new ones
-			let rsvById = $reservations.reduce((obj, rsv) => {
-				obj[rsv.id] = rsv;
-				return obj;
-			}, {});
-			data.reservations.forEach((rsv) => {
-				rsvById[rsv.id] = augmentRsv(rsv);
+			callLogout();
+			return;
+		}
+		$loginState = 'in';
+
+		const maxDateStr = datetimeToLocalDateStr(new Date());
+		const [userNotifications, reqReservations] = await Promise.all([
+			getUserNotifications(),
+			getUserPastReservations($user.id, maxDateStr)
+		]);
+		$notifications = userNotifications;
+
+		if (reqReservations.status === 'success') {
+			$userPastReservations = (reqReservations.userPastReservations || []).map((rsv) => {
+				return augmentRsv(rsv, $user);
 			});
-			$reservations = Object.values(rsvById).filter((rsv) => rsv.status !== 'canceled');
 		}
 
 		if ($user.privileges === 'admin') {
-			let data = await get('BoatAssignments');
+			$viewMode = setViewMode;
+			let data = await getBoatAssignments();
 			if (data.status === 'success') {
 				$boatAssignments = data.assignments;
 			}
 		}
 	}
 
-	const oneWeekAgo = () => {
-		let d = PanglaoDate();
-		d.setDate(d.getDate() - 7);
-		return datetimeToLocalDateStr(d);
+	async function initApp() {
+		if (isLoading) {
+			// prevent overloading our server
+			return;
+		}
+		try {
+			isLoading = true;
+			const oneWeekAgo = dayjs().locale('en-US').subtract(7, 'day').format('YYYY-MM-DD');
+			// TODO: this is super slow
+			const [resSettings, resAppData] = await Promise.all([
+				getSettings(),
+				getAppData(oneWeekAgo),
+				getSession().then((res) => {
+					// try to make things faster
+					if (res.status !== 'success') {
+						$loginState = 'out';
+						throw new Error('Could not get session from database');
+					} else {
+						$user = res.user || null;
+						initializeUserSessionData(res.viewMode);
+						$profileSrc = res.photoURL || '';
+					}
+				})
+			]);
+			if (resSettings.status === 'error') {
+				throw new Error('Could not get settings from database');
+			}
+
+			$settings = resSettings.settings;
+			$buoys = resSettings.buoys;
+			$users = resAppData.usersById!;
+
+			const rsvById: { [id: string]: any } = $reservations.reduce((obj, rsv) => {
+				obj[rsv.id] = rsv;
+				return obj;
+			}, {});
+			(resAppData.reservations || []).forEach((rsv) => {
+				rsvById[rsv.id] = augmentRsv(rsv);
+			});
+			$reservations = Object.values(rsvById).filter((rsv) => rsv.status !== 'canceled');
+
+			if (!intervalId) {
+				intervalId = setInterval(initApp, $settings.refreshInterval.default);
+			}
+		} catch (error) {
+			console.error(error);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	const getUserFromAuth = async (e: any) => {
+		const uid = _.get(e, 'detail.userId', '');
+		const accessToken = _.get(e, 'detail.accessToken', '');
+		if (uid) {
+			console.log('uid:', uid);
+			$loginState = 'in';
+			await login(uid, accessToken, true);
+			await initializeUserSessionData();
+		} else {
+			$loginState = 'out';
+		}
 	};
 
-	async function initFromUser(vm = 'admin') {
-		if ($user == null) {
-			$loginState = 'out';
-		} else if ($user.status === 'active') {
-			$loginState = 'in';
-			let minDateStr = oneWeekAgo();
-			let data = await post('getAppData', { user: $user.id, minDateStr });
-
-			if (data.status === 'error') {
-				throw new Error('Could not read app data from database');
-			}
-			$users = data.usersById;
-			$reservations = data.reservations
-				.filter((rsv) => rsv.status != 'canceled')
-				.map((rsv) => augmentRsv(rsv));
-			$notifications = data.notifications;
-
-			let maxDateStr = datetimeToLocalDateStr(new Date());
-			data = await post('getUserPastReservations', { user: $user.id, maxDateStr });
-			if (data.status === 'success') {
-				$userPastReservations = data.userPastReservations.map((rsv) => {
-					return augmentRsv(rsv, $user);
-				});
-			}
-
-			if ($user.privileges === 'admin') {
-				$viewMode = vm;
-				let data = await get('BoatAssignments');
-				if (data.status === 'success') {
-					$boatAssignments = data.assignments;
-				}
-			}
-
-			intervalId = setInterval(refreshAppState, $settings.refreshInterval.default);
-		} else if ($user.status === 'disabled') {
-			popup(
-				'User ' +
-					$user.name +
-					' does not have permission ' +
-					'to access this app; please contact the admin for help'
-			);
-			await callLogout();
-		} else {
-			await callLogout();
-			throw new Error('Unknown user status');
+	onMount(() => {
+		if (!isFacebook) {
+			// @ts-ignore
+			toast.promise(initApp(), {
+				loading: 'loading...',
+				error: 'Loading error'
+			});
 		}
-	}
 
-	async function initApp() {
-		let init = async () => {
-			try {
-				loadFB();
-				let data = await get('Settings');
-				if (data.status === 'error') {
-					throw new Error('Could not get settings from database');
-				}
-				$settings = data.settings;
-				$buoys = data.buoys;
-
-				data = await get('Session');
-				if (data.status === 'error') {
-					throw new Error('Could not get session from database');
-				}
-				$user = data.user;
-				await initFromUser(data.viewMode);
-
-				return true;
-			} catch (error) {
-				console.error(error);
-				return false;
+		return () => {
+			if (intervalId) {
+				clearInterval(intervalId);
 			}
 		};
-
-		// try up to 3 times to load app state
-		for (let i = 0; i < 3; i++) {
-			let success = await init();
-			if (success) {
-				goto($page.url.href);
-				return;
-			} else {
-				await new Promise((resolve) => setTimeout(resolve, 1000));
-			}
-		}
-		goto('/error');
-		return Promise.reject();
-	}
-
-	async function get(item) {
-		const response = await fetch('/api/get' + item);
-		const data = await response.json();
-		return data;
-	}
-
-	async function post(endpoint, params) {
-		const response = await fetch('/api/' + endpoint, {
-			method: 'POST',
-			headers: { 'Content-type': 'application/json' },
-			body: JSON.stringify(params)
-		});
-		let data = await response.json();
-		return data;
-	}
+	});
 </script>
 
 <Nprogress />
 <Sidebar />
 <div id="app" class="flex px-1 mx-auto w-full">
 	<main class="lg:ml-72 w-full mx-auto">
-		{#if $user && $loginState === 'in'}
+		{#if $loginState === 'in'}
 			<slot />
-		{:else if $loginState === 'out'}
-			<button
-				on:click={() => login(initFromUser)}
-				class="bg-[#3b5998] text-white text-sm xs:text-base absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-				>Log in with Facebook</button
-			>
+		{:else if $loginState === 'pending'}
+			<div class="m-auto flex items-center justify-center pt-10">
+				<Spinner />
+			</div>
+		{:else}
+			<div class="m-auto flex items-center justify-center pt-10">
+				<FacebookAuth
+					appId={PUBLIC_FACEBOOK_APP_ID}
+					on:auth-success={getUserFromAuth}
+					on:auth-info={getUserFromAuth}
+				/>
+			</div>
 		{/if}
 	</main>
 </div>
