@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
+	import { datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
 	import { minuteOfDay, beforeCancelCutoff } from '$lib/reservationTimes.js';
 	import { timeStrToMin } from '$lib/datetimeUtils';
 	import { user, userPastReservations, reservations } from '$lib/stores';
@@ -17,7 +17,7 @@
 
 	function getResPeriod(rsv: ReservationData) {
 		let view;
-		let today = new Date();
+		let today = PanglaoDate();
 		let todayStr = datetimeToLocalDateStr(today);
 		if (rsv.date && rsv.date > todayStr) {
 			view = 'upcoming';
