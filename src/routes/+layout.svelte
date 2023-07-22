@@ -105,10 +105,17 @@
 		}
 		try {
 			isLoading = true;
+
+			const resSettings = await getSettings();
+			if (resSettings.status === 'error') {
+				throw new Error('Could not get settings from database');
+			}
+			$settings = resSettings.settings;
+			$buoys = resSettings.buoys;
+
 			const oneWeekAgo = dayjs().locale('en-US').subtract(7, 'day').format('YYYY-MM-DD');
 			// TODO: this is super slow
-			const [resSettings, resAppData] = await Promise.all([
-				getSettings(),
+			const [resAppData] = await Promise.all([
 				getAppData(oneWeekAgo),
 				getSession().then((res) => {
 					// try to make things faster
@@ -122,12 +129,6 @@
 					}
 				})
 			]);
-			if (resSettings.status === 'error') {
-				throw new Error('Could not get settings from database');
-			}
-
-			$settings = resSettings.settings;
-			$buoys = resSettings.buoys;
 			$users = resAppData.usersById!;
 
 			const rsvById: { [id: string]: any } = $reservations.reduce((obj, rsv) => {

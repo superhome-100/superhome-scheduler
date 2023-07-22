@@ -5,7 +5,7 @@ import type { UsersRecord } from './server/xata.codegen';
 export const buoys = writable<any[]>([]);
 export const boatAssignments = writable<any>({});
 export const canSubmit = writable<boolean>(false);
-export const loginState = writable<'pending' | 'in' | 'out'>('out');
+export const loginState = writable<'pending' | 'in' | 'out'>('pending');
 export const notifications = writable<any[]>([]);
 export const profileSrc = writable<any>(null);
 export const reservations = writable<any[]>([]);
