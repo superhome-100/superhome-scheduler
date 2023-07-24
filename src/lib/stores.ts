@@ -17,3 +17,4 @@ export const view = writable<string>('multi-day');
 export const viewedDate = writable<Date>(new Date());
 export const viewedMonth = writable<Date>(new Date());
 export const viewMode = writable<string>('normal');
+export const stateLoaded = writable<boolean>(false);

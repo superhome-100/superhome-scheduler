@@ -5,10 +5,9 @@
 	import DayOpenWater from '$lib/components/DayOpenWater.svelte';
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
-	import { validReservationDate, minValidDate } from '$lib/reservationTimes.js';
-	import { datetimeToLocalDateStr, month2idx, idx2month } from '$lib/datetimeUtils';
+	import { datetimeToLocalDateStr, idx2month } from '$lib/datetimeUtils';
 	import Modal from '$lib/components/Modal.svelte';
-	import { user, view, viewMode, viewedDate, reservations } from '$lib/stores';
+	import { view, viewMode, viewedDate, reservations, stateLoaded } from '$lib/stores';
 	import { Settings } from '$lib/settings.js';
 	import { CATEGORIES } from '$lib/constants.js';
 	import { toast } from 'svelte-french-toast';
@@ -148,86 +147,88 @@
 
 <svelte:window on:keydown={handleKeypress} />
 
-<div class="[&>*]:mx-auto flex items-center justify-between">
-	<div class="dropdown h-8 mb-4">
-		<label tabindex="0" class="border border-gray-200 dark:border-gray-700 btn btn-fsh-dropdown"
-			>{category}</label
-		>
-		<ul tabindex="0" class="dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit">
-			{#each categories as cat}
-				{#if cat !== category}
-					<li>
-						<a class="text-xl active:bg-gray-300" href="/single-day/{cat}">
-							{cat}
-						</a>
-					</li>
-				{/if}
-			{/each}
-		</ul>
-	</div>
-	<div class="inline-flex items-center justify-between">
-		<span on:click={prevDay} on:keypress={prevDay} class="cursor-pointer">
-			<Chevron direction="left" svgClass="h-8 w-8" />
-		</span>
-		<span on:click={nextDay} on:keypress={nextDay} class="cursor-pointer">
-			<Chevron direction="right" svgClass="h-8 w-8" />
-		</span>
-		<span class="text-2xl ml-2">
-			{idx2month[$viewedDate.getMonth()]}
-			{$viewedDate.getDate()}
-		</span>
-	</div>
-	<span class="mr-2">
-		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}
-			><ReservationDialog {category} dateFn={(cat) => datetimeToLocalDateStr($viewedDate)} /></Modal
-		>
-	</span>
-</div>
-<br />
-<div class="flex justify-between">
-	<a
-		class="inline-flex items-center border border-solid border-transparent hover:border-black rounded-lg pl-1.5 pr-4 py-0 hover:text-white hover:bg-gray-700"
-		href="/multi-day/{category}"
-	>
-		<span><Chevron direction="left" /></span>
-		<span class="xs:text-xl pb-1 whitespace-nowrap">month view</span>
-	</a>
-	{#if $viewMode === 'admin' && category === 'openwater'}
-		<span>
-			<button
-				on:click={lockBuoys}
-				class="{highlightButton(
-					true,
-					buoyState
-				)} px-1 py-0 font-semibold border-black dark:border-white"
-			>
-				Lock
-			</button>
-			<button
-				on:click={unlockBuoys}
-				class="{highlightButton(
-					false,
-					buoyState
-				)} px-1 py-0 font-semibold border-black dark:border-white"
-			>
-				Unlock
-			</button>
-		</span>
-	{/if}
-</div>
-<br />
-<div
-	class="w-full min-h-[500px]"
-	use:swipe={{ timeframe: 300, minSwipeDistance: 10, touchAction: 'pan-y' }}
-	on:swipe={swipeHandler}
->
-	<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-		{#if category === 'pool'}
-			<DayHourly {category} resInfo={resInfo()} />
-		{:else if category === 'classroom'}
-			<DayHourly {category} resInfo={resInfo()} />
-		{:else if category == 'openwater'}
-			<DayOpenWater />
-		{/if}
-	</Modal>
-</div>
+{#if $stateLoaded}
+    <div class="[&>*]:mx-auto flex items-center justify-between">
+        <div class="dropdown h-8 mb-4">
+            <label tabindex="0" class="border border-gray-200 dark:border-gray-700 btn btn-fsh-dropdown"
+                >{category}</label
+            >
+            <ul tabindex="0" class="dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit">
+                {#each categories as cat}
+                    {#if cat !== category}
+                        <li>
+                            <a class="text-xl active:bg-gray-300" href="/single-day/{cat}">
+                                {cat}
+                            </a>
+                        </li>
+                    {/if}
+                {/each}
+            </ul>
+        </div>
+        <div class="inline-flex items-center justify-between">
+            <span on:click={prevDay} on:keypress={prevDay} class="cursor-pointer">
+                <Chevron direction="left" svgClass="h-8 w-8" />
+            </span>
+            <span on:click={nextDay} on:keypress={nextDay} class="cursor-pointer">
+                <Chevron direction="right" svgClass="h-8 w-8" />
+            </span>
+            <span class="text-2xl ml-2">
+                {idx2month[$viewedDate.getMonth()]}
+                {$viewedDate.getDate()}
+            </span>
+        </div>
+        <span class="mr-2">
+            <Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}
+                ><ReservationDialog {category} dateFn={(cat) => datetimeToLocalDateStr($viewedDate)} /></Modal
+            >
+        </span>
+    </div>
+    <br />
+    <div class="flex justify-between">
+        <a
+            class="inline-flex items-center border border-solid border-transparent hover:border-black rounded-lg pl-1.5 pr-4 py-0 hover:text-white hover:bg-gray-700"
+            href="/multi-day/{category}"
+        >
+            <span><Chevron direction="left" /></span>
+            <span class="xs:text-xl pb-1 whitespace-nowrap">month view</span>
+        </a>
+        {#if $viewMode === 'admin' && category === 'openwater'}
+            <span>
+                <button
+                    on:click={lockBuoys}
+                    class="{highlightButton(
+                        true,
+                        buoyState
+                    )} px-1 py-0 font-semibold border-black dark:border-white"
+                >
+                    Lock
+                </button>
+                <button
+                    on:click={unlockBuoys}
+                    class="{highlightButton(
+                        false,
+                        buoyState
+                    )} px-1 py-0 font-semibold border-black dark:border-white"
+                >
+                    Unlock
+                </button>
+            </span>
+        {/if}
+    </div>
+    <br />
+    <div
+        class="w-full min-h-[500px]"
+        use:swipe={{ timeframe: 300, minSwipeDistance: 10, touchAction: 'pan-y' }}
+        on:swipe={swipeHandler}
+    >
+        <Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
+            {#if category === 'pool'}
+                <DayHourly {category} resInfo={resInfo()} />
+            {:else if category === 'classroom'}
+                <DayHourly {category} resInfo={resInfo()} />
+            {:else if category == 'openwater'}
+                <DayOpenWater />
+            {/if}
+        </Modal>
+    </div>
+{/if}
