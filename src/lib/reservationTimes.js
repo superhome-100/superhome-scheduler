@@ -8,7 +8,7 @@ export const maxClassroomEnd = (stns, date) =>
 	dtu.timeStrToMin(stns.get('maxClassroomEndTime', date));
 export const resCutoff = (stns, date) => dtu.timeStrToMin(stns.get('reservationCutOffTime', date));
 export const cancelCutoff = (stns, cat, date) => {
-	if (cat === 'classroom') {
+	if (['classroom', 'pool'].includes(cat)) {
 		return 0;
 	} else {
 		return dtu.timeStrToMin(stns.get('cancelationCutOffTime', date));
@@ -28,7 +28,7 @@ export function beforeResCutoff(stns, dateStr, startTime, category) {
 	tomorrow.setDate(now.getDate() + 1);
 	let tomStr = dtu.datetimeToLocalDateStr(tomorrow);
 
-	if (category === 'classroom') {
+	if (['classroom', 'pool'].includes(category)) {
 		return beforeCancelCutoff(stns, dateStr, startTime, category);
 	} else if (dateStr > tomStr) {
 		return true;
@@ -78,13 +78,15 @@ export const startTimes = (stns, dateStr, cat) =>
 export const endTimes = (stns, dateStr, cat) =>
 	Array(nRes(stns, dateStr, cat))
 		.fill()
-		.map((v, i) => dtu.minToTimeStr(minStart(stns, dateStr, cat) + (i + 1) * inc(stns, dateStr)));
+		.map((v, i) =>
+			dtu.minToTimeStr(minStart(stns, dateStr, cat) + (i + 1) * inc(stns, dateStr))
+		);
 
 export function minValidDate(stns, category) {
 	let today = dtu.PanglaoDate();
 	let todayStr = dtu.datetimeToLocalDateStr(today);
 	let d = dtu.PanglaoDate();
-	if (category === 'classroom') {
+	if (['classroom', 'pool'].includes(category)) {
 		let sTs = startTimes(stns, todayStr, category);
 		let lastSlot = dtu.timeStrToMin(sTs[sTs.length - 1]);
 		if (minuteOfDay(today) < lastSlot) {
