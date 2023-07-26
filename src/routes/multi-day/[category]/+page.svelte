@@ -8,7 +8,7 @@
 	import Chevron from '$lib/components/Chevron.svelte';
 	import { minValidDateStr } from '$lib/reservationTimes.js';
 	import { idx2month } from '$lib/datetimeUtils';
-	import { view, viewedMonth, reservations, stateLoaded } from '$lib/stores';
+	import { view, viewedMonth, reservations, loginState, stateLoaded } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants.js';
 	import { Settings } from '$lib/settings.js';
 
@@ -98,7 +98,7 @@
 
 <svelte:window on:keydown={handleKeypress} />
 
-{#if $stateLoaded}
+{#if $stateLoaded && $loginState === 'in'}
     <div class="[&>*]:mx-auto flex items-center justify-between">
         <div class="dropdown h-8 mb-4">
             <label tabindex="0" class="border border-gray-200 dark:border-gray-700 btn btn-fsh-dropdown"

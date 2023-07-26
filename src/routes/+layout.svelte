@@ -120,34 +120,30 @@
 					await initializeUserSessionData(res.viewMode);
 				}
 			}
-			// only load app state if user is fully logged in
-			if ($loginState === 'in') {
-				const oneWeekAgo = dayjs().locale('en-US').subtract(7, 'day').format('YYYY-MM-DD');
-				// TODO: this is super slow
-				const [resSettings, resAppData] = await Promise.all([
-					getSettings(),
-					getAppData(oneWeekAgo)
-				]);
-				if (resSettings.status === 'error') {
-					throw new Error('Could not get settings from database');
-				}
-				$settings = resSettings.settings;
-				$buoys = resSettings.buoys;
-				$users = resAppData.usersById!;
-				$stateLoaded = true;
+			const oneWeekAgo = dayjs().locale('en-US').subtract(7, 'day').format('YYYY-MM-DD');
+			// TODO: this is super slow
+			const [resSettings, resAppData] = await Promise.all([
+				getSettings(),
+				getAppData(oneWeekAgo)
+			]);
+			if (resSettings.status === 'error') {
+				throw new Error('Could not get settings from database');
+			}
+			$settings = resSettings.settings;
+			$buoys = resSettings.buoys;
+			$users = resAppData.usersById!;
+			$stateLoaded = true;
+			const rsvById: { [id: string]: any } = $reservations.reduce((obj, rsv) => {
+				obj[rsv.id] = rsv;
+				return obj;
+			}, {});
+			(resAppData.reservations || []).forEach((rsv) => {
+				rsvById[rsv.id] = augmentRsv(rsv);
+			});
+			$reservations = Object.values(rsvById).filter((rsv) => rsv.status !== 'canceled');
 
-				const rsvById: { [id: string]: any } = $reservations.reduce((obj, rsv) => {
-					obj[rsv.id] = rsv;
-					return obj;
-				}, {});
-				(resAppData.reservations || []).forEach((rsv) => {
-					rsvById[rsv.id] = augmentRsv(rsv);
-				});
-				$reservations = Object.values(rsvById).filter((rsv) => rsv.status !== 'canceled');
-
-				if (!intervalId) {
-					intervalId = setInterval(initApp, $settings.refreshInterval.default);
-				}
+			if (!intervalId) {
+				intervalId = setInterval(initApp, $settings.refreshInterval.default);
 			}
 		} catch (error) {
 			console.error(error);
