@@ -108,21 +108,19 @@
 		try {
 			isLoading = true;
 
-			// if $user is not null, then we are just doing a refresh, no need to reload session
-			if ($user == null) {
-				const res = await getSession();
-				if (res.status !== 'success') {
-					$loginState = 'out';
-					throw new Error('Could not get session from database');
-				} else {
-					$user = res.user;
-					$profileSrc = res.photoURL || '';
-					await initializeUserSessionData(res.viewMode);
-				}
-			}
 			const oneWeekAgo = dayjs().locale('en-US').subtract(7, 'day').format('YYYY-MM-DD');
 			// TODO: this is super slow
-			const [resSettings, resAppData] = await Promise.all([
+			const [, resSettings, resAppData] = await Promise.all([
+				getSession().then((res) => {
+					if (res.status !== 'success') {
+						$loginState = 'out';
+						throw new Error('Could not get session from database');
+					} else {
+						$user = res.user;
+						$profileSrc = res.photoURL || '';
+						initializeUserSessionData(res.viewMode);
+					}
+				}),
 				getSettings(),
 				getAppData(oneWeekAgo)
 			]);
