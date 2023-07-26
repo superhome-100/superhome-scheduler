@@ -18,6 +18,7 @@
 		notifications,
 		reservations,
 		settings,
+		stateLoaded,
 		user,
 		userPastReservations,
 		users,
@@ -105,6 +106,7 @@
 		}
 		try {
 			isLoading = true;
+
 			const oneWeekAgo = dayjs().locale('en-US').subtract(7, 'day').format('YYYY-MM-DD');
 			// TODO: this is super slow
 			const [resSettings, resAppData] = await Promise.all([
@@ -125,10 +127,10 @@
 			if (resSettings.status === 'error') {
 				throw new Error('Could not get settings from database');
 			}
-
 			$settings = resSettings.settings;
 			$buoys = resSettings.buoys;
 			$users = resAppData.usersById!;
+			$stateLoaded = true;
 
 			const rsvById: { [id: string]: any } = $reservations.reduce((obj, rsv) => {
 				obj[rsv.id] = rsv;
