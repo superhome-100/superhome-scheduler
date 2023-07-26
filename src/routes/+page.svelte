@@ -5,10 +5,10 @@
 	import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs.js';
 	import { minValidDateStr } from '$lib/reservationTimes.js';
 	import { Settings } from '$lib/settings.js';
-	import { user, stateLoaded } from '$lib/stores';
+	import { user, stateLoaded, loginState } from '$lib/stores';
 </script>
 
-{#if $stateLoaded}
+{#if $stateLoaded && $loginState === 'in'}
 	<span class="flex items-center justify-between mr-2">
 		<span />
 		<span class="text-lg font-semibold">{$user.name.split(' ')[0]}'s Reservations</span>
