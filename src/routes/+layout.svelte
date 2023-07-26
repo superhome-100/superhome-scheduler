@@ -61,41 +61,42 @@
 	}
 
 	async function initializeUserSessionData(setViewMode = 'admin') {
-		if (!$user || $user.status !== 'active') {
+		if ($user == null) {
 			$loginState = 'out';
-
-			if ($user && $user.status === 'disabled') {
-				popup(
-					'User ' +
-						$user.name +
-						' does not have permission ' +
-						'to access this app; please contact the admin for help'
-				);
-			}
+		} else if ($user.status === 'disabled') {
+			popup(
+				'User ' +
+					$user.name +
+					' does not have permission ' +
+					'to access this app; please contact the admin for help'
+			);
 			callLogout();
-			return;
-		}
-		$loginState = 'in';
+		} else if ($user.status === 'active') {
+			$loginState = 'in';
 
-		const maxDateStr = datetimeToLocalDateStr(new Date());
-		const [userNotifications, reqReservations] = await Promise.all([
-			getUserNotifications(),
-			getUserPastReservations($user.id, maxDateStr)
-		]);
-		$notifications = userNotifications;
+			const maxDateStr = datetimeToLocalDateStr(new Date());
+			const [userNotifications, reqReservations] = await Promise.all([
+				getUserNotifications(),
+				getUserPastReservations($user.id, maxDateStr)
+			]);
+			$notifications = userNotifications;
 
-		if (reqReservations.status === 'success') {
-			$userPastReservations = (reqReservations.userPastReservations || []).map((rsv) => {
-				return augmentRsv(rsv, $user);
-			});
-		}
-
-		if ($user.privileges === 'admin') {
-			$viewMode = setViewMode;
-			let data = await getBoatAssignments();
-			if (data.status === 'success') {
-				$boatAssignments = data.assignments;
+			if (reqReservations.status === 'success') {
+				$userPastReservations = (reqReservations.userPastReservations || []).map((rsv) => {
+					return augmentRsv(rsv, $user);
+				});
 			}
+
+			if ($user.privileges === 'admin') {
+				$viewMode = setViewMode;
+				let data = await getBoatAssignments();
+				if (data.status === 'success') {
+					$boatAssignments = data.assignments;
+				}
+			}
+		} else {
+			// in case the admin made a typo in the status field of the Xata UI
+			throw new Error('Unknown user status!');
 		}
 	}
 
@@ -107,42 +108,46 @@
 		try {
 			isLoading = true;
 
-			const oneWeekAgo = dayjs().locale('en-US').subtract(7, 'day').format('YYYY-MM-DD');
-			// TODO: this is super slow
-			const [resSettings, resAppData] = await Promise.all([
-				getSettings(),
-				getAppData(oneWeekAgo),
-				getSession().then((res) => {
-					// try to make things faster
-					if (res.status !== 'success') {
-						$loginState = 'out';
-						throw new Error('Could not get session from database');
-					} else {
-						$user = res.user || null;
-						initializeUserSessionData(res.viewMode);
-						$profileSrc = res.photoURL || '';
-					}
-				})
-			]);
-			if (resSettings.status === 'error') {
-				throw new Error('Could not get settings from database');
+			// if $user is not null, then we are just doing a refresh, no need to reload session
+			if ($user == null) {
+				const res = await getSession();
+				if (res.status !== 'success') {
+					$loginState = 'out';
+					throw new Error('Could not get session from database');
+				} else {
+					$user = res.user;
+					$profileSrc = res.photoURL || '';
+					await initializeUserSessionData(res.viewMode);
+				}
 			}
-			$settings = resSettings.settings;
-			$buoys = resSettings.buoys;
-			$users = resAppData.usersById!;
-			$stateLoaded = true;
+			// only load app state if user is fully logged in
+			if ($loginState === 'in') {
+				const oneWeekAgo = dayjs().locale('en-US').subtract(7, 'day').format('YYYY-MM-DD');
+				// TODO: this is super slow
+				const [resSettings, resAppData] = await Promise.all([
+					getSettings(),
+					getAppData(oneWeekAgo)
+				]);
+				if (resSettings.status === 'error') {
+					throw new Error('Could not get settings from database');
+				}
+				$settings = resSettings.settings;
+				$buoys = resSettings.buoys;
+				$users = resAppData.usersById!;
+				$stateLoaded = true;
 
-			const rsvById: { [id: string]: any } = $reservations.reduce((obj, rsv) => {
-				obj[rsv.id] = rsv;
-				return obj;
-			}, {});
-			(resAppData.reservations || []).forEach((rsv) => {
-				rsvById[rsv.id] = augmentRsv(rsv);
-			});
-			$reservations = Object.values(rsvById).filter((rsv) => rsv.status !== 'canceled');
+				const rsvById: { [id: string]: any } = $reservations.reduce((obj, rsv) => {
+					obj[rsv.id] = rsv;
+					return obj;
+				}, {});
+				(resAppData.reservations || []).forEach((rsv) => {
+					rsvById[rsv.id] = augmentRsv(rsv);
+				});
+				$reservations = Object.values(rsvById).filter((rsv) => rsv.status !== 'canceled');
 
-			if (!intervalId) {
-				intervalId = setInterval(initApp, $settings.refreshInterval.default);
+				if (!intervalId) {
+					intervalId = setInterval(initApp, $settings.refreshInterval.default);
+				}
 			}
 		} catch (error) {
 			console.error(error);
@@ -152,11 +157,10 @@
 	}
 
 	const getUserFromAuth = async (e: any) => {
+		$loginState = 'pending';
 		const uid = _.get(e, 'detail.userId', '');
 		const accessToken = _.get(e, 'detail.accessToken', '');
 		if (uid) {
-			console.log('uid:', uid);
-			$loginState = 'in';
 			await login(uid, accessToken, true);
 			await initializeUserSessionData();
 		} else {
@@ -179,6 +183,8 @@
 			}
 		};
 	});
+
+	const loginVisible = (state) => (state === 'pending' ? 'invisible' : 'visible');
 </script>
 
 <Nprogress />
@@ -187,12 +193,13 @@
 	<main class="lg:ml-72 w-full mx-auto">
 		{#if $loginState === 'in'}
 			<slot />
-		{:else if $loginState === 'pending'}
-			<div class="m-auto flex items-center justify-center pt-10">
-				<Spinner />
-			</div>
 		{:else}
-			<div class="m-auto flex items-center justify-center pt-10">
+			{#if $loginState === 'pending'}
+				<div class="m-auto flex items-center justify-center pt-10">
+					<Spinner />
+				</div>
+			{/if}
+			<div class="{loginVisible($loginState)} m-auto flex items-center justify-center pt-10">
 				<FacebookAuth
 					appId={PUBLIC_FACEBOOK_APP_ID}
 					on:auth-success={getUserFromAuth}
