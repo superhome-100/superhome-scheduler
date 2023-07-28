@@ -116,7 +116,7 @@
 						$loginState = 'out';
 						throw new Error('Could not get session from database');
 					} else {
-						$user = res.user;
+						$user = res.user || null;
 						$profileSrc = res.photoURL || '';
 						initializeUserSessionData(res.viewMode);
 					}
