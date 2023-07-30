@@ -7,7 +7,7 @@
 	import Chevron from '$lib/components/Chevron.svelte';
 	import { datetimeToLocalDateStr, idx2month } from '$lib/datetimeUtils';
 	import Modal from '$lib/components/Modal.svelte';
-	import { view, viewMode, viewedDate, reservations, stateLoaded } from '$lib/stores';
+	import { loginState, stateLoaded, view, viewMode, viewedDate, reservations } from '$lib/stores';
 	import { Settings } from '$lib/settings.js';
 	import { CATEGORIES } from '$lib/constants.js';
 	import { toast } from 'svelte-french-toast';
@@ -147,7 +147,7 @@
 
 <svelte:window on:keydown={handleKeypress} />
 
-{#if $stateLoaded}
+{#if $stateLoaded && $loginState === 'in'}
     <div class="[&>*]:mx-auto flex items-center justify-between">
         <div class="dropdown h-8 mb-4">
             <label tabindex="0" class="border border-gray-200 dark:border-gray-700 btn btn-fsh-dropdown"
