@@ -45,11 +45,11 @@ export const getBoatAssignments = async () => {
 	return data;
 };
 
-export const getUserPastReservations = async (uid: string, maxValidDateStr: string) => {
+export const getUserPastReservations = async (uid: string, maxDateStr: string) => {
 	const response = await fetch('/api/getUserPastReservations', {
 		method: 'POST',
 		headers: { 'Content-type': 'application/json' },
-		body: JSON.stringify({ user: uid, maxValidDateStr })
+		body: JSON.stringify({ user: uid, maxDateStr })
 	});
 	let data = (await response.json()) as {
 		status: 'success' | 'error';
