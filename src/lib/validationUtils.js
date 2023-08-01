@@ -228,11 +228,11 @@ export function buddysRsv(rsv, sub) {
 	}
 }
 
-export function checkNoOverlappingRsvs(settings, sub, existing) {
+export function checkNoOverlappingRsvs(settings, orig, sub, existing) {
 	let userIds = [sub.user, ...sub.buddies];
 	let overlapping = getOverlappingReservations(settings, sub, existing);
 	for (let rsv of overlapping) {
-		if (rsv.id != sub.id && !buddysRsv(rsv, sub) && userIds.includes(rsv.user.id)) {
+		if (rsv.id != sub.id && !buddysRsv(rsv, orig) && userIds.includes(rsv.user.id)) {
 			return {
 				status: 'error',
 				msg: 'You or one of your buddies has an existing reservation at this time'

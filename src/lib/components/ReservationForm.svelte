@@ -63,7 +63,7 @@
 			return;
 		}
 
-		result = checkNoOverlappingRsvs(Settings, submitted, $reservations);
+		result = checkNoOverlappingRsvs(Settings, submitted, submitted, $reservations);
 		if (result.status === 'error') {
 			popup(result.msg);
 			cancel();
