@@ -1,6 +1,6 @@
 <script>
 	import { startTimes, endTimes } from '$lib/reservationTimes.js';
-	import { user, viewedDate, reservations } from '$lib/stores';
+	import { viewedDate, viewMode, reservations } from '$lib/stores';
 	import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils';
 	import { getContext } from 'svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
@@ -16,7 +16,7 @@
 		open(RsvTabs, {
 			rsvs: rsvs,
 			hasForm: true,
-			disableModify: $user.privileges === 'admin'
+			disableModify: $viewMode === 'admin'
 		});
 	};
 
