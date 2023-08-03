@@ -19,7 +19,7 @@
 	import { sineIn } from 'svelte/easing';
 	import { loginState, user, view, viewMode } from '$lib/stores';
 	import { toast } from 'svelte-french-toast';
-	import { logout } from '$lib/authentication.js';
+	import { logout } from '$lib/authentication';
 	import { page } from '$app/stores';
 
 	const schedulerDoc =

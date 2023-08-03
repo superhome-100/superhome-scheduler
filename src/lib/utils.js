@@ -42,7 +42,7 @@ export function removeRsv(id) {
 	}
 }
 
-export function augmentRsv(rsv, user = null) {
+export function augmentRsv(rsv, user) {
 	let startTime = rsv.startTime;
 	let endTime = rsv.endTime;
 	let categoryPretty = rsv.category.charAt(0).toUpperCase() + rsv.category.slice(1);
@@ -65,7 +65,7 @@ export function augmentRsv(rsv, user = null) {
 		endTime
 	};
 
-	if (user) {
+	if (!!user) {
 		newRsv.user = user;
 	}
 
