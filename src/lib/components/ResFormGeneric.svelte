@@ -5,12 +5,13 @@
 	import { canSubmit, user, users } from '$lib/stores';
 	import { Settings } from '$lib/settings.js';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes.js';
+	import { PanglaoDate } from '$lib/datetimeUtils';
 	import BuddyMatch from '$lib/components/BuddyMatch.svelte';
 	import PlusIcon from '$lib/components/PlusIcon.svelte';
 	import DeleteIcon from '$lib/components/DeleteIcon.svelte';
 
 	export let rsv: ReservationData | null;
-	export let date: string | null = rsv?.date || new Date().toString();
+	export let date: string | null = rsv?.date || PanglaoDate().toString();
 	export let category: ReservationCategory | string =
 		rsv?.category.toString() || ReservationCategory.pool;
 	export let viewOnly = false;
@@ -24,7 +25,7 @@
 
 	$: maxBuddies =
 		category === 'openwater'
-			? 3 
+			? 3
 			: category === 'pool'
 			? 1
 			: category === 'classroom'

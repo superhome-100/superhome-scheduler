@@ -100,7 +100,7 @@
 			cancel();
 		}
 
-		let result = checkNoOverlappingRsvs(Settings, submitted, $reservations);
+		let result = checkNoOverlappingRsvs(Settings, rsv, submitted, $reservations);
 		if (result.status === 'error') {
 			popup(result.msg);
 			cancel();

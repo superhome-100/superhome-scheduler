@@ -1,4 +1,5 @@
 import { getXataClient } from './xata-old';
+import type { Cookies } from '@sveltejs/kit';
 
 const xata = getXataClient();
 
@@ -39,4 +40,15 @@ export async function authenticateUser(userId: string, userName: string) {
 		record = records[0];
 	}
 	return record;
+}
+
+export async function getUserByCookies(cookies: Cookies) {
+	const sessionID = cookies.get('sessionid');
+	if (!sessionID) return undefined;
+
+	let record = await xata.db.Sessions.read(sessionID);
+	if (record == undefined) {
+		return undefined;
+	}
+	return await xata.db.Users.read(record.user!);
 }
