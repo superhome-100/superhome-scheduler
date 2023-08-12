@@ -6,13 +6,13 @@
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { popup } from './Popup.svelte';
-	import { canSubmit, user, users, reservations, buoys } from '$lib/stores';
+	import { users, reservations, buoys } from '$lib/stores';
 	import { beforeCancelCutoff, beforeResCutoff } from '$lib/reservationTimes.js';
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
-	import { Settings } from '$lib/settings';
-	import { checkNoOverlappingRsvs, checkSpaceAvailable } from '$lib/validationUtils.js';
 
-	import { validateBuddies } from '$utils/validation';
+	import { Settings } from '$lib/settings';
+	import { checkSpaceAvailable } from '$lib/validationUtils.js';
+
+	import { validateBuddies, checkNoOverlappingRsvs } from '$utils/validation';
 
 	import {
 		addMissingFields,
@@ -98,7 +98,7 @@
 			cancel();
 		}
 
-		let result = checkNoOverlappingRsvs(Settings, rsv, submitted, $reservations);
+		let result = checkNoOverlappingRsvs(rsv, submitted, $reservations);
 		if (result.status === 'error') {
 			popup(result.msg);
 			cancel();
