@@ -13,9 +13,9 @@
 		"strict": true,
 		"types": ["vitest/globals", "@testing-library/jest-dom"],
 		"paths": {
-			"$lib":["./src/lib"],
+			"$lib": ["./src/lib"],
 			"$lib/*": ["./src/lib/*"],
-			"$utils":["src/utils"],
+			"$utils": ["src/utils"],
 			"$utils/*": ["src/utils/*"],
 			"$types": ["./src/types.ts"]
 		},

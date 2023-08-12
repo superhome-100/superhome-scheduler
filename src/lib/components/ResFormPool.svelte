@@ -3,7 +3,7 @@
 	import { startTimes, endTimes, minuteOfDay } from '$lib/reservationTimes.js';
 	import { timeStrToMin, datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
 	import { canSubmit, user } from '$lib/stores';
-	import { Settings } from '$lib/settings.js';
+	import { Settings } from '$lib/settings';
 	import { adminView } from '$lib/utils.js';
 	import type { ReservationData } from '$types';
 

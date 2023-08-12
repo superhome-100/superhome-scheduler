@@ -7,7 +7,7 @@
 	import Modal from './Modal.svelte';
 	import CancelDialog from './CancelDialog.svelte';
 	import RsvTabs from './RsvTabs.svelte';
-	import { Settings } from '$lib/settings.js';
+	import { Settings } from '$lib/settings';
 
 	import type { ReservationData, ReservationPeriod } from '$types';
 	import { ReservationCategory, ReservationStatus } from '$types';

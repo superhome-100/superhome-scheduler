@@ -1,7 +1,7 @@
 import { inc, startTimes } from '$lib/reservationTimes.js';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { nOccupants } from '$lib/validationUtils.js';
-import { Settings } from '$lib/settings.js';
+import { Settings } from '$lib/settings';
 
 // priority rules:
 //   1 pre-assigned rsvs

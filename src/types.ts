@@ -26,3 +26,9 @@ export enum ReservationStatus {
 }
 
 export type ReservationPeriod = 'upcoming' | 'past';
+
+export type Setting = {
+	// TODO: fix type remove any
+	default: any;
+	entries: any[];
+};

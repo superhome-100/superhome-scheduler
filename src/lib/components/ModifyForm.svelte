@@ -9,15 +9,10 @@
 	import { canSubmit, user, users, reservations, buoys } from '$lib/stores';
 	import { beforeCancelCutoff, beforeResCutoff } from '$lib/reservationTimes.js';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
-	import { Settings } from '$lib/settings.js';
-	import {
-		checkNoOverlappingRsvs,
-		checkSpaceAvailable,
-	} from '$lib/validationUtils.js';
+	import { Settings } from '$lib/settings';
+	import { checkNoOverlappingRsvs, checkSpaceAvailable } from '$lib/validationUtils.js';
 
-	import {
-		validateBuddies
-	} from '$utils/validation'
+	import { validateBuddies } from '$utils/validation';
 
 	import {
 		addMissingFields,
