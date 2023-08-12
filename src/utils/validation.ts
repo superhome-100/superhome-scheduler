@@ -1,4 +1,4 @@
-import type { ReservationData } from '$types';
+import type { ReservationData, Buoy } from '$types';
 
 import { users } from '$lib/stores';
 import { get } from 'svelte/store';
@@ -6,6 +6,8 @@ import { startTimes, endTimes } from '$lib/reservationTimes.js';
 
 import { Settings as settings } from '$lib/settings';
 import { timeStrToMin } from '$lib/datetimeUtils';
+import { getNumberOfOccupants } from './reservations';
+import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
 
 export function validateBuddies(rsv: ReservationData) {
 	let userIds = Object.keys(get(users));
@@ -71,6 +73,105 @@ export function isBuddiesReservation(rsv: ReservationData, sub: ReservationData)
 	} else {
 		return false;
 	}
+}
+
+export function checkSpaceAvailable(
+	buoys: Buoy[],
+	sub: ReservationData,
+	existingReservations: ReservationData[]
+) {
+	let overlapping = getOverlappingReservations(sub, existingReservations).filter(
+		(rsv) => rsv.category === sub.category
+	);
+	if (sub.category === 'openwater') {
+		let diveGroup = simulateDiveGroup(sub, overlapping);
+		let result = assignRsvsToBuoys(buoys, diveGroup);
+		if (result.status === 'error') {
+			return {
+				status: 'error',
+				message:
+					'All buoys are fully booked at this time.  ' +
+					'Please either check back later or try a different date/time'
+			};
+		} else {
+			return result;
+		}
+	} else if (sub.category === 'pool') {
+		if (checkPoolSpaceAvailable(sub, overlapping)) {
+			return { status: 'success' };
+		} else {
+			return {
+				status: 'error',
+				message:
+					'All pool lanes are booked at this time.  ' +
+					'Please either check back later or try a different date/time'
+			};
+		}
+	} else if (sub.category === 'classroom') {
+		overlapping = overlapping.filter((rsv) => rsv?.user?.id != sub.user);
+		if (overlapping.length >= settings.get('classrooms', sub.date!).length) {
+			return {
+				status: 'error',
+				message:
+					'All classrooms are booked at this time.  ' +
+					'Please either check back later or try a different date/time'
+			};
+		} else {
+			return { status: 'success' };
+		}
+	}
+}
+
+function checkPoolSpaceAvailable(sub: ReservationData, rsvs: ReservationData[]) {
+	let startTs = startTimes(settings, sub.date, sub.category);
+	for (let i = startTs.indexOf(sub.startTime!); i < startTs.indexOf(sub.endTime); i++) {
+		let time = timeStrToMin(startTs[i]);
+		let overlap = rsvs.filter((rsv) => {
+			let start = timeStrToMin(rsv.startTime!);
+			let end = timeStrToMin(rsv.endTime);
+			let notMe = sub.id != rsv.id;
+			let notMyBuddy = !sub.buddies!.includes(rsv?.user?.id!);
+			return notMe && notMyBuddy && start <= time && end > time;
+		});
+		let mpl = settings.get('maxOccupantsPerLane', sub.date!);
+		let numDivers =
+			getNumberOfOccupants([sub]) + sub.buddies!.length + getNumberOfOccupants(overlap);
+		let nLanes = settings.get('poolLanes', sub.date!).length;
+		if (numDivers > nLanes * mpl) {
+			return false;
+		}
+	}
+	return true;
+}
+
+// TODO: fix this seems to return non-uniform ReservationData[]
+function simulateDiveGroup(sub: ReservationData, existingReservations: ReservationData[]) {
+	// remove current user and buddies in case this is a modification
+	// to an existing reservation
+	const reservations = existingReservations.filter((rsv) => {
+		return rsv?.user?.id !== sub.id && !sub.buddies!.includes(rsv?.user?.id!);
+	});
+
+	// add fields that db normally adds to this submission and its buddies
+	let owner = { ...sub };
+	let simId = -1;
+	owner.buoy = owner.resType === 'cbs' ? 'CBS' : 'auto';
+	owner.id = (simId--).toString();
+
+	// @ts-ignore dont know why this is needed
+	owner.user = { id: owner.user };
+
+	let simBuds = [];
+	for (let id of owner.buddies || []) {
+		let buddies = [owner?.user?.id, ...owner.buddies!.filter((thisId) => thisId != id)];
+		simBuds.push({
+			...owner,
+			id: simId--,
+			user: { id },
+			buddies
+		});
+	}
+	return [owner, ...simBuds, ...reservations];
 }
 
 // TODO: document what this does
