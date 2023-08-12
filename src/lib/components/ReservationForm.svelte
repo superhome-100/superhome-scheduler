@@ -9,9 +9,9 @@
 	import { users, reservations, buoys } from '$lib/stores';
 	import { beforeResCutoff } from '$lib/reservationTimes.js';
 	import { Settings } from '$lib/settings';
-	import { checkNoOverlappingRsvs, checkSpaceAvailable } from '$lib/validationUtils.js';
+	import { checkSpaceAvailable } from '$lib/validationUtils.js';
 
-	import { validateBuddies } from '$utils/validation';
+	import { validateBuddies, checkNoOverlappingRsvs } from '$utils/validation';
 
 	import {
 		augmentRsv,
@@ -61,7 +61,7 @@
 			return;
 		}
 
-		result = checkNoOverlappingRsvs(Settings, submitted, submitted, $reservations);
+		result = (submitted, submitted, $reservations);
 		if (result.status === 'error') {
 			popup(result.msg);
 			cancel();

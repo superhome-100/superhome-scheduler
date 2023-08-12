@@ -35,6 +35,43 @@ export function getOverlappingReservations(sub: ReservationData, rsvs: Reservati
 	});
 }
 
+export function checkNoOverlappingRsvs(
+	orig: ReservationData,
+	sub: ReservationData,
+	existingReservations: ReservationData[]
+) {
+	let userIds = [sub.user, ...sub.buddies!];
+	let overlapping = getOverlappingReservations(sub, existingReservations);
+	for (let rsv of overlapping) {
+		if (rsv.id != sub.id && !isBuddiesReservation(rsv, orig) && userIds.includes(rsv?.user?.id)) {
+			return {
+				status: 'error',
+				msg: 'You or one of your buddies has an existing reservation at this time'
+			};
+		}
+	}
+	return { status: 'success' };
+}
+
+// TOOD: probably needs a clearer name?
+export function isBuddiesReservation(rsv: ReservationData, sub: ReservationData) {
+	if (sub.buddies && sub.buddies.includes(rsv?.user?.id!)) {
+		if (['pool', 'classroom'].includes(sub.category)) {
+			return (
+				rsv.category === sub.category &&
+				rsv.startTime === sub.startTime &&
+				rsv.endTime === sub.endTime
+			);
+		} else if (sub.category === 'openwater') {
+			return rsv.category === sub.category && rsv.owTime === sub.owTime;
+		} else {
+			// TODO: add error message? whats the problem?
+			throw new Error();
+		}
+	} else {
+		return false;
+	}
+}
 
 // TODO: document what this does
 function getTimeOverlapFilters(rsv: ReservationData) {

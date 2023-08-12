@@ -2,7 +2,7 @@ import { timeStrToMin } from '$lib/datetimeUtils';
 import { startTimes } from '$lib/reservationTimes.js';
 import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
 
-import { getOverlappingReservations } from '$utils/validation'
+import { getOverlappingReservations, isBuddiesReservation } from '$utils/validation';
 
 export const nOccupants = (rsvs) =>
 	rsvs.reduce((n, rsv) => {
@@ -101,36 +101,4 @@ export function checkSpaceAvailable(settings, buoys, sub, existing) {
 			return { status: 'success' };
 		}
 	}
-}
-
-export function buddysRsv(rsv, sub) {
-	if (sub.buddies && sub.buddies.includes(rsv.user.id)) {
-		if (['pool', 'classroom'].includes(sub.category)) {
-			return (
-				rsv.category === sub.category &&
-				rsv.startTime === sub.startTime &&
-				rsv.endTime === sub.endTime
-			);
-		} else if (sub.category === 'openwater') {
-			return rsv.category === sub.category && rsv.owTime === sub.owTime;
-		} else {
-			throw new Error();
-		}
-	} else {
-		return false;
-	}
-}
-
-export function checkNoOverlappingRsvs(settings, orig, sub, existing) {
-	let userIds = [sub.user, ...sub.buddies];
-	let overlapping = getOverlappingReservations(sub, existing);
-	for (let rsv of overlapping) {
-		if (rsv.id != sub.id && !buddysRsv(rsv, orig) && userIds.includes(rsv.user.id)) {
-			return {
-				status: 'error',
-				msg: 'You or one of your buddies has an existing reservation at this time'
-			};
-		}
-	}
-	return { status: 'success' };
 }
