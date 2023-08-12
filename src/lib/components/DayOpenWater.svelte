@@ -14,7 +14,7 @@
 	import { getContext } from 'svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { badgeColor, buoyDesc } from '$lib/utils.js';
-	import { Settings } from '$lib/settings.js';
+	import { Settings } from '$lib/settings';
 
 	const { open } = getContext('simple-modal');
 

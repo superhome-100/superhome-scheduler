@@ -1,4 +1,4 @@
-import { getOn } from '$lib/settings.js';
+import { getOn } from '$lib/settings';
 import { getXataClient } from '$lib/server/xata-old';
 import { parseSettingsTbl } from '$lib/utils.js';
 

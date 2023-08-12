@@ -1,115 +1,8 @@
 import { timeStrToMin } from '$lib/datetimeUtils';
-import { startTimes, endTimes } from '$lib/reservationTimes.js';
+import { startTimes } from '$lib/reservationTimes.js';
 import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
-import { get } from 'svelte/store';
-import { users } from '$lib/stores';
 
-function getTimeSlots(settings, date, category, start, end) {
-	let sTs = startTimes(settings, date, category);
-	let eTs = endTimes(settings, date, category);
-	let times = [...sTs, eTs[eTs.length - 1]];
-
-	let sIdx = times.indexOf(start);
-	let eIdx = times.indexOf(end);
-	if (sIdx == -1 && eIdx == -1) {
-		return null;
-	}
-
-	if (sIdx == -1) {
-		sIdx = 0;
-	}
-	if (eIdx == -1) {
-		eIdx = times.length - 1;
-	}
-
-	let beforeStart = times.slice(0, sIdx);
-	let startVals = times.slice(sIdx, eIdx);
-
-	let endVals = times.slice(sIdx + 1, eIdx + 1);
-	let afterEnd = times.slice(eIdx + 1);
-
-	return { startVals, endVals, beforeStart, afterEnd };
-}
-
-function timeOverlap(startA, endA, startB, endB) {
-	startA = timeStrToMin(startA);
-	startB = timeStrToMin(startB);
-	endA = timeStrToMin(endA);
-	endB = timeStrToMin(endB);
-	return (
-		(startA >= startB && startA < endB) ||
-		(endA <= endB && endA > startB) ||
-		(startA < startB && endA > endB)
-	);
-}
-
-function getTimeOverlapFilters(settings, rsv) {
-	let owAmStart = settings.get('openwaterAmStartTime', rsv.date);
-	let owAmEnd = settings.get('openwaterAmEndTime', rsv.date);
-	let owPmStart = settings.get('openwaterPmStartTime', rsv.date);
-	let owPmEnd = settings.get('openwaterPmEndTime', rsv.date);
-	let start, end;
-	let owTimes = [];
-	if (['pool', 'classroom'].includes(rsv.category)) {
-		start = rsv.startTime;
-		end = rsv.endTime;
-		if (timeOverlap(start, end, owAmStart, owAmEnd)) {
-			owTimes.push('AM');
-		}
-		if (timeOverlap(start, end, owPmStart, owPmEnd)) {
-			owTimes.push('PM');
-		}
-	} else if (rsv.category === 'openwater') {
-		owTimes.push(rsv.owTime);
-		if (rsv.owTime === 'AM') {
-			start = owAmStart;
-			end = owAmEnd;
-		} else if (rsv.owTime === 'PM') {
-			start = owPmStart;
-			end = owPmEnd;
-		}
-	}
-
-	let filters = [];
-
-	if (owTimes.length > 0) {
-		filters.push((rsv) => rsv.category === 'openwater' && owTimes.includes(rsv.owTime));
-	}
-
-	let slots = getTimeSlots(settings, rsv.date, 'pool', start, end);
-	if (slots != null) {
-		let timeFilt = [];
-		if (slots.startVals.length > 0) {
-			timeFilt.push((rsv) => slots.startVals.includes(rsv.startTime));
-		}
-		if (slots.endVals.length > 0) {
-			timeFilt.push((rsv) => slots.endVals.includes(rsv.endTime));
-		}
-		if (slots.beforeStart.length > 0 && slots.afterEnd.length > 0) {
-			timeFilt.push(
-				(rsv) => slots.beforeStart.includes(rsv.startTime) && slots.afterEnd.includes(rsv.endTime)
-			);
-		}
-		filters.push(
-			(rsv) =>
-				['pool', 'classroom'].includes(rsv.category) &&
-				timeFilt.reduce((b, f) => b || f(rsv), false)
-		);
-	}
-	return filters;
-}
-
-export function getOverlappingReservations(settings, sub, rsvs) {
-	let filters = (rsv) => {
-		return (
-			rsv.date === sub.date &&
-			['pending', 'confirmed'].includes(rsv.status) &&
-			getTimeOverlapFilters(settings, sub).reduce((b, f) => b || f(rsv), false)
-		);
-	};
-
-	return rsvs.filter((rsv) => filters(rsv));
-}
+import { getOverlappingReservations } from '$utils/validation'
 
 export const nOccupants = (rsvs) =>
 	rsvs.reduce((n, rsv) => {
@@ -168,7 +61,7 @@ function simulateDiveGroup(sub, existing) {
 }
 
 export function checkSpaceAvailable(settings, buoys, sub, existing) {
-	let overlapping = getOverlappingReservations(settings, sub, existing).filter(
+	let overlapping = getOverlappingReservations(sub, existing).filter(
 		(rsv) => rsv.category === sub.category
 	);
 	if (sub.category === 'openwater') {
@@ -230,7 +123,7 @@ export function buddysRsv(rsv, sub) {
 
 export function checkNoOverlappingRsvs(settings, orig, sub, existing) {
 	let userIds = [sub.user, ...sub.buddies];
-	let overlapping = getOverlappingReservations(settings, sub, existing);
+	let overlapping = getOverlappingReservations(sub, existing);
 	for (let rsv of overlapping) {
 		if (rsv.id != sub.id && !buddysRsv(rsv, orig) && userIds.includes(rsv.user.id)) {
 			return {

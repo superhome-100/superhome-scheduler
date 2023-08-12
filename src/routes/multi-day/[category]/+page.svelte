@@ -10,7 +10,7 @@
 	import { idx2month } from '$lib/datetimeUtils';
 	import { view, viewedMonth, reservations, loginState, stateLoaded } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants.js';
-	import { Settings } from '$lib/settings.js';
+	import { Settings } from '$lib/settings';
 
 	export let data;
 
@@ -99,68 +99,68 @@
 <svelte:window on:keydown={handleKeypress} />
 
 {#if $stateLoaded && $loginState === 'in'}
-    <div class="[&>*]:mx-auto flex items-center justify-between">
-        <div class="dropdown h-8 mb-4">
-            <label tabindex="0" class="border border-gray-200 dark:border-gray-700 btn btn-fsh-dropdown"
-                >{gCategory}</label
-            >
-            <ul tabindex="0" class="dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit">
-                {#each ['pool', 'openwater', 'classroom'] as cat}
-                    {#if cat !== gCategory}
-                        <li>
-                            <a class="text-xl active:bg-gray-300" href="/multi-day/{cat}">
-                                {cat}
-                            </a>
-                        </li>
-                    {/if}
-                {/each}
-            </ul>
-        </div>
-        <div class="inline-flex items-center justify-between">
-            <span on:click={prevMonth} on:keypress={prevMonth} class="cursor-pointer">
-                <Chevron direction="left" svgClass="h-6 w-6" />
-            </span>
-            <span on:click={nextMonth} on:keypress={nextMonth} class="cursor-pointer">
-                <Chevron direction="right" svgClass="h-6 w-6" />
-            </span>
-            <span class="text-2xl">{idx2month[gMonth]}</span>
-        </div>
-        <span class="">
-            <Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}
-                ><ReservationDialog
-                    category={gCategory}
-                    dateFn={(cat) => minValidDateStr(Settings, cat)}
-                /></Modal
-            >
-        </span>
-    </div>
-    <div
-        use:swipe={{ timeframe: 300, minSwipeDistance: 10, touchAction: 'pan-y' }}
-        on:swipe={swipeHandler}
-    >
-        <table class="calendar table-fixed border-collapse w-full">
-            <thead>
-                <tr>
-                    <th>S</th>
-                    <th>M</th>
-                    <th>T</th>
-                    <th>W</th>
-                    <th>T</th>
-                    <th>F</th>
-                    <th>S</th>
-                </tr>
-            </thead>
-            <tbody>
-                {#each gMonthArr() as week}
-                    <tr>
-                        {#each week as { date, rsvs }}
-                            <td class="{catStyle(gCategory)} align-top h-20 xs:h-24 border border-solid">
-                                <DayOfMonth {date} category={gCategory} {rsvs} />
-                            </td>
-                        {/each}
-                    </tr><tr />
-                {/each}
-            </tbody>
-        </table>
-    </div>
+	<div class="[&>*]:mx-auto flex items-center justify-between">
+		<div class="dropdown h-8 mb-4">
+			<label tabindex="0" class="border border-gray-200 dark:border-gray-700 btn btn-fsh-dropdown"
+				>{gCategory}</label
+			>
+			<ul tabindex="0" class="dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit">
+				{#each ['pool', 'openwater', 'classroom'] as cat}
+					{#if cat !== gCategory}
+						<li>
+							<a class="text-xl active:bg-gray-300" href="/multi-day/{cat}">
+								{cat}
+							</a>
+						</li>
+					{/if}
+				{/each}
+			</ul>
+		</div>
+		<div class="inline-flex items-center justify-between">
+			<span on:click={prevMonth} on:keypress={prevMonth} class="cursor-pointer">
+				<Chevron direction="left" svgClass="h-6 w-6" />
+			</span>
+			<span on:click={nextMonth} on:keypress={nextMonth} class="cursor-pointer">
+				<Chevron direction="right" svgClass="h-6 w-6" />
+			</span>
+			<span class="text-2xl">{idx2month[gMonth]}</span>
+		</div>
+		<span class="">
+			<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}
+				><ReservationDialog
+					category={gCategory}
+					dateFn={(cat) => minValidDateStr(Settings, cat)}
+				/></Modal
+			>
+		</span>
+	</div>
+	<div
+		use:swipe={{ timeframe: 300, minSwipeDistance: 10, touchAction: 'pan-y' }}
+		on:swipe={swipeHandler}
+	>
+		<table class="calendar table-fixed border-collapse w-full">
+			<thead>
+				<tr>
+					<th>S</th>
+					<th>M</th>
+					<th>T</th>
+					<th>W</th>
+					<th>T</th>
+					<th>F</th>
+					<th>S</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each gMonthArr() as week}
+					<tr>
+						{#each week as { date, rsvs }}
+							<td class="{catStyle(gCategory)} align-top h-20 xs:h-24 border border-solid">
+								<DayOfMonth {date} category={gCategory} {rsvs} />
+							</td>
+						{/each}
+					</tr><tr />
+				{/each}
+			</tbody>
+		</table>
+	</div>
 {/if}

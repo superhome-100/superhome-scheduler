@@ -3,7 +3,7 @@
 	import { ReservationStatus } from '$types';
 	import { ReservationCategory } from '$types';
 	import { canSubmit, user, users } from '$lib/stores';
-	import { Settings } from '$lib/settings.js';
+	import { Settings } from '$lib/settings';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes.js';
 	import { PanglaoDate } from '$lib/datetimeUtils';
 	import BuddyMatch from '$lib/components/BuddyMatch.svelte';

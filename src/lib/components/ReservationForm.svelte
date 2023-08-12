@@ -8,15 +8,10 @@
 	import { popup } from './Popup.svelte';
 	import { users, reservations, buoys } from '$lib/stores';
 	import { beforeResCutoff } from '$lib/reservationTimes.js';
-	import { Settings } from '$lib/settings.js';
-	import {
-		checkNoOverlappingRsvs,
-		checkSpaceAvailable,
-	} from '$lib/validationUtils.js';
+	import { Settings } from '$lib/settings';
+	import { checkNoOverlappingRsvs, checkSpaceAvailable } from '$lib/validationUtils.js';
 
-	import {
-		validateBuddies,
-	} from '$utils/validation'
+	import { validateBuddies } from '$utils/validation';
 
 	import {
 		augmentRsv,
