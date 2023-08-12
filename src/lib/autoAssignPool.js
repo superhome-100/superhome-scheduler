@@ -1,7 +1,7 @@
 import { inc, startTimes } from '$lib/reservationTimes.js';
 import { timeStrToMin } from '$lib/datetimeUtils';
-import { nOccupants } from '$lib/validationUtils.js';
 import { Settings } from '$lib/settings';
+import { getNumberOfOccupants } from '$utils/reservations';
 
 // priority rules:
 //   1 pre-assigned rsvs
@@ -119,7 +119,7 @@ function getMinBreaksPathRec(spacesByTimes, laneWidth, width, curTime, endTime, 
 	return pathObj;
 }
 
-const getWidth = (rsv) => nOccupants([rsv]) + rsv.buddies.length;
+const getWidth = (rsv) => getNumberOfOccupants([rsv]) + rsv.buddies.length;
 
 function rsvToBlock(rsv, minTime, inc, resourceNames) {
 	let startTime = (timeStrToMin(rsv.startTime) - minTime) / inc;

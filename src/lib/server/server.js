@@ -1,6 +1,5 @@
 import { getXataClient } from '$lib/server/xata-old';
 import { addMissingFields, convertReservationTypes } from '$lib/utils.js';
-import { checkSpaceAvailable } from '$lib/validationUtils.js';
 import { redirect } from '@sveltejs/kit';
 import { startTimes, endTimes } from '$lib/reservationTimes.js';
 import { timeStrToMin } from '$lib/datetimeUtils';
@@ -8,7 +7,7 @@ import { Settings } from '$lib/server/settings';
 import ObjectsToCsv from 'objects-to-csv';
 import JSZip from 'jszip';
 
-import { isBuddiesReservation } from '$utils/validation';
+import { isBuddiesReservation, checkSpaceAvailable } from '$utils/validation';
 
 import { getUserById } from './user';
 
@@ -171,7 +170,7 @@ async function querySpaceAvailable(entries, remove = []) {
 		buoys = await xata.db.Buoys.getAll();
 	}
 	await Settings.init();
-	let result = checkSpaceAvailable(Settings, buoys, sub, existing);
+	let result = checkSpaceAvailable(buoys, sub, existing);
 	if (result.status === 'error') {
 		return {
 			status: 'error',

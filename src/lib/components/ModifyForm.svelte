@@ -10,9 +10,8 @@
 	import { beforeCancelCutoff, beforeResCutoff } from '$lib/reservationTimes.js';
 
 	import { Settings } from '$lib/settings';
-	import { checkSpaceAvailable } from '$lib/validationUtils.js';
 
-	import { validateBuddies, checkNoOverlappingRsvs } from '$utils/validation';
+	import { validateBuddies, checkNoOverlappingRsvs, checkSpaceAvailable } from '$utils/validation';
 
 	import {
 		addMissingFields,
@@ -105,7 +104,7 @@
 			return;
 		}
 
-		result = checkSpaceAvailable(Settings, $buoys, submitted, $reservations);
+		result = checkSpaceAvailable($buoys, submitted, $reservations);
 		if (result.status === 'error') {
 			popup(result.message);
 			cancel();
