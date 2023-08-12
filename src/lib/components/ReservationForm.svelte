@@ -12,8 +12,11 @@
 	import {
 		checkNoOverlappingRsvs,
 		checkSpaceAvailable,
-		validateBuddies
 	} from '$lib/validationUtils.js';
+
+	import {
+		validateBuddies,
+	} from '$utils/validation'
 
 	import {
 		augmentRsv,
