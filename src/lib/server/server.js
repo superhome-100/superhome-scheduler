@@ -7,8 +7,8 @@ import {
 	endTimes,
 	beforeCancelCutoff,
 	beforeResCutoff,
-    resCutoff,
-    minuteOfDay
+	resCutoff,
+	minuteOfDay
 } from '$lib/reservationTimes.js';
 import { timeStrToMin, PanglaoDate, datetimeToLocalDateStr } from '$lib/datetimeUtils';
 import { Settings } from '$lib/server/settings.js';
@@ -203,16 +203,16 @@ export async function submitReservation(formData) {
 
 	await Settings.init();
 	if (!beforeResCutoff(Settings, sub.date, sub.startTime, sub.category)) {
-        let now = PanglaoDate();
-        let tomorrow = PanglaoDate();
-        tomorrow.setDate(now.getDate() + 1);
-        let tomStr = datetimeToLocalDateStr(tomorrow);
+		let now = PanglaoDate();
+		let tomorrow = PanglaoDate();
+		tomorrow.setDate(now.getDate() + 1);
+		let tomStr = datetimeToLocalDateStr(tomorrow);
 
 		return {
 			status: 'error',
-            cutoff: resCutoff(Settings, sub.date),
-            tomStr,
-            minOfDay: minuteOfDay(now),
+			cutoff: resCutoff(Settings, sub.date),
+			tomStr,
+			minOfDay: minuteOfDay(now),
 			code: 'AFTER_CUTOFF'
 		};
 	}
@@ -257,6 +257,12 @@ export async function submitReservation(formData) {
 	};
 }
 
+const reducingStudents = (orig, sub) =>
+	orig.resType === 'course' && orig.numStudents > sub.numStudents;
+const removingBuddy = (orig, sub) =>
+	orig.buddies.length > sub.buddies.length &&
+	sub.buddies.reduce((id, val) => orig.buddies.includes(id) && val, true);
+
 export async function updateReservation(formData) {
 	let { oldBuddies, ...sub } = convertReservationTypes(Object.fromEntries(formData));
 	oldBuddies = oldBuddies ? oldBuddies : [];
@@ -267,9 +273,10 @@ export async function updateReservation(formData) {
 
 	await Settings.init();
 	if (!beforeResCutoff(Settings, sub.date, sub.startTime, sub.category)) {
-		//the only type of mod that's allowed after the res cutoff is to reduce
-		//the number of students in a course
-		if (orig.resType != 'course' || orig.numStudents <= sub.numStudents) {
+		//the only types of mod that's allowed after the res cutoff are:
+		// 1) reducing the number of students in a course
+		// 2) deleting a buddy's reservation
+		if (!reducingStudents(orig, sub) && !removingBuddy(orig, sub)) {
 			return {
 				status: 'error',
 				code: 'AFTER_CUTOFF'
