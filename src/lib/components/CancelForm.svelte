@@ -52,7 +52,7 @@
 						$reservations = [...$reservations];
 						toast.success('Reservation canceled');
 					} else if (result.data.status === 'error') {
-						switch (result.data.error) {
+						switch (result.data.code) {
 							case 'AFTER_CUTOFF':
 								popup(
 									'The cancelation window for this reservation has expired;' +
@@ -60,7 +60,7 @@
 								);
 								break;
 							default:
-								console.errror(result.data.error);
+								console.error(result.data.code);
 								throw new Error('unknown cancelation error code');
 						}
 					}
