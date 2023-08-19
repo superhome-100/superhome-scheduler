@@ -7,9 +7,10 @@ import {
 	endTimes,
 	beforeCancelCutoff,
 	beforeResCutoff,
-    resCutoff
+    resCutoff,
+    minuteOfDay
 } from '$lib/reservationTimes.js';
-import { timeStrToMin, PanglaoDate, datetimeToLocalDateStr, minuteOfDay } from '$lib/datetimeUtils';
+import { timeStrToMin, PanglaoDate, datetimeToLocalDateStr } from '$lib/datetimeUtils';
 import { Settings } from '$lib/server/settings.js';
 import ObjectsToCsv from 'objects-to-csv';
 import JSZip from 'jszip';
