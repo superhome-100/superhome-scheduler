@@ -2,7 +2,12 @@ import { getXataClient } from '$lib/server/xata-old';
 import { addMissingFields, convertReservationTypes } from '$lib/utils.js';
 import { buddysRsv, checkSpaceAvailable } from '$lib/validationUtils.js';
 import { redirect } from '@sveltejs/kit';
-import { startTimes, endTimes } from '$lib/reservationTimes.js';
+import {
+	startTimes,
+	endTimes,
+	beforeCancelCutoff,
+	beforeResCutoff
+} from '$lib/reservationTimes.js';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { Settings } from '$lib/server/settings.js';
 import ObjectsToCsv from 'objects-to-csv';
@@ -194,6 +199,14 @@ export async function submitReservation(formData) {
 		};
 	}
 
+	await Settings.init();
+	if (!beforeResCutoff(Settings, sub.date, sub.startTime, sub.category)) {
+		return {
+			status: 'error',
+			code: 'AFTER_CUTOFF'
+		};
+	}
+
 	let checkExisting = [sub.user, ...sub.buddies];
 	let existing = await getOverlappingReservations(sub, checkExisting);
 	if (existing.length > 0) {
@@ -242,7 +255,25 @@ export async function updateReservation(formData) {
 
 	addMissingFields(sub, orig);
 
-	// first check that the submitter and associated buddies do not have existing
+	await Settings.init();
+	if (!beforeResCutoff(Settings, sub.date, sub.startTime, sub.category)) {
+		//the only type of mod that's allowed after the res cutoff is to reduce
+		//the number of students in a course
+		if (orig.resType != 'course' || orig.numStudents <= sub.numStudents) {
+			return {
+				status: 'error',
+				code: 'AFTER_CUTOFF'
+			};
+			//no mods allowed after cancel cutoff
+		} else if (!beforeCancelCutoff(Settings, sub.date, sub.startTime, sub.category)) {
+			return {
+				status: 'error',
+				code: 'AFTER_CUTOFF'
+			};
+		}
+	}
+
+	// check that the submitter and associated buddies do not have existing
 	// reservations that will overlap with the updated reservation
 	let checkExisting = [sub.user, ...sub.buddies];
 	let existing = await getOverlappingReservations(sub, checkExisting);
@@ -374,6 +405,13 @@ export async function adminUpdate(formData) {
 export async function cancelReservation(formData) {
 	let data = convertReservationTypes(Object.fromEntries(formData));
 
+	await Settings.init();
+	if (!beforeCancelCutoff(Settings, data.date, data.startTime, data.category)) {
+		return {
+			status: 'error',
+			code: 'AFTER_CUTOFF'
+		};
+	}
 	let save = data.buddies.filter((id) => !data.delBuddies.includes(id));
 	let cancel = [data.id];
 	let records = { modified: [], canceled: [] };
@@ -408,7 +446,10 @@ export async function cancelReservation(formData) {
 	);
 	records.canceled = cancelrecs;
 
-	return records;
+	return {
+		status: 'success',
+		records
+	};
 }
 
 export function checkSessionActive(route, cookies) {
