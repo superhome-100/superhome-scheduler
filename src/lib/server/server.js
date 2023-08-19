@@ -7,10 +7,8 @@ import {
 	endTimes,
 	beforeCancelCutoff,
 	beforeResCutoff,
-	resCutoff,
-	minuteOfDay
 } from '$lib/reservationTimes.js';
-import { timeStrToMin, PanglaoDate, datetimeToLocalDateStr } from '$lib/datetimeUtils';
+import { timeStrToMin } from '$lib/datetimeUtils';
 import { Settings } from '$lib/server/settings.js';
 import ObjectsToCsv from 'objects-to-csv';
 import JSZip from 'jszip';
@@ -203,16 +201,8 @@ export async function submitReservation(formData) {
 
 	await Settings.init();
 	if (!beforeResCutoff(Settings, sub.date, sub.startTime, sub.category)) {
-		let now = PanglaoDate();
-		let tomorrow = PanglaoDate();
-		tomorrow.setDate(now.getDate() + 1);
-		let tomStr = datetimeToLocalDateStr(tomorrow);
-
 		return {
 			status: 'error',
-			cutoff: resCutoff(Settings, sub.date),
-			tomStr,
-			minOfDay: minuteOfDay(now),
 			code: 'AFTER_CUTOFF'
 		};
 	}
