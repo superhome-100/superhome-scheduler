@@ -1,25 +1,26 @@
-import { XataClient } from '../src/lib/server/xata.codegen';
+import dayjs from 'dayjs';
+import { XataClient } from '../src/lib/server/xata.codegen.js';
 
 const XATA_API_KEY = 'xau_9xJINLTWEBX1d0EyWIi7YL9QinLT2TEv1';
 
 const dev = new XataClient({ apiKey: XATA_API_KEY, branch: 'dev' });
 const main = new XataClient({ apiKey: XATA_API_KEY, branch: 'main' });
 
-async function getAll(xata) {
+async function getAll(xata, dateStr) {
 	let Settings = await xata.db.Settings.getAll();
 	let Buoys = await xata.db.Buoys.getAll();
 	let Users = await xata.db.Users.getAll();
-	let Reservations = await xata.db.Reservations.getAll();
+	let Reservations = await xata.db.Reservations
+        .filter({ date: { $ge: dateStr }})
+        .select(['*', 'user'])
+        .getAll();
 	let Boats = await xata.db.Boats.getAll();
 	let UserPriceTemplates = await xata.db.UserPriceTemplates.getAll();
-	Reservations = Reservations.map((rsv) => {
-		return { ...rsv, user: rsv.user.id };
-	});
 	return { Settings, Buoys, Boats, Users, Reservations, UserPriceTemplates };
 }
 
 async function wipeDev() {
-	let data = await getAll(dev);
+	let data = await getAll(dev, '1970-01-01');
 	for (let tbl in data) {
 		try {
 			let ids = data[tbl].map((v) => v.id);
@@ -33,7 +34,10 @@ async function wipeDev() {
 }
 
 async function copyMainToDev() {
-	let data = await getAll(main);
+    let date = new Date();
+    date.setDate(date.getDate() - 7);
+    let dateStr = dayjs(date).locale('en-US').format('YYYY-MM-DD');
+	let data = await getAll(main, dateStr);
 	for (let tbl in data) {
 		await dev.db[tbl].create(data[tbl]);
 	}
