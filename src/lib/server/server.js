@@ -263,7 +263,7 @@ export async function updateReservation(formData) {
 
 	await Settings.init();
 	if (!beforeResCutoff(Settings, sub.date, sub.startTime, sub.category)) {
-		//the only types of mod that's allowed after the res cutoff are:
+		//the only types of mods that are allowed after the res cutoff are:
 		// 1) reducing the number of students in a course
 		// 2) deleting a buddy's reservation
 		if (!reducingStudents(orig, sub) && !removingBuddy(orig, sub)) {
@@ -271,7 +271,7 @@ export async function updateReservation(formData) {
 				status: 'error',
 				code: 'AFTER_CUTOFF'
 			};
-			//no mods allowed after cancel cutoff
+		//no mods allowed after cancel cutoff
 		} else if (!beforeCancelCutoff(Settings, sub.date, sub.startTime, sub.category)) {
 			return {
 				status: 'error',
