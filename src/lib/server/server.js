@@ -8,7 +8,7 @@ import {
 	beforeCancelCutoff,
 	beforeResCutoff
 } from '$lib/reservationTimes.js';
-import { timeStrToMin } from '$lib/datetimeUtils';
+import { timeStrToMin, PanglaoDate } from '$lib/datetimeUtils';
 import { Settings } from '$lib/server/settings.js';
 import ObjectsToCsv from 'objects-to-csv';
 import JSZip from 'jszip';
@@ -203,6 +203,7 @@ export async function submitReservation(formData) {
 	if (!beforeResCutoff(Settings, sub.date, sub.startTime, sub.category)) {
 		return {
 			status: 'error',
+            date: PanglaoDate().toLocaleString(),
 			code: 'AFTER_CUTOFF'
 		};
 	}

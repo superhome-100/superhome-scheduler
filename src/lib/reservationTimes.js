@@ -24,7 +24,6 @@ export function validReservationDate(stns, date, category) {
 
 export function beforeResCutoff(stns, dateStr, startTime, category) {
 	let now = dtu.PanglaoDate();
-    console.log('now: ' + now);
 	let tomorrow = dtu.PanglaoDate();
 	tomorrow.setDate(now.getDate() + 1);
 	let tomStr = dtu.datetimeToLocalDateStr(tomorrow);
@@ -32,10 +31,8 @@ export function beforeResCutoff(stns, dateStr, startTime, category) {
 	if (['classroom', 'pool'].includes(category)) {
 		return beforeCancelCutoff(stns, dateStr, startTime, category);
 	} else if (dateStr > tomStr) {
-        console.log(dateStr + ' > ' + tomStr);
 		return true;
 	} else if (dateStr == tomStr && minuteOfDay(now) <= resCutoff(stns, dateStr)) {
-        console.log(dateStr + ' == ' + tomStr + ' && ' + minuteOfDay(now) + ' <= ' + resCutoff(stns, dateStr));
 		return true;
 	} else {
 		return false;
