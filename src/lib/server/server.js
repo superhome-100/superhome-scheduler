@@ -8,6 +8,7 @@ import ObjectsToCsv from 'objects-to-csv';
 import JSZip from 'jszip';
 
 import { isBuddiesReservation, checkSpaceAvailable } from '$utils/validation';
+import { checkAvailableClassroom } from '$utils/validation-server';
 
 import { getUserById } from './user';
 
@@ -170,7 +171,13 @@ async function querySpaceAvailable(entries, remove = []) {
 		buoys = await xata.db.Buoys.getAll();
 	}
 	await Settings.init();
-	let result = checkSpaceAvailable(buoys, sub, existing);
+	let result;
+	if (sub.category === 'classroom') {
+		result = checkAvailableClassroom(sub, existing);
+	} else {
+		result = checkSpaceAvailable(buoys, sub, existing);
+	}
+
 	if (result.status === 'error') {
 		return {
 			status: 'error',
