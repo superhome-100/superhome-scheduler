@@ -10,10 +10,9 @@ async function getAll(xata, dateStr) {
 	let Settings = await xata.db.Settings.getAll();
 	let Buoys = await xata.db.Buoys.getAll();
 	let Users = await xata.db.Users.getAll();
-	let Reservations = await xata.db.Reservations
-        .filter({ date: { $ge: dateStr }})
-        .select(['*', 'user'])
-        .getAll();
+	let Reservations = await xata.db.Reservations.filter({ date: { $ge: dateStr } })
+		.select(['*', 'user'])
+		.getAll();
 	let Boats = await xata.db.Boats.getAll();
 	let UserPriceTemplates = await xata.db.UserPriceTemplates.getAll();
 	return { Settings, Buoys, Boats, Users, Reservations, UserPriceTemplates };
@@ -34,9 +33,9 @@ async function wipeDev() {
 }
 
 async function copyMainToDev() {
-    let date = new Date();
-    date.setDate(date.getDate() - 7);
-    let dateStr = dayjs(date).locale('en-US').format('YYYY-MM-DD');
+	let date = new Date();
+	date.setDate(date.getDate() - 7);
+	let dateStr = dayjs(date).locale('en-US').format('YYYY-MM-DD');
 	let data = await getAll(main, dateStr);
 	for (let tbl in data) {
 		await dev.db[tbl].create(data[tbl]);
