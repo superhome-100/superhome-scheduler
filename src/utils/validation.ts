@@ -84,6 +84,7 @@ export function checkSpaceAvailable(
 		(rsv) => rsv.category === sub.category
 	);
 	if (sub.category === 'openwater') {
+		// TODO: refactor this into its own function
 		let diveGroup = simulateDiveGroup(sub, overlapping);
 		let result = assignRsvsToBuoys(buoys, diveGroup);
 		if (result.status === 'error') {
@@ -97,6 +98,7 @@ export function checkSpaceAvailable(
 			return result;
 		}
 	} else if (sub.category === 'pool') {
+		// TODO: refactor this into its own function
 		if (checkPoolSpaceAvailable(sub, overlapping)) {
 			return { status: 'success' };
 		} else {
@@ -108,6 +110,8 @@ export function checkSpaceAvailable(
 			};
 		}
 	} else if (sub.category === 'classroom') {
+		// TODO: refactor this into its own function
+		// this thing has nothing to do with buoys
 		overlapping = overlapping.filter((rsv) => rsv?.user?.id != sub.user);
 		if (overlapping.length >= settings.get('classrooms', sub.date!).length) {
 			return {
