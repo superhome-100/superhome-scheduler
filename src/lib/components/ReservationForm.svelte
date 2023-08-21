@@ -103,6 +103,11 @@
 							popup(
 								'Reservation rejected! User does not have permission to ' + 'make reservations'
 							);
+						} else if (result.data.code === 'AFTER_CUTOFF') {
+							popup(
+								'The submission window for this reservation date/time has expired. ' +
+									'Please choose a later date.'
+							);
 						}
 					}
 					break;

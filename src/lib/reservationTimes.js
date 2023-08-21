@@ -78,9 +78,7 @@ export const startTimes = (stns, dateStr, cat) =>
 export const endTimes = (stns, dateStr, cat) =>
 	Array(nRes(stns, dateStr, cat))
 		.fill()
-		.map((v, i) =>
-			dtu.minToTimeStr(minStart(stns, dateStr, cat) + (i + 1) * inc(stns, dateStr))
-		);
+		.map((v, i) => dtu.minToTimeStr(minStart(stns, dateStr, cat) + (i + 1) * inc(stns, dateStr)));
 
 export function minValidDate(stns, category) {
 	let today = dtu.PanglaoDate();
