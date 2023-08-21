@@ -38,17 +38,32 @@
 		return async ({ result, update }) => {
 			switch (result.type) {
 				case 'success':
-					for (let rsv of result.data.modified) {
-						removeRsv(rsv.id);
-						let user = $users[rsv.user.id];
-						rsv = augmentRsv(rsv, user);
-						$reservations.push(rsv);
+					if (result.data.status === 'success') {
+						let records = result.data.records;
+						for (let rsv of records.modified) {
+							removeRsv(rsv.id);
+							let user = $users[rsv.user.id];
+							rsv = augmentRsv(rsv, user);
+							$reservations.push(rsv);
+						}
+						for (let rsv of records.canceled) {
+							removeRsv(rsv.id);
+						}
+						$reservations = [...$reservations];
+						toast.success('Reservation canceled');
+					} else if (result.data.status === 'error') {
+						switch (result.data.code) {
+							case 'AFTER_CUTOFF':
+								popup(
+									'The cancelation window for this reservation has expired;' +
+										'this reservation can no longer be canceled'
+								);
+								break;
+							default:
+								console.error(result.data.code);
+								throw new Error('unknown cancelation error code');
+						}
 					}
-					for (let rsv of result.data.canceled) {
-						removeRsv(rsv.id);
-					}
-					$reservations = [...$reservations];
-					toast.success('Reservation canceled');
 					break;
 				default:
 					console.error(result);
