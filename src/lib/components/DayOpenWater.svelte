@@ -171,8 +171,9 @@
 		}
 	};
 
-	$: owTimeColWidth = () => ($viewMode === 'admin' ? 'w-[33%]' : 'w-[42%]');
-
+	$: owTimeColWidth = () => ($viewMode === 'admin' ? 'w-[33%]' : 'w-[40%]');
+	$: boatColWidth = () => ($viewMode === 'admin' ? 'w-[18%]' : 'w-[10%]');
+	$: buoyColWidth = () => ($viewMode === 'admin' ? 'w-[16%]' : 'w-[10%]');
 	const boatCountPos = (profileSrc) => {
 		if (profileSrc != null) {
 			return 'top-[50px] sm:top-[120px] md:top-[110px]';
@@ -201,7 +202,7 @@
 	<div class="font-semibold text-3xl text-center">Closed</div>
 {:else}
 	<div class="row">
-		<div class="column text-center w-[16%]">
+		<div class="column text-center {buoyColWidth()}">
 			<div class="font-semibold">buoy</div>
 			{#each displayBuoys as buoy (buoy.name)}
 				{#if buoyInUse(schedule, buoy.name)}
@@ -224,15 +225,15 @@
 				{/if}
 			{/each}
 		</div>
-		{#if $viewMode === 'admin'}
-			<div class="column text-center w-[18%]">
-				<div class="font-semibold">boat</div>
-				{#each displayBuoys as buoy (buoy.name)}
-					{#if buoyInUse(schedule, buoy.name)}
-						<div
-							class="flex items-center justify-center"
-							style="height: {rowHeights[buoy.name].header}rem"
-						>
+		<div class="column text-center {boatColWidth()}">
+			<div class="font-semibold">boat</div>
+			{#each displayBuoys as buoy (buoy.name)}
+				{#if buoyInUse(schedule, buoy.name)}
+					<div
+						class="flex items-center justify-center"
+						style="height: {rowHeights[buoy.name].header}rem"
+					>
+						{#if $viewMode === 'admin'}
 							<select
 								class="text-sm h-6 w-16 xs:text-xl xs:h-8 xs:w-16"
 								name={buoy.name + '_boat'}
@@ -245,11 +246,13 @@
 									<option value={boat}>{boat}</option>
 								{/each}
 							</select>
-						</div>
-					{/if}
-				{/each}
-			</div>
-		{/if}
+						{:else}
+							{displayValue(buoy.name) ? displayValue(buoy.name) : ''}
+						{/if}
+					</div>
+				{/if}
+			{/each}
+		</div>
 		{#each [{ cur: 'AM', other: 'PM' }, { cur: 'PM', other: 'AM' }] as { cur, other }}
 			<div class="column text-center {owTimeColWidth()}">
 				<div class="font-semibold">{cur}</div>

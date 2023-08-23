@@ -189,7 +189,7 @@
 					{disabled}
 					tabindex="5"
 				/>
-				<label for="formBottomPlate">bottom plate</label>
+				<label for="formBottomPlate">bottom plate with tags</label>
 			</div>
 			<div>
 				{#if disabled}
