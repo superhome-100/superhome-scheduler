@@ -75,9 +75,10 @@
 			$loginState = 'in';
 
 			const maxDateStr = datetimeToLocalDateStr(new Date());
-			const [userNotifications, reqReservations] = await Promise.all([
+			const [userNotifications, reqReservations, reqBoatAssignments] = await Promise.all([
 				getUserNotifications(),
-				getUserPastReservations($user.id, maxDateStr)
+				getUserPastReservations($user.id, maxDateStr),
+				getBoatAssignments()
 			]);
 			$notifications = userNotifications;
 
@@ -87,12 +88,11 @@
 				});
 			}
 
+			if (reqBoatAssignments.status === 'success') {
+				$boatAssignments = reqBoatAssignments.assignments;
+			}
 			if ($user.privileges === 'admin') {
 				$viewMode = setViewMode;
-				let data = await getBoatAssignments();
-				if (data.status === 'success') {
-					$boatAssignments = data.assignments;
-				}
 			}
 		} else {
 			// in case the admin made a typo in the status field of the Xata UI
