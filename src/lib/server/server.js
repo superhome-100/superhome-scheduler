@@ -6,7 +6,7 @@ import {
 	startTimes,
 	endTimes,
 	beforeCancelCutoff,
-	beforeResCutoff,
+	beforeResCutoff
 } from '$lib/reservationTimes.js';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { Settings } from '$lib/server/settings.js';
@@ -200,6 +200,14 @@ export async function submitReservation(formData) {
 	}
 
 	await Settings.init();
+	//TODO: find a cleaner way to handle startTime for OW rsvs
+	if (sub.category === 'openwater') {
+		if (sub.owTime === 'AM') {
+			sub.startTime = Settings.get('openwaterAmStartTime', sub.date);
+		} else if (sub.owTime === 'PM') {
+			sub.startTime = Settings.get('openwaterPmStartTime', sub.date);
+		}
+	}
 	if (!beforeResCutoff(Settings, sub.date, sub.startTime, sub.category)) {
 		return {
 			status: 'error',
@@ -262,6 +270,14 @@ export async function updateReservation(formData) {
 	addMissingFields(sub, orig);
 
 	await Settings.init();
+	//TODO: find a cleaner way to handle startTime for OW rsvs
+	if (sub.category === 'openwater') {
+		if (sub.owTime === 'AM') {
+			sub.startTime = Settings.get('openwaterAmStartTime', sub.date);
+		} else if (sub.owTime === 'PM') {
+			sub.startTime = Settings.get('openwaterPmStartTime', sub.date);
+		}
+	}
 	if (!beforeResCutoff(Settings, sub.date, sub.startTime, sub.category)) {
 		//the only types of mods that are allowed after the res cutoff are:
 		// 1) reducing the number of students in a course
@@ -271,7 +287,7 @@ export async function updateReservation(formData) {
 				status: 'error',
 				code: 'AFTER_CUTOFF'
 			};
-		//no mods allowed after cancel cutoff
+			//no mods allowed after cancel cutoff
 		} else if (!beforeCancelCutoff(Settings, sub.date, sub.startTime, sub.category)) {
 			return {
 				status: 'error',
@@ -413,6 +429,14 @@ export async function cancelReservation(formData) {
 	let data = convertReservationTypes(Object.fromEntries(formData));
 
 	await Settings.init();
+	//TODO: find a cleaner way to handle startTime for OW rsvs
+	if (data.category === 'openwater') {
+		if (data.owTime === 'AM') {
+			data.startTime = Settings.get('openwaterAmStartTime', data.date);
+		} else if (data.owTime === 'PM') {
+			data.startTime = Settings.get('openwaterPmStartTime', data.date);
+		}
+	}
 	if (!beforeCancelCutoff(Settings, data.date, data.startTime, data.category)) {
 		return {
 			status: 'error',
