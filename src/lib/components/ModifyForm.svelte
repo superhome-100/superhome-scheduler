@@ -149,6 +149,11 @@
 							);
 						} else if (result.data.code === 'NO_SPACE_AVAILABLE') {
 							popup(result.data.message);
+						} else if (result.data.code === 'AFTER_CUTOFF') {
+							popup(
+								'The modification window for this reservation date/time has expired; ' +
+									'this reservation can no longer be modified'
+							);
 						}
 					}
 					break;
