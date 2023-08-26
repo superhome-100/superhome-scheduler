@@ -7,12 +7,16 @@ let settingsStore = null;
 export const Settings = {
 	init: async () => {
 		if (!settingsStore) {
-			let settingsTbl = await xata.db.Settings.getAll();
-			settingsStore = parseSettingsTbl(settingsTbl);
+			settingsStore = getSettings();
 		}
 	},
 	get: (name, date) => {
 		let setting = settingsStore[name];
 		return getOn(setting, date);
 	}
+};
+
+export const getSettings = async () => {
+	const settingsTbl = await xata.db.Settings.getAll();
+	return parseSettingsTbl(settingsTbl);
 };
