@@ -184,11 +184,12 @@ async function querySpaceAvailable(entries, remove = []) {
 	}
 
 	if (result.status === 'error') {
-		return {
-			status: 'error',
-			code: 'NO_SPACE_AVAILABLE',
-			message: result.message
-		};
+		throw new Error("NO_SPACE_AVAILABLE")
+		// return {
+		// 	status: 'error',
+		// 	code: 'NO_SPACE_AVAILABLE',
+		// 	message: result.message
+		// };
 	} else {
 		return {
 			status: 'success'
@@ -201,10 +202,7 @@ export async function submitReservation(formData) {
 
 	const user = await getUserById(sub.user);
 	if (user && user.status === 'disabled') {
-		return {
-			status: 'error',
-			code: 'USER_DISABLED'
-		};
+		throw new Error("ask admin to enable usage.")
 	}
 
 	await Settings.init();
@@ -216,20 +214,17 @@ export async function submitReservation(formData) {
 			sub.startTime = Settings.get('openwaterPmStartTime', sub.date);
 		}
 	}
+	console.log("test -1");
+
 	if (!beforeResCutoff(Settings, sub.date, sub.startTime, sub.category)) {
-		return {
-			status: 'error',
-			code: 'AFTER_CUTOFF'
-		};
+		throw new Error("The submission window for this reservation date/time has expired. Please choose a later date.")
 	}
 
+	console.log("test 0");
 	let checkExisting = [sub.user, ...sub.buddies];
 	let existing = await getOverlappingReservations(sub, checkExisting);
 	if (existing.length > 0) {
-		return {
-			status: 'error',
-			code: 'RSV_EXISTS'
-		};
+		throw new Error("Reservation rejected!  You or one of your buddies has a pre-existing reservation at this time")
 	}
 
 	// openwater bookings require the admin to manually confirm
@@ -242,7 +237,7 @@ export async function submitReservation(formData) {
 	// since lanes is of type 'multiple' in the db, it cant have a
 	// default value, so we set the default here
 	sub.lanes = ['auto'];
-
+	console.log("test 1");
 	let entries = [sub];
 	if (sub.buddies.length > 0) {
 		let { user, buddies, ...common } = sub;
@@ -251,6 +246,7 @@ export async function submitReservation(formData) {
 			entries.push({ ...common, user: id, buddies: bg, owner: false });
 		}
 	}
+	console.log('settings init 3');
 	let result = await querySpaceAvailable(entries);
 	if (result.status === 'error') {
 		return result;
@@ -290,17 +286,13 @@ export async function updateReservation(formData) {
 		//the only types of mods that are allowed after the res cutoff are:
 		// 1) reducing the number of students in a course
 		// 2) deleting a buddy's reservation
+
+		const cutoffError = "The modification window for this reservation date/time has expired; this reservation can no longer be modified"
 		if (!reducingStudents(orig, sub) && !removingBuddy(orig, sub)) {
-			return {
-				status: 'error',
-				code: 'AFTER_CUTOFF'
-			};
+			throw new Error(cutoffError)
 			//no mods allowed after cancel cutoff
 		} else if (!beforeCancelCutoff(Settings, sub.date, sub.startTime, sub.category)) {
-			return {
-				status: 'error',
-				code: 'AFTER_CUTOFF'
-			};
+			throw new Error(cutoffError)
 		}
 	}
 
@@ -311,10 +303,7 @@ export async function updateReservation(formData) {
 	if (existing.length > 0) {
 		for (let rsv of existing) {
 			if (rsv.id !== orig.id && !isBuddiesReservation(rsv, orig)) {
-				return {
-					status: 'error',
-					code: 'RSV_EXISTS'
-				};
+				throw new Error("reservation exists")
 			}
 		}
 	}
@@ -446,10 +435,7 @@ export async function cancelReservation(formData) {
 		}
 	}
 	if (!beforeCancelCutoff(Settings, data.date, data.startTime, data.category)) {
-		return {
-			status: 'error',
-			code: 'AFTER_CUTOFF'
-		};
+		throw new Error("The modification window for this reservation date/time has expired; this reservation can no longer be modified")
 	}
 	let save = data.buddies.filter((id) => !data.delBuddies.includes(id));
 	let cancel = [data.id];

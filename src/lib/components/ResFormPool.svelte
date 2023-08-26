@@ -19,6 +19,7 @@
 	export let restrictModify = false;
 	export let maxNumStudents = 4;
 	export let maxTimeHours = 4;
+	export let error = ''
 
 	let disabled = viewOnly || restrictModify;
 
@@ -50,7 +51,7 @@
 	};
 </script>
 
-<ResFormGeneric {viewOnly} {restrictModify} {showBuddyFields} bind:date bind:category {rsv}>
+<ResFormGeneric {error} {viewOnly} {restrictModify} {showBuddyFields} bind:date bind:category {rsv}>
 	<div class="[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5" slot="categoryLabels">
 		{#if adminView(viewOnly)}
 			{#if category === 'pool'}
