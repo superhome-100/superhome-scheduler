@@ -1,7 +1,12 @@
 import { getXataClient } from '$lib/server/xata-old';
 import { addMissingFields, convertReservationTypes } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
-import { startTimes, endTimes } from '$lib/reservationTimes.js';
+import {
+	startTimes,
+	endTimes,
+	beforeCancelCutoff,
+	beforeResCutoff
+} from '$lib/reservationTimes.js';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { Settings } from '$lib/server/settings';
 import ObjectsToCsv from 'objects-to-csv';
@@ -202,6 +207,22 @@ export async function submitReservation(formData) {
 		};
 	}
 
+	await Settings.init();
+	//TODO: find a cleaner way to handle startTime for OW rsvs
+	if (sub.category === 'openwater') {
+		if (sub.owTime === 'AM') {
+			sub.startTime = Settings.get('openwaterAmStartTime', sub.date);
+		} else if (sub.owTime === 'PM') {
+			sub.startTime = Settings.get('openwaterPmStartTime', sub.date);
+		}
+	}
+	if (!beforeResCutoff(Settings, sub.date, sub.startTime, sub.category)) {
+		return {
+			status: 'error',
+			code: 'AFTER_CUTOFF'
+		};
+	}
+
 	let checkExisting = [sub.user, ...sub.buddies];
 	let existing = await getOverlappingReservations(sub, checkExisting);
 	if (existing.length > 0) {
@@ -242,6 +263,12 @@ export async function submitReservation(formData) {
 	};
 }
 
+const reducingStudents = (orig, sub) =>
+	orig.resType === 'course' && orig.numStudents > sub.numStudents;
+const removingBuddy = (orig, sub) =>
+	orig.buddies.length > sub.buddies.length &&
+	sub.buddies.reduce((id, val) => orig.buddies.includes(id) && val, true);
+
 export async function updateReservation(formData) {
 	let { oldBuddies, ...sub } = convertReservationTypes(Object.fromEntries(formData));
 	oldBuddies = oldBuddies ? oldBuddies : [];
@@ -250,7 +277,34 @@ export async function updateReservation(formData) {
 
 	addMissingFields(sub, orig);
 
-	// first check that the submitter and associated buddies do not have existing
+	await Settings.init();
+	//TODO: find a cleaner way to handle startTime for OW rsvs
+	if (sub.category === 'openwater') {
+		if (sub.owTime === 'AM') {
+			sub.startTime = Settings.get('openwaterAmStartTime', sub.date);
+		} else if (sub.owTime === 'PM') {
+			sub.startTime = Settings.get('openwaterPmStartTime', sub.date);
+		}
+	}
+	if (!beforeResCutoff(Settings, sub.date, sub.startTime, sub.category)) {
+		//the only types of mods that are allowed after the res cutoff are:
+		// 1) reducing the number of students in a course
+		// 2) deleting a buddy's reservation
+		if (!reducingStudents(orig, sub) && !removingBuddy(orig, sub)) {
+			return {
+				status: 'error',
+				code: 'AFTER_CUTOFF'
+			};
+			//no mods allowed after cancel cutoff
+		} else if (!beforeCancelCutoff(Settings, sub.date, sub.startTime, sub.category)) {
+			return {
+				status: 'error',
+				code: 'AFTER_CUTOFF'
+			};
+		}
+	}
+
+	// check that the submitter and associated buddies do not have existing
 	// reservations that will overlap with the updated reservation
 	let checkExisting = [sub.user, ...sub.buddies];
 	let existing = await getOverlappingReservations(sub, checkExisting);
@@ -382,6 +436,21 @@ export async function adminUpdate(formData) {
 export async function cancelReservation(formData) {
 	let data = convertReservationTypes(Object.fromEntries(formData));
 
+	await Settings.init();
+	//TODO: find a cleaner way to handle startTime for OW rsvs
+	if (data.category === 'openwater') {
+		if (data.owTime === 'AM') {
+			data.startTime = Settings.get('openwaterAmStartTime', data.date);
+		} else if (data.owTime === 'PM') {
+			data.startTime = Settings.get('openwaterPmStartTime', data.date);
+		}
+	}
+	if (!beforeCancelCutoff(Settings, data.date, data.startTime, data.category)) {
+		return {
+			status: 'error',
+			code: 'AFTER_CUTOFF'
+		};
+	}
 	let save = data.buddies.filter((id) => !data.delBuddies.includes(id));
 	let cancel = [data.id];
 	let records = { modified: [], canceled: [] };
@@ -416,7 +485,10 @@ export async function cancelReservation(formData) {
 	);
 	records.canceled = cancelrecs;
 
-	return records;
+	return {
+		status: 'success',
+		records
+	};
 }
 
 export function checkSessionActive(route, cookies) {
