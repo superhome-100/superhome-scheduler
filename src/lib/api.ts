@@ -5,12 +5,12 @@ export const getSettings = async () => {
 	const response = await fetch('/api/getSettings');
 	const data = (await response.json()) as {
 		status: 'success' | 'error';
-		settings: {
-			[key: string]: {
-				default: string;
-				entries: any[];
-			};
-		};
+		// settings: {
+		// 	[key: string]: {
+		// 		default: string;
+		// 		entries: any[];
+		// 	};
+		// };
 		buoys: any[];
 	};
 	return data;
