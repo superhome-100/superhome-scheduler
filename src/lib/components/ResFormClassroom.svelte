@@ -8,6 +8,8 @@
 	export let dateFn = null;
 	export let restrictModify = false;
 	export let viewOnly = false;
+	export let error = '';
+
 	const maxNumStudents = 10;
 	const maxTimeHours = 6;
 </script>
@@ -22,4 +24,5 @@
 	{viewOnly}
 	{maxNumStudents}
 	{maxTimeHours}
+	{error}
 />

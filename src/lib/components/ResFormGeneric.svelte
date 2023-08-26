@@ -17,6 +17,7 @@
 	export let viewOnly = false;
 	export let showBuddyFields = true;
 	export let restrictModify = false;
+	export let error = '';
 
 	let disabled = viewOnly || restrictModify;
 
@@ -289,8 +290,17 @@
 
 <input type="hidden" name="numBuddies" value={buddyFields.length} />
 
+
+
+
 <div class="row w-full">
 	<div class="column w-full">
+
+		{#if error}
+			<div class=" my-2 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+				<span class="block sm:inline">{error}</span>
+			</div>
+		{/if}
 		<div class="text-right p-2">
 			<button
 				type="submit"
