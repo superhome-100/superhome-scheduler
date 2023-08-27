@@ -21,11 +21,11 @@ export const actions = {
 			const record = await submitReservation(data);
 			return record;
 		} catch (e) {
-			console.error(e)
+			console.error(e);
 			if (e instanceof Error) {
-				return fail(400, { error: e.message })
+				return fail(400, { error: e.message });
 			}
-			return fail(400, { error: "unknown error tell admin" })
+			return fail(400, { error: 'unknown error tell admin' });
 		}
 	},
 	updateReservation: async ({ request }) => {
@@ -35,9 +35,9 @@ export const actions = {
 			return record;
 		} catch (e) {
 			if (e instanceof Error) {
-				return fail(400, { error: e.message })
+				return fail(400, { error: e.message });
 			}
-			return fail(400, { error: "unknown error tell admin" })
+			return fail(400, { error: 'unknown error tell admin' });
 		}
 	},
 	cancelReservation: async ({ request }) => {
@@ -47,9 +47,9 @@ export const actions = {
 			return record;
 		} catch (e) {
 			if (e instanceof Error) {
-				return fail(400, { error: e.message })
+				return fail(400, { error: e.message });
 			}
-			return fail(400, { error: "unknown error tell admin" })
+			return fail(400, { error: 'unknown error tell admin' });
 		}
 	},
 	adminUpdateConfirmed: adminUpdateGeneric,
