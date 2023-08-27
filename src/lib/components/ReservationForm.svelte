@@ -6,6 +6,7 @@
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { popup } from './Popup.svelte';
+	import Spinner from '$lib/components/spinner.svelte';
 	import { users, reservations, buoys } from '$lib/stores';
 	import { beforeResCutoff } from '$lib/reservationTimes.js';
 	import { Settings } from '$lib/settings';
@@ -23,14 +24,16 @@
 	export let dateFn;
 	export let hasForm = false;
 
-	let error = "";
+	let error = '';
 
 	let date;
 
 	const { close } = getContext('simple-modal');
 
+	let submitting = false;
+
 	const submitReservation = async ({ form, data, action, cancel }) => {
-		error = ""
+		error = '';
 		updateReservationFormData(data);
 
 		let submitted = convertReservationTypes(Object.fromEntries(data));
@@ -49,8 +52,10 @@
 			cancel();
 			return;
 		}
-	
+		$: submitting = true;
+
 		return async ({ result, update }) => {
+			$: submitting = false;
 			switch (result.type) {
 				case 'success':
 					if (result.data.status === 'success') {
@@ -65,7 +70,7 @@
 					}
 					close();
 					break;
-				case "failure":
+				case 'failure':
 					error = result.data.error;
 					console.error(result);
 					break;
@@ -79,13 +84,16 @@
 </script>
 
 {#if hasForm}
+	{#if submitting}
+		<Spinner />
+	{/if}
 	<div class="px-2">
 		<div class="form-title">reservation request</div>
 		<form method="POST" action="/?/submitReservation" use:enhance={submitReservation}>
 			{#if category === 'pool'}
 				<ResFormPool bind:date {dateFn} bind:category {error} />
 			{:else if category === 'openwater'}
-				<ResFormOpenWater bind:date {dateFn} bind:category {error}/>
+				<ResFormOpenWater bind:date {dateFn} bind:category {error} />
 			{:else if category === 'classroom'}
 				<ResFormClassroom bind:date {dateFn} bind:category {error} />
 			{/if}
