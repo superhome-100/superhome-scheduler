@@ -16,7 +16,7 @@ export const Settings = {
 };
 
 export const getOn = (setting, date) => {
-	let val = settingsStore.default;
+	let val = setting.default;
 	for (let entry of setting.entries) {
 		if (entry.startDate <= date && date <= entry.endDate) {
 			val = entry.value;
