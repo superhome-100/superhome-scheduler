@@ -19,7 +19,7 @@
 	export let restrictModify = false;
 	export let maxNumStudents = 4;
 	export let maxTimeHours = 4;
-	export let error = ''
+	export let error = '';
 
 	let disabled = viewOnly || restrictModify;
 

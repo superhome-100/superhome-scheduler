@@ -130,7 +130,7 @@
 			if (resSettings.status === 'error') {
 				throw new Error('Could not get settings from database');
 			}
-			
+
 			$buoys = resSettings.buoys;
 			$users = resAppData.usersById!;
 			$stateLoaded = true;
