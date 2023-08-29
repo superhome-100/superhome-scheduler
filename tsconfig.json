@@ -15,8 +15,8 @@
 		"paths": {
 			"$lib": ["./src/lib"],
 			"$lib/*": ["./src/lib/*"],
-			"$utils": ["src/utils"],
-			"$utils/*": ["src/utils/*"],
+			"$utils": ["./src/utils"],
+			"$utils/*": ["./src/utils/*"],
 			"$types": ["./src/types.ts"]
 		},
 		"typeRoots": ["./node_modules/@types", "./types"]
