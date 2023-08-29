@@ -5,6 +5,7 @@ import {
 	adminUpdate,
 	insertNotificationReceipt
 } from '$lib/server/server.js';
+import { ValidationError } from '$utils/validation';
 import { fail } from '@sveltejs/kit';
 import { updateNickname } from '$lib/server/user';
 
@@ -21,11 +22,11 @@ export const actions = {
 			const record = await submitReservation(data);
 			return record;
 		} catch (e) {
-			console.error(e);
-			if (e instanceof Error) {
+			if (e instanceof ValidationError) {
 				return fail(400, { error: e.message });
+			} else {
+				throw e;
 			}
-			return fail(400, { error: 'unknown error tell admin' });
 		}
 	},
 	updateReservation: async ({ request }) => {
@@ -34,10 +35,11 @@ export const actions = {
 			const record = await updateReservation(data);
 			return record;
 		} catch (e) {
-			if (e instanceof Error) {
+			if (e instanceof ValidationError) {
 				return fail(400, { error: e.message });
+			} else {
+				throw e;
 			}
-			return fail(400, { error: 'unknown error tell admin' });
 		}
 	},
 	cancelReservation: async ({ request }) => {
@@ -46,10 +48,11 @@ export const actions = {
 			const record = await cancelReservation(data);
 			return record;
 		} catch (e) {
-			if (e instanceof Error) {
+			if (e instanceof ValidationError) {
 				return fail(400, { error: e.message });
+			} else {
+				throw e;
 			}
-			return fail(400, { error: 'unknown error tell admin' });
 		}
 	},
 	adminUpdateConfirmed: adminUpdateGeneric,
