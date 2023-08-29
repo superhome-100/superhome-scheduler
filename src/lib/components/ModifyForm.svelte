@@ -2,30 +2,27 @@
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-french-toast';
 	import { enhance } from '$app/forms';
+	import { beforeResCutoff } from '$lib/reservationTimes.js';
 	import ResFormPool from './ResFormPool.svelte';
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { popup } from './Popup.svelte';
-	import { users, reservations, buoys } from '$lib/stores';
-	import { beforeCancelCutoff, beforeResCutoff } from '$lib/reservationTimes.js';
-
+	import { users, reservations } from '$lib/stores';
 	import { Settings } from '$lib/settings';
-
-	import { validateBuddies, checkNoOverlappingRsvs, checkSpaceAvailable } from '$utils/validation';
-
 	import {
 		addMissingFields,
 		augmentRsv,
+		buddiesAreValid,
 		removeRsv,
-		updateReservationFormData,
+		cleanUpFormDataBuddyFields,
 		convertReservationTypes,
 		categoryIsBookable
 	} from '$lib/utils.js';
-
 	export let hasForm = false;
 	export let rsv;
 
-	const { close } = getContext('simple-modal');
+	let error = '';
+	const { close, hideModal, showModal } = getContext('simple-modal');
 
 	const reservationChanges = (submitted, original) => {
 		const isEmpty = (v) => v == null || v == '' || (Object.hasOwn(v, 'length') && v.length == 0);
@@ -62,12 +59,19 @@
 		return null;
 	};
 
-	const updateReservation = async ({ form, data, action, cancel }) => {
-		updateReservationFormData(data, rsv.category);
+	const updateReservation = async ({ data, cancel }) => {
+		error = '';
+		cleanUpFormDataBuddyFields(data, rsv.category);
 		data.set('category', rsv.category);
 
 		let submitted = convertReservationTypes(Object.fromEntries(data));
 		addMissingFields(submitted, rsv);
+
+		if (!buddiesAreValid(submitted)) {
+			popup('Unknown buddy in buddy field!');
+			cancel();
+			return;
+		}
 
 		if (!Settings.get('openForBusiness', submitted.date)) {
 			popup('We are closed on this date; please choose a different date');
@@ -90,74 +94,38 @@
 		}
 
 		data.append('oldBuddies', JSON.stringify(rsv.buddies));
+        hideModal();
 
-		if (!beforeCancelCutoff(Settings, submitted.date, submitted.startTime, submitted.category)) {
-			popup(`The modification window for this reservation has expired; 
-                this reservation can no longer be modified`);
-			cancel();
-		}
-
-		let result = checkNoOverlappingRsvs(rsv, submitted, $reservations);
-		if (result.status === 'error') {
-			popup(result.msg);
-			cancel();
-			return;
-		}
-
-		result = checkSpaceAvailable($buoys, submitted, $reservations);
-		if (result.status === 'error') {
-			popup(result.message);
-			cancel();
-			return;
-		}
-
-		result = validateBuddies(submitted, $reservations);
-		if (result.status == 'error') {
-			popup(result.msg);
-			cancel();
-			return;
-		}
-
-		close();
-
-		return async ({ result, update }) => {
+		return async ({ result }) => {
+			let records;
 			switch (result.type) {
 				case 'success':
-					if (result.data.status === 'success') {
-						let records = result.data.records;
-						for (let rsv of records.modified) {
-							let user = $users[rsv.user.id];
-							removeRsv(rsv.id);
-							rsv = augmentRsv(rsv, user);
-							$reservations.push(rsv);
-						}
-						for (let rsv of records.created) {
-							let user = $users[rsv.user.id];
-							rsv = augmentRsv(rsv, user);
-							$reservations.push(rsv);
-						}
-						for (let rsv of records.canceled) {
-							removeRsv(rsv.id);
-						}
-						$reservations = [...$reservations];
-						toast.success('Reservation updated!');
-					} else if (result.data.status === 'error') {
-						if (result.data.code === 'RSV_EXISTS') {
-							popup(
-								'Reservation rejected!  You or one of your ' +
-									'buddies has a pre-existing reservation at this time'
-							);
-						} else if (result.data.code === 'NO_SPACE_AVAILABLE') {
-							popup(result.data.message);
-						} else if (result.data.code === 'AFTER_CUTOFF') {
-							popup(
-								'The modification window for this reservation date/time has expired; ' +
-									'this reservation can no longer be modified'
-							);
-						}
+					records = result.data.records;
+					for (let rsv of records.modified) {
+						let user = $users[rsv.user.id];
+						removeRsv(rsv.id);
+						rsv = augmentRsv(rsv, user);
+						$reservations.push(rsv);
 					}
+					for (let rsv of records.created) {
+						let user = $users[rsv.user.id];
+						rsv = augmentRsv(rsv, user);
+						$reservations.push(rsv);
+					}
+					for (let rsv of records.canceled) {
+						removeRsv(rsv.id);
+					}
+					$reservations = [...$reservations];
+					toast.success('Reservation updated!');
+					close();
+					break;
+				case 'failure':
+					error = result.data.error;
+                    showModal();
+					console.error(result);
 					break;
 				default:
+                    showModal();
 					console.error(result);
 					toast.error('Update failed with unknown error!');
 					break;
@@ -174,11 +142,11 @@
 		<form method="POST" action="/?/updateReservation" use:enhance={updateReservation}>
 			<input type="hidden" name="id" value={rsv.id} />
 			{#if rsv.category === 'pool'}
-				<ResFormPool {restrictModify} {rsv} />
+				<ResFormPool {restrictModify} {rsv} {error} />
 			{:else if rsv.category === 'openwater'}
-				<ResFormOpenWater {restrictModify} {rsv} />
+				<ResFormOpenWater {restrictModify} {rsv} {error} />
 			{:else if rsv.category === 'classroom'}
-				<ResFormClassroom {rsv} />
+				<ResFormClassroom {rsv} {error} />
 			{/if}
 		</form>
 	</div>

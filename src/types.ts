@@ -1,6 +1,5 @@
 import type { Reservations, Buoys } from './lib/server/xata.codegen';
 
-// TODO: fix this annoying type shape rsv?.user?.id != sub.user
 export type ReservationData = Omit<Reservations, 'category' | 'status'> & {
 	category: ReservationCategory;
 	status: ReservationStatus;

@@ -6,16 +6,12 @@
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { popup } from './Popup.svelte';
-	import Spinner from '$lib/components/spinner.svelte';
-	import { users, reservations, buoys } from '$lib/stores';
-	import { beforeResCutoff } from '$lib/reservationTimes.js';
+	import { users, reservations } from '$lib/stores';
 	import { Settings } from '$lib/settings';
-
-	import { validateBuddies, checkSpaceAvailable } from '$utils/validation';
-
 	import {
 		augmentRsv,
-		updateReservationFormData,
+		buddiesAreValid,
+		cleanUpFormDataBuddyFields,
 		convertReservationTypes,
 		categoryIsBookable
 	} from '$lib/utils.js';
@@ -25,18 +21,20 @@
 	export let hasForm = false;
 
 	let error = '';
-
 	let date;
+	const { close, hideModal, showModal } = getContext('simple-modal');
 
-	const { close } = getContext('simple-modal');
-
-	let submitting = false;
-
-	const submitReservation = async ({ form, data, action, cancel }) => {
+	const submitReservation = async ({ data, cancel }) => {
 		error = '';
-		updateReservationFormData(data);
+		cleanUpFormDataBuddyFields(data);
 
 		let submitted = convertReservationTypes(Object.fromEntries(data));
+
+		if (!buddiesAreValid(submitted)) {
+			popup('Unknown buddy in buddy field!');
+			cancel();
+			return;
+		}
 
 		// TODO: move to server
 		if (!Settings.get('openForBusiness', submitted.date)) {
@@ -52,10 +50,9 @@
 			cancel();
 			return;
 		}
-		$: submitting = true;
+        hideModal();
 
-		return async ({ result, update }) => {
-			$: submitting = false;
+		return async ({ result }) => {
 			switch (result.type) {
 				case 'success':
 					if (result.data.status === 'success') {
@@ -72,9 +69,11 @@
 					break;
 				case 'failure':
 					error = result.data.error;
+                    showModal();
 					console.error(result);
 					break;
 				default:
+                    showModal();
 					console.error(result);
 					toast.error('Submission failed with unknown error!');
 					break;
@@ -84,9 +83,6 @@
 </script>
 
 {#if hasForm}
-	{#if submitting}
-		<Spinner />
-	{/if}
 	<div class="px-2">
 		<div class="form-title">reservation request</div>
 		<form method="POST" action="/?/submitReservation" use:enhance={submitReservation}>
