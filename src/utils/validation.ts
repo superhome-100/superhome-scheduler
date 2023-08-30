@@ -106,7 +106,11 @@ export function checkOWSpaceAvailable(
 	}
 }
 
-export function checkPoolSpaceAvailable(settings: any, sub: ReservationData, rsvs: ReservationData[]) {
+export function checkPoolSpaceAvailable(
+	settings: any,
+	sub: ReservationData,
+	rsvs: ReservationData[]
+) {
 	let startTs = startTimes(settings, sub.date, sub.category);
 	for (let i = startTs.indexOf(sub.startTime!); i < startTs.indexOf(sub.endTime); i++) {
 		let time = timeStrToMin(startTs[i]);

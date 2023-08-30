@@ -18,7 +18,7 @@
 </script>
 
 <script>
-    import Spinner from '$lib/components/spinner.svelte';
+	import Spinner from '$lib/components/spinner.svelte';
 	import * as svelte from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { createEventDispatcher } from 'svelte';
@@ -333,20 +333,20 @@
 		onClose = callback.onClose || onClose;
 		onClosed = callback.onClosed || onClosed;
 		Component = null;
-        hidden = false;
+		hidden = false;
 		enableScroll();
 	};
 
-    let hidden = false;
-    const hideModal = () => {
-        if (!Component) return;
-        hidden = true;
-    }
+	let hidden = false;
+	const hideModal = () => {
+		if (!Component) return;
+		hidden = true;
+	};
 
-    const showModal = () => {
-        if (!Component) return;
-        hidden = false;
-    }
+	const showModal = () => {
+		if (!Component) return;
+		hidden = false;
+	};
 
 	const handleKeydown = (event) => {
 		if (state.closeOnEsc && Component && event.key === 'Escape') {
@@ -445,7 +445,7 @@
 			style={cssWindowWrap}
 		>
 			<div
-                {hidden}
+				{hidden}
 				class={state.classWindow}
 				class:window={!unstyled}
 				role="dialog"
@@ -473,13 +473,13 @@
 						/>
 					{/if}
 				{/if}
-                <div class={state.classContent} class:content={!unstyled} style={cssContent}>
+				<div class={state.classContent} class:content={!unstyled} style={cssContent}>
 					<svelte:component this={Component} />
 				</div>
 			</div>
-            {#if hidden}
-                <Spinner/>
-            {/if}
+			{#if hidden}
+				<Spinner />
+			{/if}
 		</div>
 	</div>
 {/if}

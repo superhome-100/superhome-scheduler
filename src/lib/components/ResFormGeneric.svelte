@@ -9,7 +9,7 @@
 	import BuddyMatch from '$lib/components/BuddyMatch.svelte';
 	import PlusIcon from '$lib/components/PlusIcon.svelte';
 	import DeleteIcon from '$lib/components/DeleteIcon.svelte';
-    import ExclamationCircle from '$lib/components/ExclamationCircle.svelte';
+	import ExclamationCircle from '$lib/components/ExclamationCircle.svelte';
 
 	export let rsv: ReservationData | null;
 	export let date: string | null = rsv?.date || PanglaoDate().toString();
@@ -298,8 +298,8 @@
 				class="my-2 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative w-fit left-1/2 -translate-x-2/4"
 				role="alert"
 			>
-                <ExclamationCircle/>
-                <span class="block sm:inline">{error}</span>
+				<ExclamationCircle />
+				<span class="block sm:inline">{error}</span>
 			</div>
 		{/if}
 		<div class="text-right p-2">
