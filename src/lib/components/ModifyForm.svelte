@@ -94,7 +94,7 @@
 		}
 
 		data.append('oldBuddies', JSON.stringify(rsv.buddies));
-        hideModal();
+		hideModal();
 
 		return async ({ result }) => {
 			let records;
@@ -121,11 +121,12 @@
 					break;
 				case 'failure':
 					error = result.data.error;
-                    showModal();
+					showModal();
+					toast.error('Reservation rejected!');
 					console.error(result);
 					break;
 				default:
-                    showModal();
+					showModal();
 					console.error(result);
 					toast.error('Update failed with unknown error!');
 					break;
