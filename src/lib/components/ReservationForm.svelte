@@ -50,30 +50,30 @@
 			cancel();
 			return;
 		}
-        hideModal();
+		hideModal();
 
 		return async ({ result }) => {
 			switch (result.type) {
 				case 'success':
-					if (result.data.status === 'success') {
-						let records = result.data.records;
-						for (let rsv of records) {
-							let user = $users[rsv.user.id];
-							rsv = augmentRsv(rsv, user);
-							$reservations.push(rsv);
-						}
-						$reservations = [...$reservations];
-						toast.success('Reservation submitted!');
+					let records = result.data.records;
+					for (let rsv of records) {
+						let user = $users[rsv.user.id];
+						rsv = augmentRsv(rsv, user);
+						$reservations.push(rsv);
 					}
+					$reservations = [...$reservations];
+					toast.success('Reservation submitted!');
 					close();
 					break;
 				case 'failure':
 					error = result.data.error;
-                    showModal();
+					showModal();
+					toast.error('Reservation rejected!');
 					console.error(result);
 					break;
 				default:
-                    showModal();
+					error = 'Unknown error!';
+					showModal();
 					console.error(result);
 					toast.error('Submission failed with unknown error!');
 					break;
