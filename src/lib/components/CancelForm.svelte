@@ -7,7 +7,7 @@
 	import { toast } from 'svelte-french-toast';
 	import { augmentRsv, removeRsv } from '$lib/utils.js';
 	import { popup } from '$lib/components/Popup.svelte';
-    import Spinner from '$lib/components/spinner.svelte';
+	import Spinner from '$lib/components/spinner.svelte';
 
 	export let rsv;
 	export let hasForm = false;
@@ -24,8 +24,8 @@
 			data.delete('buddy-' + i);
 		}
 		data.append('delBuddies', JSON.stringify(delBuddies));
-    
-        hideModal();
+
+		hideModal();
 
 		return async ({ result }) => {
 			switch (result.type) {
@@ -51,7 +51,7 @@
 					toast.error('Could not cancel reservation!');
 					break;
 			}
-            close();
+			close();
 		};
 	};
 </script>
