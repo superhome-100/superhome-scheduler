@@ -17,6 +17,7 @@ import {
 import { getUserById } from './user';
 import ObjectsToCsv from 'objects-to-csv';
 import JSZip from 'jszip';
+import { categoryIsBookable } from './reservation';
 
 const xata = getXataClient();
 
@@ -74,8 +75,20 @@ async function throwIfNoSpaceAvailable(settings, sub, overlappingRsvs, ignore = 
 	}
 }
 
+// TODO: move this to a reservation.ts file apply appropriate type shape
 export async function submitReservation(formData) {
+	await Settings.init();
 	let sub = convertReservationTypes(Object.fromEntries(formData));
+
+	if (!Settings.get('openForBusiness', sub.date)) {
+		throw new ValidationError('We are closed on this date; please choose a different date');
+	}
+
+	if (!categoryIsBookable(sub)) {
+		throw new ValidationError(
+			`The ${sub.category} is not bookable on this date; please choose a different date`
+		);
+	}
 
 	const user = await getUserById(sub.user.id);
 	if (user.status === 'disabled') {
@@ -85,6 +98,7 @@ export async function submitReservation(formData) {
 	}
 
 	await initSettings();
+
 	if (!beforeResCutoff(Settings, sub.date, getStartTime(Settings, sub), sub.category)) {
 		throw new ValidationError(
 			'The submission window for this reservation date/time has expired. Please choose a later date.'
