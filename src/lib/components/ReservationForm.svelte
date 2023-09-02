@@ -37,7 +37,7 @@
 		}
 
 		// TODO: move to server
-		if (!Settings.get('openForBusiness', submitted.date)) {
+		if (!Settings.getOpenForBusiness(submitted.date)) {
 			popup('We are closed on this date; please choose a different date');
 			cancel();
 			return;

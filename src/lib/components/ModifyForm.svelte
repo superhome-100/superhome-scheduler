@@ -2,7 +2,7 @@
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-french-toast';
 	import { enhance } from '$app/forms';
-	import { beforeResCutoff } from '$lib/reservationTimes.js';
+	import { beforeResCutoff } from '$lib/reservationTimes';
 	import ResFormPool from './ResFormPool.svelte';
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
@@ -73,7 +73,7 @@
 			return;
 		}
 
-		if (!Settings.get('openForBusiness', submitted.date)) {
+		if (!Settings.getOpenForBusiness(submitted.date)) {
 			popup('We are closed on this date; please choose a different date');
 			cancel();
 			return;

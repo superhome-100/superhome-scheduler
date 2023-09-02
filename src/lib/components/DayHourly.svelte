@@ -1,5 +1,5 @@
 <script>
-	import { startTimes, endTimes } from '$lib/reservationTimes.js';
+	import { startTimes, endTimes } from '$lib/reservationTimes';
 	import { viewedDate, viewMode, reservations } from '$lib/stores';
 	import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils';
 	import { getContext } from 'svelte';
@@ -99,7 +99,7 @@
 
 <svelte:window bind:innerWidth />
 
-{#if Settings.get('openForBusiness', datetimeToLocalDateStr($viewedDate)) === false}
+{#if Settings.getOpenForBusiness(datetimeToLocalDateStr($viewedDate)) === false}
 	<div class="font-semibold text-3xl text-center">Closed</div>
 {:else if assignment.status === 'error'}
 	<div class="font-semibold text-red-600 text-xl text-center mt-4">

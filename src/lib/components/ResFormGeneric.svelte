@@ -1,17 +1,17 @@
 <script lang="ts">
-	import type { ReservationData, BuddyData } from '$types';
+	import type { Reservation, BuddyData } from '$types';
 	import { ReservationStatus } from '$types';
 	import { ReservationCategory } from '$types';
 	import { canSubmit, user, users } from '$lib/stores';
 	import { Settings } from '$lib/settings';
-	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes.js';
+	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes';
 	import { PanglaoDate } from '$lib/datetimeUtils';
 	import BuddyMatch from '$lib/components/BuddyMatch.svelte';
 	import PlusIcon from '$lib/components/PlusIcon.svelte';
 	import DeleteIcon from '$lib/components/DeleteIcon.svelte';
 	import ExclamationCircle from '$lib/components/ExclamationCircle.svelte';
 
-	export let rsv: ReservationData | null;
+	export let rsv: Reservation | null;
 	export let date: string | null = rsv?.date || PanglaoDate().toString();
 	export let category: ReservationCategory | string =
 		rsv?.category.toString() || ReservationCategory.pool;
