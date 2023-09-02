@@ -1,4 +1,4 @@
-import { startTimes, inc } from './reservationTimes.js';
+import { startTimes, inc } from './reservationTimes';
 import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils';
 import { reservations, user, users, viewMode } from './stores';
 import { Settings } from './settings';
@@ -51,11 +51,11 @@ export function augmentRsv(rsv, user) {
 	}
 	if (rsv.category === 'openwater') {
 		if (rsv.owTime === 'AM') {
-			startTime = Settings.get('openwaterAmStartTime', rsv.date);
-			endTime = Settings.get('openwaterAmEndTime', rsv.date);
+			startTime = Settings.getOpenwaterAmStartTime(rsv.date);
+			endTime = Settings.getOpenwaterAmEndTime(rsv.date);
 		} else if (rsv.owTime === 'PM') {
-			startTime = Settings.get('openwaterPmStartTime', rsv.date);
-			endTime = Settings.get('openwaterPmEndTime', rsv.date);
+			startTime = Settings.getOpenwaterPmStartTime(rsv.date);
+			endTime = Settings.getOpenwaterPmEndTime(rsv.date);
 		}
 	}
 	let newRsv = {
@@ -197,18 +197,18 @@ export function categoryIsBookable(sub) {
 	let val;
 	let msg;
 	if (sub.category === 'pool') {
-		val = Settings.get('poolBookable', sub.date);
+		val = Settings.getPoolBookable(sub.date);
 		msg = 'Pool';
 	} else if (sub.category === 'openwater') {
 		if (sub.owTime == 'AM') {
-			val = Settings.get('openwaterAmBookable', sub.date);
+			val = Settings.getOpenwaterAmBookable(sub.date);
 			msg = 'AM Openwater';
 		} else if (sub.owTime == 'PM') {
-			val = Settings.get('openwaterPmBookable', sub.date);
+			val = Settings.getOpenwaterPmBookable(sub.date);
 			msg = 'PM Openwater';
 		}
 	} else if (sub.category === 'classroom') {
-		val = Settings.get('classroomBookable', sub.date);
+		val = Settings.getClassroomBookable(sub.date);
 		msg = 'Classroom';
 	}
 	if (val) {
@@ -222,7 +222,7 @@ export function categoryIsBookable(sub) {
 }
 
 function assignClassrooms(rsvs, dateStr) {
-	let rooms = Settings.get('classrooms', dateStr);
+	let rooms = Settings.getClassrooms(dateStr);
 	let schedule = Array(rooms.length)
 		.fill()
 		.map(() => {

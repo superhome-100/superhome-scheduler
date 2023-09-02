@@ -93,7 +93,7 @@
 			>
 				<option value="autonomous">Autonomous</option>
 				<option value="course">Course/Coaching</option>
-				{#if Settings.get('cbsAvailable', date)}
+				{#if Settings.getCbsAvailable(date)}
 					<option value="cbs">CBS</option>
 				{/if}
 			</select>

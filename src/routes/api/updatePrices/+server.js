@@ -93,9 +93,9 @@ export async function GET() {
 		let d = datetimeInPanglaoFromServer();
 		let date = datetimeToDateStr(d);
 		let time = d.getHours() * 60 + d.getMinutes();
-		let maxChgbl = Settings.get('maxChargeableOWPerMonth', date);
-		let amOWStart = timeStrToMin(Settings.get('openwaterAmStartTime', date));
-		let pmOWStart = timeStrToMin(Settings.get('openwaterPmStartTime', date));
+		let maxChgbl = Settings.getMaxChargeableOWPerMonth(date);
+		let amOWStart = timeStrToMin(Settings.getOpenwaterAmStartTime(date));
+		let pmOWStart = timeStrToMin(Settings.getOpenwaterPmStartTime(date));
 
 		let { oldRsvs, newRsvs } = await getOldAndNewRsvs(date);
 		if (newRsvs.length > 0) {

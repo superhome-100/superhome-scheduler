@@ -1,8 +1,8 @@
 <script lang="ts">
 	import ResFormPool from '$lib/components/ResFormPool.svelte';
-	import type { ReservationData } from '$types';
+	import type { Reservation } from '$types';
 
-	export let rsv: ReservationData | null = null;
+	export let rsv: Reservation | null = null;
 	export let category = 'classroom';
 	export let date: Date | null = null;
 	export let dateFn = null;

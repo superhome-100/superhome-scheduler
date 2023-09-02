@@ -1,5 +1,5 @@
-import type { ReservationData } from '$types';
-import { startTimes, endTimes } from '$lib/reservationTimes.js';
+import type { Reservation } from '$types';
+import { startTimes, endTimes } from '$lib/reservationTimes';
 import { timeStrToMin } from '$lib/datetimeUtils';
 
 // helper for getTimeOverlapFilters: sorts all possible start and end times into four groups:
@@ -69,11 +69,11 @@ function isTimeOverlapping({
 
 // return xata filters for querying all reservations that overlap in time with the given reservation
 // note: this searches across all categories
-export function getTimeOverlapFilters(settings: any, rsv: ReservationData) {
-	let owAmStart = settings.get('openwaterAmStartTime', rsv.date);
-	let owAmEnd = settings.get('openwaterAmEndTime', rsv.date);
-	let owPmStart = settings.get('openwaterPmStartTime', rsv.date);
-	let owPmEnd = settings.get('openwaterPmEndTime', rsv.date);
+export function getTimeOverlapFilters(settings: any, rsv: Reservation) {
+	let owAmStart = settings.getOpenwaterAmStartTime(rsv.date);
+	let owAmEnd = settings.getOpenwaterAmEndTime(rsv.date);
+	let owPmStart = settings.getOpenwaterPmStartTime(rsv.date);
+	let owPmEnd = settings.getOpenwaterPmEndTime(rsv.date);
 	let start, end;
 	let owTimes: string[] = [];
 	if (['pool', 'classroom'].includes(rsv.category)) {

@@ -1,8 +1,9 @@
 import { getXataClient } from '$lib/server/xata-old';
 import { addMissingFields, convertReservationTypes } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
-import { beforeCancelCutoff, beforeResCutoff } from '$lib/reservationTimes.js';
-import { Settings } from '$lib/server/settings';
+import { beforeCancelCutoff, beforeResCutoff } from '$lib/reservationTimes';
+import { Settings } from '$lib/settings';
+import { initSettings } from '$lib/server/settings.js';
 import { getTimeOverlapFilters } from '$utils/reservation-queries';
 import {
 	checkClassroomAvailable,
@@ -31,14 +32,13 @@ export async function getBackUpZip(branch) {
 	return zip;
 }
 
-export async function getSettings() {
-	let settingsTbl = await xata.db.Settings.getAll();
+export async function getBuoys() {
 	let buoys = await xata.db.Buoys.getAll();
-	return { settingsTbl, buoys };
+	return buoys;
 }
 
 async function getOverlappingReservations(sub) {
-	await Settings.init();
+	await initSettings();
 	let filters = {
 		date: sub.date,
 		$any: getTimeOverlapFilters(Settings, sub),
@@ -84,7 +84,7 @@ export async function submitReservation(formData) {
 		);
 	}
 
-	await Settings.init();
+	await initSettings();
 	if (!beforeResCutoff(Settings, sub.date, getStartTime(Settings, sub), sub.category)) {
 		throw new ValidationError(
 			'The submission window for this reservation date/time has expired. Please choose a later date.'
@@ -138,7 +138,7 @@ export async function updateReservation(formData) {
 
 	addMissingFields(sub, orig);
 
-	await Settings.init();
+	await initSettings();
 	throwIfPastUpdateTime(Settings, orig, sub);
 
 	let allOverlappingRsvs = await getOverlappingReservations(sub);
@@ -265,7 +265,7 @@ export async function adminUpdate(formData) {
 export async function cancelReservation(formData) {
 	let data = convertReservationTypes(Object.fromEntries(formData));
 
-	await Settings.init();
+	await initSettings();
 	if (!beforeCancelCutoff(Settings, data.date, getStartTime(Settings, data), data.category)) {
 		throw new ValidationError(
 			'The modification window for this reservation date/time has expired; this reservation can no longer be modified'

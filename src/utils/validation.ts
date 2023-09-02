@@ -1,4 +1,5 @@
-import type { ReservationData, Buoy } from '$types';
+import type { Reservation, Buoy, SettingsStore } from '$types';
+import { ReservationType, ReservationCategory, OWTime } from '$types';
 
 import { users } from '$lib/stores';
 import { get } from 'svelte/store';
@@ -8,32 +9,38 @@ import {
 	beforeResCutoff,
 	beforeCancelCutoff
 } from '$lib/reservationTimes.js';
-import { Settings as settings } from '$lib/settings';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getNumberOfOccupants } from './reservations';
 import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
 
 export class ValidationError extends Error {}
 
-export function getStartTime(settings: any, sub: ReservationData): string {
-	if (sub.category === 'openwater') {
-		if (sub.owTime === 'AM') {
-			return settings.get('openwaterAmStartTime', sub.date);
-		} else if (sub.owTime === 'PM') {
-			return settings.get('openwaterPmStartTime', sub.date);
+export function getStartTime(settings: SettingsStore, sub: Reservation): string {
+	if (sub.category === ReservationCategory.openwater) {
+		if (sub.owTime === OWTime.AM) {
+			return settings.getOpenwaterAmStartTime(sub.date);
+		} else if (sub.owTime === OWTime.PM) {
+			return settings.getOpenwaterPmStartTime(sub.date);
+		} else {
+			throw new Error('unknown owTime value: ' + sub.owTime);
 		}
 	} else {
 		return sub.startTime;
 	}
 }
 
-const reducingStudents = (orig: ReservationData, sub: ReservationData) =>
-	orig.resType === 'course' && orig.numStudents > sub.numStudents;
-const removingBuddy = (orig: ReservationData, sub: ReservationData) =>
+const reducingStudents = (orig: Reservation, sub: Reservation) =>
+	orig.resType === ReservationType.course && orig.numStudents > sub.numStudents;
+const removingBuddy = (orig: Reservation, sub: Reservation) =>
+	orig.resType === ReservationType.autonomous &&
 	orig.buddies.length > sub.buddies.length &&
 	sub.buddies.reduce((val, id) => orig.buddies.includes(id) && val, true);
 
-export function throwIfPastUpdateTime(settings: any, orig: ReservationData, sub: ReservationData) {
+export function throwIfPastUpdateTime(
+	settings: SettingsStore,
+	orig: Reservation,
+	sub: Reservation
+) {
 	let startTime = getStartTime(settings, sub);
 	if (!beforeResCutoff(settings, sub.date, startTime, sub.category)) {
 		//the only types of mods that are allowed after the res cutoff are:
@@ -52,15 +59,15 @@ export function throwIfPastUpdateTime(settings: any, orig: ReservationData, sub:
 	}
 }
 
-function isMyBuddysReservation(rsv: ReservationData, sub: ReservationData) {
-	if (sub.buddies && sub.buddies.includes(rsv?.user?.id!)) {
-		if (['pool', 'classroom'].includes(sub.category)) {
+function isMyBuddysReservation(rsv: Reservation, sub: Reservation) {
+	if (sub.buddies && sub.buddies.includes(rsv.user.id)) {
+		if ([ReservationCategory.pool, ReservationCategory.classroom].includes(sub.category)) {
 			return (
 				rsv.category === sub.category &&
 				rsv.startTime === sub.startTime &&
 				rsv.endTime === sub.endTime
 			);
-		} else if (sub.category === 'openwater') {
+		} else if (sub.category === ReservationCategory.openwater) {
 			return rsv.category === sub.category && rsv.owTime === sub.owTime;
 		} else {
 			throw new ValidationError('invalid category: ' + sub.category);
@@ -71,8 +78,8 @@ function isMyBuddysReservation(rsv: ReservationData, sub: ReservationData) {
 }
 
 export function throwIfOverlappingReservation(
-	sub: ReservationData,
-	allOverlappingRsvs: ReservationData[],
+	sub: Reservation,
+	allOverlappingRsvs: Reservation[],
 	userIds: string[]
 ) {
 	let userOverlapping = allOverlappingRsvs.filter((rsv) => userIds.includes(rsv.user.id));
@@ -89,8 +96,8 @@ export function throwIfOverlappingReservation(
 
 export function checkOWSpaceAvailable(
 	buoys: Buoy[],
-	sub: ReservationData,
-	existingReservations: ReservationData[]
+	sub: Reservation,
+	existingReservations: Reservation[]
 ) {
 	let buddyGroup = simulateBuddyGroup(sub);
 	let result = assignRsvsToBuoys(buoys, [...buddyGroup, ...existingReservations]);
@@ -107,24 +114,24 @@ export function checkOWSpaceAvailable(
 }
 
 export function checkPoolSpaceAvailable(
-	settings: any,
-	sub: ReservationData,
-	rsvs: ReservationData[]
+	settings: SettingsStore,
+	sub: Reservation,
+	rsvs: Reservation[]
 ) {
 	let startTs = startTimes(settings, sub.date, sub.category);
-	for (let i = startTs.indexOf(sub.startTime!); i < startTs.indexOf(sub.endTime); i++) {
+	for (let i = startTs.indexOf(sub.startTime); i < startTs.indexOf(sub.endTime); i++) {
 		let time = timeStrToMin(startTs[i]);
 		let overlap = rsvs.filter((rsv) => {
-			let start = timeStrToMin(rsv.startTime!);
+			let start = timeStrToMin(rsv.startTime);
 			let end = timeStrToMin(rsv.endTime);
 			let notMe = sub.id != rsv.id;
-			let notMyBuddy = !sub.buddies!.includes(rsv?.user?.id!);
+			let notMyBuddy = !sub.buddies.includes(rsv.user.id);
 			return notMe && notMyBuddy && start <= time && end > time;
 		});
-		let mpl = settings.get('maxOccupantsPerLane', sub.date!);
+		let mpl = settings.getMaxOccupantsPerLane(sub.date);
 		let numDivers =
-			getNumberOfOccupants([sub]) + sub.buddies!.length + getNumberOfOccupants(overlap);
-		let nLanes = settings.get('poolLanes', sub.date!).length;
+			getNumberOfOccupants([sub]) + sub.buddies.length + getNumberOfOccupants(overlap);
+		let nLanes = settings.getPoolLanes(sub.date).length;
 		if (numDivers > nLanes * mpl) {
 			return {
 				status: 'error',
@@ -138,11 +145,11 @@ export function checkPoolSpaceAvailable(
 }
 
 export const checkClassroomAvailable = (
-	settings: any,
-	sub: ReservationData,
-	overlapping: ReservationData[]
+	settings: SettingsStore,
+	sub: Reservation,
+	overlapping: Reservation[]
 ) => {
-	if (overlapping.length >= settings.get('classrooms', sub.date!).length) {
+	if (overlapping.length >= settings.getClassrooms(sub.date).length) {
 		return {
 			status: 'error',
 			message:
@@ -154,16 +161,16 @@ export const checkClassroomAvailable = (
 	}
 };
 
-function simulateBuddyGroup(sub: ReservationData) {
+function simulateBuddyGroup(sub: Reservation) {
 	// add fields that db normally adds to this submission and its buddies
 	let owner = { ...sub };
 	let simId = -1;
-	owner.buoy = owner.resType === 'cbs' ? 'CBS' : 'auto';
+	owner.buoy = owner.resType === ReservationType.cbs ? 'CBS' : 'auto';
 	owner.id = (simId--).toString();
 
 	let simBuds = [];
-	for (let id of owner.buddies || []) {
-		let buddies = [owner?.user?.id, ...owner.buddies!.filter((thisId) => thisId != id)];
+	for (let id of owner.buddies) {
+		let buddies = [owner.user.id, ...owner.buddies.filter((thisId) => thisId != id)];
 		simBuds.push({
 			...owner,
 			id: simId--,
