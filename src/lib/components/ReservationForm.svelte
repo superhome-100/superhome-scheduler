@@ -7,13 +7,11 @@
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { popup } from './Popup.svelte';
 	import { users, reservations } from '$lib/stores';
-	import { Settings } from '$lib/settings';
 	import {
 		augmentRsv,
 		buddiesAreValid,
 		cleanUpFormDataBuddyFields,
-		convertReservationTypes,
-		categoryIsBookable
+		convertReservationTypes
 	} from '$lib/utils.js';
 
 	export let category = 'openwater';
@@ -35,22 +33,6 @@
 			cancel();
 			return;
 		}
-
-		// TODO: move to server
-		if (!Settings.getOpenForBusiness(submitted.date)) {
-			popup('We are closed on this date; please choose a different date');
-			cancel();
-			return;
-		}
-
-		// TODO: move to server
-		const q = categoryIsBookable(submitted);
-		if (q.result == false) {
-			popup(q.message);
-			cancel();
-			return;
-		}
-		hideModal();
 
 		return async ({ result }) => {
 			switch (result.type) {
