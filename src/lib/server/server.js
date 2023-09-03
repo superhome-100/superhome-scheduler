@@ -279,7 +279,7 @@ export async function cancelReservation(formData) {
 	await Settings.init();
 	if (!beforeCancelCutoff(Settings, data.date, getStartTime(Settings, data), data.category)) {
 		throw new ValidationError(
-			'The modification window for this reservation date/time has expired; this reservation can no longer be modified'
+			'The cancellation window for this reservation has expired; this reservation can no longer be canceled'
 		);
 	}
 	let save = data.buddies.filter((id) => !data.delBuddies.includes(id));

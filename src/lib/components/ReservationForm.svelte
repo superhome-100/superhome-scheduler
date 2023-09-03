@@ -34,6 +34,8 @@
 			return;
 		}
 
+		hideModal();
+
 		return async ({ result }) => {
 			switch (result.type) {
 				case 'success':
