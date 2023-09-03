@@ -11,9 +11,10 @@ import {
 	getStartTime,
 	throwIfOverlappingReservation,
 	throwIfPastUpdateTime,
+	throwIfUserIsDisabled,
 	ValidationError
 } from '$utils/validation';
-import { getUserById } from './user';
+import { getUsersById } from './user';
 import ObjectsToCsv from 'objects-to-csv';
 import JSZip from 'jszip';
 import { categoryIsBookable } from './reservation';
@@ -90,12 +91,10 @@ export async function submitReservation(formData) {
 		);
 	}
 
-	const user = await getUserById(sub.user.id);
-	if (user.status === 'disabled') {
-		throw new ValidationError(
-			'User does not have permission to use this app; please contact the admin for help'
-		);
-	}
+	let userIds = [sub.user.id, ...sub.buddies];
+
+	await throwIfUserIsDisabled(userIds);
+
 	if (!beforeResCutoff(Settings, sub.date, getStartTime(Settings, sub), sub.category)) {
 		throw new ValidationError(
 			'The submission window for this reservation date/time has expired. Please choose a later date.'
@@ -104,7 +103,6 @@ export async function submitReservation(formData) {
 
 	let allOverlappingRsvs = await getOverlappingReservations(sub);
 
-	let userIds = [sub.user.id, ...sub.buddies];
 	let userOverlappingRsvs = allOverlappingRsvs.filter((rsv) => userIds.includes(rsv.user.id));
 	if (userOverlappingRsvs.length > 0) {
 		throw new ValidationError(
@@ -217,6 +215,10 @@ export async function updateReservation(formData) {
 				cancel.push(rsvId);
 			}
 		}
+	}
+
+	if (create.length > 0) {
+		await throwIfUserIsDisabled(create.map((entry) => entry.user));
 	}
 
 	await throwIfNoSpaceAvailable(Settings, sub, allOverlappingRsvs, [
