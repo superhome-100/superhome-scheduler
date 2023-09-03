@@ -108,7 +108,7 @@ export async function submitReservation(formData) {
 	let userOverlappingRsvs = allOverlappingRsvs.filter((rsv) => userIds.includes(rsv.user.id));
 	if (userOverlappingRsvs.length > 0) {
 		throw new ValidationError(
-			'Reservation rejected!  You or one of your buddies has a pre-existing reservation at this time'
+			'You or one of your buddies has a pre-existing reservation at this time'
 		);
 	}
 
