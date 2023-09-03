@@ -77,10 +77,10 @@ async function throwIfNoSpaceAvailable(settings, sub, overlappingRsvs, ignore = 
 
 // TODO: move this to a reservation.ts file apply appropriate type shape
 export async function submitReservation(formData) {
-	await Settings.init();
+	await initSettings();
 	let sub = convertReservationTypes(Object.fromEntries(formData));
 
-	if (!Settings.get('openForBusiness', sub.date)) {
+	if (!Settings.getOpenForBusiness(sub.date)) {
 		throw new ValidationError('We are closed on this date; please choose a different date');
 	}
 
@@ -96,8 +96,6 @@ export async function submitReservation(formData) {
 			'User does not have permission to use this app; please contact the admin for help'
 		);
 	}
-
-	await initSettings();
 
 	if (!beforeResCutoff(Settings, sub.date, getStartTime(Settings, sub), sub.category)) {
 		throw new ValidationError(

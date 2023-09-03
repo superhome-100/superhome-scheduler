@@ -1,18 +1,20 @@
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getXataClient } from '$lib/server/xata-old';
 import type { SelectableColumn } from '@xata.io/client';
-import type { ReservationsRecord } from './xata';
 import ObjectsToCsv from 'objects-to-csv';
 import _ from 'lodash';
-import type { ReservationData } from '$types';
-import { Settings } from './settings';
+import type { ReservationsRecord } from './xata.codegen';
+import type { Reservation } from '$types';
+import { ReservationCategory, ReservationStatus, ReservationType, OWTime } from '$types';
+import { Settings } from '$lib/settings';
+import { initSettings } from './settings';
+import dayjs from 'dayjs';
 
 const client = getXataClient();
 
 export async function getReservationsCsv(branch: string) {
 	const client = getXataClient(branch);
 	const fields = [
-		'user.id',
 		'user.name',
 		'user.nickname',
 		'date',
@@ -24,20 +26,33 @@ export async function getReservationsCsv(branch: string) {
 		'owTime',
 		'startTime',
 		'endTime'
-	] as SelectableColumn<ReservationsRecord, []>[];
-	let records = await client.db.Reservations.select(fields).getAll();
+	] as SelectableColumn<Reservation, []>[];
+	// download all rsvs from the 1st day of the previous month
+	let dateStr = dayjs()
+		.month(dayjs().month() - 1)
+		.startOf('month')
+		.locale('en-US')
+		.format('YYYY-MM-DD');
+	let records = <Reservation[]>await client.db.Reservations.filter({
+		date: { $ge: dateStr }
+	})
+		.select(fields)
+		.getAll();
 
+	// conveniences for the admins:
+	//  set numStudents = 1 for autonomous bookings
+	//  set owTime for pool/classroom based on whether startTime is in AM or PM
 	records = records.map((rsv) => {
 		let numStudents = rsv.numStudents;
-		if (numStudents == null) {
+		if (rsv.resType == ReservationType.autonomous) {
 			numStudents = 1;
 		}
 		let owTime = rsv.owTime;
-		if (owTime == null) {
+		if (rsv.category != ReservationCategory.openwater) {
 			if (timeStrToMin(rsv.startTime) < 720) {
-				owTime = 'AM';
+				owTime = OWTime.AM;
 			} else {
-				owTime = 'PM';
+				owTime = OWTime.PM;
 			}
 		}
 		return { ...rsv, owTime, numStudents };
@@ -47,8 +62,8 @@ export async function getReservationsCsv(branch: string) {
 		records.map((ent) => {
 			return {
 				..._.omit(ent, ['user']),
-				name: ent.user?.name || ent.user.id,
-				nickname: ent.user?.nickname || 'no nickname'
+				name: ent.user.name,
+				nickname: ent.user.nickname
 			};
 		})
 	);
@@ -67,24 +82,70 @@ export async function getReservationsSince(minDateStr: string) {
 		.sort('date', 'asc')
 		.getAll();
 
-	return reservations;
+	// make sure it's safe to cast to the Reservation type
+	reservations.map((rsv) => throwIfReservationIsInvalid(rsv));
+
+	return <Reservation[]>reservations;
 }
 
-export async function categoryIsBookable(sub: ReservationData): Promise<boolean> {
-	await Settings.init();
+export async function categoryIsBookable(sub: Reservation): Promise<boolean> {
+	await initSettings();
 
 	let val;
-	if (sub.category === 'pool') {
-		val = Settings.get('poolBookable', sub.date);
-	} else if (sub.category === 'openwater') {
-		if (sub.owTime == 'AM') {
-			val = Settings.get('openwaterAmBookable', sub.date);
-		} else if (sub.owTime == 'PM') {
-			val = Settings.get('openwaterPmBookable', sub.date);
+	if (sub.category === ReservationCategory.pool) {
+		val = Settings.getPoolBookable(sub.date);
+	} else if (sub.category === ReservationCategory.openwater) {
+		if (sub.owTime == OWTime.AM) {
+			val = Settings.getOpenwaterAmBookable(sub.date);
+		} else if (sub.owTime == OWTime.PM) {
+			val = Settings.getOpenwaterPmBookable(sub.date);
+		} else {
+			throw new Error('invalid OWTime: ' + sub.owTime);
 		}
-	} else if (sub.category === 'classroom') {
-		val = Settings.get('classroomBookable', sub.date);
+	} else if (sub.category === ReservationCategory.classroom) {
+		val = Settings.getClassroomBookable(sub.date);
+	} else {
+		throw new Error('invalid category: ' + sub.category);
 	}
 
-	return !!val;
+	return val;
+}
+
+const throwIfNull = (rsv: any, field: string) => {
+	if (rsv[field] == null) {
+		throw new Error(`invalid null value for ${field} in reservation ${rsv.id}`);
+	}
+};
+
+// sanity check that the reservation record coming from xata is valid:
+//     assert that enum types have valid values,
+//     and that fields that shouldn't be null are not null
+export function throwIfReservationIsInvalid(rsv: ReservationsRecord) {
+	if (!Object.keys(ReservationCategory).includes(rsv.category!)) {
+		throw new Error(`invalid reservation category "${rsv.category}" for ${rsv.id}`);
+	} else {
+		if (rsv.category == ReservationCategory.openwater) {
+			if (!Object.keys(OWTime).includes(rsv.owTime!)) {
+				throw new Error(`invalid owTime "${rsv.owTime}" for ${rsv.id}`);
+			}
+			throwIfNull(rsv, 'maxDepth');
+			throwIfNull(rsv, 'buoy');
+		} else {
+			throwIfNull(rsv, 'startTime');
+			throwIfNull(rsv, 'endTime');
+		}
+	}
+	if (!Object.keys(ReservationType).includes(rsv.resType!)) {
+		throw new Error(`invalid reservation type "${rsv.resType}" for ${rsv.id}`);
+	} else {
+		if (rsv.resType == ReservationType.autonomous) {
+			throwIfNull(rsv, 'buddies');
+		} else if (rsv.resType == ReservationType.course) {
+			throwIfNull(rsv, 'numStudents');
+		}
+	}
+	if (!Object.keys(ReservationStatus).includes(rsv.status!)) {
+		throw new Error(`invalid reservation status "${rsv.status}" for ${rsv.id}`);
+	}
+	throwIfNull(rsv, 'user');
 }
