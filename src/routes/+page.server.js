@@ -5,7 +5,8 @@ import {
 	adminUpdate,
 	insertNotificationReceipt
 } from '$lib/server/server.js';
-
+import { ValidationError } from '$utils/validation';
+import { fail } from '@sveltejs/kit';
 import { updateNickname } from '$lib/server/user';
 
 const adminUpdateGeneric = async ({ request }) => {
@@ -16,24 +17,43 @@ const adminUpdateGeneric = async ({ request }) => {
 
 export const actions = {
 	submitReservation: async ({ request }) => {
-		const data = await request.formData();
-		const record = await submitReservation(data);
-		return record;
+		try {
+			const data = await request.formData();
+			const record = await submitReservation(data);
+			return record;
+		} catch (e) {
+			if (e instanceof ValidationError) {
+				return fail(400, { error: e.message });
+			} else {
+				throw e;
+			}
+		}
 	},
 	updateReservation: async ({ request }) => {
 		const data = await request.formData();
 		try {
 			const record = await updateReservation(data);
 			return record;
-		} catch (error) {
-			console.error(error);
-			return error;
+		} catch (e) {
+			if (e instanceof ValidationError) {
+				return fail(400, { error: e.message });
+			} else {
+				throw e;
+			}
 		}
 	},
 	cancelReservation: async ({ request }) => {
-		const data = await request.formData();
-		const record = await cancelReservation(data);
-		return record;
+		try {
+			const data = await request.formData();
+			const record = await cancelReservation(data);
+			return record;
+		} catch (e) {
+			if (e instanceof ValidationError) {
+				return fail(400, { error: e.message });
+			} else {
+				throw e;
+			}
+		}
 	},
 	adminUpdateConfirmed: adminUpdateGeneric,
 	adminUpdatePending: adminUpdateGeneric,

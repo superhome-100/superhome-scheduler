@@ -24,8 +24,8 @@ export async function updateNickname(userId: string, nickname: string) {
 	return record;
 }
 
-export async function getUserById(id: string) {
-	return await xata.db.Users.read(id);
+export async function getUsersById(ids: string[]) {
+	return await xata.db.Users.read(ids);
 }
 
 export async function authenticateUser(userId: string, userName: string) {

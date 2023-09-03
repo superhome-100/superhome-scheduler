@@ -1,7 +1,7 @@
 import { startTimes, inc } from './reservationTimes.js';
 import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils';
-import { reservations, user, viewMode } from './stores';
-import { Settings } from './settings.js';
+import { reservations, user, users, viewMode } from './stores';
+import { Settings } from './settings';
 import { get } from 'svelte/store';
 import { assignPoolSpaces, patchSchedule } from './autoAssignPool.js';
 
@@ -73,6 +73,9 @@ export function augmentRsv(rsv, user) {
 }
 
 export function convertReservationTypes(data) {
+	if ('user' in data) {
+		data.user = JSON.parse(data.user);
+	}
 	if ('maxDepth' in data) {
 		data.maxDepth = parseInt(data.maxDepth);
 	}
@@ -98,7 +101,7 @@ export function convertReservationTypes(data) {
 	return data;
 }
 
-export function updateReservationFormData(formData) {
+export function cleanUpFormDataBuddyFields(formData) {
 	let resType = formData.get('resType');
 	let numBuddies = parseInt(formData.get('numBuddies'));
 	formData.delete('numBuddies');
@@ -373,4 +376,14 @@ export const addMissingFields = (submitted, original) => {
 			submitted[field] = original[field];
 		}
 	}
+};
+
+export const buddiesAreValid = (submitted) => {
+	let userIds = Object.keys(get(users));
+	for (let id of submitted.buddies) {
+		if (!userIds.includes(id)) {
+			return false;
+		}
+	}
+	return true;
 };

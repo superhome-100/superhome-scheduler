@@ -8,7 +8,7 @@ import {
 	timeStrToMin,
 	firstOfMonthStr
 } from '$lib/datetimeUtils';
-import { Settings } from '$lib/server/settings.js';
+import { Settings } from '$lib/server/settings';
 
 const unpackTemplate = (uT) => {
 	return {

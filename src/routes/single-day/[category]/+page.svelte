@@ -8,7 +8,7 @@
 	import { datetimeToLocalDateStr, idx2month } from '$lib/datetimeUtils';
 	import Modal from '$lib/components/Modal.svelte';
 	import { loginState, stateLoaded, view, viewMode, viewedDate, reservations } from '$lib/stores';
-	import { Settings } from '$lib/settings.js';
+	import { Settings } from '$lib/settings';
 	import { CATEGORIES } from '$lib/constants.js';
 	import { toast } from 'svelte-french-toast';
 

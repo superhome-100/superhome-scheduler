@@ -4,7 +4,7 @@
 	import MyReservations from '$lib/components/MyReservations.svelte';
 	import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs.js';
 	import { minValidDateStr } from '$lib/reservationTimes.js';
-	import { Settings } from '$lib/settings.js';
+	import { Settings } from '$lib/settings';
 	import { user, stateLoaded, loginState } from '$lib/stores';
 </script>
 

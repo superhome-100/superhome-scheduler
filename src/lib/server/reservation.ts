@@ -4,6 +4,8 @@ import type { SelectableColumn } from '@xata.io/client';
 import type { ReservationsRecord } from './xata';
 import ObjectsToCsv from 'objects-to-csv';
 import _ from 'lodash';
+import type { ReservationData } from '$types';
+import { Settings } from './settings';
 
 const client = getXataClient();
 
@@ -59,11 +61,30 @@ export async function getReservationsSince(minDateStr: string) {
 	//  in MyReservations page
 	//  - [canceled rsvs]: in refreshAppState fn, clients can detect when other
 	//  users have canceled an rsv and remove it from their cache
-	const reservations = await client.db.Reservations.select(['*', 'user'])
+	const reservations = await client.db.Reservations.select(['*', 'user.*'])
 		// @ts-ignore - seems to be a bug in the xata client types
 		.filter({ date: { $ge: minDateStr } })
 		.sort('date', 'asc')
 		.getAll();
 
 	return reservations;
+}
+
+export async function categoryIsBookable(sub: ReservationData): Promise<boolean> {
+	await Settings.init();
+
+	let val;
+	if (sub.category === 'pool') {
+		val = Settings.get('poolBookable', sub.date);
+	} else if (sub.category === 'openwater') {
+		if (sub.owTime == 'AM') {
+			val = Settings.get('openwaterAmBookable', sub.date);
+		} else if (sub.owTime == 'PM') {
+			val = Settings.get('openwaterPmBookable', sub.date);
+		}
+	} else if (sub.category === 'classroom') {
+		val = Settings.get('classroomBookable', sub.date);
+	}
+
+	return !!val;
 }

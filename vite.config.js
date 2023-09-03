@@ -8,6 +8,7 @@ export default defineConfig({
 	plugins: [sveltekit(), mkcert()],
 	resolve: {
 		alias: {
+			$utils: path.resolve('./src/utils'),
 			$libs: path.resolve('./src/libs'),
 			$types: path.resolve('./src/types.ts')
 		}

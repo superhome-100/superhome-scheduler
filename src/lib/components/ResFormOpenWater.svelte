@@ -1,7 +1,7 @@
 <script>
 	import { canSubmit, buoys, reservations } from '$lib/stores';
 	import { adminView, buoyDesc } from '$lib/utils.js';
-	import { Settings } from '$lib/settings.js';
+	import { Settings } from '$lib/settings';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 
 	export let rsv = null;
@@ -10,6 +10,7 @@
 	export let category;
 	export let viewOnly = false;
 	export let restrictModify = false;
+	export let error = '';
 
 	let disabled = viewOnly || restrictModify;
 
@@ -46,7 +47,7 @@
 	};
 </script>
 
-<ResFormGeneric {viewOnly} {restrictModify} {showBuddyFields} bind:date bind:category {rsv}>
+<ResFormGeneric {error} {viewOnly} {restrictModify} {showBuddyFields} bind:date bind:category {rsv}>
 	<div class="[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5" slot="categoryLabels">
 		{#if adminView(viewOnly)}
 			<div><label for="formBuoy">Buoy</label></div>
