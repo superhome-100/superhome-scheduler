@@ -5,7 +5,7 @@
 	import { getContext } from 'svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { badgeColor, getDaySchedule } from '$lib/utils.js';
-	import { Settings } from '$lib/settings.js';
+	import { Settings } from '$lib/settings';
 
 	export let resInfo;
 	export let category;

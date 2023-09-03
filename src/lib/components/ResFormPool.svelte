@@ -3,7 +3,7 @@
 	import { startTimes, endTimes, minuteOfDay } from '$lib/reservationTimes.js';
 	import { timeStrToMin, datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
 	import { canSubmit, user } from '$lib/stores';
-	import { Settings } from '$lib/settings.js';
+	import { Settings } from '$lib/settings';
 	import { adminView } from '$lib/utils.js';
 	import type { ReservationData } from '$types';
 
@@ -19,6 +19,7 @@
 	export let restrictModify = false;
 	export let maxNumStudents = 4;
 	export let maxTimeHours = 4;
+	export let error = '';
 
 	let disabled = viewOnly || restrictModify;
 
@@ -50,7 +51,7 @@
 	};
 </script>
 
-<ResFormGeneric {viewOnly} {restrictModify} {showBuddyFields} bind:date bind:category {rsv}>
+<ResFormGeneric {error} {viewOnly} {restrictModify} {showBuddyFields} bind:date bind:category {rsv}>
 	<div class="[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5" slot="categoryLabels">
 		{#if adminView(viewOnly)}
 			{#if category === 'pool'}
