@@ -8,6 +8,7 @@ import {
 	beforeResCutoff,
 	beforeCancelCutoff
 } from '$lib/reservationTimes.js';
+import { getUsersById } from '$lib/server/user';
 import { Settings as settings } from '$lib/settings';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getNumberOfOccupants } from './reservations';
@@ -173,3 +174,15 @@ function simulateBuddyGroup(sub: ReservationData) {
 	}
 	return [owner, ...simBuds];
 }
+
+export const throwIfUserIsDisabled = async (userIds: string[]) => {
+	const users = await getUsersById(userIds);
+	users.map((user) => {
+		if (user == null) throw new Error('invalid user Id');
+		if (user.status === 'disabled') {
+			throw new ValidationError(
+				`${user.nickname} does not have permission to use this app; please contact the admin for help`
+			);
+		}
+	});
+};
