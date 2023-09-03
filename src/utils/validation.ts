@@ -70,7 +70,7 @@ function isMyBuddysReservation(rsv: Reservation, sub: Reservation) {
 		} else if (sub.category === ReservationCategory.openwater) {
 			return rsv.category === sub.category && rsv.owTime === sub.owTime;
 		} else {
-			throw new ValidationError('invalid category: ' + sub.category);
+			throw new Error('invalid category: ' + sub.category);
 		}
 	} else {
 		return false;
