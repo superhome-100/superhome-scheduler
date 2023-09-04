@@ -42,36 +42,6 @@ export function removeRsv(id) {
 	}
 }
 
-export function augmentRsv(rsv, user) {
-	let startTime = rsv.startTime;
-	let endTime = rsv.endTime;
-	let categoryPretty = rsv.category.charAt(0).toUpperCase() + rsv.category.slice(1);
-	if (rsv.buddies == null) {
-		rsv.buddies = [];
-	}
-	if (rsv.category === 'openwater') {
-		if (rsv.owTime === 'AM') {
-			startTime = Settings.getOpenwaterAmStartTime(rsv.date);
-			endTime = Settings.getOpenwaterAmEndTime(rsv.date);
-		} else if (rsv.owTime === 'PM') {
-			startTime = Settings.getOpenwaterPmStartTime(rsv.date);
-			endTime = Settings.getOpenwaterPmEndTime(rsv.date);
-		}
-	}
-	let newRsv = {
-		...rsv,
-		categoryPretty,
-		startTime,
-		endTime
-	};
-
-	if (!!user) {
-		newRsv.user = user;
-	}
-
-	return newRsv;
-}
-
 export function convertReservationTypes(data) {
 	if ('user' in data) {
 		data.user = JSON.parse(data.user);

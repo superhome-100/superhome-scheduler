@@ -52,7 +52,7 @@
 	};
 
 	const catDesc = (rsv: Reservation) => {
-		let desc = [rsv.categoryPretty];
+		let desc = [rsv.category];
 		if (rsv.resType === 'course') {
 			desc += ' +' + rsv.numStudents;
 		}

@@ -18,7 +18,7 @@ import {
 import { getUsersById } from './user';
 import ObjectsToCsv from 'objects-to-csv';
 import JSZip from 'jszip';
-import { categoryIsBookable } from './reservation';
+import { categoryIsBookable, convertFromXataToAppType } from './reservation';
 
 const xata = getXataClient();
 
@@ -135,7 +135,7 @@ export async function submitReservation(formData) {
 	let records = await xata.db.Reservations.create(entries);
 	return {
 		status: 'success',
-		records
+		records: await convertFromXataToAppType(records)
 	};
 }
 
@@ -232,10 +232,10 @@ export async function updateReservation(formData) {
 	};
 
 	let modrecs = await xata.db.Reservations.update(modify);
-	records.modified = modrecs;
+	records.modified = await convertFromXataToAppType(modrecs);
 	if (create.length > 0) {
 		let createrecs = await xata.db.Reservations.create(create);
-		records.created = createrecs;
+		records.created = await convertFromXataToAppType(createrecs);
 	}
 	if (cancel.length > 0) {
 		let cancelrecs = await xata.db.Reservations.update(
@@ -303,7 +303,7 @@ export async function cancelReservation(formData) {
 				modify[0].owner = true;
 			}
 			let modrecs = await xata.db.Reservations.update(modify);
-			records.modified = modrecs;
+			records.modified = await convertFromXataToAppType(modrecs);
 		}
 
 		cancel = cancel.concat(

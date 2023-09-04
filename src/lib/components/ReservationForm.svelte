@@ -8,7 +8,6 @@
 	import { popup } from './Popup.svelte';
 	import { users, reservations } from '$lib/stores';
 	import {
-		augmentRsv,
 		buddiesAreValid,
 		cleanUpFormDataBuddyFields,
 		convertReservationTypes
@@ -40,12 +39,7 @@
 			switch (result.type) {
 				case 'success':
 					let records = result.data.records;
-					for (let rsv of records) {
-						let user = $users[rsv.user.id];
-						rsv = augmentRsv(rsv, user);
-						$reservations.push(rsv);
-					}
-					$reservations = [...$reservations];
+					$reservations = [...$reservations, ...records];
 					toast.success('Reservation submitted!');
 					close();
 					break;
