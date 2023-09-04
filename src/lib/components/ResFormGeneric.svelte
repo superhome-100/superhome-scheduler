@@ -5,6 +5,7 @@
 	import { canSubmit, user, users } from '$lib/stores';
 	import { Settings } from '$lib/settings';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes';
+	import { adminView, isMyReservation } from '$lib/utils.js';
 	import { PanglaoDate } from '$lib/datetimeUtils';
 	import BuddyMatch from '$lib/components/BuddyMatch.svelte';
 	import PlusIcon from '$lib/components/PlusIcon.svelte';
@@ -185,7 +186,9 @@
 				{/each}
 			{/if}
 		{/if}
-		<div class="form-label h-8 mb-0.5"><label for="formComments">Comments</label></div>
+		{#if isMyReservation(rsv) || adminView(viewOnly)}
+			<div class="form-label h-8 mb-0.5"><label for="formComments">Comments</label></div>
+		{/if}
 	</div>
 	<div class="column inputs text-left w-[67%]">
 		{#if viewOnly}
@@ -271,16 +274,18 @@
 				{/each}
 			{/if}
 		{/if}
-		<div>
-			<textarea
-				id="formComments"
-				name="comments"
-				class="w-44 xs:w-52 mb-4"
-				bind:value={comments}
-				tabindex="4"
-				{disabled}
-			/>
-		</div>
+		{#if isMyReservation(rsv) || adminView(viewOnly)}
+			<div>
+				<textarea
+					id="formComments"
+					name="comments"
+					class="w-44 xs:w-52 mb-4"
+					bind:value={comments}
+					tabindex="4"
+					{disabled}
+				/>
+			</div>
+		{/if}
 	</div>
 </div>
 <div class="row w-full">
