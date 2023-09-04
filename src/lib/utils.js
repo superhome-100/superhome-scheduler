@@ -355,6 +355,10 @@ export const adminView = (viewOnly) => {
 	return get(user).privileges === 'admin' && get(viewMode) === 'admin' && viewOnly;
 };
 
+export const isMyReservation = (rsv) => {
+	return rsv == null || get(user).id === rsv.user.id;
+};
+
 export const buoyDesc = (buoy) => {
 	let desc = '';
 	if (buoy.largeBuoy) {
