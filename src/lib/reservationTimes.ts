@@ -1,4 +1,4 @@
-import type { SettingsStore } from '$types';
+import type { SettingsStore } from '$lib/settings';
 
 import * as dtu from './datetimeUtils';
 
