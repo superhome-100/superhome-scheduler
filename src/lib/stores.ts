@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store';
 import type { UsersRecord } from './server/xata.codegen';
 
-import type { Settings } from '$types';
+import type { Setting } from '$types';
 
 // TODO: Add specific types for each store
 export const buoys = writable<any[]>([]);
@@ -11,7 +11,7 @@ export const loginState = writable<'pending' | 'in' | 'out'>('pending');
 export const notifications = writable<any[]>([]);
 export const profileSrc = writable<any>(null);
 export const reservations = writable<any[]>([]);
-export const settings = writable<Settings>({});
+export const settings = writable<{ [key:string]: Setting }>({});
 export const user = writable<UsersRecord | null>(null);
 export const userPastReservations = writable<any[]>([]);
 export const users = writable<{ [uid: string]: any }>([]);
