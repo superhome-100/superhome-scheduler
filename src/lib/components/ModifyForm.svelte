@@ -11,7 +11,6 @@
 	import { Settings } from '$lib/settings';
 	import {
 		addMissingFields,
-		augmentRsv,
 		buddiesAreValid,
 		removeRsv,
 		cleanUpFormDataBuddyFields,
@@ -104,12 +103,10 @@
 					for (let rsv of records.modified) {
 						let user = $users[rsv.user.id];
 						removeRsv(rsv.id);
-						rsv = augmentRsv(rsv, user);
 						$reservations.push(rsv);
 					}
 					for (let rsv of records.created) {
 						let user = $users[rsv.user.id];
-						rsv = augmentRsv(rsv, user);
 						$reservations.push(rsv);
 					}
 					for (let rsv of records.canceled) {

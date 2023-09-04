@@ -3,8 +3,8 @@ import { getXataClient } from '$lib/server/xata-old';
 import type { SelectableColumn } from '@xata.io/client';
 import ObjectsToCsv from 'objects-to-csv';
 import _ from 'lodash';
-import type { ReservationsRecord } from './xata.codegen';
-import type { Reservation } from '$types';
+import type { ReservationsRecord, UsersRecord } from './xata.codegen';
+import type { Reservation, SettingsStore } from '$types';
 import { ReservationCategory, ReservationStatus, ReservationType, OWTime } from '$types';
 import { Settings } from '$lib/settings';
 import { initSettings } from './settings';
@@ -70,22 +70,72 @@ export async function getReservationsCsv(branch: string) {
 	return await csv.toString();
 }
 
+export async function convertFromXataToAppType(rawRsvs: ReservationsRecord[]) {
+	await initSettings();
+
+	// make sure it's safe to cast to the Reservation type
+	rawRsvs.map((rsv) => throwIfReservationIsInvalid(rsv));
+	let reservations = <Reservation[]>rawRsvs;
+
+	// get user records for each buddy
+	let userIds = reservations.map((rsv) => rsv.user.id);
+	let users: (UsersRecord | null)[] = await client.db.Users.read(userIds);
+	let usersById = users.reduce((obj: { [key: string]: UsersRecord }, user: UsersRecord | null) => {
+		if (user == null) {
+			throw new Error('unknown user record');
+		} else {
+			obj[user.id] = user;
+		}
+		return obj;
+	}, {});
+
+	// add values used by app that Reservations table doesn't include
+	return reservations.map((rsv) => {
+		let user = usersById[rsv.user.id];
+		return getAugmentedRsv(Settings, rsv, user);
+	});
+}
+
+const getAugmentedRsv = (settings: SettingsStore, rsv: Reservation, user: UsersRecord) => {
+	let buddies = rsv.buddies;
+	let startTime = rsv.startTime;
+	let endTime = rsv.endTime;
+
+	if (buddies == null) {
+		buddies = [];
+	}
+	if (rsv.category === 'openwater') {
+		if (rsv.owTime === 'AM') {
+			startTime = settings.getOpenwaterAmStartTime(rsv.date);
+			endTime = settings.getOpenwaterAmEndTime(rsv.date);
+		} else if (rsv.owTime === 'PM') {
+			startTime = settings.getOpenwaterPmStartTime(rsv.date);
+			endTime = settings.getOpenwaterPmEndTime(rsv.date);
+		}
+	}
+	return {
+		...rsv,
+		user,
+		buddies,
+		startTime,
+		endTime
+	};
+};
+
 export async function getReservationsSince(minDateStr: string) {
 	//note: we include rejected and canceled rsvs here so that:
 	//  - [rejected rsvs]: users can see which of their rsvs have been rejected
 	//  in MyReservations page
-	//  - [canceled rsvs]: in refreshAppState fn, clients can detect when other
+	//  - [canceled rsvs]: when app state is refreshed, clients can detect when other
 	//  users have canceled an rsv and remove it from their cache
-	const reservations = await client.db.Reservations.select(['*', 'user.*'])
+	const rawRsvs = await client.db.Reservations.select(['*', 'user.*'])
 		// @ts-ignore - seems to be a bug in the xata client types
 		.filter({ date: { $ge: minDateStr } })
 		.sort('date', 'asc')
 		.getAll();
 
-	// make sure it's safe to cast to the Reservation type
-	reservations.map((rsv) => throwIfReservationIsInvalid(rsv));
-
-	return <Reservation[]>reservations;
+	let reservations = await convertFromXataToAppType(rawRsvs);
+	return reservations;
 }
 
 export async function categoryIsBookable(sub: Reservation): Promise<boolean> {
@@ -138,9 +188,7 @@ export function throwIfReservationIsInvalid(rsv: ReservationsRecord) {
 	if (!Object.keys(ReservationType).includes(rsv.resType!)) {
 		throw new Error(`invalid reservation type "${rsv.resType}" for ${rsv.id}`);
 	} else {
-		if (rsv.resType == ReservationType.autonomous) {
-			throwIfNull(rsv, 'buddies');
-		} else if (rsv.resType == ReservationType.course) {
+		if (rsv.resType == ReservationType.course) {
 			throwIfNull(rsv, 'numStudents');
 		}
 	}

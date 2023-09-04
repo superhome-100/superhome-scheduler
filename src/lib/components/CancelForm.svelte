@@ -5,7 +5,7 @@
 	import { beforeCancelCutoff } from '$lib/reservationTimes';
 	import { Settings } from '$lib/settings';
 	import { toast } from 'svelte-french-toast';
-	import { augmentRsv, removeRsv } from '$lib/utils.js';
+	import { removeRsv } from '$lib/utils.js';
 	import { popup } from '$lib/components/Popup.svelte';
 	import Spinner from '$lib/components/spinner.svelte';
 
@@ -34,7 +34,6 @@
 					for (let rsv of records.modified) {
 						removeRsv(rsv.id);
 						let user = $users[rsv.user.id];
-						rsv = augmentRsv(rsv, user);
 						$reservations.push(rsv);
 					}
 					for (let rsv of records.canceled) {
