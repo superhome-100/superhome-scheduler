@@ -76,7 +76,7 @@ export async function getReservationsSince(minDateStr: string) {
 	//  in MyReservations page
 	//  - [canceled rsvs]: in refreshAppState fn, clients can detect when other
 	//  users have canceled an rsv and remove it from their cache
-	const reservations = await client.db.Reservations.select(['*', 'user'])
+	const reservations = await client.db.Reservations.select(['*', 'user.*'])
 		// @ts-ignore - seems to be a bug in the xata client types
 		.filter({ date: { $ge: minDateStr } })
 		.sort('date', 'asc')

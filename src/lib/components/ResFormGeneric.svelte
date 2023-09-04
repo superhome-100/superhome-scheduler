@@ -298,8 +298,7 @@
 				class="my-2 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative w-fit left-1/2 -translate-x-2/4"
 				role="alert"
 			>
-				<ExclamationCircle />
-				<span class="block sm:inline">{error}</span>
+				<span class="block sm:inline"><ExclamationCircle />{error}</span>
 			</div>
 		{/if}
 		<div class="text-right p-2">

@@ -12,9 +12,10 @@ import {
 	getStartTime,
 	throwIfOverlappingReservation,
 	throwIfPastUpdateTime,
+	throwIfUserIsDisabled,
 	ValidationError
 } from '$utils/validation';
-import { getUserById } from './user';
+import { getUsersById } from './user';
 import ObjectsToCsv from 'objects-to-csv';
 import JSZip from 'jszip';
 import { categoryIsBookable } from './reservation';
@@ -90,12 +91,9 @@ export async function submitReservation(formData) {
 		);
 	}
 
-	const user = await getUserById(sub.user.id);
-	if (user.status === 'disabled') {
-		throw new ValidationError(
-			'User does not have permission to use this app; please contact the admin for help'
-		);
-	}
+	let userIds = [sub.user.id, ...sub.buddies];
+
+	await throwIfUserIsDisabled(userIds);
 
 	if (!beforeResCutoff(Settings, sub.date, getStartTime(Settings, sub), sub.category)) {
 		throw new ValidationError(
@@ -105,11 +103,10 @@ export async function submitReservation(formData) {
 
 	let allOverlappingRsvs = await getOverlappingReservations(sub);
 
-	let userIds = [sub.user.id, ...sub.buddies];
 	let userOverlappingRsvs = allOverlappingRsvs.filter((rsv) => userIds.includes(rsv.user.id));
 	if (userOverlappingRsvs.length > 0) {
 		throw new ValidationError(
-			'Reservation rejected!  You or one of your buddies has a pre-existing reservation at this time'
+			'You or one of your buddies has a pre-existing reservation at this time'
 		);
 	}
 
@@ -220,6 +217,10 @@ export async function updateReservation(formData) {
 		}
 	}
 
+	if (create.length > 0) {
+		await throwIfUserIsDisabled(create.map((entry) => entry.user));
+	}
+
 	await throwIfNoSpaceAvailable(Settings, sub, allOverlappingRsvs, [
 		...modify.filter((rsv) => rsv.id),
 		...cancel
@@ -280,7 +281,7 @@ export async function cancelReservation(formData) {
 	await initSettings();
 	if (!beforeCancelCutoff(Settings, data.date, getStartTime(Settings, data), data.category)) {
 		throw new ValidationError(
-			'The modification window for this reservation date/time has expired; this reservation can no longer be modified'
+			'The cancellation window for this reservation has expired; this reservation can no longer be canceled'
 		);
 	}
 	let save = data.buddies.filter((id) => !data.delBuddies.includes(id));
