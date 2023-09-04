@@ -1,4 +1,4 @@
-import type { Reservation, Buoy, SettingsStore } from '$types';
+import type { Reservation, Buoy } from '$types';
 import { ReservationType, ReservationCategory, OWTime } from '$types';
 
 import { users } from '$lib/stores';
@@ -10,6 +10,7 @@ import {
 	beforeCancelCutoff
 } from '$lib/reservationTimes.js';
 import { getUsersById } from '$lib/server/user';
+import type { SettingsStore } from '$lib/settings';
 import { Settings as settings } from '$lib/settings';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getNumberOfOccupants } from './reservations';
