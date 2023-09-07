@@ -14,9 +14,9 @@
 		buddiesAreValid,
 		removeRsv,
 		cleanUpFormDataBuddyFields,
-		convertReservationTypes,
-		categoryIsBookable
+		convertReservationTypes
 	} from '$lib/utils.js';
+
 	export let hasForm = false;
 	export let rsv;
 
@@ -58,29 +58,15 @@
 		return null;
 	};
 
-	const updateReservation = async ({ data, cancel }) => {
+	const modifyReservation = async ({ data, cancel }) => {
 		error = '';
-		cleanUpFormDataBuddyFields(data, rsv.category);
-		data.set('category', rsv.category);
 
+		cleanUpFormDataBuddyFields(data);
 		let submitted = convertReservationTypes(Object.fromEntries(data));
 		addMissingFields(submitted, rsv);
 
 		if (!buddiesAreValid(submitted)) {
 			popup('Unknown buddy in buddy field!');
-			cancel();
-			return;
-		}
-
-		if (!Settings.getOpenForBusiness(submitted.date)) {
-			popup('We are closed on this date; please choose a different date');
-			cancel();
-			return;
-		}
-
-		const q = categoryIsBookable(submitted);
-		if (q.result == false) {
-			popup(q.message);
 			cancel();
 			return;
 		}
@@ -92,7 +78,6 @@
 			return;
 		}
 
-		data.append('oldBuddies', JSON.stringify(rsv.buddies));
 		hideModal();
 
 		return async ({ result }) => {
@@ -137,7 +122,7 @@
 {#if hasForm}
 	<div>
 		<div class="form-title">modify reservation</div>
-		<form method="POST" action="/?/updateReservation" use:enhance={updateReservation}>
+		<form method="POST" action="/?/modifyReservation" use:enhance={modifyReservation}>
 			<input type="hidden" name="id" value={rsv.id} />
 			{#if rsv.category === 'pool'}
 				<ResFormPool {restrictModify} {rsv} {error} />

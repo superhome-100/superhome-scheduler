@@ -1,4 +1,5 @@
-import type { Reservation, Buoy } from '$types';
+import type { Reservation } from '$types';
+import type { BuoysRecord } from '$lib/server/xata.codegen';
 import { ReservationType, ReservationCategory, OWTime } from '$types';
 
 import { users } from '$lib/stores';
@@ -15,8 +16,11 @@ import { Settings as settings } from '$lib/settings';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getNumberOfOccupants } from './reservations';
 import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
+import { getXataClient } from '$lib/server/xata-old';
 
 export class ValidationError extends Error {}
+
+const client = getXataClient();
 
 export function getStartTime(settings: SettingsStore, sub: Reservation): string {
 	if (sub.category === ReservationCategory.openwater) {
@@ -98,7 +102,7 @@ export function throwIfOverlappingReservation(
 }
 
 export function checkOWSpaceAvailable(
-	buoys: Buoy[],
+	buoys: BuoysRecord[],
 	sub: Reservation,
 	existingReservations: Reservation[]
 ) {
@@ -195,3 +199,31 @@ export const throwIfUserIsDisabled = async (userIds: string[]) => {
 		}
 	});
 };
+
+export async function throwIfNoSpaceAvailable(
+	settings: SettingsStore,
+	sub: Reservation,
+	overlappingRsvs: Reservation[],
+	ignore: string[] = []
+) {
+	let result;
+	let rsvs = overlappingRsvs
+		.filter((rsv) => rsv.category === sub.category && !ignore.includes(rsv.id))
+		.map((rsv) => {
+			return { ...rsv };
+		}); // remove const
+
+	if (sub.category === ReservationCategory.openwater) {
+		let buoys = await client.db.Buoys.getAll();
+		result = checkOWSpaceAvailable(buoys, sub, rsvs);
+	} else if (sub.category === ReservationCategory.pool) {
+		result = checkPoolSpaceAvailable(settings, sub, rsvs);
+	} else if (sub.category === ReservationCategory.classroom) {
+		result = checkClassroomAvailable(settings, sub, rsvs);
+	} else {
+		throw new Error(`invalid category ${sub.category} for ${sub.id}`);
+	}
+	if (result.status === 'error') {
+		throw new ValidationError(result.message);
+	}
+}

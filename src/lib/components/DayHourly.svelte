@@ -54,10 +54,12 @@
 	const formatTag = (rsvs, nSlots, width, slotWidthPx) => {
 		let tag = '';
 		if (rsvs[0].resType === 'course') {
-			tag = rsvs[0].user.nickname + ' +' + rsvs[0].numStudents;
+			let nickname = $users[rsvs[0].user.id].nickname;
+			tag = nickname + ' +' + rsvs[0].numStudents;
 		} else {
 			for (let i = 0; i < rsvs.length; i++) {
-				tag += rsvs[i].user.nickname;
+				let nickname = $users[rsvs[i].user.id].nickname;
+				tag += nickname;
 				if (i < rsvs.length - 1) {
 					tag += ' and ';
 				}
