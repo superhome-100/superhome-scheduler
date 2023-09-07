@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+	import { OWTime } from '$types';
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-french-toast';
 	import { enhance } from '$app/forms';
@@ -9,13 +10,7 @@
 	import { popup } from './Popup.svelte';
 	import { users, reservations } from '$lib/stores';
 	import { Settings } from '$lib/settings';
-	import {
-		addMissingFields,
-		buddiesAreValid,
-		removeRsv,
-		cleanUpFormDataBuddyFields,
-		convertReservationTypes
-	} from '$lib/utils.js';
+	import { removeRsv, cleanUpFormDataBuddyFields } from '$lib/utils.js';
 
 	export let hasForm = false;
 	export let rsv;
@@ -23,61 +18,58 @@
 	let error = '';
 	const { close, hideModal, showModal } = getContext('simple-modal');
 
-	const reservationChanges = (submitted, original) => {
-		const isEmpty = (v) => v == null || v == '' || (Object.hasOwn(v, 'length') && v.length == 0);
-		const bothEmpty = (a, b) => isEmpty(a) && isEmpty(b);
+	const reservationChanged = (formData, original) => {
+		const checkString = (field) => {
+			return formData.has(field) && formData.get(field) != original[field];
+		};
+		const checkNumber = (field) => {
+			return formData.has(field) && parseInt(formData.get(field)) != original[field];
+		};
+		const checkBool = (field) => {
+			return formData.has(field) && (formData.get(field) == 'on') != original[field];
+		};
 
-		for (let field in submitted) {
-			if (field === 'user') {
-				continue;
-			}
-
-			let a = original[field];
-			let b = submitted[field];
-
-			if (bothEmpty(a, b)) {
-				continue;
-			}
-
-			if (field === 'buddies') {
-				if (a == null || b == null) {
-					return 'buddies';
-				}
-				if (a.length != b.length) {
-					return 'buddies';
-				}
-				for (let id of a) {
-					if (!b.includes(id)) {
-						return 'buddies';
-					}
-				}
-			} else if (a !== b) {
-				return field;
+		let buddies = JSON.parse(formData.get('buddies'));
+		let union = new Set([...buddies, ...original.buddies]);
+		if (union.size > buddies.length || union.size > original.buddies.length) {
+			return true;
+		}
+		if (formData.has('owTime')) {
+			let owTime = OWTime[formData.get('owTime') as keyof typeof OWTime];
+			if (owTime != original.owTime) {
+				return true;
 			}
 		}
-		return null;
+		if (formData.has('pulley')) {
+			if ((formData.get('pulley') == 'on') != original.pulley) {
+				return true;
+			}
+		} else if (original.pulley != null) {
+			return true;
+		}
+
+		return (
+			checkString('date') ||
+			checkString('comments') ||
+			checkNumber('numStudents') ||
+			checkString('startTime') ||
+			checkString('endTime') ||
+			checkNumber('maxDepth') ||
+			checkBool('extraBottomWeight') ||
+			checkBool('bottomPlate') ||
+			checkBool('largeBuoy') ||
+			checkBool('O2OnBuoy')
+		);
 	};
 
 	const modifyReservation = async ({ data, cancel }) => {
 		error = '';
-
 		cleanUpFormDataBuddyFields(data);
-		let submitted = convertReservationTypes(Object.fromEntries(data));
-		addMissingFields(submitted, rsv);
-
-		if (!buddiesAreValid(submitted)) {
-			popup('Unknown buddy in buddy field!');
-			cancel();
-			return;
-		}
-
-		let change = reservationChanges(submitted, rsv);
-		if (change == null) {
+		if (!reservationChanged(data, rsv)) {
 			cancel();
 			close();
 			return;
 		}
-
 		hideModal();
 
 		return async ({ result }) => {

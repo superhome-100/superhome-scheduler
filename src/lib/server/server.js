@@ -1,21 +1,5 @@
 import { getXataClient } from '$lib/server/xata-old';
-import { addMissingFields, convertReservationTypes } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
-import { beforeCancelCutoff, beforeResCutoff } from '$lib/reservationTimes';
-import { Settings } from '$lib/settings';
-import { initSettings } from '$lib/server/settings.js';
-import { getTimeOverlapFilters } from '$utils/reservation-queries';
-import {
-	checkClassroomAvailable,
-	checkPoolSpaceAvailable,
-	checkOWSpaceAvailable,
-	getStartTime,
-	throwIfOverlappingReservation,
-	throwIfPastUpdateTime,
-	throwIfUserIsDisabled,
-	ValidationError
-} from '$utils/validation';
-import { getUsersById } from './user';
 import ObjectsToCsv from 'objects-to-csv';
 import JSZip from 'jszip';
 

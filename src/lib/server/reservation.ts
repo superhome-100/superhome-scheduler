@@ -9,7 +9,6 @@ import { getXataClient } from '$lib/server/xata-old';
 import { getTimeOverlapFilters } from '$utils/reservation-queries';
 import { Settings } from '$lib/settings';
 import { initSettings } from './settings';
-import { addMissingFields, convertReservationTypes } from '$lib/utils.js';
 import {
 	getStartTime,
 	throwIfNoSpaceAvailable,

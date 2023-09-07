@@ -7,11 +7,7 @@
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { popup } from './Popup.svelte';
 	import { users, reservations } from '$lib/stores';
-	import {
-		buddiesAreValid,
-		cleanUpFormDataBuddyFields,
-		convertReservationTypes
-	} from '$lib/utils.js';
+	import { cleanUpFormDataBuddyFields } from '$lib/utils.js';
 
 	export let category = 'openwater';
 	export let dateFn;
@@ -24,15 +20,6 @@
 	const submitReservation = async ({ data, cancel }) => {
 		error = '';
 		cleanUpFormDataBuddyFields(data);
-
-		let submitted = convertReservationTypes(Object.fromEntries(data));
-
-		if (!buddiesAreValid(submitted)) {
-			popup('Unknown buddy in buddy field!');
-			cancel();
-			return;
-		}
-
 		hideModal();
 
 		return async ({ result }) => {
