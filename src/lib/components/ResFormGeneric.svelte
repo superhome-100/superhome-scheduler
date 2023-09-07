@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Reservation, BuddyData } from '$types';
-	import { ReservationStatus } from '$types';
-	import { ReservationCategory } from '$types';
+	import { ReservationStatus, ReservationCategory } from '$types';
 	import { canSubmit, user, users } from '$lib/stores';
 	import { Settings } from '$lib/settings';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes';
@@ -13,9 +12,8 @@
 	import ExclamationCircle from '$lib/components/ExclamationCircle.svelte';
 
 	export let rsv: Reservation | null;
-	export let date: string | null = rsv?.date || PanglaoDate().toString();
-	export let category: ReservationCategory | string =
-		rsv?.category.toString() || ReservationCategory.pool;
+	export let date: string = rsv?.date || PanglaoDate().toString();
+	export let category: ReservationCategory = rsv?.category || ReservationCategory.pool;
 	export let viewOnly = false;
 	export let showBuddyFields = true;
 	export let restrictModify = false;
@@ -23,17 +21,11 @@
 
 	let disabled = viewOnly || restrictModify;
 
-	let status = rsv == null ? 'pending' : rsv.status;
-	let comments = rsv == null ? null : rsv.comments;
+	let status: ReservationStatus = rsv?.status || ReservationStatus.pending;
+	let comments = rsv?.comments || null;
 
 	$: maxBuddies =
-		category === 'openwater'
-			? 3
-			: category === 'pool'
-			? 1
-			: category === 'classroom'
-			? 0
-			: undefined;
+		category === ReservationCategory.openwater ? 3 : category === ReservationCategory.pool ? 1 : 0; //category === ReservationCategory.classroom
 
 	const initBF = (): BuddyData[] => {
 		let buddyFields: BuddyData[] = [];
@@ -136,13 +128,13 @@
 	const autocompUlStyle =
 		'relative ml-2 top-0 border border-solid border-bg-gray-300 ' + 'rounded text-sm';
 
-	const bdColor: { [k: string]: string } = {
-		confirmed: 'border-status-confirmed',
-		pending: 'border-status-pending',
-		rejected: 'border-status-rejected'
+	const bdColor: { [key in ReservationStatus]: string } = {
+		[ReservationStatus.confirmed]: 'border-status-confirmed',
+		[ReservationStatus.pending]: 'border-status-pending',
+		[ReservationStatus.rejected]: 'border-status-rejected'
 	};
 
-	const statusStyle = (status: string) =>
+	const statusStyle = (status: ReservationStatus) =>
 		'align-middle px-2 py-0 pb-1 mb-1 ml-2 w-fit ' +
 		'text-xl text-gray-500 dark:text-gray-300 ' +
 		'bg-white dark:bg-gray-500 ' +
@@ -192,12 +184,12 @@
 	</div>
 	<div class="column inputs text-left w-[67%]">
 		{#if viewOnly}
-			<div class={statusStyle(rsv?.status?.toString() || ReservationStatus.pending.toString())}>
-				{rsv?.status}
+			<div class={statusStyle(rsv.status)}>
+				{rsv.status}
 			</div>
 		{/if}
 		<div>
-			<input type="hidden" name="user" value={JSON.stringify($user)} />
+			<input type="hidden" name="user" value={JSON.stringify({ id: $user.id })} />
 			<input type="hidden" name="date" value={date} />
 			<input type="hidden" name="category" value={category} />
 			<input type="hidden" name="status" value={status} />
@@ -221,9 +213,9 @@
 				bind:value={category}
 				disabled={disabled || rsv != null}
 			>
-				<option value="pool">Pool</option>
-				<option value="openwater">Open Water</option>
-				<option value="classroom">Classroom</option>
+				<option value={ReservationCategory.pool}>Pool</option>
+				<option value={ReservationCategory.openwater}>Open Water</option>
+				<option value={ReservationCategory.classroom}>Classroom</option>
 			</select>
 		</div>
 		<slot name="categoryInputs" />

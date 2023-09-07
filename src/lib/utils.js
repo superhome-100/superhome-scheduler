@@ -59,7 +59,7 @@ export function convertReservationTypes(data) {
 	if ('numStudents' in data) {
 		data.numStudents = parseInt(data.numStudents);
 	}
-	for (let f of ['buddies', 'oldBuddies', 'delBuddies']) {
+	for (let f of ['buddies', 'cancelBuddies']) {
 		if (f in data) {
 			data[f] = JSON.parse(data[f]);
 		}
@@ -90,7 +90,7 @@ export function cleanUpFormDataBuddyFields(formData) {
 }
 
 export const displayTag = (rsv, admin) => {
-	let tag = rsv.user.nickname;
+	let tag = get(users)[rsv.user.id].nickname;
 	if (rsv.resType === 'course') {
 		tag += ' +' + rsv.numStudents;
 	}
@@ -162,34 +162,6 @@ export const badgeColor = (rsvs) => {
 	let approved = rsvs.reduce((sts, rsv) => sts && rsv.status === 'confirmed', true);
 	return approved ? 'bg-[#00FF00]' : 'bg-[#FFFF00]';
 };
-
-export function categoryIsBookable(sub) {
-	let val;
-	let msg;
-	if (sub.category === 'pool') {
-		val = Settings.getPoolBookable(sub.date);
-		msg = 'Pool';
-	} else if (sub.category === 'openwater') {
-		if (sub.owTime == 'AM') {
-			val = Settings.getOpenwaterAmBookable(sub.date);
-			msg = 'AM Openwater';
-		} else if (sub.owTime == 'PM') {
-			val = Settings.getOpenwaterPmBookable(sub.date);
-			msg = 'PM Openwater';
-		}
-	} else if (sub.category === 'classroom') {
-		val = Settings.getClassroomBookable(sub.date);
-		msg = 'Classroom';
-	}
-	if (val) {
-		return { result: true };
-	} else {
-		return {
-			result: false,
-			message: msg + ' reservations are not bookable on this date'
-		};
-	}
-}
 
 function assignClassrooms(rsvs, dateStr) {
 	let rooms = Settings.getClassrooms(dateStr);
