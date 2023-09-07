@@ -84,11 +84,13 @@
 				}
 			}
 		}
-
-		if (currentBF.matches.length == 1 && currentBF.name === currentBF.matches[0].nickname) {
-			setInputVal(currentBF.matches[0]);
+		if (currentBF.matches.length == 0 && currentBF.name.length > 0) {
+			//don't allow user to type an unknown user name
+			currentBF.name = currentBF.name.slice(0, currentBF.name.length - 1);
+			matchUser();
+		} else {
+			buddyFields = [...buddyFields];
 		}
-		buddyFields = [...buddyFields];
 	}
 
 	const focus = (el: HTMLElement) => (rsv == null ? el.focus() : null);
