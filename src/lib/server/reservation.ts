@@ -70,20 +70,18 @@ export async function getReservationsSince(minDateStr: string) {
 	return reservations;
 }
 
-export async function categoryIsBookable(sub: ReservationData): Promise<boolean> {
-	await Settings.init();
-
+export function categoryIsBookable(settings: any, sub: ReservationData): boolean {
 	let val;
 	if (sub.category === 'pool') {
-		val = Settings.get('poolBookable', sub.date);
+		val = settings.get('poolBookable', sub.date);
 	} else if (sub.category === 'openwater') {
 		if (sub.owTime == 'AM') {
-			val = Settings.get('openwaterAmBookable', sub.date);
+			val = settings.get('openwaterAmBookable', sub.date);
 		} else if (sub.owTime == 'PM') {
-			val = Settings.get('openwaterPmBookable', sub.date);
+			val = settings.get('openwaterPmBookable', sub.date);
 		}
 	} else if (sub.category === 'classroom') {
-		val = Settings.get('classroomBookable', sub.date);
+		val = settings.get('classroomBookable', sub.date);
 	}
 
 	return !!val;

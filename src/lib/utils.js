@@ -216,7 +216,7 @@ export function categoryIsBookable(sub) {
 	} else {
 		return {
 			result: false,
-			message: msg + ' reservations are not bookable on this date'
+			message: msg + ' reservations are not bookable on this date/time'
 		};
 	}
 }
