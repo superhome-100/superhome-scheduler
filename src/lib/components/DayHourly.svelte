@@ -1,6 +1,6 @@
 <script>
 	import { startTimes, endTimes } from '$lib/reservationTimes';
-	import { viewedDate, viewMode, reservations } from '$lib/stores';
+	import { reservations, users, viewedDate, viewMode } from '$lib/stores';
 	import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils';
 	import { getContext } from 'svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';

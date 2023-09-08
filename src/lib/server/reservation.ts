@@ -177,7 +177,7 @@ export async function getReservationsSince(minDateStr: string) {
 	return reservations;
 }
 
-export async function categoryIsBookable(sub: Reservation): Promise<boolean> {
+export async function categoryIsBookable(sub: Submission): Promise<boolean> {
 	await initSettings();
 
 	let val;
@@ -200,7 +200,7 @@ export async function categoryIsBookable(sub: Reservation): Promise<boolean> {
 	return val;
 }
 
-async function getOverlappingReservations(sub: Reservation) {
+async function getOverlappingReservations(sub: Submission) {
 	await initSettings();
 	let filters = {
 		date: sub.date,
