@@ -1,4 +1,4 @@
-import type { Reservation } from '$types';
+import type { Submission } from '$types';
 import type { SettingsStore } from '$lib/settings';
 import { OWTime, ReservationCategory } from '$types';
 import { startTimes, endTimes } from '$lib/reservationTimes';
@@ -71,7 +71,7 @@ function isTimeOverlapping({
 
 // return xata filters for querying all reservations that overlap in time with the given reservation
 // note: this searches across all categories
-export function getTimeOverlapFilters(settings: SettingsStore, rsv: Reservation) {
+export function getTimeOverlapFilters(settings: SettingsStore, rsv: Submission) {
 	let owAmStart = settings.getOpenwaterAmStartTime(rsv.date);
 	let owAmEnd = settings.getOpenwaterAmEndTime(rsv.date);
 	let owPmStart = settings.getOpenwaterPmStartTime(rsv.date);
