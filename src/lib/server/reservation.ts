@@ -139,9 +139,7 @@ export async function getReservationsSince(minDateStr: string) {
 	return reservations;
 }
 
-export async function categoryIsBookable(sub: Reservation): Promise<boolean> {
-	await initSettings();
-
+export function categoryIsBookable(settings: SettingsStore, sub: Reservation): boolean {
 	let val;
 	if (sub.category === ReservationCategory.pool) {
 		val = Settings.getPoolBookable(sub.date);

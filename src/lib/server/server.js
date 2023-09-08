@@ -85,9 +85,9 @@ export async function submitReservation(formData) {
 		throw new ValidationError('We are closed on this date; please choose a different date');
 	}
 
-	if (!categoryIsBookable(sub)) {
+	if (!categoryIsBookable(Settings, sub)) {
 		throw new ValidationError(
-			`The ${sub.category} is not bookable on this date; please choose a different date`
+			`The ${sub.category} is not bookable on this date/time; please choose a different date/time`
 		);
 	}
 
