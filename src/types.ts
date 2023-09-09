@@ -1,4 +1,4 @@
-import type { Reservations } from './lib/server/xata.codegen';
+import type { Reservations, Buoys } from './lib/server/xata.codegen';
 
 export type ReservationData = Omit<Reservations, 'category' | 'status'> & {
 	category: ReservationCategory;
@@ -26,3 +26,12 @@ export enum ReservationStatus {
 }
 
 export type ReservationPeriod = 'upcoming' | 'past';
+
+// TODO: seems to be unrelated to Settings type from xata
+export type Setting = {
+	// TODO: fix type remove any
+	default: any;
+	entries: any[];
+};
+
+export type Buoy = Required<Buoys>;

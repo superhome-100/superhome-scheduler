@@ -10,7 +10,7 @@
 	import { idx2month } from '$lib/datetimeUtils';
 	import { view, viewedMonth, reservations, loginState, stateLoaded } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants.js';
-	import { Settings } from '$lib/settings.js';
+	import { Settings } from '$lib/settings';
 
 	export let data;
 

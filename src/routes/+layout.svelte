@@ -42,6 +42,9 @@
 
 	let intervalId: number | undefined;
 
+	export let data; // has data = { settings } parsed from xata
+	$settings = data.settings;
+
 	$: if ($loginState === 'out' && $page.route.id != '/') {
 		goto('/');
 	}
@@ -127,7 +130,7 @@
 			if (resSettings.status === 'error') {
 				throw new Error('Could not get settings from database');
 			}
-			$settings = resSettings.settings;
+
 			$buoys = resSettings.buoys;
 			$users = resAppData.usersById!;
 			$stateLoaded = true;
