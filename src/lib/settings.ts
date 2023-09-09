@@ -1,7 +1,8 @@
+import type { Setting } from '$types';
 import { settings } from './stores';
 import { get } from 'svelte/store';
 
-export const getOn = (setting, date) => {
+export const getOn = (setting: Setting, date: Date | string) => {
 	let val = setting.default;
 	for (let entry of setting.entries) {
 		if (entry.startDate <= date && date <= entry.endDate) {
@@ -13,7 +14,7 @@ export const getOn = (setting, date) => {
 };
 
 export const Settings = {
-	get: (name, date) => {
+	get: (name: string, date: Date | string) => {
 		let setting = get(settings)[name];
 		return getOn(setting, date);
 	}

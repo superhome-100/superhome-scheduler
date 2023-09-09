@@ -1,19 +1,23 @@
 import { getXataClient } from '$lib/server/xata-old';
 import { addMissingFields, convertReservationTypes } from '$lib/utils.js';
-import { buddysRsv, checkSpaceAvailable } from '$lib/validationUtils.js';
 import { redirect } from '@sveltejs/kit';
+import { beforeCancelCutoff, beforeResCutoff } from '$lib/reservationTimes.js';
+import { Settings } from '$lib/server/settings';
+import { getTimeOverlapFilters } from '$utils/reservation-queries';
 import {
-	startTimes,
-	endTimes,
-	beforeCancelCutoff,
-	beforeResCutoff
-} from '$lib/reservationTimes.js';
-import { timeStrToMin } from '$lib/datetimeUtils';
-import { Settings } from '$lib/server/settings.js';
+	checkClassroomAvailable,
+	checkPoolSpaceAvailable,
+	checkOWSpaceAvailable,
+	getStartTime,
+	throwIfOverlappingReservation,
+	throwIfPastUpdateTime,
+	throwIfUserIsDisabled,
+	ValidationError
+} from '$utils/validation';
+import { getUsersById } from './user';
 import ObjectsToCsv from 'objects-to-csv';
 import JSZip from 'jszip';
-
-import { getUserById } from './user';
+import { categoryIsBookable } from './reservation';
 
 const xata = getXataClient();
 
@@ -35,108 +39,10 @@ export async function getSettings() {
 	return { settingsTbl, buoys };
 }
 
-function getTimeSlots(settings, date, category, start, end) {
-	let sTs = startTimes(settings, date, category);
-	let eTs = endTimes(settings, date, category);
-	let times = [...sTs, eTs[eTs.length - 1]];
-
-	let sIdx = times.indexOf(start);
-	let eIdx = times.indexOf(end);
-	if (sIdx == -1 && eIdx == -1) {
-		return null;
-	}
-
-	if (sIdx == -1) {
-		sIdx = 0;
-	}
-	if (eIdx == -1) {
-		eIdx = times.length - 1;
-	}
-
-	let beforeStart = times.slice(0, sIdx);
-	let startVals = times.slice(sIdx, eIdx);
-
-	let endVals = times.slice(sIdx + 1, eIdx + 1);
-	let afterEnd = times.slice(eIdx + 1);
-
-	return { startVals, endVals, beforeStart, afterEnd };
-}
-
-function timeOverlap(startA, endA, startB, endB) {
-	startA = timeStrToMin(startA);
-	startB = timeStrToMin(startB);
-	endA = timeStrToMin(endA);
-	endB = timeStrToMin(endB);
-	return (
-		(startA >= startB && startA < endB) ||
-		(endA <= endB && endA > startB) ||
-		(startA < startB && endA > endB)
-	);
-}
-
-function getTimeOverlapFilters(settings, rsv) {
-	let owAmStart = settings.get('openwaterAmStartTime', rsv.date);
-	let owAmEnd = settings.get('openwaterAmEndTime', rsv.date);
-	let owPmStart = settings.get('openwaterPmStartTime', rsv.date);
-	let owPmEnd = settings.get('openwaterPmEndTime', rsv.date);
-	let start, end;
-	let owTimes = [];
-	if (['pool', 'classroom'].includes(rsv.category)) {
-		start = rsv.startTime;
-		end = rsv.endTime;
-		if (timeOverlap(start, end, owAmStart, owAmEnd)) {
-			owTimes.push('AM');
-		}
-		if (timeOverlap(start, end, owPmStart, owPmEnd)) {
-			owTimes.push('PM');
-		}
-	} else if (rsv.category === 'openwater') {
-		owTimes.push(rsv.owTime);
-		if (rsv.owTime === 'AM') {
-			start = owAmStart;
-			end = owAmEnd;
-		} else if (rsv.owTime === 'PM') {
-			start = owPmStart;
-			end = owPmEnd;
-		}
-	}
-
-	let filters = [];
-
-	if (owTimes.length > 0) {
-		filters.push({
-			category: 'openwater',
-			owTime: { $any: owTimes }
-		});
-	}
-
-	let slots = getTimeSlots(Settings, rsv.date, 'pool', start, end);
-	if (slots != null) {
-		let timeFilt = [];
-		if (slots.startVals.length > 0) {
-			timeFilt.push({ startTime: { $any: slots.startVals } });
-		}
-		if (slots.endVals.length > 0) {
-			timeFilt.push({ endTime: { $any: slots.endVals } });
-		}
-		if (slots.beforeStart.length > 0 && slots.afterEnd.length > 0) {
-			timeFilt.push({
-				$all: [{ startTime: { $any: slots.beforeStart } }, { endTime: { $any: slots.afterEnd } }]
-			});
-		}
-		filters.push({
-			category: { $any: ['pool', 'classroom'] },
-			$any: timeFilt
-		});
-	}
-	return filters;
-}
-
-async function getOverlappingReservations(sub, buddies) {
+async function getOverlappingReservations(sub) {
 	await Settings.init();
 	let filters = {
 		date: sub.date,
-		user: { $any: buddies },
 		$any: getTimeOverlapFilters(Settings, sub),
 		status: { $any: ['pending', 'confirmed'] }
 	};
@@ -144,84 +50,64 @@ async function getOverlappingReservations(sub, buddies) {
 	return existing;
 }
 
-async function getExistingRsvs(entries) {
-	let ids = entries
-		.filter((o) => o.id)
-		.map((o) => {
-			return { id: o.id };
-		});
-	let filters = {
-		date: entries[0].date,
-		category: entries[0].category,
-		status: { $any: ['pending', 'confirmed'] }
-	};
-	if (ids.length > 0) {
-		filters.$not = { $any: ids };
-	}
-
-	let existing = await xata.db.Reservations.filter(filters).getAll();
-	// remove const
-	return existing.map((rsv) => {
-		return { ...rsv };
-	});
+async function getUserOverlappingReservations(sub, userIds) {
+	let existing = await getOverlappingReservations(sub);
+	return existing.filter((rsv) => userIds.includes(rsv.user.id));
 }
 
-async function querySpaceAvailable(entries, remove = []) {
-	let existing = await getExistingRsvs([...entries, ...remove]);
-	let buoys;
-	let sub = entries[0];
+async function throwIfNoSpaceAvailable(settings, sub, overlappingRsvs, ignore = []) {
+	let result;
+	let rsvs = overlappingRsvs
+		.filter((rsv) => rsv.category === sub.category && !ignore.includes(rsv.id))
+		.map((rsv) => {
+			return { ...rsv };
+		}); // remove const
+
 	if (sub.category === 'openwater') {
-		buoys = await xata.db.Buoys.getAll();
+		let buoys = await xata.db.Buoys.getAll();
+		result = checkOWSpaceAvailable(buoys, sub, rsvs);
+	} else if (sub.category === 'pool') {
+		result = checkPoolSpaceAvailable(settings, sub, rsvs);
+	} else if (sub.category === 'classroom') {
+		result = checkClassroomAvailable(settings, sub, rsvs);
 	}
-	await Settings.init();
-	let result = checkSpaceAvailable(Settings, buoys, sub, existing);
 	if (result.status === 'error') {
-		return {
-			status: 'error',
-			code: 'NO_SPACE_AVAILABLE',
-			message: result.message
-		};
-	} else {
-		return {
-			status: 'success'
-		};
+		throw new ValidationError(result.message);
 	}
 }
 
+// TODO: move this to a reservation.ts file apply appropriate type shape
 export async function submitReservation(formData) {
+	await Settings.init();
 	let sub = convertReservationTypes(Object.fromEntries(formData));
 
-	const user = await getUserById(sub.user);
-	if (user && user.status === 'disabled') {
-		return {
-			status: 'error',
-			code: 'USER_DISABLED'
-		};
+	if (!Settings.get('openForBusiness', sub.date)) {
+		throw new ValidationError('We are closed on this date; please choose a different date');
 	}
 
-	await Settings.init();
-	//TODO: find a cleaner way to handle startTime for OW rsvs
-	if (sub.category === 'openwater') {
-		if (sub.owTime === 'AM') {
-			sub.startTime = Settings.get('openwaterAmStartTime', sub.date);
-		} else if (sub.owTime === 'PM') {
-			sub.startTime = Settings.get('openwaterPmStartTime', sub.date);
-		}
-	}
-	if (!beforeResCutoff(Settings, sub.date, sub.startTime, sub.category)) {
-		return {
-			status: 'error',
-			code: 'AFTER_CUTOFF'
-		};
+	if (!categoryIsBookable(Settings, sub)) {
+		throw new ValidationError(
+			`The ${sub.category} is not bookable on this date/time; please choose a different date/time`
+		);
 	}
 
-	let checkExisting = [sub.user, ...sub.buddies];
-	let existing = await getOverlappingReservations(sub, checkExisting);
-	if (existing.length > 0) {
-		return {
-			status: 'error',
-			code: 'RSV_EXISTS'
-		};
+	let userIds = [sub.user.id, ...sub.buddies];
+
+	await throwIfUserIsDisabled(userIds);
+
+	if (!beforeResCutoff(Settings, sub.date, getStartTime(Settings, sub), sub.category)) {
+		throw new ValidationError(
+			'The submission window for this reservation date/time has expired. Please choose a later date.'
+		);
+	}
+
+	let allOverlappingRsvs = await getOverlappingReservations(sub);
+
+	let userOverlappingRsvs = allOverlappingRsvs.filter((rsv) => userIds.includes(rsv.user.id));
+	if (userOverlappingRsvs.length > 0) {
+		throw new ValidationError(
+			'You or one of your buddies has a pre-existing reservation at this time'
+		);
 	}
 
 	// openwater bookings require the admin to manually confirm
@@ -243,10 +129,8 @@ export async function submitReservation(formData) {
 			entries.push({ ...common, user: id, buddies: bg, owner: false });
 		}
 	}
-	let result = await querySpaceAvailable(entries);
-	if (result.status === 'error') {
-		return result;
-	}
+
+	await throwIfNoSpaceAvailable(Settings, sub, allOverlappingRsvs);
 
 	let records = await xata.db.Reservations.create(entries);
 	return {
@@ -254,12 +138,6 @@ export async function submitReservation(formData) {
 		records
 	};
 }
-
-const reducingStudents = (orig, sub) =>
-	orig.resType === 'course' && orig.numStudents > sub.numStudents;
-const removingBuddy = (orig, sub) =>
-	orig.buddies.length > sub.buddies.length &&
-	sub.buddies.reduce((id, val) => orig.buddies.includes(id) && val, true);
 
 export async function updateReservation(formData) {
 	let { oldBuddies, ...sub } = convertReservationTypes(Object.fromEntries(formData));
@@ -270,46 +148,14 @@ export async function updateReservation(formData) {
 	addMissingFields(sub, orig);
 
 	await Settings.init();
-	//TODO: find a cleaner way to handle startTime for OW rsvs
-	if (sub.category === 'openwater') {
-		if (sub.owTime === 'AM') {
-			sub.startTime = Settings.get('openwaterAmStartTime', sub.date);
-		} else if (sub.owTime === 'PM') {
-			sub.startTime = Settings.get('openwaterPmStartTime', sub.date);
-		}
-	}
-	if (!beforeResCutoff(Settings, sub.date, sub.startTime, sub.category)) {
-		//the only types of mods that are allowed after the res cutoff are:
-		// 1) reducing the number of students in a course
-		// 2) deleting a buddy's reservation
-		if (!reducingStudents(orig, sub) && !removingBuddy(orig, sub)) {
-			return {
-				status: 'error',
-				code: 'AFTER_CUTOFF'
-			};
-			//no mods allowed after cancel cutoff
-		} else if (!beforeCancelCutoff(Settings, sub.date, sub.startTime, sub.category)) {
-			return {
-				status: 'error',
-				code: 'AFTER_CUTOFF'
-			};
-		}
-	}
+	throwIfPastUpdateTime(Settings, orig, sub);
+
+	let allOverlappingRsvs = await getOverlappingReservations(sub);
 
 	// check that the submitter and associated buddies do not have existing
 	// reservations that will overlap with the updated reservation
-	let checkExisting = [sub.user, ...sub.buddies];
-	let existing = await getOverlappingReservations(sub, checkExisting);
-	if (existing.length > 0) {
-		for (let rsv of existing) {
-			if (rsv.id !== orig.id && !buddysRsv(rsv, orig)) {
-				return {
-					status: 'error',
-					code: 'RSV_EXISTS'
-				};
-			}
-		}
-	}
+	let userIds = [sub.user.id, ...sub.buddies];
+	throwIfOverlappingReservation(orig, allOverlappingRsvs, userIds);
 
 	sub.owner = true; // the submitter assumes ownership
 	sub.status = sub.category === 'openwater' ? 'pending' : 'confirmed';
@@ -334,14 +180,14 @@ export async function updateReservation(formData) {
 		delete common.updatedAt;
 
 		if (oldBuddies.length > 0) {
-			existingBuddies = await getOverlappingReservations(orig, oldBuddies);
+			existingBuddies = await getUserOverlappingReservations(orig, oldBuddies);
 		}
 
 		for (let bId of buddySet) {
 			if (buddies.includes(bId) && oldBuddies.includes(bId)) {
 				// modify
 				let rsvId = existingBuddies.filter((rsv) => rsv.user.id === bId)[0].id;
-				let bg = [user, ...buddies.filter((bIdp) => bIdp != bId)];
+				let bg = [user.id, ...buddies.filter((bIdp) => bIdp != bId)];
 				let entry = {
 					...common,
 					updatedAt,
@@ -353,7 +199,7 @@ export async function updateReservation(formData) {
 				modify.push(entry);
 			} else if (buddies.includes(bId)) {
 				// create
-				let bg = [user, ...buddies.filter((bIdp) => bIdp != bId)];
+				let bg = [user.id, ...buddies.filter((bIdp) => bIdp != bId)];
 				let entry = {
 					...common,
 					updatedAt,
@@ -371,10 +217,14 @@ export async function updateReservation(formData) {
 		}
 	}
 
-	let result = await querySpaceAvailable([...modify, ...create], cancel);
-	if (result.status === 'error') {
-		return result;
+	if (create.length > 0) {
+		await throwIfUserIsDisabled(create.map((entry) => entry.user));
 	}
+
+	await throwIfNoSpaceAvailable(Settings, sub, allOverlappingRsvs, [
+		...modify.filter((rsv) => rsv.id),
+		...cancel
+	]);
 
 	let records = {
 		created: [],
@@ -429,25 +279,16 @@ export async function cancelReservation(formData) {
 	let data = convertReservationTypes(Object.fromEntries(formData));
 
 	await Settings.init();
-	//TODO: find a cleaner way to handle startTime for OW rsvs
-	if (data.category === 'openwater') {
-		if (data.owTime === 'AM') {
-			data.startTime = Settings.get('openwaterAmStartTime', data.date);
-		} else if (data.owTime === 'PM') {
-			data.startTime = Settings.get('openwaterPmStartTime', data.date);
-		}
-	}
-	if (!beforeCancelCutoff(Settings, data.date, data.startTime, data.category)) {
-		return {
-			status: 'error',
-			code: 'AFTER_CUTOFF'
-		};
+	if (!beforeCancelCutoff(Settings, data.date, getStartTime(Settings, data), data.category)) {
+		throw new ValidationError(
+			'The cancellation window for this reservation has expired; this reservation can no longer be canceled'
+		);
 	}
 	let save = data.buddies.filter((id) => !data.delBuddies.includes(id));
 	let cancel = [data.id];
 	let records = { modified: [], canceled: [] };
 	if (data.buddies.length > 0) {
-		let existing = await getOverlappingReservations(data, data.buddies);
+		let existing = await getUserOverlappingReservations(data, data.buddies);
 		let modify = existing
 			.filter((rsv) => save.includes(rsv.user.id))
 			.map((rsv) => {

@@ -3,27 +3,19 @@
 	import { enhance } from '$app/forms';
 	import { user, users, reservations } from '$lib/stores';
 	import { beforeCancelCutoff } from '$lib/reservationTimes.js';
-	import { Settings } from '$lib/settings.js';
+	import { Settings } from '$lib/settings';
 	import { toast } from 'svelte-french-toast';
 	import { augmentRsv, removeRsv } from '$lib/utils.js';
 	import { popup } from '$lib/components/Popup.svelte';
+	import Spinner from '$lib/components/spinner.svelte';
 
 	export let rsv;
 	export let hasForm = false;
 
-	const { close } = getContext('simple-modal');
+	const { close, hideModal } = getContext('simple-modal');
 
-	const cancelReservation = async ({ form, data, action, cancel }) => {
-		if (!beforeCancelCutoff(Settings, rsv.date, rsv.startTime, rsv.category)) {
-			popup(
-				`The cancelation window for this reservation has expired; 
-                this reservation can no longer be canceled`
-			);
-			cancel();
-		}
-
+	const cancelReservation = async ({ data }) => {
 		data.append('buddies', JSON.stringify(rsv.buddies));
-
 		let delBuddies = [];
 		for (let i = 0; i < rsv.buddies.length; i++) {
 			if (data.get('buddy-' + i) === 'on') {
@@ -33,43 +25,33 @@
 		}
 		data.append('delBuddies', JSON.stringify(delBuddies));
 
-		close();
+		hideModal();
 
-		return async ({ result, update }) => {
+		return async ({ result }) => {
 			switch (result.type) {
 				case 'success':
-					if (result.data.status === 'success') {
-						let records = result.data.records;
-						for (let rsv of records.modified) {
-							removeRsv(rsv.id);
-							let user = $users[rsv.user.id];
-							rsv = augmentRsv(rsv, user);
-							$reservations.push(rsv);
-						}
-						for (let rsv of records.canceled) {
-							removeRsv(rsv.id);
-						}
-						$reservations = [...$reservations];
-						toast.success('Reservation canceled');
-					} else if (result.data.status === 'error') {
-						switch (result.data.code) {
-							case 'AFTER_CUTOFF':
-								popup(
-									'The cancelation window for this reservation has expired;' +
-										'this reservation can no longer be canceled'
-								);
-								break;
-							default:
-								console.error(result.data.code);
-								throw new Error('unknown cancelation error code');
-						}
+					let records = result.data.records;
+					for (let rsv of records.modified) {
+						removeRsv(rsv.id);
+						let user = $users[rsv.user.id];
+						rsv = augmentRsv(rsv, user);
+						$reservations.push(rsv);
 					}
+					for (let rsv of records.canceled) {
+						removeRsv(rsv.id);
+					}
+					$reservations = [...$reservations];
+					toast.success('Reservation canceled');
+					break;
+				case 'failure':
+					popup(result.data.error);
 					break;
 				default:
 					console.error(result);
 					toast.error('Could not cancel reservation!');
 					break;
 			}
+			close();
 		};
 	};
 </script>
