@@ -22,15 +22,6 @@ export async function getBuoys() {
 	return buoys;
 }
 
-export function checkSessionActive(route, cookies) {
-	let session = cookies.get('sessionid');
-	if (session === undefined) {
-		if (route.id !== '/') {
-			throw redirect(307, '/');
-		}
-	}
-}
-
 export async function getUserActiveNotifications(user) {
 	const receipts = await xata.db.NotificationReceipts.filter({ user }).getAll();
 	const notifications = await xata.db.Notifications.getAll();

@@ -177,22 +177,21 @@ export async function getReservationsSince(minDateStr: string) {
 	return reservations;
 }
 
-export async function categoryIsBookable(sub: Submission): Promise<boolean> {
-	await initSettings();
+export function categoryIsBookable(settings: SettingsStore, sub: Submission): boolean {
 
 	let val;
 	if (sub.category === ReservationCategory.pool) {
-		val = Settings.getPoolBookable(sub.date);
+		val = settings.getPoolBookable(sub.date);
 	} else if (sub.category === ReservationCategory.openwater) {
 		if (sub.owTime == OWTime.AM) {
-			val = Settings.getOpenwaterAmBookable(sub.date);
+			val = settings.getOpenwaterAmBookable(sub.date);
 		} else if (sub.owTime == OWTime.PM) {
-			val = Settings.getOpenwaterPmBookable(sub.date);
+			val = settings.getOpenwaterPmBookable(sub.date);
 		} else {
 			throw new Error('invalid OWTime: ' + sub.owTime);
 		}
 	} else if (sub.category === ReservationCategory.classroom) {
-		val = Settings.getClassroomBookable(sub.date);
+		val = settings.getClassroomBookable(sub.date);
 	} else {
 		throw new Error('invalid category: ' + sub.category);
 	}
@@ -223,7 +222,7 @@ async function throwIfSubmissionIsInvalid(sub: Submission) {
 		throw new ValidationError('We are closed on this date; please choose a different date');
 	}
 
-	if (!categoryIsBookable(sub)) {
+	if (!categoryIsBookable(Settings, sub)) {
 		throw new ValidationError(
 			`The ${sub.category} is not bookable on this date; please choose a different date`
 		);
@@ -310,7 +309,7 @@ async function throwIfUpdateIsInvalid(sub: Reservation, orig: Reservation, ignor
 		throw new ValidationError('We are closed on this date; please choose a different date');
 	}
 
-	if (!categoryIsBookable(sub)) {
+	if (!categoryIsBookable(Settings, sub)) {
 		throw new ValidationError(
 			`The ${sub.category} is not bookable on this date; please choose a different date`
 		);
