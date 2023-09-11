@@ -121,6 +121,11 @@ export async function submitReservation(formData) {
 	// default value, so we set the default here
 	sub.lanes = ['auto'];
 
+	// TEMPORARY FIX: remove this once type shape is fixed
+	if (sub.user.id) { // means its an object should be a string
+		sub.user = sub.user.id;
+	}
+
 	let entries = [sub];
 	if (sub.buddies.length > 0) {
 		let { user, buddies, ...common } = sub;
@@ -131,6 +136,8 @@ export async function submitReservation(formData) {
 	}
 
 	await throwIfNoSpaceAvailable(Settings, sub, allOverlappingRsvs);
+	console.log('creating reservation', entries)
+
 
 	let records = await xata.db.Reservations.create(entries);
 	return {
