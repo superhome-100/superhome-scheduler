@@ -1,4 +1,6 @@
-import type { Reservation } from '$types';
+import type { Submission } from '$types';
+import type { SettingsStore } from '$lib/settings';
+import { OWTime, ReservationCategory } from '$types';
 import { startTimes, endTimes } from '$lib/reservationTimes';
 import { timeStrToMin } from '$lib/datetimeUtils';
 
@@ -11,9 +13,9 @@ function getTimeSlots({
 	start,
 	end
 }: {
-	settings: any;
+	settings: SettingsStore;
 	date: string;
-	category: 'pool';
+	category: ReservationCategory.pool;
 	start: string;
 	end: string;
 }) {
@@ -69,14 +71,14 @@ function isTimeOverlapping({
 
 // return xata filters for querying all reservations that overlap in time with the given reservation
 // note: this searches across all categories
-export function getTimeOverlapFilters(settings: any, rsv: Reservation) {
+export function getTimeOverlapFilters(settings: SettingsStore, rsv: Submission) {
 	let owAmStart = settings.getOpenwaterAmStartTime(rsv.date);
 	let owAmEnd = settings.getOpenwaterAmEndTime(rsv.date);
 	let owPmStart = settings.getOpenwaterPmStartTime(rsv.date);
 	let owPmEnd = settings.getOpenwaterPmEndTime(rsv.date);
 	let start, end;
-	let owTimes: string[] = [];
-	if (['pool', 'classroom'].includes(rsv.category)) {
+	let owTimes: OWTime[] = [];
+	if ([ReservationCategory.pool, ReservationCategory.classroom].includes(rsv.category)) {
 		start = rsv.startTime;
 		end = rsv.endTime;
 		if (
@@ -87,7 +89,7 @@ export function getTimeOverlapFilters(settings: any, rsv: Reservation) {
 				endB: owAmEnd
 			})
 		) {
-			owTimes.push('AM');
+			owTimes.push(OWTime.AM);
 		}
 		if (
 			isTimeOverlapping({
@@ -97,25 +99,29 @@ export function getTimeOverlapFilters(settings: any, rsv: Reservation) {
 				endB: owPmEnd
 			})
 		) {
-			owTimes.push('PM');
+			owTimes.push(OWTime.PM);
 		}
-	} else if (rsv.category === 'openwater') {
+	} else if (rsv.category === ReservationCategory.openwater) {
 		owTimes.push(rsv.owTime);
-		if (rsv.owTime === 'AM') {
+		if (rsv.owTime === OWTime.AM) {
 			start = owAmStart;
 			end = owAmEnd;
-		} else if (rsv.owTime === 'PM') {
+		} else if (rsv.owTime === OWTime.PM) {
 			start = owPmStart;
 			end = owPmEnd;
+		} else {
+			throw new Error('invalid OWTime: ' + rsv.owTime);
 		}
+	} else {
+		throw new Error('invalid reservation category: ' + rsv.category);
 	}
 
 	//TODO: fix type
-	const filters: any[] = [];
+	const filters: { [key: string]: any }[] = [];
 
 	if (owTimes.length > 0) {
 		filters.push({
-			category: 'openwater',
+			category: ReservationCategory.openwater,
 			owTime: { $any: owTimes }
 		});
 	}
@@ -123,12 +129,12 @@ export function getTimeOverlapFilters(settings: any, rsv: Reservation) {
 	let slots = getTimeSlots({
 		settings,
 		date: rsv.date,
-		category: 'pool',
+		category: ReservationCategory.pool,
 		start,
 		end
 	});
 	if (slots != null) {
-		let timeFilt: any[] = [];
+		let timeFilt: { [key: string]: any }[] = [];
 		if (slots.startVals.length > 0) {
 			timeFilt.push({ startTime: { $any: slots.startVals } });
 		}
@@ -141,7 +147,7 @@ export function getTimeOverlapFilters(settings: any, rsv: Reservation) {
 			});
 		}
 		filters.push({
-			category: { $any: ['pool', 'classroom'] },
+			category: { $any: [ReservationCategory.pool, ReservationCategory.classroom] },
 			$any: timeFilt
 		});
 	}

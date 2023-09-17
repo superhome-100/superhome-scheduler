@@ -42,35 +42,6 @@ export function removeRsv(id) {
 	}
 }
 
-export function convertReservationTypes(data) {
-	if ('user' in data) {
-		data.user = JSON.parse(data.user);
-	}
-	if ('maxDepth' in data) {
-		data.maxDepth = parseInt(data.maxDepth);
-	}
-	if (data.category === 'openwater') {
-		for (let opt of ['O2OnBuoy', 'extraBottomWeight', 'bottomPlate', 'largeBuoy']) {
-			data[opt] = data[opt] === 'on';
-		}
-		// preserve whether or not user indicated a pulley preference
-		data.pulley = data.pulley === undefined ? null : data.pulley === 'on';
-	}
-	if ('numStudents' in data) {
-		data.numStudents = parseInt(data.numStudents);
-	}
-	for (let f of ['buddies', 'oldBuddies', 'delBuddies']) {
-		if (f in data) {
-			data[f] = JSON.parse(data[f]);
-		}
-	}
-	if (data.price != null) {
-		data.price = parseInt(data.price);
-	}
-
-	return data;
-}
-
 export function cleanUpFormDataBuddyFields(formData) {
 	let resType = formData.get('resType');
 	let numBuddies = parseInt(formData.get('numBuddies'));
@@ -78,9 +49,9 @@ export function cleanUpFormDataBuddyFields(formData) {
 	let buddies = [];
 	for (let i = 0; i < numBuddies; i++) {
 		if (resType === 'autonomous') {
-			let name = formData.get('buddy' + i);
-			if (name !== '') {
-				buddies.push(formData.get('buddy' + i + '_id'));
+			let id = formData.get('buddy' + i + '_id');
+			if (id !== 'undefined') {
+				buddies.push(id);
 			}
 		}
 		formData.delete('buddy' + i);
@@ -90,7 +61,7 @@ export function cleanUpFormDataBuddyFields(formData) {
 }
 
 export const displayTag = (rsv, admin) => {
-	let tag = rsv.user.nickname;
+	let tag = get(users)[rsv.user.id].nickname;
 	if (rsv.resType === 'course') {
 		tag += ' +' + rsv.numStudents;
 	}
@@ -162,34 +133,6 @@ export const badgeColor = (rsvs) => {
 	let approved = rsvs.reduce((sts, rsv) => sts && rsv.status === 'confirmed', true);
 	return approved ? 'bg-[#00FF00]' : 'bg-[#FFFF00]';
 };
-
-export function categoryIsBookable(sub) {
-	let val;
-	let msg;
-	if (sub.category === 'pool') {
-		val = Settings.getPoolBookable(sub.date);
-		msg = 'Pool';
-	} else if (sub.category === 'openwater') {
-		if (sub.owTime == 'AM') {
-			val = Settings.getOpenwaterAmBookable(sub.date);
-			msg = 'AM Openwater';
-		} else if (sub.owTime == 'PM') {
-			val = Settings.getOpenwaterPmBookable(sub.date);
-			msg = 'PM Openwater';
-		}
-	} else if (sub.category === 'classroom') {
-		val = Settings.getClassroomBookable(sub.date);
-		msg = 'Classroom';
-	}
-	if (val) {
-		return { result: true };
-	} else {
-		return {
-			result: false,
-			message: msg + ' reservations are not bookable on this date/time'
-		};
-	}
-}
 
 function assignClassrooms(rsvs, dateStr) {
 	let rooms = Settings.getClassrooms(dateStr);
@@ -342,22 +285,4 @@ export const buoyDesc = (buoy) => {
 	}
 	desc += buoy.maxDepth;
 	return desc;
-};
-
-export const addMissingFields = (submitted, original) => {
-	for (let field in original) {
-		if (submitted[field] === undefined) {
-			submitted[field] = original[field];
-		}
-	}
-};
-
-export const buddiesAreValid = (submitted) => {
-	let userIds = Object.keys(get(users));
-	for (let id of submitted.buddies) {
-		if (!userIds.includes(id)) {
-			return false;
-		}
-	}
-	return true;
 };
