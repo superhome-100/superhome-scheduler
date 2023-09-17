@@ -22,6 +22,7 @@ export async function POST({ request }: RequestEvent) {
 			usersById
 		});
 	} catch (error) {
+		console.error(error);
 		return json({ status: 'error', error });
 	}
 }

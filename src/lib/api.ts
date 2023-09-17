@@ -1,16 +1,10 @@
 import type { UsersRecord } from './server/xata.codegen';
 
 // TODO: fix this type
-export const getSettings = async () => {
-	const response = await fetch('/api/getSettings');
+export const getBuoys = async () => {
+	const response = await fetch('/api/getBuoys');
 	const data = (await response.json()) as {
 		status: 'success' | 'error';
-		// settings: {
-		// 	[key: string]: {
-		// 		default: string;
-		// 		entries: any[];
-		// 	};
-		// };
 		buoys: any[];
 	};
 	return data;

@@ -25,7 +25,6 @@
 		viewMode,
 		profileSrc
 	} from '$lib/stores';
-	import { augmentRsv } from '$lib/utils.js';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { login, logout } from '$lib/authentication';
 	import { toast, Toaster } from 'svelte-french-toast';
@@ -34,7 +33,7 @@
 		getAppData,
 		getBoatAssignments,
 		getSession,
-		getSettings,
+		getBuoys,
 		getUserPastReservations,
 		getUserNotifications
 	} from '$lib/api';
@@ -86,9 +85,7 @@
 			$notifications = userNotifications;
 
 			if (reqReservations.status === 'success') {
-				$userPastReservations = (reqReservations.userPastReservations || []).map((rsv) => {
-					return augmentRsv(rsv, $user);
-				});
+				$userPastReservations = reqReservations.userPastReservations;
 			}
 
 			if (reqBoatAssignments.status === 'success') {
@@ -113,7 +110,7 @@
 
 			const oneWeekAgo = dayjs().locale('en-US').subtract(7, 'day').format('YYYY-MM-DD');
 			// TODO: this is super slow
-			const [, resSettings, resAppData] = await Promise.all([
+			const [, resBuoys, resAppData] = await Promise.all([
 				getSession().then((res) => {
 					if (res.status !== 'success') {
 						$loginState = 'out';
@@ -124,22 +121,25 @@
 						initializeUserSessionData(res.viewMode);
 					}
 				}),
-				getSettings(),
+				getBuoys(),
 				getAppData(oneWeekAgo)
 			]);
-			if (resSettings.status === 'error') {
-				throw new Error('Could not get settings from database');
+			if (resBuoys.status === 'error') {
+				throw new Error('Could not get buoys from database');
 			}
-
-			$buoys = resSettings.buoys;
+			$buoys = resBuoys.buoys;
+			if (resAppData.status === 'error') {
+				throw new Error('Could not get application data from the database');
+			}
 			$users = resAppData.usersById!;
 			$stateLoaded = true;
-			const rsvById: { [id: string]: any } = $reservations.reduce((obj, rsv) => {
+
+			const rsvById: { [id: string]: Reservation } = $reservations.reduce((obj, rsv) => {
 				obj[rsv.id] = rsv;
 				return obj;
 			}, {});
-			(resAppData.reservations || []).forEach((rsv) => {
-				rsvById[rsv.id] = augmentRsv(rsv);
+			resAppData.reservations.forEach((rsv) => {
+				rsvById[rsv.id] = rsv;
 			});
 			$reservations = Object.values(rsvById).filter((rsv) => rsv.status !== 'canceled');
 

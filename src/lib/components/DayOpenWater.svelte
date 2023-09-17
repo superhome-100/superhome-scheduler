@@ -113,7 +113,7 @@
 	};
 
 	$: date = dtToLDS($viewedDate);
-	$: boats = Settings.get('boats', date);
+	$: boats = Settings.getBoats(date);
 	$: boatCounts = boats.reduce((bc, b) => {
 		bc[b] = 0;
 		return bc;
@@ -198,7 +198,7 @@
 		{/each}
 	</div>
 {/if}
-{#if Settings.get('openForBusiness', dtToLDS($viewedDate)) === false}
+{#if Settings.getOpenForBusiness(dtToLDS($viewedDate)) === false}
 	<div class="font-semibold text-3xl text-center">Closed</div>
 {:else}
 	<div class="row">

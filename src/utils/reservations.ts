@@ -1,11 +1,11 @@
-import type { ReservationData } from '$types';
+import type { Submission } from '$types';
 
-export const getNumberOfOccupants = (rsvs: ReservationData[]) =>
+export const getNumberOfOccupants = (rsvs: Submission[]) =>
 	rsvs.reduce((n, rsv) => {
 		if (rsv.category === 'classroom') {
-			return n + rsv.numStudents!;
+			return n + rsv.numStudents;
 		} else {
-			return rsv.resType === 'course' ? n + 2 * Math.ceil(rsv.numStudents! / 2) : n + 1;
+			return rsv.resType === 'course' ? n + 2 * Math.ceil(rsv.numStudents / 2) : n + 1;
 		}
 	}, 0);
 

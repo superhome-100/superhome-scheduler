@@ -3,8 +3,8 @@
 	import { Tab, Tabs, TabList, TabPanel } from '$lib/tabs.js';
 	import ViewForm from '$lib/components/ViewForm.svelte';
 	import ModifyForm from '$lib/components/ModifyForm.svelte';
-	import { user } from '$lib/stores';
-	import { beforeResCutoff, beforeCancelCutoff } from '$lib/reservationTimes.js';
+	import { user, users } from '$lib/stores';
+	import { beforeResCutoff, beforeCancelCutoff } from '$lib/reservationTimes';
 	import { Settings } from '$lib/settings';
 
 	export let rsvs;
@@ -33,7 +33,7 @@
 	<Tabs bind:tabIndex>
 		<TabList>
 			{#each rsvs as rsv}
-				<Tab>{rsv.user.nickname}</Tab>
+				<Tab>{$users[rsv.user.id].nickname}</Tab>
 			{/each}
 		</TabList>
 
