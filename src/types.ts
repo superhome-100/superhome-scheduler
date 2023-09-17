@@ -1,31 +1,37 @@
-import type { Users, Buoys } from './lib/server/xata.codegen';
+import type { Users, Buoys, ReservationsRecord } from './lib/server/xata.codegen';
+import type { SelectedPick } from '@xata.io/client';
 
-export type Reservation = {
-	id: string;
-	owTime: OWTime;
+export type ReservationXata = SelectedPick<ReservationsRecord, ['*']>;
+
+export type Submission = {
+	user: { id: string };
+	date: string;
+	category: ReservationCategory;
 	resType: ReservationType;
-	numStudents: number;
-	maxDepth: number;
+	buddies: string[];
 	comments: string;
-	user: Users;
+	numStudents: number;
 	startTime: string;
 	endTime: string;
-	category: ReservationCategory;
-	createdAt: Date;
-	date: string;
-	owner: boolean;
-	buddies: string[];
-	status: ReservationStatus;
-	pulley: boolean;
+	owTime: OWTime;
+	maxDepth: number;
+	pulley: boolean | null;
 	extraBottomWeight: boolean;
 	bottomPlate: boolean;
 	largeBuoy: boolean;
-	lanes: string[];
 	O2OnBuoy: boolean;
+	owner: boolean;
+	status: ReservationStatus;
+	lanes: string[];
 	buoy: string;
+};
+
+export type Reservation = Submission & {
+	id: string;
+	createdAt?: Date;
 	room: string;
-	price: number;
-	updatedAt: Date;
+	price?: number;
+	updatedAt?: Date;
 };
 
 export type ReservationPeriod = 'upcoming' | 'past';
@@ -62,3 +68,8 @@ export interface BuddyData {
 	id?: number;
 	matches?: any[];
 }
+
+export type AppFormData = {
+	get: (prop: string) => string;
+	has: (prop: string) => boolean;
+};

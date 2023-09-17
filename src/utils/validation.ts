@@ -1,4 +1,5 @@
-import type { Reservation, Buoy } from '$types';
+import type { Reservation, Submission } from '$types';
+import type { BuoysRecord } from '$lib/server/xata.codegen';
 import { ReservationType, ReservationCategory, OWTime } from '$types';
 
 import { users } from '$lib/stores';
@@ -15,10 +16,13 @@ import { Settings as settings } from '$lib/settings';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getNumberOfOccupants } from './reservations';
 import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
+import { getXataClient } from '$lib/server/xata-old';
 
 export class ValidationError extends Error {}
 
-export function getStartTime(settings: SettingsStore, sub: Reservation): string {
+const client = getXataClient();
+
+export function getStartTime(settings: SettingsStore, sub: Submission): string {
 	if (sub.category === ReservationCategory.openwater) {
 		if (sub.owTime === OWTime.AM) {
 			return settings.getOpenwaterAmStartTime(sub.date);
@@ -62,7 +66,7 @@ export function throwIfPastUpdateTime(
 	}
 }
 
-function isMyBuddysReservation(rsv: Reservation, sub: Reservation) {
+function isMyBuddysReservation(rsv: Reservation, sub: Submission) {
 	if (sub.buddies && sub.buddies.includes(rsv.user.id)) {
 		if ([ReservationCategory.pool, ReservationCategory.classroom].includes(sub.category)) {
 			return (
@@ -98,8 +102,8 @@ export function throwIfOverlappingReservation(
 }
 
 export function checkOWSpaceAvailable(
-	buoys: Buoy[],
-	sub: Reservation,
+	buoys: BuoysRecord[],
+	sub: Submission,
 	existingReservations: Reservation[]
 ) {
 	let buddyGroup = simulateBuddyGroup(sub);
@@ -118,22 +122,19 @@ export function checkOWSpaceAvailable(
 
 export function checkPoolSpaceAvailable(
 	settings: SettingsStore,
-	sub: Reservation,
-	rsvs: Reservation[]
+	sub: Submission,
+	overlapping: Reservation[]
 ) {
 	let startTs = startTimes(settings, sub.date, sub.category);
 	for (let i = startTs.indexOf(sub.startTime); i < startTs.indexOf(sub.endTime); i++) {
 		let time = timeStrToMin(startTs[i]);
-		let overlap = rsvs.filter((rsv) => {
+		let thisSlotOverlap = overlapping.filter((rsv) => {
 			let start = timeStrToMin(rsv.startTime);
 			let end = timeStrToMin(rsv.endTime);
-			let notMe = sub.id != rsv.id;
-			let notMyBuddy = !sub.buddies.includes(rsv.user.id);
-			return notMe && notMyBuddy && start <= time && end > time;
+			return start <= time && end > time;
 		});
 		let mpl = settings.getMaxOccupantsPerLane(sub.date);
-		let numDivers =
-			getNumberOfOccupants([sub]) + sub.buddies.length + getNumberOfOccupants(overlap);
+		let numDivers = getNumberOfOccupants([...thisSlotOverlap, sub]) + sub.buddies.length;
 		let nLanes = settings.getPoolLanes(sub.date).length;
 		if (numDivers > nLanes * mpl) {
 			return {
@@ -149,7 +150,7 @@ export function checkPoolSpaceAvailable(
 
 export const checkClassroomAvailable = (
 	settings: SettingsStore,
-	sub: Reservation,
+	sub: Submission,
 	overlapping: Reservation[]
 ) => {
 	if (overlapping.length >= settings.getClassrooms(sub.date).length) {
@@ -164,12 +165,14 @@ export const checkClassroomAvailable = (
 	}
 };
 
-function simulateBuddyGroup(sub: Reservation) {
+function simulateBuddyGroup(sub: Submission) {
 	// add fields that db normally adds to this submission and its buddies
-	let owner = { ...sub };
 	let simId = -1;
-	owner.buoy = owner.resType === ReservationType.cbs ? 'CBS' : 'auto';
-	owner.id = (simId--).toString();
+	let owner = { 
+        ...sub,
+        id: (simId--).toString(),
+        buoy: sub.resType === ReservationType.cbs ? 'CBS' : 'auto',
+    };
 
 	let simBuds = [];
 	for (let id of owner.buddies) {
@@ -195,3 +198,31 @@ export const throwIfUserIsDisabled = async (userIds: string[]) => {
 		}
 	});
 };
+
+export async function throwIfNoSpaceAvailable(
+	settings: SettingsStore,
+	sub: Submission,
+	allOverlappingRsvs: Reservation[],
+	ignore: string[] = []
+) {
+	let result;
+	let catOverlapping = allOverlappingRsvs
+		.filter((rsv) => rsv.category === sub.category && !ignore.includes(rsv.id))
+		.map((rsv) => {
+			return { ...rsv };
+		}); // remove const
+
+	if (sub.category === ReservationCategory.openwater) {
+		let buoys = await client.db.Buoys.getAll();
+		result = checkOWSpaceAvailable(buoys, sub, catOverlapping);
+	} else if (sub.category === ReservationCategory.pool) {
+		result = checkPoolSpaceAvailable(settings, sub, catOverlapping);
+	} else if (sub.category === ReservationCategory.classroom) {
+		result = checkClassroomAvailable(settings, sub, catOverlapping);
+	} else {
+		throw new Error(`invalid category ${sub.category}`);
+	}
+	if (result.status === 'error') {
+		throw new ValidationError(result.message);
+	}
+}

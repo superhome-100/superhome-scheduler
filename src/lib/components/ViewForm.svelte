@@ -85,14 +85,10 @@
 		return async ({ result, update }) => {
 			switch (result.type) {
 				case 'success':
-					if (result.data.status === 'success') {
-						let updated = result.data.record;
-						copyChanges(rsv, updated);
-						$reservations = [...$reservations];
-						toast.success('Reservation updated!');
-					} else if (result.data.status === 'error') {
-						toast.error('Server returned error!');
-					}
+					let updated = result.data.record;
+					copyChanges(rsv, updated);
+					$reservations = [...$reservations];
+					toast.success('Reservation updated!');
 					break;
 				default:
 					console.error(result);

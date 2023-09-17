@@ -1,10 +1,10 @@
 import {
 	submitReservation,
-	updateReservation,
+	modifyReservation,
 	cancelReservation,
-	adminUpdate,
-	insertNotificationReceipt
-} from '$lib/server/server.js';
+	adminUpdate
+} from '$lib/server/reservation';
+import { insertNotificationReceipt } from '$lib/server/server.js';
 import { ValidationError } from '$utils/validation';
 import { fail } from '@sveltejs/kit';
 import { updateNickname } from '$lib/server/user';
@@ -29,10 +29,10 @@ export const actions = {
 			}
 		}
 	},
-	updateReservation: async ({ request }) => {
+	modifyReservation: async ({ request }) => {
 		const data = await request.formData();
 		try {
-			const record = await updateReservation(data);
+			const record = await modifyReservation(data);
 			return record;
 		} catch (e) {
 			if (e instanceof ValidationError) {
