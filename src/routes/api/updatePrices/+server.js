@@ -8,7 +8,8 @@ import {
 	timeStrToMin,
 	firstOfMonthStr
 } from '$lib/datetimeUtils';
-import { Settings } from '$lib/server/settings';
+import { Settings } from '$lib/settings';
+import { initSettings } from '$lib/server/settings';
 
 const unpackTemplate = (uT) => {
 	return {
@@ -26,30 +27,6 @@ const unpackTemplate = (uT) => {
 		}
 	};
 };
-
-/*
- * This fn could be used as an optimization if the cron job
- * were to actually run more than once a day (but that would
- * require upgarding to a paid vercel account)
-
-function currentTimeActive(settings, date, time) {
-    let starts = [
-        settings.get('minPoolStartTime', date),
-        settings.get('minClassroomStartTime', date),
-        settings.get('openwaterAmStartTime', date)
-    ].map(tm => timeStrToMin(tm));
-    let ends = [
-        settings.get('maxPoolEndTime', date),
-        settings.get('maxClassroomEndTime', date),
-        settings.get('openwaterPmEndTime', date)
-    ].map(tm => timeStrToMin(tm));
-
-    // true if current time is beyond the minimum possible rsv start time
-    // and is before the maximum possible rsv end time
-    return starts.reduce((b,tm) => b || time >= tm, false)
-        && ends.reduce((b, tm) => b || time <= tm, false);
-}
-*/
 
 async function getOldAndNewRsvs(date) {
 	let reservations = await xata.db.Reservations.filter({
@@ -88,14 +65,14 @@ const getStart = (rsv, amOWTime, pmOWTime) => {
 
 export async function GET() {
 	try {
-		await Settings.init();
+		await initSettings();
 
 		let d = datetimeInPanglaoFromServer();
 		let date = datetimeToDateStr(d);
 		let time = d.getHours() * 60 + d.getMinutes();
-		let maxChgbl = Settings.get('maxChargeableOWPerMonth', date);
-		let amOWStart = timeStrToMin(Settings.get('openwaterAmStartTime', date));
-		let pmOWStart = timeStrToMin(Settings.get('openwaterPmStartTime', date));
+		let maxChgbl = Settings.getMaxChargeableOWPerMonth(date);
+		let amOWStart = timeStrToMin(Settings.getOpenwaterAmStartTime(date));
+		let pmOWStart = timeStrToMin(Settings.getOpenwaterPmStartTime(date));
 
 		let { oldRsvs, newRsvs } = await getOldAndNewRsvs(date);
 		if (newRsvs.length > 0) {

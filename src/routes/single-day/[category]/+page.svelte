@@ -104,13 +104,13 @@
 	const resInfo = () => {
 		let dateStr = datetimeToLocalDateStr($viewedDate);
 		if (category === 'pool') {
-			let lanes = Settings.get('poolLanes', dateStr);
-			let occ = Settings.get('maxOccupantsPerLane', dateStr);
-			let label = Settings.get('poolLabel', dateStr);
+			let lanes = Settings.getPoolLanes(dateStr);
+			let occ = Settings.getMaxOccupantsPerLane(dateStr);
+			let label = Settings.getPoolLabel(dateStr);
 			return { resources: lanes, occupancy: occ, name: label };
 		} else if (category === 'classroom') {
-			let rooms = Settings.get('classrooms', dateStr);
-			let label = Settings.get('classroomLabel', dateStr);
+			let rooms = Settings.getClassrooms(dateStr);
+			let label = Settings.getClassroomLabel(dateStr);
 			return { resources: rooms, occupancy: 1, name: label };
 		}
 	};
