@@ -1,4 +1,4 @@
-import { getBuoys } from '$lib/server/server.js';
+import { getBuoys } from '$lib/server/server';
 import { json } from '@sveltejs/kit';
 
 export async function GET() {
