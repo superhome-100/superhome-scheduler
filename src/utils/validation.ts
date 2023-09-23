@@ -168,11 +168,11 @@ export const checkClassroomAvailable = (
 function simulateBuddyGroup(sub: Submission) {
 	// add fields that db normally adds to this submission and its buddies
 	let simId = -1;
-	let owner = { 
-        ...sub,
-        id: (simId--).toString(),
-        buoy: sub.resType === ReservationType.cbs ? 'CBS' : 'auto',
-    };
+	let owner = {
+		...sub,
+		id: (simId--).toString(),
+		buoy: sub.resType === ReservationType.cbs ? 'CBS' : 'auto'
+	};
 
 	let simBuds = [];
 	for (let id of owner.buddies) {

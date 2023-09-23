@@ -1,4 +1,4 @@
-import { getBackUpZip } from '$lib/server/server.js';
+import { getBackUpZip } from '$lib/server/server';
 import { getReservationsCsv } from '$lib/server/reservation';
 
 export async function POST({ request }) {
