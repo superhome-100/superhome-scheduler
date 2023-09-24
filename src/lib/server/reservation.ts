@@ -178,29 +178,30 @@ export async function getReservationsSince(minDateStr: string) {
 }
 
 export function categoryIsBookable(settings: SettingsStore, sub: Submission): boolean {
-	let val;
-	if (sub.category === ReservationCategory.pool) {
-		val = settings.getPoolBookable(sub.date);
-	} else if (sub.category === ReservationCategory.openwater) {
-		if (sub.owTime == OWTime.AM) {
-			val = settings.getOpenwaterAmBookable(sub.date);
-		} else if (sub.owTime == OWTime.PM) {
-			val = settings.getOpenwaterPmBookable(sub.date);
-		} else {
-			throw new Error('invalid OWTime: ' + sub.owTime);
-		}
-	} else if (sub.category === ReservationCategory.classroom) {
-		val = settings.getClassroomBookable(sub.date);
-	} else {
-		throw new Error('invalid category: ' + sub.category);
+	let isBookable = false;
+
+	switch (sub.category) {
+		case ReservationCategory.pool:
+			isBookable = settings.getPoolBookable(sub.date);
+			break;
+		case ReservationCategory.openwater:
+			if (sub.owTime == OWTime.AM) {
+				isBookable = settings.getOpenwaterAmBookable(sub.date);
+			} else {
+				isBookable = settings.getOpenwaterPmBookable(sub.date);
+			}
+			break;
+		case ReservationCategory.classroom:
+			isBookable = settings.getClassroomBookable(sub.date);
+			break;
 	}
 
-	return val;
+	return isBookable;
 }
 
 async function getOverlappingReservations(sub: Submission) {
 	await initSettings();
-	let filters = {
+	const filters = {
 		date: sub.date,
 		$any: getTimeOverlapFilters(Settings, sub),
 		status: { $any: [ReservationStatus.pending, ReservationStatus.confirmed] }
