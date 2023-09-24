@@ -1,16 +1,6 @@
 import { settings } from './stores';
 import { get } from 'svelte/store';
-
-type SettingValue = string | string[] | number | boolean;
-type SettingEntry = {
-	startDate: string;
-	endDate: string;
-	value: SettingValue;
-};
-type Setting = {
-	default: SettingValue;
-	entries: SettingEntry[];
-};
+import type { Setting } from '$types';
 
 export const getOn = (setting: Setting, date?: string) => {
 	let val = setting.default;
@@ -26,6 +16,11 @@ export const getOn = (setting: Setting, date?: string) => {
 };
 
 export type SettingsStore = typeof Settings;
+
+// TODO: encapsulate this in a class that receives a settings object, making it reusable correctly across server and client side
+// client side usage: const settings = initSetting($settings);
+// server side usage: const settings = initSetting(await getSettings());
+// settings.getBoards(date);
 
 export const Settings = {
 	getBoats: (date?: string) => {

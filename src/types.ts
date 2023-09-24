@@ -73,3 +73,14 @@ export type AppFormData = {
 	get: (prop: string) => string;
 	has: (prop: string) => boolean;
 };
+
+export type Setting = {
+	default: string | string[] | boolean | number;
+	entries: {
+		startDate: string; // yyyy-mm-dd
+		endDate: string; // yyyy-mm-dd
+		id: string;
+		name: string;
+		value: string | string[] | boolean | number;
+	}[];
+};
