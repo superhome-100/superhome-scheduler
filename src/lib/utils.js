@@ -1,7 +1,7 @@
 import { startTimes, inc } from './reservationTimes';
 import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils';
 import { reservations, user, users, viewMode } from './stores';
-import { Settings } from './settings';
+import { Settings } from './client/settings';
 import { get } from 'svelte/store';
 import { assignPoolSpaces, patchSchedule } from './autoAssignPool.js';
 
@@ -70,64 +70,6 @@ export const displayTag = (rsv, admin) => {
 	}
 	return tag;
 };
-
-export function parseSettingsTbl(settingsTbl) {
-	let settings = {};
-	let fields = new Set(settingsTbl.map((e) => e.name));
-
-	let fixTypes = (e) => {
-		let name = e.name;
-		let v = e.value;
-		if (
-			[
-				'maxOccupantsPerLane',
-				'maxChargeableOWPerMonth',
-				'refreshIntervalSeconds',
-				'reservationLeadTimeDays'
-			].includes(name)
-		) {
-			v = parseInt(v);
-		}
-		if (name === 'refreshIntervalSeconds') {
-			name = 'refreshInterval';
-			v = v * 1000;
-		}
-		if (
-			[
-				'cbsAvailable',
-				'classroomBookable',
-				'openForBusiness',
-				'openwaterAmBookable',
-				'openwaterPmBookable',
-				'poolBookable'
-			].includes(name)
-		) {
-			v = v === 'true';
-		}
-		if (['poolLanes', 'classrooms', 'boats', 'captains'].includes(name)) {
-			v = v.split(';');
-		}
-
-		return {
-			...e,
-			name,
-			value: v
-		};
-	};
-
-	fields.forEach((field) => {
-		let entries = settingsTbl.filter((e) => e.name === field).map((e) => fixTypes(e));
-		let def = entries.splice(
-			entries.findIndex((e) => e.startDate === 'default'),
-			1
-		)[0];
-		settings[def.name] = {
-			default: def.value,
-			entries
-		};
-	});
-	return settings;
-}
 
 export const badgeColor = (rsvs) => {
 	let approved = rsvs.reduce((sts, rsv) => sts && rsv.status === 'confirmed', true);

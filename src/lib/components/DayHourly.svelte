@@ -1,11 +1,11 @@
-<script>
+<script lang="ts">
 	import { startTimes, endTimes } from '$lib/reservationTimes';
 	import { reservations, users, viewedDate, viewMode } from '$lib/stores';
 	import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils';
 	import { getContext } from 'svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { badgeColor, getDaySchedule } from '$lib/utils.js';
-	import { Settings } from '$lib/settings';
+	import { Settings } from '$lib/client/settings';
 
 	export let resInfo;
 	export let category;

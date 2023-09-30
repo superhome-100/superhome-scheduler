@@ -4,7 +4,7 @@ import {
 	cancelReservation,
 	adminUpdate
 } from '$lib/server/reservation';
-import { insertNotificationReceipt } from '$lib/server/server.js';
+import { insertNotificationReceipt } from '$lib/server/server';
 import { ValidationError } from '$utils/validation';
 import { fail } from '@sveltejs/kit';
 import { updateNickname } from '$lib/server/user';

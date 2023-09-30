@@ -2,17 +2,13 @@ import type { Reservation, Submission } from '$types';
 import type { BuoysRecord } from '$lib/server/xata.codegen';
 import { ReservationType, ReservationCategory, OWTime } from '$types';
 
-import { users } from '$lib/stores';
-import { get } from 'svelte/store';
 import {
 	startTimes,
-	endTimes,
 	beforeResCutoff,
 	beforeCancelCutoff
 } from '$lib/reservationTimes.js';
 import { getUsersById } from '$lib/server/user';
-import type { SettingsStore } from '$lib/settings';
-import { Settings as settings } from '$lib/settings';
+import type { SettingsManager } from '$lib/client/settings';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getNumberOfOccupants } from './reservations';
 import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
@@ -22,7 +18,7 @@ export class ValidationError extends Error {}
 
 const client = getXataClient();
 
-export function getStartTime(settings: SettingsStore, sub: Submission): string {
+export function getStartTime(settings: SettingsManager, sub: Submission): string {
 	if (sub.category === ReservationCategory.openwater) {
 		if (sub.owTime === OWTime.AM) {
 			return settings.getOpenwaterAmStartTime(sub.date);
@@ -44,7 +40,7 @@ const removingBuddy = (orig: Reservation, sub: Reservation) =>
 	sub.buddies.reduce((val, id) => orig.buddies.includes(id) && val, true);
 
 export function throwIfPastUpdateTime(
-	settings: SettingsStore,
+	settings: SettingsManager,
 	orig: Reservation,
 	sub: Reservation
 ) {
@@ -121,7 +117,7 @@ export function checkOWSpaceAvailable(
 }
 
 export function checkPoolSpaceAvailable(
-	settings: SettingsStore,
+	settings: SettingsManager,
 	sub: Submission,
 	overlapping: Reservation[]
 ) {
@@ -149,7 +145,7 @@ export function checkPoolSpaceAvailable(
 }
 
 export const checkClassroomAvailable = (
-	settings: SettingsStore,
+	settings: SettingsManager,
 	sub: Submission,
 	overlapping: Reservation[]
 ) => {
@@ -168,11 +164,11 @@ export const checkClassroomAvailable = (
 function simulateBuddyGroup(sub: Submission) {
 	// add fields that db normally adds to this submission and its buddies
 	let simId = -1;
-	let owner = { 
-        ...sub,
-        id: (simId--).toString(),
-        buoy: sub.resType === ReservationType.cbs ? 'CBS' : 'auto',
-    };
+	let owner = {
+		...sub,
+		id: (simId--).toString(),
+		buoy: sub.resType === ReservationType.cbs ? 'CBS' : 'auto'
+	};
 
 	let simBuds = [];
 	for (let id of owner.buddies) {
@@ -200,7 +196,7 @@ export const throwIfUserIsDisabled = async (userIds: string[]) => {
 };
 
 export async function throwIfNoSpaceAvailable(
-	settings: SettingsStore,
+	settings: SettingsManager,
 	sub: Submission,
 	allOverlappingRsvs: Reservation[],
 	ignore: string[] = []

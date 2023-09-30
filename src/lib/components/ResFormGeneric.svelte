@@ -2,7 +2,7 @@
 	import type { Reservation, BuddyData } from '$types';
 	import { ReservationStatus, ReservationCategory } from '$types';
 	import { canSubmit, user, users } from '$lib/stores';
-	import { Settings } from '$lib/settings';
+	import { Settings } from '$lib/client/settings';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes';
 	import { adminView, isMyReservation } from '$lib/utils.js';
 	import { PanglaoDate } from '$lib/datetimeUtils';
