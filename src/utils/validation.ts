@@ -11,8 +11,8 @@ import {
 	beforeCancelCutoff
 } from '$lib/reservationTimes.js';
 import { getUsersById } from '$lib/server/user';
-import type { SettingsStore } from '$lib/settings';
-import { Settings as settings } from '$lib/settings';
+import type { SettingsStore } from '$lib/client/settings';
+import { Settings as settings } from '$lib/client/settings';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getNumberOfOccupants } from './reservations';
 import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';

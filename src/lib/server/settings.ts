@@ -1,19 +1,24 @@
 import { getXataClient } from '$lib/server/xata-old';
 import { parseSettingsTbl } from '$lib/utils.js';
-import { settings } from '$lib/stores';
-import { get } from 'svelte/store';
-import type { Setting } from '$types';
+import type { Settings } from '$types';
+
+import { getSettingsManager, type SettingsManager as SM } from '$lib/settingsManager';
 
 const xata = getXataClient();
 
+let settings: Settings;
+
 // TODO: svelte stores are not meant to be used in server-side code
 export const initSettings = async () => {
-	if (Object.keys(get(settings)).length === 0) {
-		settings.set(await getSettings());
+	if (!settings) {
+		settings = await getSettings();
 	}
+	return getSettingsManager(settings);
 };
 
-export const getSettings = async (): Promise<{ [key: string]: Setting }> => {
+export const getSettings = async (): Promise<Settings> => {
 	const settingsTbl = await xata.db.Settings.getAll();
-	return parseSettingsTbl(settingsTbl) as { [key: string]: Setting };
+	return parseSettingsTbl(settingsTbl) as Settings;
 };
+
+export type SettingsManager = SM

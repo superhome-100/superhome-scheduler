@@ -1,7 +1,7 @@
 <script>
 	import { canSubmit, buoys, reservations } from '$lib/stores';
 	import { adminView, buoyDesc, isMyReservation } from '$lib/utils.js';
-	import { Settings } from '$lib/settings';
+	import { Settings } from '$lib/client/settings.ts';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 
 	export let rsv = null;

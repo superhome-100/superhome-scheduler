@@ -1,4 +1,4 @@
-import type { SettingsStore } from '$lib/settings';
+import type { SettingsStore } from '$lib/client/settings';
 import { ReservationCategory } from '$types';
 import * as dtu from './datetimeUtils';
 

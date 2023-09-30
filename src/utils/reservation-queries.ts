@@ -1,5 +1,5 @@
 import type { Submission } from '$types';
-import type { SettingsStore } from '$lib/settings';
+import type { SettingsStore } from '$lib/client/settings';
 import { OWTime, ReservationCategory } from '$types';
 import { startTimes, endTimes } from '$lib/reservationTimes';
 import { timeStrToMin } from '$lib/datetimeUtils';

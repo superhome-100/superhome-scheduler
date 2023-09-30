@@ -1,6 +1,6 @@
 import { inc, startTimes } from '$lib/reservationTimes';
 import { timeStrToMin } from '$lib/datetimeUtils';
-import { Settings } from '$lib/settings';
+import { Settings } from '$lib/client/settings';
 import { getNumberOfOccupants } from '$utils/reservations';
 
 // priority rules:

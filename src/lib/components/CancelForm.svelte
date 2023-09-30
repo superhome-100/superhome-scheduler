@@ -1,13 +1,10 @@
 <script>
 	import { getContext } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { user, users, reservations } from '$lib/stores';
-	import { beforeCancelCutoff } from '$lib/reservationTimes';
-	import { Settings } from '$lib/settings';
+	import { users, reservations } from '$lib/stores';
 	import { toast } from 'svelte-french-toast';
 	import { removeRsv } from '$lib/utils.js';
 	import { popup } from '$lib/components/Popup.svelte';
-	import Spinner from '$lib/components/spinner.svelte';
 
 	export let rsv;
 	export let hasForm = false;

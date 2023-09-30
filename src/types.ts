@@ -74,6 +74,36 @@ export type AppFormData = {
 	has: (prop: string) => boolean;
 };
 
+// if there are new setting type add it here
+export enum SettingTypes {
+	boats = 'boats',
+	cancelationCutOffTime = 'cancelationCutOffTime',
+	cbsAvailable = 'cbsAvailable',
+	classroomBookable = 'classroomBookable',
+	classroomLabel = 'classroomLabel',
+	classrooms = 'classrooms',
+	maxChargeableOWPerMonth = 'maxChargeableOWPerMonth',
+	maxClassroomEndTime = 'maxClassroomEndTime',
+	maxOccupantsPerLane = 'maxOccupantsPerLane',
+	maxPoolEndTime = 'maxPoolEndTime',
+	minClassroomStartTime = 'minClassroomStartTime',
+	minPoolStartTime = 'minPoolStartTime',
+	openForBusiness = 'openForBusiness',
+	openwaterAmBookable = 'openwaterAmBookable',
+	openwaterAmEndTime = 'openwaterAmEndTime',
+	openwaterAmStartTime = 'openwaterAmStartTime',
+	openwaterPmBookable = 'openwaterPmBookable',
+	openwaterPmEndTime = 'openwaterPmEndTime',
+	openwaterPmStartTime = 'openwaterPmStartTime',
+	poolBookable = 'poolBookable',
+	poolLabel = 'poolLabel',
+	poolLanes = 'poolLanes',
+	refreshIntervalSeconds = 'refreshIntervalSeconds',
+	reservationCutOffTime = 'reservationCutOffTime',
+	reservationIncrement = 'reservationIncrement',
+	reservationLeadTimeDays = 'reservationLeadTimeDays'
+}
+
 export type Setting = {
 	default: string | string[] | boolean | number;
 	entries: {
@@ -83,4 +113,8 @@ export type Setting = {
 		name: string;
 		value: string | string[] | boolean | number;
 	}[];
+};
+
+export type Settings = {
+	[key in SettingTypes]: Setting;
 };

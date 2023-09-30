@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import {
 		buoys,
 		boatAssignments,
@@ -14,7 +14,7 @@
 	import { getContext } from 'svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { badgeColor, buoyDesc } from '$lib/utils.js';
-	import { Settings } from '$lib/settings';
+	import { Settings } from '$lib/client/settings';
 
 	const { open } = getContext('simple-modal');
 
