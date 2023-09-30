@@ -68,10 +68,7 @@
 			$loginState = 'out';
 		} else if ($user.status === 'disabled') {
 			popup(
-				'User ' +
-					$user.name +
-					' does not have permission ' +
-					'to access this app; please contact the admin for help'
+				'You have signed up SuperHOME Scheduler, please contact SuperHOME admins to activate your account'
 			);
 			callLogout();
 		} else if ($user.status === 'active') {
