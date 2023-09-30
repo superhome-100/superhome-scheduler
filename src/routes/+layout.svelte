@@ -1,16 +1,26 @@
 <script lang="ts">
 	import '../app.postcss';
 	import _ from 'lodash';
+	import dayjs from 'dayjs';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { toast, Toaster } from 'svelte-french-toast';
+	import { FacebookAuth } from '@beyonk/svelte-social-auth';
+	import { onMount } from 'svelte';
+	import { PUBLIC_FACEBOOK_APP_ID } from '$env/static/public';
+
+	// done move this 2 lines this has to initialize first
+	// everything above should have nothing to do with with the settings store
+	// TODO: reduce usage of $Settings on non-component libs
+	export let data; // has data = { settings } parsed from xata
+	$settings = data.settings;
+
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import Nprogress from '$lib/components/Nprogress.svelte';
 	import Spinner from '$lib/components/spinner.svelte';
 	import Popup, { popup } from '$lib/components/Popup.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Notification from '$lib/components/Notification.svelte';
-	import { PUBLIC_FACEBOOK_APP_ID } from '$env/static/public';
-	import dayjs from 'dayjs';
 	import {
 		boatAssignments,
 		buoys,
@@ -27,8 +37,6 @@
 	} from '$lib/stores';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { login, logout } from '$lib/authentication';
-	import { toast, Toaster } from 'svelte-french-toast';
-	import { FacebookAuth } from '@beyonk/svelte-social-auth';
 	import {
 		getAppData,
 		getBoatAssignments,
@@ -37,12 +45,8 @@
 		getUserPastReservations,
 		getUserNotifications
 	} from '$lib/api';
-	import { onMount } from 'svelte';
 
 	let intervalId: number | undefined;
-
-	export let data; // has data = { settings } parsed from xata
-	$settings = data.settings;
 
 	$: if ($loginState === 'out' && $page.route.id != '/') {
 		goto('/');
@@ -67,10 +71,7 @@
 			$loginState = 'out';
 		} else if ($user.status === 'disabled') {
 			popup(
-				'User ' +
-					$user.name +
-					' does not have permission ' +
-					'to access this app; please contact the admin for help'
+				'You have signed up SuperHOME Scheduler, please contact SuperHOME admins to activate your account'
 			);
 			callLogout();
 		} else if ($user.status === 'active') {

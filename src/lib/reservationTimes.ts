@@ -1,19 +1,19 @@
-import type { SettingsStore } from '$lib/settings';
+import type { SettingsManager } from '$lib/client/settings';
 import { ReservationCategory } from '$types';
 import * as dtu from './datetimeUtils';
 
-export const minPoolStart = (stns: SettingsStore, date: string): number =>
+export const minPoolStart = (stns: SettingsManager, date: string): number =>
 	dtu.timeStrToMin(stns.getMinPoolStartTime(date));
-export const maxPoolEnd = (stns: SettingsStore, date: string): number =>
+export const maxPoolEnd = (stns: SettingsManager, date: string): number =>
 	dtu.timeStrToMin(stns.getMaxPoolEndTime(date));
-export const minClassroomStart = (stns: SettingsStore, date: string): number =>
+export const minClassroomStart = (stns: SettingsManager, date: string): number =>
 	dtu.timeStrToMin(stns.getMinClassroomStartTime(date));
-export const maxClassroomEnd = (stns: SettingsStore, date: string): number =>
+export const maxClassroomEnd = (stns: SettingsManager, date: string): number =>
 	dtu.timeStrToMin(stns.getMaxClassroomEndTime(date));
-export const resCutoff = (stns: SettingsStore, date: string): number =>
+export const resCutoff = (stns: SettingsManager, date: string): number =>
 	dtu.timeStrToMin(stns.getReservationCutOffTime(date));
 export const cancelCutoff = (
-	stns: SettingsStore,
+	stns: SettingsManager,
 	cat: ReservationCategory,
 	date: string
 ): number => {
@@ -23,13 +23,13 @@ export const cancelCutoff = (
 		return dtu.timeStrToMin(stns.getCancelationCutOffTime(date));
 	}
 };
-export const inc = (stns: SettingsStore, date: string): number =>
+export const inc = (stns: SettingsManager, date: string): number =>
 	dtu.timeStrToMin(stns.getReservationIncrement(date));
 
 export const minuteOfDay = (date: Date): number => date.getHours() * 60 + date.getMinutes();
 
 export function validReservationDate(
-	stns: SettingsStore,
+	stns: SettingsManager,
 	date: Date,
 	category: ReservationCategory
 ) {
@@ -37,7 +37,7 @@ export function validReservationDate(
 }
 
 export function beforeResCutoff(
-	stns: SettingsStore,
+	stns: SettingsManager,
 	dateStr: string,
 	startTime: string,
 	category: ReservationCategory
@@ -59,7 +59,7 @@ export function beforeResCutoff(
 }
 
 export function beforeCancelCutoff(
-	stns: SettingsStore,
+	stns: SettingsManager,
 	dateStr: string,
 	startTime: string,
 	category: ReservationCategory
@@ -75,25 +75,25 @@ export function beforeCancelCutoff(
 		);
 }
 
-const minStart = (stns: SettingsStore, dateStr: string, cat: ReservationCategory) =>
+const minStart = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
 	cat === ReservationCategory.pool ? minPoolStart(stns, dateStr) : minClassroomStart(stns, dateStr);
-const maxEnd = (stns: SettingsStore, dateStr: string, cat: ReservationCategory) =>
+const maxEnd = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
 	cat === ReservationCategory.pool ? maxPoolEnd(stns, dateStr) : maxClassroomEnd(stns, dateStr);
 
-const nRes = (stns: SettingsStore, dateStr: string, cat: ReservationCategory) =>
+const nRes = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
 	Math.floor((maxEnd(stns, dateStr, cat) - minStart(stns, dateStr, cat)) / inc(stns, dateStr));
 
-export const startTimes = (stns: SettingsStore, dateStr: string, cat: ReservationCategory) =>
+export const startTimes = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
 	Array(nRes(stns, dateStr, cat))
 		.fill(undefined)
 		.map((v, i) => dtu.minToTimeStr(minStart(stns, dateStr, cat) + i * inc(stns, dateStr)));
 
-export const endTimes = (stns: SettingsStore, dateStr: string, cat: ReservationCategory) =>
+export const endTimes = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
 	Array(nRes(stns, dateStr, cat))
 		.fill(undefined)
 		.map((v, i) => dtu.minToTimeStr(minStart(stns, dateStr, cat) + (i + 1) * inc(stns, dateStr)));
 
-export function minValidDate(stns: SettingsStore, category: ReservationCategory) {
+export function minValidDate(stns: SettingsManager, category: ReservationCategory) {
 	let today = dtu.PanglaoDate();
 	let todayStr = dtu.datetimeToLocalDateStr(today);
 	let d = dtu.PanglaoDate();
@@ -113,12 +113,12 @@ export function minValidDate(stns: SettingsStore, category: ReservationCategory)
 	return d;
 }
 
-export function minValidDateStr(stns: SettingsStore, category: ReservationCategory) {
+export function minValidDateStr(stns: SettingsManager, category: ReservationCategory) {
 	let d = minValidDate(stns, category);
 	return dtu.datetimeToLocalDateStr(d);
 }
 
-export function maxValidDate(stns: SettingsStore) {
+export function maxValidDate(stns: SettingsManager) {
 	let today = dtu.PanglaoDate();
 	let todayStr = dtu.datetimeToLocalDateStr(today);
 	let maxDay = dtu.PanglaoDate();
@@ -126,6 +126,6 @@ export function maxValidDate(stns: SettingsStore) {
 	return maxDay;
 }
 
-export function maxValidDateStr(stns: SettingsStore) {
+export function maxValidDateStr(stns: SettingsManager) {
 	return dtu.datetimeToLocalDateStr(maxValidDate(stns));
 }

@@ -5,7 +5,7 @@
 	import ModifyForm from '$lib/components/ModifyForm.svelte';
 	import { user, users } from '$lib/stores';
 	import { beforeResCutoff, beforeCancelCutoff } from '$lib/reservationTimes';
-	import { Settings } from '$lib/settings';
+	import { Settings } from '$lib/client/settings.ts';
 
 	export let rsvs;
 	export let hasForm;

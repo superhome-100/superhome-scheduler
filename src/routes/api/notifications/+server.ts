@@ -1,5 +1,5 @@
 import { getUserByCookies } from '$lib/server/user';
-import { getUserActiveNotifications } from '$lib/server/server.js';
+import { getUserActiveNotifications } from '$lib/server/server';
 import { json, type RequestEvent } from '@sveltejs/kit';
 
 export async function GET({ cookies }: RequestEvent) {
