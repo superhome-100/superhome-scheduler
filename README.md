@@ -68,7 +68,7 @@ xata init
 Global settings are defined in the `Settings` table on xata. The table consists of four columns: `name`, `value`, `startDate`, `endDate`.<br><br>
 The `value` column is a string type, but the true data type for each setting may be different. Each setting variable is converted to its true data type in the function `parseSettingsTbl` in `src/lib/utils.js`<br><br>
 The `startDate` and `endDate` fields indicate the date range within which the given value applies. `startDate` and `endDate` values of `default` indicate that the value applies whenever a specific date range that includes the current date is not defined.<br><br>
-On the client, settings are retrieved via the `src/lib/settings` module, while on the server, they are retrieved via `src/lib/server/settings`. The reason for separate storage code for client and server is that the client uses a svelte store to cache the variables, and the server cannot use svelte stores.
+On the client, settings are retrieved via the `src/lib/client/settings` module, while on the server, they are retrieved via `src/lib/server/settings`. The reason for separate storage code for client and server is that the client uses a svelte store to cache the variables, and the server cannot use svelte stores.
 
 ### Client-side code
 

@@ -8,7 +8,6 @@ import {
 	timeStrToMin,
 	firstOfMonthStr
 } from '$lib/datetimeUtils';
-import { Settings } from '$lib/settings';
 import { initSettings } from '$lib/server/settings';
 
 const unpackTemplate = (uT) => {
@@ -65,14 +64,14 @@ const getStart = (rsv, amOWTime, pmOWTime) => {
 
 export async function GET() {
 	try {
-		await initSettings();
+		const settings = await initSettings();
 
 		let d = datetimeInPanglaoFromServer();
 		let date = datetimeToDateStr(d);
 		let time = d.getHours() * 60 + d.getMinutes();
-		let maxChgbl = Settings.getMaxChargeableOWPerMonth(date);
-		let amOWStart = timeStrToMin(Settings.getOpenwaterAmStartTime(date));
-		let pmOWStart = timeStrToMin(Settings.getOpenwaterPmStartTime(date));
+		let maxChgbl = settings.getMaxChargeableOWPerMonth(date);
+		let amOWStart = timeStrToMin(settings.getOpenwaterAmStartTime(date));
+		let pmOWStart = timeStrToMin(settings.getOpenwaterPmStartTime(date));
 
 		let { oldRsvs, newRsvs } = await getOldAndNewRsvs(date);
 		if (newRsvs.length > 0) {

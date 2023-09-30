@@ -1,7 +1,7 @@
 import { startTimes, inc } from './reservationTimes';
 import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils';
 import { reservations, user, users, viewMode } from './stores';
-import { Settings } from './settings';
+import { Settings } from './client/settings';
 import { get } from 'svelte/store';
 import { assignPoolSpaces, patchSchedule } from './autoAssignPool.js';
 

@@ -1,14 +1,12 @@
 import type { SelectableColumn, EditableData } from '@xata.io/client';
-import type { UsersRecord, ReservationsRecord } from './xata.codegen';
+import type { ReservationsRecord } from './xata.codegen';
 import type { AppFormData, Reservation, ReservationXata, Submission } from '$types';
-import type { SettingsStore } from '$lib/settings';
 
 import { ReservationCategory, ReservationStatus, ReservationType, OWTime } from '$types';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getXataClient } from '$lib/server/xata-old';
 import { getTimeOverlapFilters } from '$utils/reservation-queries';
-import { Settings } from '$lib/settings';
-import { initSettings } from './settings';
+import { initSettings, type SettingsManager } from './settings';
 import {
 	getStartTime,
 	throwIfNoSpaceAvailable,
@@ -124,7 +122,7 @@ export function throwIfReservationIsInvalid(rsv: ReservationXata | null): Reserv
 	return rsv;
 }
 
-const getAugmentedRsv = (settings: SettingsStore, rsv: Reservation): Reservation => {
+const getAugmentedRsv = (settings: SettingsManager, rsv: Reservation): Reservation => {
 	let buddies = rsv.buddies;
 	let startTime = rsv.startTime;
 	let endTime = rsv.endTime;
@@ -150,14 +148,14 @@ const getAugmentedRsv = (settings: SettingsStore, rsv: Reservation): Reservation
 };
 
 export async function convertFromXataToAppType(rawRsvs: (ReservationXata | null)[]) {
-	await initSettings();
+	const settings = await initSettings();
 
 	// make sure it's safe to cast to the Reservation type
 	let reservations = <Reservation[]>rawRsvs.map((rsv) => throwIfReservationIsInvalid(rsv));
 
 	// add values used by app that Reservations table doesn't include
 	return reservations.map((rsv) => {
-		return getAugmentedRsv(Settings, rsv);
+		return getAugmentedRsv(settings, rsv);
 	});
 }
 
@@ -177,7 +175,7 @@ export async function getReservationsSince(minDateStr: string) {
 	return reservations;
 }
 
-export function categoryIsBookable(settings: SettingsStore, sub: Submission): boolean {
+export function categoryIsBookable(settings: SettingsManager, sub: Submission): boolean {
 	let isBookable = false;
 
 	switch (sub.category) {
@@ -200,10 +198,10 @@ export function categoryIsBookable(settings: SettingsStore, sub: Submission): bo
 }
 
 async function getOverlappingReservations(sub: Submission) {
-	await initSettings();
+	const settings = await initSettings();
 	const filters = {
 		date: sub.date,
-		$any: getTimeOverlapFilters(Settings, sub),
+		$any: getTimeOverlapFilters(settings, sub),
 		status: { $any: [ReservationStatus.pending, ReservationStatus.confirmed] }
 	};
 	const overlapping = await client.db.Reservations.filter(filters).getAll();
@@ -216,13 +214,13 @@ async function getUserOverlappingReservations(sub: Reservation, userIds: string[
 }
 
 async function throwIfSubmissionIsInvalid(sub: Submission) {
-	await initSettings();
+	const settings = await initSettings();
 
-	if (!Settings.getOpenForBusiness(sub.date)) {
+	if (!settings.getOpenForBusiness(sub.date)) {
 		throw new ValidationError('We are closed on this date; please choose a different date');
 	}
 
-	if (!categoryIsBookable(Settings, sub)) {
+	if (!categoryIsBookable(settings, sub)) {
 		throw new ValidationError(
 			`The ${sub.category} is not bookable on this date; please choose a different date`
 		);
@@ -232,7 +230,7 @@ async function throwIfSubmissionIsInvalid(sub: Submission) {
 
 	await throwIfUserIsDisabled(userIds);
 
-	if (!beforeResCutoff(Settings, sub.date, getStartTime(Settings, sub), sub.category)) {
+	if (!beforeResCutoff(settings, sub.date, getStartTime(settings, sub), sub.category)) {
 		throw new ValidationError(
 			'The submission window for this reservation date/time has expired. Please choose a later date.'
 		);
@@ -247,7 +245,7 @@ async function throwIfSubmissionIsInvalid(sub: Submission) {
 		);
 	}
 
-	await throwIfNoSpaceAvailable(Settings, sub, allOverlappingRsvs);
+	await throwIfNoSpaceAvailable(settings, sub, allOverlappingRsvs);
 }
 
 function createBuddyEntriesForSubmit(sub: Submission) {
@@ -303,19 +301,19 @@ export async function submitReservation(formData: AppFormData) {
 }
 
 async function throwIfUpdateIsInvalid(sub: Reservation, orig: Reservation, ignore: string[]) {
-	await initSettings();
+	const settings = await initSettings();
 
-	if (!Settings.getOpenForBusiness(sub.date)) {
+	if (!settings.getOpenForBusiness(sub.date)) {
 		throw new ValidationError('We are closed on this date; please choose a different date');
 	}
 
-	if (!categoryIsBookable(Settings, sub)) {
+	if (!categoryIsBookable(settings, sub)) {
 		throw new ValidationError(
 			`The ${sub.category} is not bookable on this date; please choose a different date`
 		);
 	}
 
-	throwIfPastUpdateTime(Settings, orig, sub);
+	throwIfPastUpdateTime(settings, orig, sub);
 
 	let allOverlappingRsvs = await getOverlappingReservations(sub);
 
@@ -324,7 +322,7 @@ async function throwIfUpdateIsInvalid(sub: Reservation, orig: Reservation, ignor
 	let userIds = [sub.user.id, ...sub.buddies];
 	throwIfOverlappingReservation(orig, allOverlappingRsvs, userIds);
 
-	await throwIfNoSpaceAvailable(Settings, sub, allOverlappingRsvs, ignore);
+	await throwIfNoSpaceAvailable(settings, sub, allOverlappingRsvs, ignore);
 }
 
 async function createBuddyEntriesForUpdate(sub: Reservation, orig: Reservation) {
@@ -482,8 +480,8 @@ export async function adminUpdate(formData: AppFormData) {
 }
 
 async function throwIfInvalidCancellation(data: Reservation) {
-	await initSettings();
-	if (!beforeCancelCutoff(Settings, data.date, data.startTime, data.category)) {
+	const settings = await initSettings();
+	if (!beforeCancelCutoff(settings, data.date, data.startTime, data.category)) {
 		throw new ValidationError(
 			'The cancellation window for this reservation has expired; this reservation can no longer be canceled'
 		);

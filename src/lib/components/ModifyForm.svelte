@@ -7,9 +7,8 @@
 	import ResFormPool from './ResFormPool.svelte';
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
-	import { popup } from './Popup.svelte';
 	import { users, reservations } from '$lib/stores';
-	import { Settings } from '$lib/settings';
+	import { Settings } from '$lib/client/settings';
 	import { removeRsv, cleanUpFormDataBuddyFields } from '$lib/utils.js';
 
 	export let hasForm = false;
