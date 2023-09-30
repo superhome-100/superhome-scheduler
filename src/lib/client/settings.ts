@@ -1,7 +1,8 @@
 import { settings } from '../stores';
 import { get } from 'svelte/store';
 import type { Setting } from '$types';
-import { getSettingsManager, type SettingsManager } from '../settingsManager';
+import { getSettingsManager } from '../settingsManager';
+export type { SettingsManager } from '../settingsManager';
 
 export const getOn = (setting: Setting, date?: string) => {
 	let val = setting.default;
@@ -15,8 +16,6 @@ export const getOn = (setting: Setting, date?: string) => {
 	}
 	return val;
 };
-
-export type SettingsStore = SettingsManager;
 
 // does this actually get initiallized correctly?
 export let Settings = getSettingsManager(get(settings));
