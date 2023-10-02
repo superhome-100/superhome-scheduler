@@ -17,7 +17,7 @@
 	export let resType: null | 'course' | 'autonomous' = null;
 	export let viewOnly = false;
 	export let restrictModify = false;
-	export let maxNumStudents = 4;
+	export let maxNumStudents = 6;
 	export let maxTimeHours = 4;
 	export let error = '';
 
