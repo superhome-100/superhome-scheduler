@@ -22,12 +22,13 @@ export const getSettings = async (): Promise<Settings> => {
 	return parseSettingsTbl(settingsTbl);
 };
 
-
-export function parseSettingsTbl(settingsTbl: Readonly<SelectedPick<SettingsRecord, ["*"]>>[]): Settings {
-	let settings: {[key: string]: Setting } = {};
+export function parseSettingsTbl(
+	settingsTbl: Readonly<SelectedPick<SettingsRecord, ['*']>>[]
+): Settings {
+	let settings: { [key: string]: Setting } = {};
 	let fields = new Set(settingsTbl.map((e) => e.name));
 
-	let fixTypes = (e: SelectedPick<SettingsRecord, ["*"]>) => {
+	let fixTypes = (e: SelectedPick<SettingsRecord, ['*']>) => {
 		let name = e.name!;
 		let v: any = e.value!;
 		if (
@@ -83,5 +84,4 @@ export function parseSettingsTbl(settingsTbl: Readonly<SelectedPick<SettingsReco
 	return settings as Settings;
 }
 
-
-export type SettingsManager = SM
+export type SettingsManager = SM;

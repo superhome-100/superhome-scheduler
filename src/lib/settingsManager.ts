@@ -97,4 +97,4 @@ export const getSettingsManager = (settings: Settings) => {
 	return settingsManager;
 };
 
-export type SettingsManager =  ReturnType<typeof getSettingsManager>;
+export type SettingsManager = ReturnType<typeof getSettingsManager>;

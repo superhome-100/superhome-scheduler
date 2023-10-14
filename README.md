@@ -8,46 +8,41 @@ Serverless hosting on [vercel](https://vercel.com)
 
 Database on [xata](https://xata.io)
 
-## Install
+# Tasks
+
+## install
 
 Setup [tea/cli](https://tea.xyz) first.
 
 ```bash
 cd superhome-scheduler
-npm install
+pnpm install
 ```
 
 Facebook Login requires `https`. Additional dependencies may need to be installed to enable this in your dev environment.
 
-## Developing
+## dev
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
-## Tasks
-
-# Setup
+## setup
 
 This will configure your connection to the database
 
 ```sh
-npm install -g @xata.io/cli@latest
-npm install
+pnpm add -g @xata.io/cli@latest
+pnpm
 xata auth login
 xata init
 ```
 
 ## Dependencies
 
-[`tea/cli`] will automagically make these available to your environment.
+[`pkgx`] will automagically make the package dependencies available to your environment.
 
-| Project    | Version  |
-| ---------- | -------- |
-| nodejs.org | =18.15.0 |
-| npmjs.com  | =8.19.3  |
-
-[`tea/cli`]: https://github.com/teaxyz/cli
+[`pkgx`]: https://docs.pkgx.sh/run-anywhere/terminals
 
 ## Documentation
 

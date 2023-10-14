@@ -79,10 +79,11 @@
 			</div>
 		{/if}
 		<div>
-			<select id="formOwTime" {disabled} name="owTime" value={owTime}>
+			<select id="formOwTime" {disabled} name="owTimeManual" value={owTime}>
 				<option value="AM">AM</option>
 				<option value="PM">PM</option>
 			</select>
+			<input type="hidden" name="owTime" value={owTime} />
 		</div>
 		{#if disabled || rsv != null}
 			<input type="hidden" name="resType" value={resType} />
