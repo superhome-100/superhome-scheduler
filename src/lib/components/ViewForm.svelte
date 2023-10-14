@@ -16,6 +16,8 @@
 
 	const { close } = getContext('simple-modal');
 
+	let adminComments = '';
+
 	const rsvChanged = (orig, form) => {
 		if (orig.status != form.get('status')) {
 			return true;
@@ -110,6 +112,16 @@
 		{/if}
 		<input type="hidden" name="id" value={rsv.id} />
 		{#if adminView(true)}
+			<div class="">
+				<label for="admin_comments" class="text-white">Admin Comments</label>
+				<textarea
+					id="adminComments"
+					name="admin_comments"
+					class="w-44 xs:w-52 mb-4"
+					bind:value={adminComments}
+					tabindex="4"
+				/>
+			</div>
 			<div class="[&>*]:mx-auto w-full inline-flex items-center justify-between">
 				<button formaction="/?/adminUpdateRejected" class="bg-status-rejected px-3 py-1"
 					>Reject</button

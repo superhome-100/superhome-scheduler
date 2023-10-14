@@ -264,7 +264,8 @@ const buoyProSafety = 'PRO_SAFETY';
 const buoyCBS = 'CBS';
 
 function unpackSubmitForm(formData: AppFormData): Submission {
-	const category = ReservationCategory[formData.get('category') as keyof typeof ReservationCategory];
+	const category =
+		ReservationCategory[formData.get('category') as keyof typeof ReservationCategory];
 	const status =
 		category == ReservationCategory.openwater
 			? ReservationStatus.pending
