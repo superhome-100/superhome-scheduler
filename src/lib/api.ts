@@ -92,6 +92,5 @@ export const getOWAdminComments = async (date: string) => {
 	} catch (error) {
 		console.error('getOWAdminComments: error getting admin ow comments', error);
 	}
-	console.log('getOWAdminComments: adminComments', adminComments);
 	return adminComments;
 };
