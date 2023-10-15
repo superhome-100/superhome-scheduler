@@ -8,10 +8,22 @@ import { insertNotificationReceipt } from '$lib/server/server';
 import { ValidationError } from '$utils/validation';
 import { fail } from '@sveltejs/kit';
 import { updateNickname } from '$lib/server/user';
+import { upsertOWReservationAdminComments } from '$lib/server/ow';
 
 const adminUpdateGeneric = async ({ request }) => {
 	const data = await request.formData();
+	console.log(data);
 	const record = await adminUpdate(data);
+
+	const adminComment = data.get('admin_comments');
+	if (adminComment) {
+		await upsertOWReservationAdminComments({
+			comment: adminComment,
+			date: data.get('date'),
+			buoy: data.get('buoy'),
+			am_pm: data.get('owTime')
+		});
+	}
 	return record;
 };
 

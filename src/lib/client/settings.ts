@@ -23,4 +23,4 @@ export let Settings = getSettingsManager(get(settings));
 // TODO: this is absolutely wrong, but its a hack for now.
 settings.subscribe((newSettings) => {
 	Settings = getSettingsManager(newSettings);
-})
+});

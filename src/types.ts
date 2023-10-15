@@ -44,7 +44,8 @@ export enum OWTime {
 export enum ReservationType {
 	autonomous = 'autonomous',
 	course = 'course',
-	cbs = 'cbs'
+	cbs = 'cbs',
+	proSafety = 'proSafety'
 }
 
 export enum ReservationCategory {

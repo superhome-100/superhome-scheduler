@@ -1,4 +1,4 @@
-import type { UsersRecord } from './server/xata.codegen';
+import type { UsersRecord, BuoyGroupings } from './server/xata.codegen';
 
 // TODO: fix this type
 export const getBuoys = async () => {
@@ -76,4 +76,21 @@ export const getUserNotifications = async () => {
 	const response = await fetch('/api/notifications');
 	const notifications = (await response.json()) as any[];
 	return notifications;
+};
+
+export const getOWAdminComments = async (date: string) => {
+	const response = await fetch(`/api/ow/${date}/admin-comments`);
+
+	let adminComments: BuoyGroupings[] = [];
+	try {
+		const res = await response.json();
+		if (res.message) {
+			throw new Error(res.message);
+		} else {
+			adminComments = res as BuoyGroupings[];
+		}
+	} catch (error) {
+		console.error('getOWAdminComments: error getting admin ow comments', error);
+	}
+	return adminComments;
 };
