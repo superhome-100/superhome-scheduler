@@ -1,5 +1,6 @@
 import type { BuoyGroupings } from './xata.codegen';
 import { getXataClient } from '$lib/server/xata-old';
+import { get } from 'svelte/store';
 
 interface BuoyGroupingComment {
 	buoy: string;
@@ -26,4 +27,12 @@ export const upsertOWReservationAdminComments = async (data: BuoyGroupingComment
 		await client.db.BuoyGroupings.update(recordId, { comment });
 		console.log('updated buoy comment', recordId);
 	}
+};
+
+export const getOWReservationAdminComments = async (date: string): Promise<BuoyGroupings[]> => {
+	const client = getXataClient();
+	const data = await client.db.BuoyGroupings.filter({
+		date: new Date(date)
+	}).getMany();
+	return data;
 };

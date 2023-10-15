@@ -11,10 +11,12 @@
 	import { datetimeToLocalDateStr as dtToLDS } from '$lib/datetimeUtils';
 	import { displayTag } from '$lib/utils.js';
 	import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
-	import { getContext } from 'svelte';
+	import { getContext, onMount } from 'svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { badgeColor, buoyDesc } from '$lib/utils.js';
 	import { Settings } from '$lib/client/settings';
+	import { getOWAdminComments } from '$lib/api';
+	import type { BuoyGroupings } from '$lib/server/xata.codegen';
 
 	const { open } = getContext('simple-modal');
 
@@ -51,14 +53,17 @@
 	const heightUnit = 2; //rem
 	const blkMgn = 0.25; // dependent on tailwind margin styling
 
+	// TODO: remove this, this should be done by css automatically but would require full reorganization of html
 	$: rowHeights = $buoys.reduce((o, b) => {
 		let nRes = Math.max(
 			schedule.AM[b.name] ? schedule.AM[b.name].length : 0,
 			schedule.PM[b.name] ? schedule.PM[b.name].length : 0
 		);
+		const hasAdminComments = adminComments.some((c) => c.buoy === b.name);
+		const baseHeight = nRes * heightUnit + (hasAdminComments ? heightUnit * 2 : 0);
 		o[b.name] = {
-			header: nRes * heightUnit,
-			buoy: nRes * heightUnit - blkMgn,
+			header: baseHeight,
+			buoy: baseHeight - blkMgn,
 			margins: [...Array(nRes).keys()].map((idx) => {
 				const outer = (nRes * heightUnit - blkMgn - 1.25 * nRes) / 2;
 				let top, btm;
@@ -114,12 +119,21 @@
 
 	$: date = dtToLDS($viewedDate);
 	$: boats = Settings.getBoats(date);
-	$: boatCounts = boats.reduce((bc, b) => {
-		bc[b] = 0;
-		return bc;
-	}, {});
 	$: displayBuoys = sortByBoat($buoys, $boatAssignments[date]);
 
+	let adminComments: BuoyGroupings[] = [];
+
+	const loadAdminComments = async () => {
+		if (date) {
+			adminComments = await getOWAdminComments(date);
+			console.log('date', date, adminComments);
+		} else {
+			adminComments = [];
+		}
+	};
+	$: {
+		$viewedDate && loadAdminComments();
+	}
 	const displayValue = (buoy) => {
 		if ($boatAssignments[date] === undefined) {
 			$boatAssignments[date] = {};
@@ -181,6 +195,10 @@
 			return 'top-[100px] xs:top-[110px] lg:top-[100px]';
 		}
 	};
+
+	onMount(() => {
+		loadAdminComments();
+	});
 </script>
 
 {#if $viewMode === 'admin'}
@@ -201,6 +219,21 @@
 {#if Settings.getOpenForBusiness(dtToLDS($viewedDate)) === false}
 	<div class="font-semibold text-3xl text-center">Closed</div>
 {:else}
+	<!-- TODO: fix structure
+simplify, instead of having an isolated column for buoy, boat, ap, pm then each having a child w/ a computed height
+it should be,
+	remove height and width computation
+
+	organize row data before rendering anything
+
+	table header
+		buoy | boat | AM | PM
+	rows
+		#each rows // this should be only once
+			value | value | component | component
+
+	move buoy grouping component/card into a separate file
+-->
 	<div class="row">
 		<div class="column text-center {buoyColWidth()}">
 			<div class="font-semibold">buoy</div>
@@ -272,6 +305,13 @@
 									>
 										{displayTag(rsv, $viewMode === 'admin')}
 									</div>
+									{#each adminComments as comment}
+										{#if comment.buoy == rsv.buoy && comment.am_pm === rsv.owTime}
+											<div class="flex flex-col text-sm p-1 text-gray-200">
+												ADMIN: {comment.comment}
+											</div>
+										{/if}
+									{/each}
 								</div>
 							{/each}
 						</div>
