@@ -1,11 +1,11 @@
 import type { BuoyGroupings } from './xata.codegen';
 import { getXataClient } from '$lib/server/xata-old';
-import { get } from 'svelte/store';
+import type { OWTime } from '$types';
 
 interface BuoyGroupingComment {
 	buoy: string;
 	date: string; // yyyy-mm-dd
-	am_pm: 'am' | 'pm';
+	am_pm: OWTime;
 	comment: string;
 }
 
@@ -15,17 +15,14 @@ export const upsertOWReservationAdminComments = async (data: BuoyGroupingComment
 	const recordId = `${buoy}-${date}-${am_pm}`;
 	console.log('ow comment recordId', recordId);
 	try {
-		await client.db.BuoyGroupings.create(recordId, {
+		await client.db.BuoyGroupings.createOrUpdate(recordId, {
 			buoy,
 			date: new Date(date),
 			am_pm,
 			comment
 		});
-		console.log('created new buoy comment', recordId);
 	} catch (error) {
-		console.error('already exists', error);
-		await client.db.BuoyGroupings.update(recordId, { comment });
-		console.log('updated buoy comment', recordId);
+		console.error('upsertOWReservationAdminComments', error);
 	}
 };
 
