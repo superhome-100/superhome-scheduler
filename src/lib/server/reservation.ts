@@ -260,14 +260,23 @@ function createBuddyEntriesForSubmit(sub: Submission) {
 	return entries;
 }
 
+const buoyProSafety = 'PRO_SAFETY';
+const buoyCBS = 'CBS';
+
 function unpackSubmitForm(formData: AppFormData): Submission {
-	let category = ReservationCategory[formData.get('category') as keyof typeof ReservationCategory];
-	let status =
+	const category =
+		ReservationCategory[formData.get('category') as keyof typeof ReservationCategory];
+	const status =
 		category == ReservationCategory.openwater
 			? ReservationStatus.pending
 			: ReservationStatus.confirmed;
-	let resType = ReservationType[formData.get('resType') as keyof typeof ReservationType];
-	let buoy = resType == ReservationType.cbs ? 'CBS' : 'auto';
+	const resType = ReservationType[formData.get('resType') as keyof typeof ReservationType];
+	const buoy =
+		resType == ReservationType.cbs
+			? buoyCBS
+			: resType == ReservationType.proSafety
+			? buoyProSafety
+			: 'auto';
 	return {
 		user: JSON.parse(formData.get('user')),
 		date: formData.get('date'),

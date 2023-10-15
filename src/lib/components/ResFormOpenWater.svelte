@@ -1,30 +1,33 @@
-<script>
+<script lang="ts">
 	import { canSubmit, buoys, reservations } from '$lib/stores';
 	import { adminView, buoyDesc, isMyReservation } from '$lib/utils.js';
-	import { Settings } from '$lib/client/settings.ts';
+	import { Settings } from '$lib/client/settings';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
+	import type { Reservation } from '$types';
+	import { ReservationCategory, ReservationType } from '$types';
+	import { PanglaoDate } from '$lib/datetimeUtils';
 
-	export let rsv = null;
-	export let date;
-	export let dateFn = null;
-	export let category;
+	export let rsv: Reservation;
+	export let date: string = rsv?.date || PanglaoDate().toString();
+	export let dateFn: null | ((arg0: string) => string) = null;
+	export let category: ReservationCategory = ReservationCategory.openwater;
 	export let viewOnly = false;
 	export let restrictModify = false;
 	export let error = '';
 
 	let disabled = viewOnly || restrictModify;
 
-	date = rsv == null ? (date == null ? dateFn(category) : date) : rsv.date;
+	date = rsv?.date || (dateFn && dateFn(category)) || date;
 
-	let resType = rsv == null ? 'autonomous' : rsv.resType;
-	let maxDepth = rsv == null || rsv.maxDepth == null ? null : rsv.maxDepth;
-	let owTime = rsv == null ? 'AM' : rsv.owTime;
-	let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
-	let pulley = rsv == null ? null : rsv.pulley;
-	let extraBottomWeight = rsv == null ? false : rsv.extraBottomWeight;
-	let bottomPlate = rsv == null ? false : rsv.bottomPlate;
-	let largeBuoy = rsv == null ? false : rsv.largeBuoy;
-	let o2OnBuoy = rsv == null ? false : rsv.O2OnBuoy;
+	let resType: ReservationType = rsv == null ? ReservationType.autonomous : rsv?.resType;
+	let maxDepth = rsv?.maxDepth || 1;
+	let owTime = rsv?.owTime || 'AM';
+	let numStudents = rsv?.resType !== 'course' ? 1 : rsv.numStudents;
+	let pulley = rsv?.pulley;
+	let extraBottomWeight = rsv?.extraBottomWeight || false;
+	let bottomPlate = rsv?.bottomPlate || false;
+	let largeBuoy = rsv?.largeBuoy || false;
+	let o2OnBuoy = rsv?.O2OnBuoy || false;
 
 	function checkSubmit() {
 		$canSubmit = maxDepth > 0;
@@ -34,7 +37,7 @@
 	$: showBuddyFields = resType === 'autonomous';
 	$: sortedBuoys = $buoys.sort((a, b) => (a.maxDepth > b.maxDepth ? 1 : -1));
 
-	const buoyIsAssigned = (name) => {
+	const buoyIsAssigned = (name: string) => {
 		return $reservations.filter(
 			(other) =>
 				other.date === rsv.date &&
@@ -76,10 +79,11 @@
 			</div>
 		{/if}
 		<div>
-			<select id="formOwTime" {disabled} name="owTime" value={owTime}>
+			<select id="formOwTime" {disabled} name="owTimeManual" value={owTime}>
 				<option value="AM">AM</option>
 				<option value="PM">PM</option>
 			</select>
+			<input type="hidden" name="owTime" value={owTime} />
 		</div>
 		{#if disabled || rsv != null}
 			<input type="hidden" name="resType" value={resType} />
@@ -93,7 +97,8 @@
 			>
 				<option value="autonomous">Autonomous</option>
 				<option value="course">Course/Coaching</option>
-				{#if Settings.getCbsAvailable(date)}
+				<option value="proSafety">Pay for ProSafety</option>
+				{#if date && Settings.getCbsAvailable(date)}
 					<option value="cbs">CBS</option>
 				{/if}
 			</select>
