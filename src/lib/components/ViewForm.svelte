@@ -5,8 +5,9 @@
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { popup } from './Popup.svelte';
-	import { reservations, user, users } from '$lib/stores';
+	import { adminComments, reservations, user, users } from '$lib/stores';
 	import { adminView } from '$lib/utils.js';
+	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { toast } from 'svelte-french-toast';
 
 	export let hasForm = false;
@@ -16,26 +17,7 @@
 
 	const { close } = getContext('simple-modal');
 
-	let adminComments = '';
-
-	const rsvChanged = (orig, form) => {
-		if (orig.status != form.get('status')) {
-			return true;
-		}
-		if (orig.category === 'pool') {
-			if (orig.lanes[0] != form.get('lane1')) {
-				return true;
-			}
-			if (form.has('lane2') && orig.lanes[1] != form.get('lane2')) {
-				return true;
-			}
-		} else if (orig.category === 'openwater') {
-			return orig.buoy != form.get('buoy');
-		} else if (orig.category === 'classroom') {
-			return orig.room != form.get('room');
-		}
-		return false;
-	};
+	let thisAdminComments = '';
 
 	const copyChanges = (rsv, upd) => {
 		rsv.status = upd.status;
@@ -60,11 +42,6 @@
 			? 'pending'
 			: undefined;
 		data.set('status', status);
-		if (!rsvChanged(rsv, data)) {
-			cancel();
-			dispatch('submit', { rsv });
-			return;
-		}
 
 		if (data.has('lane2')) {
 			if (
@@ -87,9 +64,21 @@
 		return async ({ result, update }) => {
 			switch (result.type) {
 				case 'success':
-					let updated = result.data.record;
+					let updated = result.data.rsvRecord;
 					copyChanges(rsv, updated);
 					$reservations = [...$reservations];
+					if ('adminCommentRecord' in result.data) {
+						const acRec = result.data.adminCommentRecord;
+						const date = datetimeToLocalDateStr(acRec.date);
+						for (let i = 0; i < $adminComments[date].length; i++) {
+							if ($adminComments[date][i].id == acRec.id) {
+								$adminComments[date].splice(i, 1);
+								break;
+							}
+						}
+						$adminComments[date].push(acRec);
+						$adminComments = { ...$adminComments };
+					}
 					toast.success('Reservation updated!');
 					break;
 				default:
@@ -118,7 +107,7 @@
 					id="adminComments"
 					name="admin_comments"
 					class="w-44 xs:w-52 mb-4 flex-1 text-gray-700 dark:text-white"
-					bind:value={adminComments}
+					bind:value={thisAdminComments}
 					tabindex="4"
 				/>
 			</div>

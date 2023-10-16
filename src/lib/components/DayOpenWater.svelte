@@ -1,5 +1,6 @@
 <script lang="ts">
 	import {
+		adminComments,
 		buoys,
 		boatAssignments,
 		reservations,
@@ -59,18 +60,20 @@
 			schedule.AM[b.name] ? schedule.AM[b.name].length : 0,
 			schedule.PM[b.name] ? schedule.PM[b.name].length : 0
 		);
-		const hasAdminComments = adminComments.some((c) => c.buoy === b.name);
-		const baseHeight = nRes * heightUnit + (hasAdminComments ? heightUnit * 2 : 0);
+		const hasAdminComments =
+			$adminComments[date] && $adminComments[date].some((c) => c.buoy === b.name);
+		const multiplier = nRes + (hasAdminComments ? 1 : 0);
+		const baseHeight = multiplier * heightUnit;
 		o[b.name] = {
 			header: baseHeight,
 			buoy: baseHeight - blkMgn,
-			margins: [...Array(nRes).keys()].map((idx) => {
-				const outer = (nRes * heightUnit - blkMgn - 1.25 * nRes) / 2;
+			margins: [...Array(multiplier).keys()].map((idx) => {
+				const outer = (multiplier * heightUnit - blkMgn - 1.25 * multiplier) / 2;
 				let top, btm;
 				if (idx == 0) {
 					top = outer;
 					btm = 0;
-				} else if (idx == nRes - 1) {
+				} else if (idx == multiplier - 1) {
 					top = 0;
 					btm = outer;
 				} else {
@@ -121,14 +124,12 @@
 	$: boats = Settings.getBoats(date);
 	$: displayBuoys = sortByBoat($buoys, $boatAssignments[date]);
 
-	let adminComments: BuoyGroupings[] = [];
-
 	const loadAdminComments = async () => {
 		if (date) {
-			adminComments = await getOWAdminComments(date);
-			console.log('date', date, adminComments);
+			$adminComments[date] = await getOWAdminComments(date);
+			console.log('date', date, $adminComments[date]);
 		} else {
-			adminComments = [];
+			$adminComments[date] = [];
 		}
 	};
 	$: {
@@ -305,15 +306,22 @@ it should be,
 									>
 										{displayTag(rsv, $viewMode === 'admin')}
 									</div>
-									{#each adminComments as comment}
-										{#if comment.buoy == rsv.buoy && comment.am_pm === rsv.owTime}
-											<div class="flex flex-col text-sm p-1 text-gray-200">
-												ADMIN: {comment.comment}
-											</div>
-										{/if}
-									{/each}
 								</div>
 							{/each}
+							{#if $adminComments[date]}
+								{#each $adminComments[date] as comment}
+									{#if comment.buoy == name && comment.am_pm === cur}
+										<div
+											class="flex flex-col text-sm p-0 text-gray-200"
+											style="margin: {rowHeights[name].margins[
+												rowHeights[name].margins.length - 1
+											]}"
+										>
+											ADMIN: {comment.comment}
+										</div>
+									{/if}
+								{/each}
+							{/if}
 						</div>
 					{:else if schedule[other][name] != undefined}
 						<div style="height: {rowHeights[name].header}rem" />
