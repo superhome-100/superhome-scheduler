@@ -127,7 +127,7 @@
 	const loadAdminComments = async () => {
 		if (date) {
 			$adminComments[date] = await getOWAdminComments(date);
-			console.log('date', date, $adminComments[date]);
+			$adminComments = { ...$adminComments };
 		} else {
 			$adminComments[date] = [];
 		}
