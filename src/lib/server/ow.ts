@@ -15,12 +15,13 @@ export const upsertOWReservationAdminComments = async (data: BuoyGroupingComment
 	const recordId = `${buoy}-${date}-${am_pm}`;
 	console.log('ow comment recordId', recordId);
 	try {
-		await client.db.BuoyGroupings.createOrUpdate(recordId, {
+		const record = await client.db.BuoyGroupings.createOrUpdate(recordId, {
 			buoy,
 			date: new Date(date),
 			am_pm,
 			comment
 		});
+		return record;
 	} catch (error) {
 		console.error('upsertOWReservationAdminComments', error);
 	}

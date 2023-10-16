@@ -485,7 +485,7 @@ export async function adminUpdate(formData: AppFormData) {
 	}
 
 	let record = await client.db.Reservations.update(id, rsv);
-	return { record };
+	return record;
 }
 
 async function throwIfInvalidCancellation(data: Reservation) {
