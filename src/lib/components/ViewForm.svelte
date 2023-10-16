@@ -78,7 +78,7 @@
 					let updated = result.data.rsvRecord;
 					copyChanges(rsv, updated);
 					$reservations = [...$reservations];
-					if ('adminCommentRecord' in result.data) {
+					if (result.data.adminCommentRecord) {
 						const acRec = result.data.adminCommentRecord;
 						const date = datetimeToLocalDateStr(acRec.date);
 						for (let i = 0; i < $adminComments[date].length; i++) {
@@ -87,7 +87,9 @@
 								break;
 							}
 						}
-						$adminComments[date].push(acRec);
+						if (acRec.comment) {
+							$adminComments[date].push(acRec);
+						}
 						$adminComments = { ...$adminComments };
 					}
 					toast.success('Reservation updated!');
