@@ -396,7 +396,14 @@ function unpackModifyForm(formData: AppFormData, orig: Reservation): Reservation
 		orig.category == ReservationCategory.openwater
 			? ReservationStatus.pending
 			: ReservationStatus.confirmed;
-	let buoy = orig.resType == ReservationType.cbs ? 'CBS' : 'auto';
+	const buoy =
+		orig.resType == ReservationType.cbs
+			? buoyCBS
+			: orig.resType == ReservationType.proSafety
+			? orig.buoy == buoyProSafety
+				? buoyProSafety
+				: orig.buoy
+			: 'auto';
 
 	return {
 		id: formData.get('id'),
