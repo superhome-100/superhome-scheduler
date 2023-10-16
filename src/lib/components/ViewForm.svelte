@@ -17,7 +17,18 @@
 
 	const { close } = getContext('simple-modal');
 
-	let thisAdminComments = '';
+	const getThisRsvAdminComments = (rsv, adminComments) => {
+		if (adminComments[rsv.date]) {
+			for (let ac of adminComments[rsv.date]) {
+				if (ac.buoy == rsv.buoy) {
+					return ac.comment;
+				}
+			}
+		}
+		return '';
+	};
+
+	let thisAdminComments = getThisRsvAdminComments(rsv, $adminComments);
 
 	const copyChanges = (rsv, upd) => {
 		rsv.status = upd.status;
