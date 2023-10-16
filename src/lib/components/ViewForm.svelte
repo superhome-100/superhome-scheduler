@@ -113,11 +113,11 @@
 		<input type="hidden" name="id" value={rsv.id} />
 		{#if adminView(true)}
 			<div class="">
-				<label for="admin_comments" class="text-white">Admin Comments</label>
+				<label for="admin_comments" class="dark:text-white w-[33%]">Admin Comments</label>
 				<textarea
 					id="adminComments"
 					name="admin_comments"
-					class="w-44 xs:w-52 mb-4"
+					class="w-44 xs:w-52 mb-4 flex-1 text-gray-700 dark:text-white"
 					bind:value={adminComments}
 					tabindex="4"
 				/>
