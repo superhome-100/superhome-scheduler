@@ -397,12 +397,8 @@ function unpackModifyForm(formData: AppFormData, orig: Reservation): Reservation
 			? ReservationStatus.pending
 			: ReservationStatus.confirmed;
 	const buoy =
-		orig.resType == ReservationType.cbs
-			? buoyCBS
-			: orig.resType == ReservationType.proSafety
-			? orig.buoy == buoyProSafety
-				? buoyProSafety
-				: orig.buoy
+		[ReservationType.cbs, ReservationType.proSafety].includes(orig.resType)
+			? orig.buoy
 			: 'auto';
 
 	return {
