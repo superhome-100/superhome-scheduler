@@ -12,19 +12,15 @@ import { upsertOWReservationAdminComments } from '$lib/server/ow';
 
 const adminUpdateGeneric = async ({ request }) => {
 	const data = await request.formData();
-	console.log(data);
-	const record = await adminUpdate(data);
-
+	const rsvRecord = await adminUpdate(data);
 	const adminComment = data.get('admin_comments');
-	if (adminComment) {
-		await upsertOWReservationAdminComments({
-			comment: adminComment,
-			date: data.get('date'),
-			buoy: data.get('buoy'),
-			am_pm: data.get('owTime')
-		});
-	}
-	return record;
+	const adminCommentRecord = await upsertOWReservationAdminComments({
+		comment: adminComment,
+		date: data.get('date'),
+		buoy: data.get('buoy'),
+		am_pm: data.get('owTime')
+	});
+	return { rsvRecord, adminCommentRecord };
 };
 
 export const actions = {

@@ -396,7 +396,10 @@ function unpackModifyForm(formData: AppFormData, orig: Reservation): Reservation
 		orig.category == ReservationCategory.openwater
 			? ReservationStatus.pending
 			: ReservationStatus.confirmed;
-	let buoy = orig.resType == ReservationType.cbs ? 'CBS' : 'auto';
+	const buoy =
+		[ReservationType.cbs, ReservationType.proSafety].includes(orig.resType)
+			? orig.buoy
+			: 'auto';
 
 	return {
 		id: formData.get('id'),
@@ -485,7 +488,7 @@ export async function adminUpdate(formData: AppFormData) {
 	}
 
 	let record = await client.db.Reservations.update(id, rsv);
-	return { record };
+	return record;
 }
 
 async function throwIfInvalidCancellation(data: Reservation) {
