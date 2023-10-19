@@ -7,7 +7,7 @@
 	import { ReservationCategory, ReservationType } from '$types';
 	import { PanglaoDate } from '$lib/datetimeUtils';
 
-	export let rsv: Reservation;
+	export let rsv: Reservation | null;
 	export let date: string = rsv?.date || PanglaoDate().toString();
 	export let dateFn: null | ((arg0: string) => string) = null;
 	export let category: ReservationCategory = ReservationCategory.openwater;

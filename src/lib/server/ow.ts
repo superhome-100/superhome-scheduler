@@ -13,17 +13,24 @@ export const upsertOWReservationAdminComments = async (data: BuoyGroupingComment
 	const client = getXataClient();
 	const { buoy, date, am_pm, comment } = data;
 	const recordId = `${buoy}-${date}-${am_pm}`;
-	console.log('ow comment recordId', recordId);
-	try {
-		await client.db.BuoyGroupings.createOrUpdate(recordId, {
-			buoy,
-			date: new Date(date),
-			am_pm,
-			comment
-		});
-	} catch (error) {
-		console.error('upsertOWReservationAdminComments', error);
+	let record;
+	if (comment) {
+		try {
+			record = await client.db.BuoyGroupings.createOrUpdate(recordId, {
+				buoy,
+				date: new Date(date),
+				am_pm,
+				comment
+			});
+		} catch (error) {
+			console.error('upsertOWReservationAdminComments', error);
+		}
+	} else {
+		// delete comment if it exists
+		const rec = await client.db.BuoyGroupings.delete(recordId);
+		record = { ...rec, comment: null };
 	}
+	return record;
 };
 
 export const getOWReservationAdminComments = async (date: string): Promise<BuoyGroupings[]> => {
