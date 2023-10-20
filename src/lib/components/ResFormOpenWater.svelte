@@ -79,7 +79,7 @@
 			</div>
 		{/if}
 		<div>
-			<select id="formOwTime" {disabled} name="owTimeManual" value={owTime}>
+			<select id="formOwTime" {disabled} name="owTimeManual" bind:value={owTime}>
 				<option value="AM">AM</option>
 				<option value="PM">PM</option>
 			</select>
