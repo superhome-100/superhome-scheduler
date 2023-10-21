@@ -294,6 +294,7 @@ function unpackSubmitForm(formData: AppFormData): Submission {
 		bottomPlate: formData.get('bottomPlate') == 'on',
 		largeBuoy: formData.get('largeBuoy') == 'on',
 		O2OnBuoy: formData.get('O2OnBuoy') == 'on',
+		shortSession: formData.get('shortSession') == 'on',
 		owner: true,
 		status,
 		buoy,
@@ -396,10 +397,9 @@ function unpackModifyForm(formData: AppFormData, orig: Reservation): Reservation
 		orig.category == ReservationCategory.openwater
 			? ReservationStatus.pending
 			: ReservationStatus.confirmed;
-	const buoy =
-		[ReservationType.cbs, ReservationType.proSafety].includes(orig.resType)
-			? orig.buoy
-			: 'auto';
+	const buoy = [ReservationType.cbs, ReservationType.proSafety].includes(orig.resType)
+		? orig.buoy
+		: 'auto';
 
 	return {
 		id: formData.get('id'),
@@ -423,6 +423,7 @@ function unpackModifyForm(formData: AppFormData, orig: Reservation): Reservation
 		bottomPlate: formData.get('bottomPlate') == 'on',
 		largeBuoy: formData.get('largeBuoy') == 'on',
 		O2OnBuoy: formData.get('O2OnBuoy') == 'on',
+		shortSession: formData.get('shortSession') == 'on',
 		createdAt: orig.createdAt,
 		owner: true,
 		status,
