@@ -25,7 +25,7 @@
 			return formData.has(field) && parseInt(formData.get(field)) != original[field];
 		};
 		const checkBool = (field) => {
-			return formData.has(field) && (formData.get(field) == 'on') != original[field];
+			return (formData.get(field) == 'on') != original[field];
 		};
 
 		let buddies = JSON.parse(formData.get('buddies'));
@@ -57,7 +57,8 @@
 			checkBool('extraBottomWeight') ||
 			checkBool('bottomPlate') ||
 			checkBool('largeBuoy') ||
-			checkBool('O2OnBuoy')
+			checkBool('O2OnBuoy') ||
+			checkBool('shortSession')
 		);
 	};
 
