@@ -22,7 +22,8 @@ const unpackTemplate = (uT) => {
 		openwater: {
 			course: uT.priceTemplate.coachOW,
 			autonomous: uT.priceTemplate.autoOW,
-			cbs: uT.priceTemplate.cbsOW
+			cbs: uT.priceTemplate.cbsOW,
+			proSafety: uT.priceTemplate.proSafetyOW
 		}
 	};
 };
