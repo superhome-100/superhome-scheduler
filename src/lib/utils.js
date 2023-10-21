@@ -1,7 +1,7 @@
-import { startTimes, inc } from './reservationTimes.js';
+import { startTimes, inc } from './reservationTimes';
 import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils';
 import { reservations, user, users, viewMode } from './stores';
-import { Settings } from './settings';
+import { Settings } from './client/settings';
 import { get } from 'svelte/store';
 import { assignPoolSpaces, patchSchedule } from './autoAssignPool.js';
 
@@ -42,65 +42,6 @@ export function removeRsv(id) {
 	}
 }
 
-export function augmentRsv(rsv, user) {
-	let startTime = rsv.startTime;
-	let endTime = rsv.endTime;
-	let categoryPretty = rsv.category.charAt(0).toUpperCase() + rsv.category.slice(1);
-	if (rsv.buddies == null) {
-		rsv.buddies = [];
-	}
-	if (rsv.category === 'openwater') {
-		if (rsv.owTime === 'AM') {
-			startTime = Settings.get('openwaterAmStartTime', rsv.date);
-			endTime = Settings.get('openwaterAmEndTime', rsv.date);
-		} else if (rsv.owTime === 'PM') {
-			startTime = Settings.get('openwaterPmStartTime', rsv.date);
-			endTime = Settings.get('openwaterPmEndTime', rsv.date);
-		}
-	}
-	let newRsv = {
-		...rsv,
-		categoryPretty,
-		startTime,
-		endTime
-	};
-
-	if (!!user) {
-		newRsv.user = user;
-	}
-
-	return newRsv;
-}
-
-export function convertReservationTypes(data) {
-	if ('user' in data) {
-		data.user = JSON.parse(data.user);
-	}
-	if ('maxDepth' in data) {
-		data.maxDepth = parseInt(data.maxDepth);
-	}
-	if (data.category === 'openwater') {
-		for (let opt of ['O2OnBuoy', 'extraBottomWeight', 'bottomPlate', 'largeBuoy']) {
-			data[opt] = data[opt] === 'on';
-		}
-		// preserve whether or not user indicated a pulley preference
-		data.pulley = data.pulley === undefined ? null : data.pulley === 'on';
-	}
-	if ('numStudents' in data) {
-		data.numStudents = parseInt(data.numStudents);
-	}
-	for (let f of ['buddies', 'oldBuddies', 'delBuddies']) {
-		if (f in data) {
-			data[f] = JSON.parse(data[f]);
-		}
-	}
-	if (data.price != null) {
-		data.price = parseInt(data.price);
-	}
-
-	return data;
-}
-
 export function cleanUpFormDataBuddyFields(formData) {
 	let resType = formData.get('resType');
 	let numBuddies = parseInt(formData.get('numBuddies'));
@@ -108,9 +49,9 @@ export function cleanUpFormDataBuddyFields(formData) {
 	let buddies = [];
 	for (let i = 0; i < numBuddies; i++) {
 		if (resType === 'autonomous') {
-			let name = formData.get('buddy' + i);
-			if (name !== '') {
-				buddies.push(formData.get('buddy' + i + '_id'));
+			let id = formData.get('buddy' + i + '_id');
+			if (id !== 'undefined') {
+				buddies.push(id);
 			}
 		}
 		formData.delete('buddy' + i);
@@ -120,7 +61,7 @@ export function cleanUpFormDataBuddyFields(formData) {
 }
 
 export const displayTag = (rsv, admin) => {
-	let tag = rsv.user.nickname;
+	let tag = get(users)[rsv.user.id].nickname;
 	if (rsv.resType === 'course') {
 		tag += ' +' + rsv.numStudents;
 	}
@@ -130,99 +71,13 @@ export const displayTag = (rsv, admin) => {
 	return tag;
 };
 
-export function parseSettingsTbl(settingsTbl) {
-	let settings = {};
-	let fields = new Set(settingsTbl.map((e) => e.name));
-
-	let fixTypes = (e) => {
-		let name = e.name;
-		let v = e.value;
-		if (
-			[
-				'maxOccupantsPerLane',
-				'maxChargeableOWPerMonth',
-				'refreshIntervalSeconds',
-				'reservationLeadTimeDays'
-			].includes(name)
-		) {
-			v = parseInt(v);
-		}
-		if (name === 'refreshIntervalSeconds') {
-			name = 'refreshInterval';
-			v = v * 1000;
-		}
-		if (
-			[
-				'cbsAvailable',
-				'classroomBookable',
-				'openForBusiness',
-				'openwaterAmBookable',
-				'openwaterPmBookable',
-				'poolBookable'
-			].includes(name)
-		) {
-			v = v === 'true';
-		}
-		if (['poolLanes', 'classrooms', 'boats', 'captains'].includes(name)) {
-			v = v.split(';');
-		}
-
-		return {
-			...e,
-			name,
-			value: v
-		};
-	};
-
-	fields.forEach((field) => {
-		let entries = settingsTbl.filter((e) => e.name === field).map((e) => fixTypes(e));
-		let def = entries.splice(
-			entries.findIndex((e) => e.startDate === 'default'),
-			1
-		)[0];
-		settings[def.name] = {
-			default: def.value,
-			entries
-		};
-	});
-	return settings;
-}
-
 export const badgeColor = (rsvs) => {
 	let approved = rsvs.reduce((sts, rsv) => sts && rsv.status === 'confirmed', true);
 	return approved ? 'bg-[#00FF00]' : 'bg-[#FFFF00]';
 };
 
-export function categoryIsBookable(sub) {
-	let val;
-	let msg;
-	if (sub.category === 'pool') {
-		val = Settings.get('poolBookable', sub.date);
-		msg = 'Pool';
-	} else if (sub.category === 'openwater') {
-		if (sub.owTime == 'AM') {
-			val = Settings.get('openwaterAmBookable', sub.date);
-			msg = 'AM Openwater';
-		} else if (sub.owTime == 'PM') {
-			val = Settings.get('openwaterPmBookable', sub.date);
-			msg = 'PM Openwater';
-		}
-	} else if (sub.category === 'classroom') {
-		val = Settings.get('classroomBookable', sub.date);
-		msg = 'Classroom';
-	}
-	if (val) {
-		return { result: true };
-	} else {
-		return {
-			result: false,
-			message: msg + ' reservations are not bookable on this date/time'
-		};
-	}
-}
-
 function assignClassrooms(rsvs, dateStr) {
-	let rooms = Settings.get('classrooms', dateStr);
+	let rooms = Settings.getClassrooms(dateStr);
 	let schedule = Array(rooms.length)
 		.fill()
 		.map(() => {
@@ -372,22 +227,4 @@ export const buoyDesc = (buoy) => {
 	}
 	desc += buoy.maxDepth;
 	return desc;
-};
-
-export const addMissingFields = (submitted, original) => {
-	for (let field in original) {
-		if (submitted[field] === undefined) {
-			submitted[field] = original[field];
-		}
-	}
-};
-
-export const buddiesAreValid = (submitted) => {
-	let userIds = Object.keys(get(users));
-	for (let id of submitted.buddies) {
-		if (!userIds.includes(id)) {
-			return false;
-		}
-	}
-	return true;
 };

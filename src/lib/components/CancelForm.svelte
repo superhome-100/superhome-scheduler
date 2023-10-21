@@ -1,13 +1,10 @@
 <script>
 	import { getContext } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { user, users, reservations } from '$lib/stores';
-	import { beforeCancelCutoff } from '$lib/reservationTimes.js';
-	import { Settings } from '$lib/settings';
+	import { users, reservations } from '$lib/stores';
 	import { toast } from 'svelte-french-toast';
-	import { augmentRsv, removeRsv } from '$lib/utils.js';
+	import { removeRsv } from '$lib/utils.js';
 	import { popup } from '$lib/components/Popup.svelte';
-	import Spinner from '$lib/components/spinner.svelte';
 
 	export let rsv;
 	export let hasForm = false;
@@ -15,15 +12,15 @@
 	const { close, hideModal } = getContext('simple-modal');
 
 	const cancelReservation = async ({ data }) => {
-		data.append('buddies', JSON.stringify(rsv.buddies));
-		let delBuddies = [];
-		for (let i = 0; i < rsv.buddies.length; i++) {
+		let buddies = JSON.parse(data.get('buddies'));
+		let cancelBuddies = [];
+		for (let i = 0; i < buddies.length; i++) {
 			if (data.get('buddy-' + i) === 'on') {
-				delBuddies.push(rsv.buddies[i]);
+				cancelBuddies.push(rsv.buddies[i]);
 			}
 			data.delete('buddy-' + i);
 		}
-		data.append('delBuddies', JSON.stringify(delBuddies));
+		data.append('cancelBuddies', JSON.stringify(cancelBuddies));
 
 		hideModal();
 
@@ -34,7 +31,6 @@
 					for (let rsv of records.modified) {
 						removeRsv(rsv.id);
 						let user = $users[rsv.user.id];
-						rsv = augmentRsv(rsv, user);
 						$reservations.push(rsv);
 					}
 					for (let rsv of records.canceled) {
@@ -65,6 +61,7 @@
 			<input type="hidden" name="startTime" value={rsv.startTime} />
 			<input type="hidden" name="endTime" value={rsv.endTime} />
 			<input type="hidden" name="owTime" value={rsv.owTime} />
+			<input type="hidden" name="buddies" value={JSON.stringify(rsv.buddies)} />
 			<div class="[&>span]:inline-block my-2 text-lg dark:text-white font-semibold mr-0.5">
 				<span>Really cancel {rsv.category} reservation on</span>
 				<span>{rsv.date}?</span>

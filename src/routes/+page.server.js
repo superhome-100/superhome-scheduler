@@ -1,18 +1,19 @@
 import {
 	submitReservation,
-	updateReservation,
+	modifyReservation,
 	cancelReservation,
-	adminUpdate,
-	insertNotificationReceipt
-} from '$lib/server/server.js';
+	adminUpdate
+} from '$lib/server/reservation';
+import { insertNotificationReceipt } from '$lib/server/server';
 import { ValidationError } from '$utils/validation';
 import { fail } from '@sveltejs/kit';
 import { updateNickname } from '$lib/server/user';
+import { upsertOWReservationAdminComments } from '$lib/server/ow';
 
 const adminUpdateGeneric = async ({ request }) => {
 	const data = await request.formData();
 	const record = await adminUpdate(data);
-	return record;
+	return { record };
 };
 
 export const actions = {
@@ -29,10 +30,10 @@ export const actions = {
 			}
 		}
 	},
-	updateReservation: async ({ request }) => {
+	modifyReservation: async ({ request }) => {
 		const data = await request.formData();
 		try {
-			const record = await updateReservation(data);
+			const record = await modifyReservation(data);
 			return record;
 		} catch (e) {
 			if (e instanceof ValidationError) {
@@ -69,5 +70,16 @@ export const actions = {
 		if (accept === 'on') {
 			await insertNotificationReceipt(notificationId, userId);
 		}
+	},
+	adminCommentUpdate: async ({ request }) => {
+		const data = await request.formData();
+		const adminComment = data.get('admin_comments');
+		const record = await upsertOWReservationAdminComments({
+			comment: adminComment,
+			date: data.get('date'),
+			buoy: data.get('buoy'),
+			am_pm: data.get('owTime')
+		});
+		return { record };
 	}
 };

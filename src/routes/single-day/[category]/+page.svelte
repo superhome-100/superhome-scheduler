@@ -8,7 +8,7 @@
 	import { datetimeToLocalDateStr, idx2month } from '$lib/datetimeUtils';
 	import Modal from '$lib/components/Modal.svelte';
 	import { loginState, stateLoaded, view, viewMode, viewedDate, reservations } from '$lib/stores';
-	import { Settings } from '$lib/settings';
+	import { Settings } from '$lib/client/settings';
 	import { CATEGORIES } from '$lib/constants.js';
 	import { toast } from 'svelte-french-toast';
 
@@ -104,13 +104,13 @@
 	const resInfo = () => {
 		let dateStr = datetimeToLocalDateStr($viewedDate);
 		if (category === 'pool') {
-			let lanes = Settings.get('poolLanes', dateStr);
-			let occ = Settings.get('maxOccupantsPerLane', dateStr);
-			let label = Settings.get('poolLabel', dateStr);
+			let lanes = Settings.getPoolLanes(dateStr);
+			let occ = Settings.getMaxOccupantsPerLane(dateStr);
+			let label = Settings.getPoolLabel(dateStr);
 			return { resources: lanes, occupancy: occ, name: label };
 		} else if (category === 'classroom') {
-			let rooms = Settings.get('classrooms', dateStr);
-			let label = Settings.get('classroomLabel', dateStr);
+			let rooms = Settings.getClassrooms(dateStr);
+			let label = Settings.getClassroomLabel(dateStr);
 			return { resources: rooms, occupancy: 1, name: label };
 		}
 	};
