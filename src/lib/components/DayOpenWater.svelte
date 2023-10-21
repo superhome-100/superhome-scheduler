@@ -1,5 +1,6 @@
-<script>
+<script lang="ts">
 	import {
+		adminComments,
 		buoys,
 		boatAssignments,
 		reservations,
@@ -11,10 +12,13 @@
 	import { datetimeToLocalDateStr as dtToLDS } from '$lib/datetimeUtils';
 	import { displayTag } from '$lib/utils.js';
 	import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
-	import { getContext } from 'svelte';
+	import { getContext, onMount } from 'svelte';
+	import AdminComment from '$lib/components/AdminComment.svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { badgeColor, buoyDesc } from '$lib/utils.js';
-	import { Settings } from '$lib/settings';
+	import { Settings } from '$lib/client/settings';
+	import { getOWAdminComments } from '$lib/api';
+	import type { BuoyGroupings } from '$lib/server/xata.codegen';
 
 	const { open } = getContext('simple-modal');
 
@@ -24,6 +28,10 @@
 			hasForm: true,
 			disableModify: $viewMode === 'admin'
 		});
+	};
+
+	const showAdminCommentForm = (date, buoy) => {
+		open(AdminComment, { date, buoy });
 	};
 
 	function getOpenWaterSchedule(rsvs, datetime) {
@@ -51,21 +59,26 @@
 	const heightUnit = 2; //rem
 	const blkMgn = 0.25; // dependent on tailwind margin styling
 
+	// TODO: remove this, this should be done by css automatically but would require full reorganization of html
 	$: rowHeights = $buoys.reduce((o, b) => {
 		let nRes = Math.max(
 			schedule.AM[b.name] ? schedule.AM[b.name].length : 0,
 			schedule.PM[b.name] ? schedule.PM[b.name].length : 0
 		);
+		const hasAdminComments =
+			$adminComments[date] && $adminComments[date].some((c) => c.buoy === b.name);
+		const multiplier = nRes + (hasAdminComments ? 1 : 0);
+		const baseHeight = multiplier * heightUnit;
 		o[b.name] = {
-			header: nRes * heightUnit,
-			buoy: nRes * heightUnit - blkMgn,
-			margins: [...Array(nRes).keys()].map((idx) => {
-				const outer = (nRes * heightUnit - blkMgn - 1.25 * nRes) / 2;
+			header: baseHeight,
+			buoy: baseHeight - blkMgn,
+			margins: [...Array(multiplier).keys()].map((idx) => {
+				const outer = (multiplier * heightUnit - blkMgn - 1.25 * multiplier) / 2;
 				let top, btm;
 				if (idx == 0) {
 					top = outer;
 					btm = 0;
-				} else if (idx == nRes - 1) {
+				} else if (idx == multiplier - 1) {
 					top = 0;
 					btm = outer;
 				} else {
@@ -113,13 +126,20 @@
 	};
 
 	$: date = dtToLDS($viewedDate);
-	$: boats = Settings.get('boats', date);
-	$: boatCounts = boats.reduce((bc, b) => {
-		bc[b] = 0;
-		return bc;
-	}, {});
+	$: boats = Settings.getBoats(date);
 	$: displayBuoys = sortByBoat($buoys, $boatAssignments[date]);
 
+	const loadAdminComments = async () => {
+		if (date) {
+			$adminComments[date] = await getOWAdminComments(date);
+			$adminComments = { ...$adminComments };
+		} else {
+			$adminComments[date] = [];
+		}
+	};
+	$: {
+		$viewedDate && loadAdminComments();
+	}
 	const displayValue = (buoy) => {
 		if ($boatAssignments[date] === undefined) {
 			$boatAssignments[date] = {};
@@ -181,6 +201,10 @@
 			return 'top-[100px] xs:top-[110px] lg:top-[100px]';
 		}
 	};
+
+	onMount(() => {
+		loadAdminComments();
+	});
 </script>
 
 {#if $viewMode === 'admin'}
@@ -198,9 +222,24 @@
 		{/each}
 	</div>
 {/if}
-{#if Settings.get('openForBusiness', dtToLDS($viewedDate)) === false}
+{#if Settings.getOpenForBusiness(dtToLDS($viewedDate)) === false}
 	<div class="font-semibold text-3xl text-center">Closed</div>
 {:else}
+	<!-- TODO: fix structure
+simplify, instead of having an isolated column for buoy, boat, ap, pm then each having a child w/ a computed height
+it should be,
+	remove height and width computation
+
+	organize row data before rendering anything
+
+	table header
+		buoy | boat | AM | PM
+	rows
+		#each rows // this should be only once
+			value | value | component | component
+
+	move buoy grouping component/card into a separate file
+-->
 	<div class="row">
 		<div class="column text-center {buoyColWidth()}">
 			<div class="font-semibold">buoy</div>
@@ -208,8 +247,9 @@
 				{#if buoyInUse(schedule, buoy.name)}
 					{#if $viewMode === 'admin'}
 						<div
-							class="flex mx-2 sm:mx-4 md:mx-8 lg:mx-6 xl:mx-12 items-center justify-between font-semibold"
+							class="cursor-pointer flex mx-2 sm:mx-4 md:mx-8 lg:mx-6 xl:mx-12 items-center justify-between font-semibold"
 							style="height: {rowHeights[buoy.name].header}rem"
+							on:click={showAdminCommentForm(date, buoy.name)}
 						>
 							<span class="text-xl">{buoy.name}</span>
 							<span class="text-sm">{buoyDesc(buoy)}</span>
@@ -274,6 +314,20 @@
 									</div>
 								</div>
 							{/each}
+							{#if $adminComments[date]}
+								{#each $adminComments[date] as comment}
+									{#if comment.buoy == name && comment.am_pm === cur}
+										<div
+											class="flex flex-col text-sm p-0 text-gray-200"
+											style="margin: {rowHeights[name].margins[
+												rowHeights[name].margins.length - 1
+											]}"
+										>
+											ADMIN: {comment.comment}
+										</div>
+									{/if}
+								{/each}
+							{/if}
 						</div>
 					{:else if schedule[other][name] != undefined}
 						<div style="height: {rowHeights[name].header}rem" />

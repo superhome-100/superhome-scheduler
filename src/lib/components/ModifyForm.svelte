@@ -1,99 +1,75 @@
-<script>
+<script lang="ts">
+	import { OWTime } from '$types';
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-french-toast';
 	import { enhance } from '$app/forms';
-	import { beforeResCutoff } from '$lib/reservationTimes.js';
+	import { beforeResCutoff } from '$lib/reservationTimes';
 	import ResFormPool from './ResFormPool.svelte';
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
-	import { popup } from './Popup.svelte';
 	import { users, reservations } from '$lib/stores';
-	import { Settings } from '$lib/settings';
-	import {
-		addMissingFields,
-		augmentRsv,
-		buddiesAreValid,
-		removeRsv,
-		cleanUpFormDataBuddyFields,
-		convertReservationTypes,
-		categoryIsBookable
-	} from '$lib/utils.js';
+	import { Settings } from '$lib/client/settings';
+	import { removeRsv, cleanUpFormDataBuddyFields } from '$lib/utils.js';
+
 	export let hasForm = false;
 	export let rsv;
 
 	let error = '';
 	const { close, hideModal, showModal } = getContext('simple-modal');
 
-	const reservationChanges = (submitted, original) => {
-		const isEmpty = (v) => v == null || v == '' || (Object.hasOwn(v, 'length') && v.length == 0);
-		const bothEmpty = (a, b) => isEmpty(a) && isEmpty(b);
+	const reservationChanged = (formData, original) => {
+		const checkString = (field) => {
+			return formData.has(field) && formData.get(field) != original[field];
+		};
+		const checkNumber = (field) => {
+			return formData.has(field) && parseInt(formData.get(field)) != original[field];
+		};
+		const checkBool = (field) => {
+			return (formData.get(field) == 'on') != original[field];
+		};
 
-		for (let field in submitted) {
-			if (field === 'user') {
-				continue;
-			}
-
-			let a = original[field];
-			let b = submitted[field];
-
-			if (bothEmpty(a, b)) {
-				continue;
-			}
-
-			if (field === 'buddies') {
-				if (a == null || b == null) {
-					return 'buddies';
-				}
-				if (a.length != b.length) {
-					return 'buddies';
-				}
-				for (let id of a) {
-					if (!b.includes(id)) {
-						return 'buddies';
-					}
-				}
-			} else if (a !== b) {
-				return field;
+		let buddies = JSON.parse(formData.get('buddies'));
+		let union = new Set([...buddies, ...original.buddies]);
+		if (union.size > buddies.length || union.size > original.buddies.length) {
+			return true;
+		}
+		if (formData.has('owTime')) {
+			let owTime = OWTime[formData.get('owTime') as keyof typeof OWTime];
+			if (owTime != original.owTime) {
+				return true;
 			}
 		}
-		return null;
+		if (formData.has('pulley')) {
+			if ((formData.get('pulley') == 'on') != original.pulley) {
+				return true;
+			}
+		} else if (original.pulley != null) {
+			return true;
+		}
+
+		return (
+			checkString('date') ||
+			checkString('comments') ||
+			checkNumber('numStudents') ||
+			checkString('startTime') ||
+			checkString('endTime') ||
+			checkNumber('maxDepth') ||
+			checkBool('extraBottomWeight') ||
+			checkBool('bottomPlate') ||
+			checkBool('largeBuoy') ||
+			checkBool('O2OnBuoy') ||
+			checkBool('shortSession')
+		);
 	};
 
-	const updateReservation = async ({ data, cancel }) => {
+	const modifyReservation = async ({ data, cancel }) => {
 		error = '';
-		cleanUpFormDataBuddyFields(data, rsv.category);
-		data.set('category', rsv.category);
-
-		let submitted = convertReservationTypes(Object.fromEntries(data));
-		addMissingFields(submitted, rsv);
-
-		if (!buddiesAreValid(submitted)) {
-			popup('Unknown buddy in buddy field!');
-			cancel();
-			return;
-		}
-
-		if (!Settings.get('openForBusiness', submitted.date)) {
-			popup('We are closed on this date; please choose a different date');
-			cancel();
-			return;
-		}
-
-		const q = categoryIsBookable(submitted);
-		if (q.result == false) {
-			popup(q.message);
-			cancel();
-			return;
-		}
-
-		let change = reservationChanges(submitted, rsv);
-		if (change == null) {
+		cleanUpFormDataBuddyFields(data);
+		if (!reservationChanged(data, rsv)) {
 			cancel();
 			close();
 			return;
 		}
-
-		data.append('oldBuddies', JSON.stringify(rsv.buddies));
 		hideModal();
 
 		return async ({ result }) => {
@@ -104,12 +80,10 @@
 					for (let rsv of records.modified) {
 						let user = $users[rsv.user.id];
 						removeRsv(rsv.id);
-						rsv = augmentRsv(rsv, user);
 						$reservations.push(rsv);
 					}
 					for (let rsv of records.created) {
 						let user = $users[rsv.user.id];
-						rsv = augmentRsv(rsv, user);
 						$reservations.push(rsv);
 					}
 					for (let rsv of records.canceled) {
@@ -140,7 +114,7 @@
 {#if hasForm}
 	<div>
 		<div class="form-title">modify reservation</div>
-		<form method="POST" action="/?/updateReservation" use:enhance={updateReservation}>
+		<form method="POST" action="/?/modifyReservation" use:enhance={modifyReservation}>
 			<input type="hidden" name="id" value={rsv.id} />
 			{#if rsv.category === 'pool'}
 				<ResFormPool {restrictModify} {rsv} {error} />

@@ -6,11 +6,11 @@
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
-	import { minValidDateStr } from '$lib/reservationTimes.js';
+	import { minValidDateStr } from '$lib/reservationTimes';
 	import { idx2month } from '$lib/datetimeUtils';
 	import { view, viewedMonth, reservations, loginState, stateLoaded } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants.js';
-	import { Settings } from '$lib/settings';
+	import { Settings } from '$lib/client/settings';
 
 	export let data;
 

@@ -7,6 +7,7 @@
 	import { popup } from './Popup.svelte';
 	import { reservations, user, users } from '$lib/stores';
 	import { adminView } from '$lib/utils.js';
+	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { toast } from 'svelte-french-toast';
 
 	export let hasForm = false;
@@ -15,25 +16,6 @@
 	const dispatch = createEventDispatcher();
 
 	const { close } = getContext('simple-modal');
-
-	const rsvChanged = (orig, form) => {
-		if (orig.status != form.get('status')) {
-			return true;
-		}
-		if (orig.category === 'pool') {
-			if (orig.lanes[0] != form.get('lane1')) {
-				return true;
-			}
-			if (form.has('lane2') && orig.lanes[1] != form.get('lane2')) {
-				return true;
-			}
-		} else if (orig.category === 'openwater') {
-			return orig.buoy != form.get('buoy');
-		} else if (orig.category === 'classroom') {
-			return orig.room != form.get('room');
-		}
-		return false;
-	};
 
 	const copyChanges = (rsv, upd) => {
 		rsv.status = upd.status;
@@ -58,11 +40,6 @@
 			? 'pending'
 			: undefined;
 		data.set('status', status);
-		if (!rsvChanged(rsv, data)) {
-			cancel();
-			dispatch('submit', { rsv });
-			return;
-		}
 
 		if (data.has('lane2')) {
 			if (
@@ -85,14 +62,10 @@
 		return async ({ result, update }) => {
 			switch (result.type) {
 				case 'success':
-					if (result.data.status === 'success') {
-						let updated = result.data.record;
-						copyChanges(rsv, updated);
-						$reservations = [...$reservations];
-						toast.success('Reservation updated!');
-					} else if (result.data.status === 'error') {
-						toast.error('Server returned error!');
-					}
+					let updated = result.data.record;
+					copyChanges(rsv, updated);
+					$reservations = [...$reservations];
+					toast.success('Reservation updated!');
 					break;
 				default:
 					console.error(result);

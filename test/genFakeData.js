@@ -3,7 +3,8 @@ import { XataClient } from '../src/lib/server/xata.codegen';
 import { datetimeToLocalDateStr } from '../src/lib/datetimeUtils';
 import { startTimes, endTimes, minValidDate } from '../src/lib/ReservationTimes.js';
 import { settings } from '../src/lib/stores';
-import { parseSettingsTbl, checkSpaceAvailable } from '../src/lib/utils.js';
+import { checkSpaceAvailable } from '../src/lib/utils.js';
+import { parseSettingsTbl } from '$lib/server/settings';
 import fs from 'fs';
 
 const XATA_API_KEY = 'xau_9xJINLTWEBX1d0EyWIi7YL9QinLT2TEv1';

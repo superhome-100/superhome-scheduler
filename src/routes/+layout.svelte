@@ -1,16 +1,26 @@
 <script lang="ts">
 	import '../app.postcss';
 	import _ from 'lodash';
+	import dayjs from 'dayjs';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { toast, Toaster } from 'svelte-french-toast';
+	import { FacebookAuth } from '@beyonk/svelte-social-auth';
+	import { onMount } from 'svelte';
+	import { PUBLIC_FACEBOOK_APP_ID } from '$env/static/public';
+
+	// done move this 2 lines this has to initialize first
+	// everything above should have nothing to do with with the settings store
+	// TODO: reduce usage of $Settings on non-component libs
+	export let data; // has data = { settings } parsed from xata
+	$settings = data.settings;
+
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import Nprogress from '$lib/components/Nprogress.svelte';
 	import Spinner from '$lib/components/spinner.svelte';
 	import Popup, { popup } from '$lib/components/Popup.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Notification from '$lib/components/Notification.svelte';
-	import { PUBLIC_FACEBOOK_APP_ID } from '$env/static/public';
-	import dayjs from 'dayjs';
 	import {
 		boatAssignments,
 		buoys,
@@ -25,25 +35,18 @@
 		viewMode,
 		profileSrc
 	} from '$lib/stores';
-	import { augmentRsv } from '$lib/utils.js';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { login, logout } from '$lib/authentication';
-	import { toast, Toaster } from 'svelte-french-toast';
-	import { FacebookAuth } from '@beyonk/svelte-social-auth';
 	import {
 		getAppData,
 		getBoatAssignments,
 		getSession,
-		getSettings,
+		getBuoys,
 		getUserPastReservations,
 		getUserNotifications
 	} from '$lib/api';
-	import { onMount } from 'svelte';
 
 	let intervalId: number | undefined;
-
-	export let data; // has data = { settings } parsed from xata
-	$settings = data.settings;
 
 	$: if ($loginState === 'out' && $page.route.id != '/') {
 		goto('/');
@@ -83,9 +86,7 @@
 			$notifications = userNotifications;
 
 			if (reqReservations.status === 'success') {
-				$userPastReservations = (reqReservations.userPastReservations || []).map((rsv) => {
-					return augmentRsv(rsv, $user);
-				});
+				$userPastReservations = reqReservations.userPastReservations;
 			}
 
 			if (reqBoatAssignments.status === 'success') {
@@ -110,7 +111,7 @@
 
 			const oneWeekAgo = dayjs().locale('en-US').subtract(7, 'day').format('YYYY-MM-DD');
 			// TODO: this is super slow
-			const [, resSettings, resAppData] = await Promise.all([
+			const [, resBuoys, resAppData] = await Promise.all([
 				getSession().then((res) => {
 					if (res.status !== 'success') {
 						$loginState = 'out';
@@ -121,22 +122,25 @@
 						initializeUserSessionData(res.viewMode);
 					}
 				}),
-				getSettings(),
+				getBuoys(),
 				getAppData(oneWeekAgo)
 			]);
-			if (resSettings.status === 'error') {
-				throw new Error('Could not get settings from database');
+			if (resBuoys.status === 'error') {
+				throw new Error('Could not get buoys from database');
 			}
-
-			$buoys = resSettings.buoys;
+			$buoys = resBuoys.buoys;
+			if (resAppData.status === 'error') {
+				throw new Error('Could not get application data from the database');
+			}
 			$users = resAppData.usersById!;
 			$stateLoaded = true;
-			const rsvById: { [id: string]: any } = $reservations.reduce((obj, rsv) => {
+
+			const rsvById: { [id: string]: Reservation } = $reservations.reduce((obj, rsv) => {
 				obj[rsv.id] = rsv;
 				return obj;
 			}, {});
-			(resAppData.reservations || []).forEach((rsv) => {
-				rsvById[rsv.id] = augmentRsv(rsv);
+			resAppData.reservations.forEach((rsv) => {
+				rsvById[rsv.id] = rsv;
 			});
 			$reservations = Object.values(rsvById).filter((rsv) => rsv.status !== 'canceled');
 

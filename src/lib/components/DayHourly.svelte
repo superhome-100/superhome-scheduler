@@ -1,11 +1,11 @@
-<script>
-	import { startTimes, endTimes } from '$lib/reservationTimes.js';
-	import { viewedDate, viewMode, reservations } from '$lib/stores';
+<script lang="ts">
+	import { startTimes, endTimes } from '$lib/reservationTimes';
+	import { reservations, users, viewedDate, viewMode } from '$lib/stores';
 	import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils';
 	import { getContext } from 'svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { badgeColor, getDaySchedule } from '$lib/utils.js';
-	import { Settings } from '$lib/settings';
+	import { Settings } from '$lib/client/settings';
 
 	export let resInfo;
 	export let category;
@@ -54,10 +54,12 @@
 	const formatTag = (rsvs, nSlots, width, slotWidthPx) => {
 		let tag = '';
 		if (rsvs[0].resType === 'course') {
-			tag = rsvs[0].user.nickname + ' +' + rsvs[0].numStudents;
+			let nickname = $users[rsvs[0].user.id].nickname;
+			tag = nickname + ' +' + rsvs[0].numStudents;
 		} else {
 			for (let i = 0; i < rsvs.length; i++) {
-				tag += rsvs[i].user.nickname;
+				let nickname = $users[rsvs[i].user.id].nickname;
+				tag += nickname;
 				if (i < rsvs.length - 1) {
 					tag += ' and ';
 				}
@@ -99,7 +101,7 @@
 
 <svelte:window bind:innerWidth />
 
-{#if Settings.get('openForBusiness', datetimeToLocalDateStr($viewedDate)) === false}
+{#if Settings.getOpenForBusiness(datetimeToLocalDateStr($viewedDate)) === false}
 	<div class="font-semibold text-3xl text-center">Closed</div>
 {:else if assignment.status === 'error'}
 	<div class="font-semibold text-red-600 text-xl text-center mt-4">

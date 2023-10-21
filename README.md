@@ -8,46 +8,41 @@ Serverless hosting on [vercel](https://vercel.com)
 
 Database on [xata](https://xata.io)
 
-## Install
+# Tasks
+
+## install
 
 Setup [tea/cli](https://tea.xyz) first.
 
 ```bash
 cd superhome-scheduler
-npm install
+pnpm install
 ```
 
 Facebook Login requires `https`. Additional dependencies may need to be installed to enable this in your dev environment.
 
-## Developing
+## dev
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
-## Tasks
-
-# Setup
+## setup
 
 This will configure your connection to the database
 
 ```sh
-npm install -g @xata.io/cli@latest
-npm install
+pnpm add -g @xata.io/cli@latest
+pnpm
 xata auth login
 xata init
 ```
 
 ## Dependencies
 
-[`tea/cli`] will automagically make these available to your environment.
+[`pkgx`] will automagically make the package dependencies available to your environment.
 
-| Project    | Version  |
-| ---------- | -------- |
-| nodejs.org | =18.15.0 |
-| npmjs.com  | =8.19.3  |
-
-[`tea/cli`]: https://github.com/teaxyz/cli
+[`pkgx`]: https://docs.pkgx.sh/run-anywhere/terminals
 
 ## Documentation
 
@@ -68,7 +63,7 @@ xata init
 Global settings are defined in the `Settings` table on xata. The table consists of four columns: `name`, `value`, `startDate`, `endDate`.<br><br>
 The `value` column is a string type, but the true data type for each setting may be different. Each setting variable is converted to its true data type in the function `parseSettingsTbl` in `src/lib/utils.js`<br><br>
 The `startDate` and `endDate` fields indicate the date range within which the given value applies. `startDate` and `endDate` values of `default` indicate that the value applies whenever a specific date range that includes the current date is not defined.<br><br>
-On the client, settings are retrieved via the `src/lib/settings` module, while on the server, they are retrieved via `src/lib/server/settings`. The reason for separate storage code for client and server is that the client uses a svelte store to cache the variables, and the server cannot use svelte stores.
+On the client, settings are retrieved via the `src/lib/client/settings` module, while on the server, they are retrieved via `src/lib/server/settings`. The reason for separate storage code for client and server is that the client uses a svelte store to cache the variables, and the server cannot use svelte stores.
 
 ### Client-side code
 

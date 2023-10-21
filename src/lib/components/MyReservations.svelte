@@ -1,21 +1,21 @@
 <script lang="ts">
 	import { datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
-	import { minuteOfDay, beforeCancelCutoff } from '$lib/reservationTimes.js';
+	import { minuteOfDay, beforeCancelCutoff } from '$lib/reservationTimes';
 	import { timeStrToMin } from '$lib/datetimeUtils';
 	import { user, userPastReservations, reservations } from '$lib/stores';
 	import { getContext } from 'svelte';
 	import Modal from './Modal.svelte';
 	import CancelDialog from './CancelDialog.svelte';
 	import RsvTabs from './RsvTabs.svelte';
-	import { Settings } from '$lib/settings';
+	import { Settings } from '$lib/client/settings';
 
-	import type { ReservationData, ReservationPeriod } from '$types';
+	import type { Reservation, ReservationPeriod } from '$types';
 	import { ReservationCategory, ReservationStatus } from '$types';
 	import dayjs from 'dayjs';
 
 	export let resPeriod: ReservationPeriod = 'upcoming';
 
-	function getResPeriod(rsv: ReservationData) {
+	function getResPeriod(rsv: Reservation) {
 		let view;
 		let today = PanglaoDate();
 		let todayStr = datetimeToLocalDateStr(today);
@@ -27,9 +27,9 @@
 			let rsvMin: number = 0;
 			if (rsv.category === ReservationCategory.openwater) {
 				if (rsv.owTime === 'AM') {
-					rsvMin = timeStrToMin(Settings.get('openwaterAmEndTime', rsv.date));
+					rsvMin = timeStrToMin(Settings.getOpenwaterAmEndTime(rsv.date));
 				} else if (rsv.owTime === 'PM') {
-					rsvMin = timeStrToMin(Settings.get('openwaterPmEndTime', rsv.date));
+					rsvMin = timeStrToMin(Settings.getOpenwaterPmEndTime(rsv.date));
 				}
 			} else {
 				rsvMin = timeStrToMin(rsv.endTime);
@@ -51,15 +51,15 @@
 		[ReservationCategory.classroom]: 'to-classroom-bg-to'
 	};
 
-	const catDesc = (rsv: ReservationData) => {
-		let desc = [rsv.categoryPretty];
+	const catDesc = (rsv: Reservation) => {
+		let desc = [rsv.category];
 		if (rsv.resType === 'course') {
 			desc += ' +' + rsv.numStudents;
 		}
 		return desc;
 	};
 
-	const timeDesc = (rsv: ReservationData) => {
+	const timeDesc = (rsv: Reservation) => {
 		const fmt = (time) => {
 			let rx = /([0-9]+):([0-9]+)/;
 			let m = rx.exec(time);
@@ -88,14 +88,14 @@
 
 	const { open } = getContext('simple-modal') as { open: (component: any, props: any) => void };
 
-	const showViewRsv = (rsv: ReservationData) => {
+	const showViewRsv = (rsv: Reservation) => {
 		open(RsvTabs, {
 			rsvs: [rsv],
 			hasForm: true
 		});
 	};
 
-	const sortChronologically = (rsvs: ReservationData[], resPeriod: ReservationPeriod) => {
+	const sortChronologically = (rsvs: Reservation[], resPeriod: ReservationPeriod) => {
 		let sign = resPeriod === 'upcoming' ? 1 : -1;
 		return rsvs.sort((a, b) => {
 			if (a.date > b.date) {
@@ -110,15 +110,15 @@
 
 	type ReservationsByMonth = {
 		month?: string;
-		rsvs: ReservationData[];
+		rsvs: Reservation[];
 	};
 
 	const groupRsvs = (
 		resPeriod: ReservationPeriod,
-		allRsvs: ReservationData[],
-		userPastRsvs: ReservationData[]
+		allRsvs: Reservation[],
+		userPastRsvs: Reservation[]
 	): ReservationsByMonth[] => {
-		let rsvs: ReservationData[] = [];
+		let rsvs: Reservation[] = [];
 		if (resPeriod === 'upcoming') {
 			rsvs = allRsvs.filter((rsv) => {
 				return rsv?.user?.id === $user.id && getResPeriod(rsv) === resPeriod;
@@ -156,7 +156,7 @@
 		[ReservationStatus.rejected]: 'text-status-rejected'
 	};
 
-	const totalThisMonth = (rsvs: ReservationData[]): number => {
+	const totalThisMonth = (rsvs: Reservation[]): number => {
 		return rsvs.reduce((t, rsv) => (rsv.price ? t + rsv.price : t), 0);
 	};
 </script>

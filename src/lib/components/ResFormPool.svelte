@@ -1,16 +1,16 @@
 <script lang="ts">
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
-	import { startTimes, endTimes, minuteOfDay } from '$lib/reservationTimes.js';
+	import { startTimes, endTimes, minuteOfDay } from '$lib/reservationTimes';
 	import { timeStrToMin, datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
 	import { canSubmit, user } from '$lib/stores';
-	import { Settings } from '$lib/settings';
+	import { Settings } from '$lib/client/settings';
 	import { adminView } from '$lib/utils.js';
-	import type { ReservationData } from '$types';
+	import type { Reservation } from '$types';
 
-	const lanes = () => Settings.get('poolLanes');
-	const rooms = () => Settings.get('classrooms');
+	const lanes = () => Settings.getPoolLanes();
+	const rooms = () => Settings.getClassrooms();
 
-	export let rsv: ReservationData | null = null;
+	export let rsv: Reservation | null = null;
 	export let category = 'pool';
 	export let date: string | null = null;
 	export let dateFn: null | ((arg0: string) => string) = null;
@@ -55,7 +55,7 @@
 	<div class="[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5" slot="categoryLabels">
 		{#if adminView(viewOnly)}
 			{#if category === 'pool'}
-				{#if rsv?.resType === 'course' && (rsv?.numStudents || 1) > Settings.get('maxOccupantsPerLane')}
+				{#if rsv?.resType === 'course' && (rsv?.numStudents || 1) > Settings.getMaxOccupantsPerLane()}
 					<div><label for="formLane1">1st Lane</label></div>
 					<div><label for="formLane2">2nd Lane</label></div>
 				{:else}
@@ -84,7 +84,7 @@
 						{/each}
 					</select>
 				</div>
-				{#if rsv.resType === 'course' && rsv.numStudents > Settings.get('maxOccupantsPerLane')}
+				{#if rsv.resType === 'course' && rsv.numStudents > Settings.getMaxOccupantsPerLane()}
 					<div>
 						<select id="formLane2" name="lane2" value={rsv.lanes[1]}>
 							<option value="auto">Auto</option>
