@@ -5,7 +5,7 @@
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { popup } from './Popup.svelte';
-	import { adminComments, reservations, user, users } from '$lib/stores';
+	import { reservations, user, users } from '$lib/stores';
 	import { adminView } from '$lib/utils.js';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { toast } from 'svelte-french-toast';
@@ -16,19 +16,6 @@
 	const dispatch = createEventDispatcher();
 
 	const { close } = getContext('simple-modal');
-
-	const getThisRsvAdminComments = (rsv, adminComments) => {
-		if (adminComments[rsv.date]) {
-			for (let ac of adminComments[rsv.date]) {
-				if (ac.buoy == rsv.buoy) {
-					return ac.comment;
-				}
-			}
-		}
-		return '';
-	};
-
-	let thisAdminComments = getThisRsvAdminComments(rsv, $adminComments);
 
 	const copyChanges = (rsv, upd) => {
 		rsv.status = upd.status;
@@ -75,23 +62,9 @@
 		return async ({ result, update }) => {
 			switch (result.type) {
 				case 'success':
-					let updated = result.data.rsvRecord;
+					let updated = result.data.record;
 					copyChanges(rsv, updated);
 					$reservations = [...$reservations];
-					if (result.data.adminCommentRecord) {
-						const acRec = result.data.adminCommentRecord;
-						const date = datetimeToLocalDateStr(acRec.date);
-						for (let i = 0; i < $adminComments[date].length; i++) {
-							if ($adminComments[date][i].id == acRec.id) {
-								$adminComments[date].splice(i, 1);
-								break;
-							}
-						}
-						if (acRec.comment) {
-							$adminComments[date].push(acRec);
-						}
-						$adminComments = { ...$adminComments };
-					}
 					toast.success('Reservation updated!');
 					break;
 				default:
@@ -114,16 +87,6 @@
 		{/if}
 		<input type="hidden" name="id" value={rsv.id} />
 		{#if adminView(true)}
-			<div class="">
-				<label for="admin_comments" class="dark:text-white w-[33%]">Admin Comments</label>
-				<textarea
-					id="adminComments"
-					name="admin_comments"
-					class="w-44 xs:w-52 mb-4 flex-1 text-gray-700 dark:text-white"
-					bind:value={thisAdminComments}
-					tabindex="4"
-				/>
-			</div>
 			<div class="[&>*]:mx-auto w-full inline-flex items-center justify-between">
 				<button formaction="/?/adminUpdateRejected" class="bg-status-rejected px-3 py-1"
 					>Reject</button
