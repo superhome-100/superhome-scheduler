@@ -20,6 +20,7 @@ export type Submission = {
 	bottomPlate: boolean;
 	largeBuoy: boolean;
 	O2OnBuoy: boolean;
+	shortSession: boolean;
 	owner: boolean;
 	status: ReservationStatus;
 	lanes: string[];
