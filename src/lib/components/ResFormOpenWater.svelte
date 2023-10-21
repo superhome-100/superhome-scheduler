@@ -28,6 +28,7 @@
 	let bottomPlate = rsv?.bottomPlate || false;
 	let largeBuoy = rsv?.largeBuoy || false;
 	let o2OnBuoy = rsv?.O2OnBuoy || false;
+	let shortSession = rsv?.shortSession || false;
 
 	function checkSubmit() {
 		$canSubmit = maxDepth > 0;
@@ -225,6 +226,20 @@
 				tabindex="5"
 			/>
 			<label for="formO2OnBuoy">O2 on buoy (additional fee)</label>
+		</div>
+		<div>
+			{#if disabled}
+				<input type="hidden" name="shortSession" value={shortSession ? 'on' : 'off'} />
+			{/if}
+			<input
+				type="checkbox"
+				id="formShortSession"
+				name="shortSession"
+				checked={shortSession}
+				{disabled}
+				tabindex="5"
+			/>
+			<label for="formShortSession">short session</label>
 		</div>
 	</div>
 </ResFormGeneric>
