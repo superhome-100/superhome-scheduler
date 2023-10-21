@@ -13,6 +13,7 @@
 	import { displayTag } from '$lib/utils.js';
 	import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
 	import { getContext, onMount } from 'svelte';
+	import AdminComment from '$lib/components/AdminComment.svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { badgeColor, buoyDesc } from '$lib/utils.js';
 	import { Settings } from '$lib/client/settings';
@@ -27,6 +28,10 @@
 			hasForm: true,
 			disableModify: $viewMode === 'admin'
 		});
+	};
+
+	const showAdminCommentForm = (date, buoy) => {
+		open(AdminComment, { date, buoy });
 	};
 
 	function getOpenWaterSchedule(rsvs, datetime) {
@@ -242,8 +247,9 @@ it should be,
 				{#if buoyInUse(schedule, buoy.name)}
 					{#if $viewMode === 'admin'}
 						<div
-							class="flex mx-2 sm:mx-4 md:mx-8 lg:mx-6 xl:mx-12 items-center justify-between font-semibold"
+							class="cursor-pointer flex mx-2 sm:mx-4 md:mx-8 lg:mx-6 xl:mx-12 items-center justify-between font-semibold"
 							style="height: {rowHeights[buoy.name].header}rem"
+							on:click={showAdminCommentForm(date, buoy.name)}
 						>
 							<span class="text-xl">{buoy.name}</span>
 							<span class="text-sm">{buoyDesc(buoy)}</span>
