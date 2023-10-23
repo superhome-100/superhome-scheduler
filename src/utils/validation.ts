@@ -7,7 +7,7 @@ import { getUsersById } from '$lib/server/user';
 import type { SettingsManager } from '$lib/client/settings';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getNumberOfOccupants } from './reservations';
-import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
+import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater';
 import { getXataClient } from '$lib/server/xata-old';
 
 export class ValidationError extends Error {}

@@ -1,5 +1,5 @@
 import { getXataClient } from '$lib/server/xata-old';
-import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
+import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater';
 import { json } from '@sveltejs/kit';
 
 const xata = getXataClient();
