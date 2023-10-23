@@ -3,7 +3,7 @@ import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils';
 import { reservations, user, users, viewMode } from './stores';
 import { Settings } from './client/settings';
 import { get } from 'svelte/store';
-import { assignPoolSpaces, patchSchedule } from './autoAssignPool.js';
+import { assignPoolSpaces } from './autoAssign';
 
 export function monthArr(year, month, reservations) {
 	let daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -194,11 +194,6 @@ export function getDaySchedule(rsvs, datetime, category) {
 	let result;
 	if (category === 'pool') {
 		result = assignPoolSpaces(rsvs, today);
-		if (result.status === 'success') {
-			// format data according to old assignment algorithm
-			// so display code doesn't have to change
-			result.schedule = patchSchedule(result.schedule);
-		}
 	} else if (category === 'classroom') {
 		result = assignClassrooms(rsvs, today);
 	}

@@ -204,6 +204,9 @@ export function assignPoolSpaces(rsvs, dateStr) {
 			result.rsv = rsv;
 		}
 	}
+	if (result.status === 'success') {
+		result.schedule = patchSchedule(result.schedule);
+	}
 	return result;
 }
 
@@ -247,7 +250,7 @@ function setRelativeSpace(sByT, space, t, blk) {
 	}
 }
 
-export function patchSchedule(sByT) {
+function patchSchedule(sByT) {
 	let schedule = Array(sByT.length)
 		.fill()
 		.map(() => {
