@@ -1,4 +1,7 @@
-function groupByBuddy(rsvs) {
+import type { Buoys } from '$lib/server/xata.codegen';
+import type { Reservation } from '$types';
+
+function groupByBuddy(rsvs: Reservation[]) {
 	let grps = [];
 	for (const rsvA of rsvs) {
 		const thisBg = new Set([rsvA.id]);
@@ -28,32 +31,32 @@ function groupByBuddy(rsvs) {
 
 	// replace rsv ids with copies of rsv objects
 	// and convert sets to arrays
-	const rsvById = rsvs.reduce((obj, rsv) => {
+	const rsvById = rsvs.reduce((obj: { [id: string]: Reservation }, rsv) => {
 		obj[rsv.id] = rsv;
 		return obj;
 	}, {});
 	return grps.map((g) => Array.from(g).map((id) => rsvById[id]));
 }
 
-const sortBuddies = (rsvs) => {
+const sortBuddies = (rsvs: Reservation[]) => {
 	return rsvs.sort((a, b) => (a.maxDepth < b.maxDepth ? 1 : -1));
 };
 
-function sortBuddyGroups(buddyGrps) {
+function sortBuddyGroups(buddyGrps: Reservation[][]) {
 	return buddyGrps
 		.map((g) => sortBuddies(g))
 		.sort((a, b) => (a[0].maxDepth < b[0].maxDepth ? 1 : -1));
 }
 
-function handlePreAssignedBuoys(buddyGrps, buoys) {
+function handlePreAssignedBuoys(buddyGrps: Reservation[][], buoys: Buoys[]) {
 	for (let grp of buddyGrps) {
 		let buoy = grp.reduce((b, rsv) => (rsv.buoy === 'auto' ? b : rsv.buoy), 'auto');
 		for (let rsv of grp) {
 			rsv.buoy = buoy;
 		}
 	}
-	let asn = buoys.reduce((a, b) => {
-		a[b.name] = [];
+	let asn = buoys.reduce((a: { [name: string]: Reservation[] }, b) => {
+		a[b.name!] = [];
 		return a;
 	}, {});
 	for (let i = buddyGrps.length - 1; i >= 0; i--) {
@@ -71,8 +74,8 @@ function handlePreAssignedBuoys(buddyGrps, buoys) {
 	return buddyGrps;
 }
 
-function createBuoyGroups(buddyGrps, maxDepthDiff) {
-	const buoyGrps = [];
+function createBuoyGroups(buddyGrps: Reservation[][], maxDepthDiff: number) {
+	const buoyGrps: Reservation[][] = [];
 	// first add all rsvs with resType==course to their own buoys
 	for (let i = buddyGrps.length - 1; i >= 0; i--) {
 		if (buddyGrps[i][0].resType === 'course') {
@@ -96,11 +99,11 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
 	buddyGrps = sortBuddyGroups(buddyGrps);
 
 	// try to avoid pairing buddies with maxDepths that differ by 10+ meters
-	const depthsTooFar = (bg0, bg1, tooFar = 10) => {
+	const depthsTooFar = (bg0: Reservation[], bg1: Reservation[], tooFar = 10) => {
 		return bg0[bg0.length - 1].maxDepth - bg1[0].maxDepth >= tooFar;
 	};
 	// helper to make sure buddies with pre-assigned buoys are consistent
-	const buoysMatch = (bg0, bg1) => {
+	const buoysMatch = (bg0: Reservation[], bg1: Reservation[]) => {
 		if ([bg0[0].buoy, bg1[0].buoy].includes('CBS')) {
 			return bg0[0].buoy === bg1[0].buoy;
 		} else {
@@ -109,7 +112,7 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
 	};
 
 	// helper for creating a buoy group from buddy groups and removing from buddyGrps
-	const update = (bgs, idx) => {
+	const update = (bgs: Reservation[][], idx: number[]) => {
 		const bg = bgs.reduce((acc, g) => acc.concat(g), []);
 		buoyGrps.push(sortBuddies(bg));
 		for (let i of idx.sort().reverse()) {
@@ -120,7 +123,13 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
 	// bg0 and bgX both consist of one diver each
 	// find the best pair of 3 divers from subsequent buddy groups
 	// could be bg0 + bgX + another group with one diver, or bg0 plus another group of two
-	const matchOneOrTwo = (bg0, bgX, xIdx, idx, tooFar) => {
+	const matchOneOrTwo = (
+		bg0: Reservation[],
+		bgX: Reservation[],
+		xIdx: number,
+		idx: number,
+		tooFar: number
+	) => {
 		if (idx == buddyGrps.length) {
 			// couldnt find a good group of 3, so create group of 2
 			update([bg0, bgX], [0, xIdx]);
@@ -146,7 +155,7 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
 
 	// edge case when there is one diver left who does not pair up nicely
 	// with any of the existing buoy groups
-	const addLastDiver = (rsv) => {
+	const addLastDiver = (rsv: Reservation) => {
 		let added = false;
 		for (let i = buoyGrps.length - 1; i >= 0; i--) {
 			let Bg = buoyGrps[i];
@@ -154,7 +163,7 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
 				if (Bg.length == 2) {
 					Bg.push(rsv);
 				} else {
-					let buoy1, buoy2;
+					let buoy1: Reservation[], buoy2: Reservation[];
 					// try not to split up pairs of buddies
 					if (Bg.filter((rsv) => rsv.buddies.length == 1).length > 0) {
 						for (let j = 0; j < Bg.length; j++) {
@@ -171,50 +180,23 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
 						buoy2 = [Bg[2], rsv];
 					}
 					buoyGrps.splice(i, 1);
-					buoyGrps.push(buoy1);
-					buoyGrps.push(buoy2);
+					buoyGrps.push(buoy1!);
+					buoyGrps.push(buoy2!);
 				}
 				added = true;
 				break;
 			}
 		}
 		if (!added) {
-			// none of the existing groups are autonomous;
-			// create group of 1
+			// none of the existing groups are autonomous; create group of 1
 			buoyGrps.push([rsv]);
-
-			// alternative method:
-			// add the diver to the course buoy with closest maxDepth and <= 3 divers
-			/*
-            let bestScore = Infinity;
-            let bestMatch;
-            let depth = rsv.maxDepth;
-            for (let Bg of buoyGrps) {
-                if (Bg[0].numStudents < 3) {
-                    let score = Math.abs(Bg[0].maxDepth - depth);
-                    if (score < bestScore) {
-                        bestScore = score;
-                        bestMatch = Bg;
-                    }
-                }
-            }
-            if (bestMatch) {
-                bestMatch.push(rsv);
-            } else {
-                // give up and just add the diver to any buoy
-                if (buoyGrps.length > 0) {
-                    buoyGrps[0].push(rsv);
-                } else {
-                    buoyGrps.push([rsv]);
-                }
-            }*/
 		}
 		buddyGrps.splice(0, 1);
 	};
 
 	// bg0 has either one or two divers
 	// look for a good buddy group(s) to combine with bg0 to form a group of 3
-	const matchOne = (bg0, idx, tooFar) => {
+	const matchOne = (bg0: Reservation[], idx: number, tooFar: number) => {
 		if (idx == buddyGrps.length) {
 			// couldnt find a good group of 3
 			if (bg0.length == 2) {
@@ -237,15 +219,15 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
 						update([bg0, bg], [0, idx]);
 					}
 				} else if (n == 2) {
-					return matchOneOrTwo(bg0, bg, idx, idx + 1, tooFar);
+					matchOneOrTwo(bg0, bg, idx, idx + 1, tooFar);
 				} else if (n == 3) {
 					update([bg0, bg], [0, idx]);
 				} else {
 					// n == 4
-					return matchOne(bg0, idx + 1, tooFar);
+					matchOne(bg0, idx + 1, tooFar);
 				}
 			} else {
-				return matchOne(bg0, idx + 1, tooFar);
+				matchOne(bg0, idx + 1, tooFar);
 			}
 		}
 	};
@@ -261,7 +243,7 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
 		if (bg[0].resType === 'course') {
 			update([bg], [0]);
 		} else {
-			matchOne(buddyGrps[0], 1, maxDepthDiff);
+			matchOne(bg, 1, maxDepthDiff);
 		}
 	}
 	/*
@@ -273,27 +255,35 @@ function createBuoyGroups(buddyGrps, maxDepthDiff) {
 	return buoyGrps;
 }
 
-const buoyOpts = ['pulley', 'bottomPlate', 'largeBuoy'];
-
-function getGroupOpts(grp) {
-	let grpOpts = {};
+function getGroupOpts(grp: Reservation[]) {
+	let grpOpts: { [key: string]: boolean | null } = {
+		pulley: null, // null = "no preference", false = "don't want pulley", true = "want pulley"
+		bottomPlate: false,
+		largeBuoy: false
+	};
 	for (let rsv of grp) {
-		for (let opt of buoyOpts) {
-			grpOpts[opt] = grpOpts[opt] || rsv[opt];
-		}
+		grpOpts.pulley = grpOpts.pulley || rsv.pulley;
+		grpOpts.bottomPlate = grpOpts.bottomPlate || rsv.bottomPlate;
+		grpOpts.largeBuoy = grpOpts.largeBuoy || rsv.largeBuoy;
 	}
 	return grpOpts;
 }
 
-function countMatches(buoy, opts) {
-	return buoyOpts.reduce((c, opt) => (buoy[opt] && opts[opt] ? c + 1 : c), 0);
+type BuoyOpts = ReturnType<typeof getGroupOpts>;
+
+function countMatches(buoy: Buoys, opts: BuoyOpts) {
+	let m = 0;
+	if (buoy.pulley && opts.pulley) m++;
+	if (buoy.bottomPlate && opts.bottomPlate) m++;
+	if (buoy.largeBuoy && opts.largeBuoy) m++;
+	return m;
 }
 
-function assignBuoyGroupsToBuoys(buoys, grps) {
-	const assignments = {};
-	const getBuoy = (grp) => {
-		return grp.reduce((buoy, buddy) => {
-			return buoy !== 'auto' ? buoy : buddy.buoy ? buddy.buoy : 'auto';
+function assignBuoyGroupsToBuoys(buoys: Buoys[], grps: Reservation[][]) {
+	const assignments: { [buoyName: string]: Reservation[] } = {};
+	const getBuoy = (grp: Reservation[]) => {
+		return grp.reduce((buoy, rsv) => {
+			return buoy !== 'auto' ? buoy : rsv.buoy ? rsv.buoy : 'auto';
 		}, 'auto');
 	};
 
@@ -313,7 +303,7 @@ function assignBuoyGroupsToBuoys(buoys, grps) {
 		}
 	}
 
-	buoys.sort((a, b) => (a.maxDepth < b.maxDepth ? 1 : -1));
+	buoys.sort((a, b) => (a.maxDepth! < b.maxDepth! ? 1 : -1));
 	grps.sort((a, b) => (a[0].maxDepth > b[0].maxDepth ? 1 : -1));
 
 	// iterate from deepest to shallowest
@@ -324,7 +314,7 @@ function assignBuoyGroupsToBuoys(buoys, grps) {
 			return { buoy, idx };
 		});
 		if (checkNoPulley) {
-			let noPulleys = candidates.filter((c) => c.pulley == false);
+			let noPulleys = candidates.filter((c) => c.buoy.pulley == false);
 			if (noPulleys.length > 0) {
 				candidates = noPulleys;
 			}
@@ -332,31 +322,34 @@ function assignBuoyGroupsToBuoys(buoys, grps) {
 
 		if (candidates.length > 0) {
 			// first find buoys with most option matches
-			let opts = getGroupOpts(grp);
-			const calcScore = (cand) => {
+			let grpOpts = getGroupOpts(grp);
+			const calcScore = (cand: { buoy: Buoys; idx: number }) => {
 				// rather than forbiding assignment of a buoy with a max depth less
 				// than the group's max depth, we allow it in cases when no other
 				// buoys of adequate depth are available via the depthPenalty
-				let depthPenalty = Math.min(0, 2 * (cand.buoy.maxDepth - grp[0].maxDepth));
-				return depthPenalty + countMatches(cand.buoy, opts);
+				let depthPenalty = Math.min(0, 2 * (cand.buoy.maxDepth! - grp[0].maxDepth));
+				return depthPenalty + countMatches(cand.buoy, grpOpts);
 			};
 			let optScore = candidates.reduce((c, cand) => Math.max(c, calcScore(cand)), -Infinity);
 			candidates = candidates.filter((cand) => calcScore(cand) == optScore);
-			// then select the one among these buoys with fewest additional opts and closest maxDepth
-			const numOpts = (req) => buoyOpts.reduce((c, opt) => (req[opt] ? c + 1 : c), 0);
-			const addOpts = (buoy) => Math.max(0, numOpts(buoy) - numOpts(opts));
-			const depthDiff = (buoy) => buoy.maxDepth - grp[0].maxDepth;
+			// then select the one among these buoys with fewest additional opts
+			// and closest maxDepth
+			const numOpts = (opts: Buoys | BuoyOpts) => {
+				return (opts.pulley ? 1 : 0) + (opts.bottomPlate ? 1 : 0) + (opts.largeBuoy ? 1 : 0);
+			};
+			const additionalOpts = (buoy: Buoys) => Math.max(0, numOpts(buoy) - numOpts(grpOpts));
+			const depthDiff = (buoy: Buoys) => buoy.maxDepth! - grp[0].maxDepth;
 			candidates.sort((a, b) =>
-				addOpts(a.buoy) > addOpts(b.buoy)
+				additionalOpts(a.buoy) > additionalOpts(b.buoy)
 					? 1
-					: addOpts(b.buoy) > addOpts(a.buoy)
+					: additionalOpts(b.buoy) > additionalOpts(a.buoy)
 					? -1
 					: depthDiff(a.buoy) > depthDiff(b.buoy)
 					? 1
 					: -1
 			);
 			let best = candidates[0];
-			assignments[best.buoy.name] = grp;
+			assignments[best.buoy.name!] = grp;
 			grps.splice(grps.length - 1, 1);
 			buoys.splice(best.idx, 1);
 		} else {
@@ -370,16 +363,24 @@ function assignBuoyGroupsToBuoys(buoys, grps) {
 	return { status: 'success', assignments };
 }
 
-export function assignRsvsToBuoys(buoys, rsvs) {
-	let buddyGrps = sortBuddyGroups(handlePreAssignedBuoys(groupByBuddy(rsvs), buoys));
+export function assignRsvsToBuoys(buoys: Buoys[], rsvs: Reservation[]) {
+	let rsvsByDuration: Reservation[][] = [[], []];
+	rsvs.forEach((rsv) => {
+		if (rsv.shortSession) rsvsByDuration[0].push(rsv);
+		else rsvsByDuration[1].push(rsv);
+	});
 
-	// try to avoid assigning divers with max depths that differ by
-	// more than maxDepthDiff to the same buoy; if no better option
-	// is available, divers may still be assigned to the same buoy
-	const maxDepthDiff = 15;
+	let buoyGrps: Reservation[][] = [];
+	for (let rsvsDur of rsvsByDuration) {
+		let buddyGrps = sortBuddyGroups(handlePreAssignedBuoys(groupByBuddy(rsvsDur), buoys));
 
-	let buoyGrps = createBuoyGroups(buddyGrps, maxDepthDiff);
+		// try to avoid assigning divers with max depths that differ by
+		// more than maxDepthDiff to the same buoy; if no better option
+		// is available, divers may still be assigned to the same buoy
+		const maxDepthDiff = 15;
 
+		buoyGrps = buoyGrps.concat(createBuoyGroups(buddyGrps, maxDepthDiff));
+	}
 	let result = assignBuoyGroupsToBuoys([...buoys], buoyGrps);
 
 	return result;
