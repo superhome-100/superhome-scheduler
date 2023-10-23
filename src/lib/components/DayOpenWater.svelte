@@ -11,7 +11,7 @@
 	} from '$lib/stores';
 	import { datetimeToLocalDateStr as dtToLDS } from '$lib/datetimeUtils';
 	import { displayTag } from '$lib/utils.js';
-	import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater';
+	import { assignRsvsToBuoys } from '$lib/autoAssign/assignRsvsToBuoys';
 	import { getContext, onMount } from 'svelte';
 	import AdminComment from '$lib/components/AdminComment.svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
