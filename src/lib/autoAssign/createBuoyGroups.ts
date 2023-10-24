@@ -2,23 +2,27 @@ import type { Buoys } from '$lib/server/xata.codegen';
 import type { Submission } from '$types';
 
 const sortBuddies = (grp: Submission[]) => {
-	return grp.sort((a, b) => a.maxDepth - b.maxDepth);
+	//deepest to shallowest
+	return grp.sort((a, b) => b.maxDepth - a.maxDepth);
 };
 
 function sortBuddyGroups(buddyGrps: Submission[][]) {
-	return buddyGrps.map((g) => sortBuddies(g)).sort((a, b) => a[0].maxDepth - b[0].maxDepth);
+	//deepest to shallowest
+	return buddyGrps.map((g) => sortBuddies(g)).sort((a, b) => b[0].maxDepth - a[0].maxDepth);
 }
 
+//group submissions by buddies and/or divers who are pre-assigned to the same buoy
 function createBuddyGroups(rsvs: Submission[]) {
+	let remaining = [...rsvs];
 	let grps = [];
 	let isBuddy = (a: Submission, b: Submission) => a.buddies.includes(b.user.id) && a.buoy == b.buoy;
 	let sameBuoy = (a: Submission, b: Submission) => a.buoy != 'auto' && a.buoy == b.buoy;
-	while (rsvs.length > 0) {
-		let next = rsvs.splice(0, 1)[0];
+	while (remaining.length > 0) {
+		let next = remaining.splice(0, 1)[0];
 		let bg = [next];
-		for (let i = rsvs.length - 1; i >= 0; i--) {
-			if (isBuddy(next, rsvs[i]) || sameBuoy(next, rsvs[i])) {
-				bg.push(rsvs.splice(i, 1)[0]);
+		for (let i = remaining.length - 1; i >= 0; i--) {
+			if (isBuddy(next, remaining[i]) || sameBuoy(next, remaining[i])) {
+				bg.push(remaining.splice(i, 1)[0]);
 			}
 		}
 		grps.push(bg);
@@ -26,22 +30,21 @@ function createBuddyGroups(rsvs: Submission[]) {
 	return sortBuddyGroups(grps);
 }
 
-// helper: try to avoid pairing buddies with maxDepths that differ by 'tooFar' meters
-const depthsTooFar = (deepBg: Submission[], shallowBg: Submission[], tooFar: number) => {
+// helper: try to avoid pairing buddies with maxDepths that differ by 'threshold' meters
+const largeDepthDifference = (deepBg: Submission[], shallowBg: Submission[], threshold: number) => {
 	let deepBgMax = deepBg[0].maxDepth;
 	let shallowBgMin = shallowBg[shallowBg.length - 1].maxDepth;
-	return deepBgMax - shallowBgMin >= tooFar;
+	return deepBgMax - shallowBgMin >= threshold;
 };
 
-// helper: make sure buddies with pre-assigned buoys are consistent
+// helper: make sure buoy assignments are consistent before merging two buddy groups
 const buoysMatch = (bgA: Submission[], bgB: Submission[]) => {
-	if (
-		[bgA[0].buoy, bgB[0].buoy].includes('CBS') ||
-		[bgA[0].buoy, bgB[0].buoy].includes('PRO_SAFETY')
-	) {
-		return bgA[0].buoy === bgB[0].buoy;
+	let buoyA = bgA[0].buoy;
+	let buoyB = bgB[0].buoy;
+	if ([buoyA, buoyB].includes('CBS') || [buoyA, buoyB].includes('PRO_SAFETY')) {
+		return buoyA === buoyB;
 	} else {
-		return bgA[0].buoy === 'auto' || bgB[0].buoy === 'auto' || bgA[0].buoy === bgB[0].buoy;
+		return buoyA === 'auto' || buoyB === 'auto' || buoyA === buoyB;
 	}
 };
 
@@ -52,8 +55,7 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 	for (let i = buddyGrps.length - 1; i >= 0; i--) {
 		let bg = buddyGrps[i];
 		if (bg[0].resType === 'course' || bg.length >= 3) {
-			buoyGrps.push(buddyGrps[i]);
-			buddyGrps.splice(i, 1);
+			buoyGrps.push(buddyGrps.splice(i, 1)[0]);
 		}
 	}
 
@@ -69,10 +71,10 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 		}
 	};
 
-	// curBg has either one or two divers
 	// This fn recursively looks for a good buddy group to combine with
 	// curBg to (ideally) form a group of 3
-	const matchOne = (curBg: Submission[], searchIdx: number, tooFar: number) => {
+	// Note: curBg has either one or two divers
+	const matchOne = (curBg: Submission[], searchIdx: number, diffThresh: number) => {
 		if (searchIdx == buddyGrps.length) {
 			// couldnt find a good group of 3
 			if (curBg.length == 2) {
@@ -86,7 +88,7 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 			let candidateBg = buddyGrps[searchIdx];
 			if (buoysMatch(curBg, candidateBg)) {
 				let n = curBg.length + candidateBg.length;
-				if (depthsTooFar(curBg, candidateBg, tooFar)) {
+				if (largeDepthDifference(curBg, candidateBg, diffThresh)) {
 					if (curBg.length == 2) {
 						// create a group of 2 rather than combine
 						// buddies with disparate maxDepths
@@ -97,36 +99,36 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 						update([curBg, candidateBg], [0, searchIdx]);
 					}
 				} else if (n == 2) {
-					matchOneOrTwo(curBg, candidateBg, searchIdx, searchIdx + 1, tooFar);
+					matchOneOrTwo(curBg, candidateBg, searchIdx, searchIdx + 1, diffThresh);
 				} else if (n == 3) {
 					update([curBg, candidateBg], [0, searchIdx]);
 				} else {
 					// n == 4
-					matchOne(curBg, searchIdx + 1, tooFar);
+					matchOne(curBg, searchIdx + 1, diffThresh);
 				}
 			} else {
-				matchOne(curBg, searchIdx + 1, tooFar);
+				matchOne(curBg, searchIdx + 1, diffThresh);
 			}
 		}
 	};
 
-	// curBg and nextBg both consist of one diver each.
-	// This fn finds the best pair of 3 divers from subsequent buddy groups.
+	// This fn finds the best group of 3 divers from subsequent buddy groups.
 	// It could be curBg + nextBg + another group with one diver,
-	// or curBg plus another group of two.
+	// or curBg plus another group of two
+	// Note: curBg and nextBg both consist of one diver each
 	const matchOneOrTwo = (
 		curBg: Submission[],
 		nextBg: Submission[],
 		nextBgIdx: number,
 		searchIdx: number,
-		tooFar: number
+		diffThresh: number
 	) => {
 		if (searchIdx == buddyGrps.length) {
 			// couldnt find a good group of 3, so create group of 2
 			update([curBg, nextBg], [0, nextBgIdx]);
 		} else {
 			let candidateBg = buddyGrps[searchIdx];
-			if (depthsTooFar(curBg, candidateBg, tooFar)) {
+			if (largeDepthDifference(curBg, candidateBg, diffThresh)) {
 				// create group of 2 rather than combine buddies w/ disparate maxDepths
 				update([curBg, nextBg], [0, nextBgIdx]);
 			} else {
@@ -138,7 +140,7 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 						update([curBg, candidateBg], [0, searchIdx]);
 					}
 				} else {
-					matchOneOrTwo(curBg, nextBg, nextBgIdx, searchIdx + 1, tooFar);
+					matchOneOrTwo(curBg, nextBg, nextBgIdx, searchIdx + 1, diffThresh);
 				}
 			}
 		}
@@ -146,31 +148,35 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 
 	// edge case when there is a solo diver who does not pair up nicely
 	// with any of the existing buoy groups
-	const forceAddSoloDiver = (rsv: Submission) => {
+	const forceAddSoloDiver = (solo: Submission) => {
 		let added = false;
+		//iterate from shallowest to deepest
 		for (let i = buoyGrps.length - 1; i >= 0; i--) {
-			let buoyG = buoyGrps[i];
-			if (buoysMatch(buoyG, [rsv]) && buoyG[0].resType === 'autonomous') {
-				if (buoyG.length == 2) {
-					buoyG.push(rsv);
+			let grp = buoyGrps[i];
+			if (buoysMatch(grp, [solo]) && grp[0].resType === 'autonomous') {
+				if (grp.length == 2) {
+					grp.push(solo);
 				} else {
-					//buoyG already has at least 3 divers
+					//grp already has at least 3 divers
 					let buoyA: Submission[], buoyB: Submission[];
-					// if buoyG has a group-of-2 buddy group
-					if (buoyG.filter((rsv) => rsv.buddies.length == 1).length > 0) {
-						//split the non-group-of-2 buddy
-						for (let j = 0; j < buoyG.length; j++) {
-							if (buoyG[j].buddies.length == 0) {
-								let buddy = buoyG.splice(j, 1)[0];
-								buoyA = buoyG;
-								buoyB = [buddy, rsv];
+					if (grp.filter((rsv) => rsv.buddies.length == 1).length > 0) {
+						//this group has a pair of buddies that requested to dive together
+						//Note: this also means that the group size must be exactly 3
+						//      because groups of 4 are only possible when 4 buddies request
+						//      to dive together
+						//keep the two buddies together and split off the third diver
+						for (let j = 0; j < grp.length; j++) {
+							if (grp[j].buddies.length == 0) {
+								let buddy = grp.splice(j, 1)[0];
+								buoyA = grp;
+								buoyB = [buddy, solo];
 								break;
 							}
 						}
 					} else {
-						// just split off the top two divers
-						buoyA = buoyG.slice(0, 2);
-						buoyB = [buoyG[2], rsv];
+						// split off the last diver
+						buoyA = grp.slice(0, grp.length - 1);
+						buoyB = [grp[grp.length - 1], solo];
 					}
 					buoyGrps.splice(i, 1);
 					buoyGrps.push(buoyA!);
@@ -178,11 +184,11 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 				}
 				added = true;
 				break;
-			}
+			} //buoysMatch
 		}
 		if (!added) {
 			// none of the existing groups are autonomous; create group of 1
-			buoyGrps.push([rsv]);
+			buoyGrps.push([solo]);
 		}
 		buddyGrps.splice(0, 1);
 	};

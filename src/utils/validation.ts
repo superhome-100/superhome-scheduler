@@ -99,8 +99,8 @@ export function checkOWSpaceAvailable(
 	existingReservations: Reservation[]
 ) {
 	let buddyGroup = simulateBuddyGroup(sub);
-	let result = assignRsvsToBuoys(buoys, [...buddyGroup, ...existingReservations]);
-	if (result.status === 'error') {
+	let { unassigned } = assignRsvsToBuoys(buoys, [...buddyGroup, ...existingReservations]);
+	if (unassigned.length > 0) {
 		return {
 			status: 'error',
 			message:
@@ -108,7 +108,7 @@ export function checkOWSpaceAvailable(
 				'Please either check back later or try a different date/time'
 		};
 	} else {
-		return result;
+		return { status: 'success' };
 	}
 }
 
