@@ -193,13 +193,15 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 		buddyGrps.splice(0, 1);
 	};
 
+	const debugPrint = () => {
+		console.log('buddyGrps:');
+		console.log(buddyGrps.map((bg) => bg.map((rsv) => rsv.maxDepth)));
+		console.log('buoyGrps:');
+		console.log(buoyGrps.map((bg) => bg.map((rsv) => rsv.maxDepth)));
+	};
+
 	while (buddyGrps.length > 0) {
-		/*
-        console.log('buddyGrps:');
-        console.log(buddyGrps.map((bg)=> bg.map((rsv)=>rsv.maxDepth)));
-        console.log('buoyGrps:');
-        console.log(buoyGrps.map((bg)=> bg.map((rsv)=>rsv.maxDepth)));
-        */
+		//debugPrint();
 		const bg = buddyGrps[0];
 		if (bg[0].resType === 'course') {
 			update([bg], [0]);
@@ -207,12 +209,7 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 			matchOne(bg, 1, maxDepthDiff);
 		}
 	}
-	/*
-    console.log('buddyGrps:');
-    console.log(buddyGrps.map((bg)=> bg.map((rsv)=>rsv.maxDepth)));
-    console.log('buoyGrps:');
-    console.log(buoyGrps.map((bg)=> bg.map((rsv)=>rsv.maxDepth)));
-    */
+	//debugPrint();
 	return buoyGrps;
 }
 

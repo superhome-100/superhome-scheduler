@@ -33,7 +33,7 @@ function assignPreAssigned(
 ) {
 	const getBuoy = (grp: Submission[]) => {
 		return grp.reduce((buoy, rsv) => {
-			return buoy !== 'auto' ? buoy : rsv.buoy ? rsv.buoy : 'auto';
+			return buoy === 'auto' ? rsv.buoy : buoy;
 		}, 'auto');
 	};
 
