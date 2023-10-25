@@ -101,12 +101,11 @@
 
 {#if Settings.getOpenForBusiness(datetimeToLocalDateStr($viewedDate)) === false}
 	<div class="font-semibold text-3xl text-center">Closed</div>
-{:else if assignment.status === 'error'}
-	<div class="font-semibold text-red-600 text-xl text-center mt-4">
-		Error assigning reservations!
-	</div>
-	<div class="text-sm text-center mt-2">Please report this error to the admin</div>
 {:else}
+	{#if assignment.status === 'error'}
+		<div class="font-semibold text-red-600 text-xl text-center">Error assigning reservations!</div>
+		<div class="text-sm text-center mb-2">Please report this error to the admin</div>
+	{/if}
 	<div class="row text-xs sm:text-base">
 		<div class="column w-[12%] m-0 text-center">
 			<div style="height: 1lh" />
@@ -120,34 +119,32 @@
 				<div class="row">
 					{#each [...Array(resInfo.occupancy).keys()] as j}
 						<div class="column" style="width: {100 / resInfo.occupancy}%">
-							{#if assignment.status === 'success'}
-								{#if assignment.schedule[i * resInfo.occupancy + j]}
-									<div style="height: 0.5rem" />
-									{#each assignment.schedule[i * resInfo.occupancy + j] as blk}
-										{#if blk.blkType === 'rsv'}
-											<div
-												class="rsv {category} bg-fixed {spaceStyling(
-													blk.styleType
-												)} mb-1 text-sm cursor-pointer hover:font-semibold"
-												style="height: {rowHeight * (blk.nSlots / slotDiv) - blkMgn}rem"
-												on:click={showViewRsvs(blk.data)}
-											>
-												<div class="block indicator w-full">
-													{#if ['single', 'end'].includes(blk.styleType)}
-														<span class="rsv-indicator {badgeColor(blk.data)}" />
-													{/if}
-													{#if ['single', 'start'].includes(blk.styleType)}
-														{#each formatTag(blk.data, blk.nSlots, blk.width, slotWidthPx) as line}
-															<div>{line}</div>
-														{/each}
-													{/if}
-												</div>
+							{#if assignment.schedule[i * resInfo.occupancy + j]}
+								<div style="height: 0.5rem" />
+								{#each assignment.schedule[i * resInfo.occupancy + j] as blk}
+									{#if blk.blkType === 'rsv'}
+										<div
+											class="rsv {category} bg-fixed {spaceStyling(
+												blk.styleType
+											)} mb-1 text-sm cursor-pointer hover:font-semibold"
+											style="height: {rowHeight * (blk.nSlots / slotDiv) - blkMgn}rem"
+											on:click={showViewRsvs(blk.data)}
+										>
+											<div class="block indicator w-full">
+												{#if ['single', 'end'].includes(blk.styleType)}
+													<span class="rsv-indicator {badgeColor(blk.data)}" />
+												{/if}
+												{#if ['single', 'start'].includes(blk.styleType)}
+													{#each formatTag(blk.data, blk.nSlots, blk.width, slotWidthPx) as line}
+														<div>{line}</div>
+													{/each}
+												{/if}
 											</div>
-										{:else}
-											<div style="height: {rowHeight * (blk.nSlots / slotDiv)}rem" />
-										{/if}
-									{/each}
-								{/if}
+										</div>
+									{:else}
+										<div style="height: {rowHeight * (blk.nSlots / slotDiv)}rem" />
+									{/if}
+								{/each}
 							{/if}
 						</div>
 					{/each}

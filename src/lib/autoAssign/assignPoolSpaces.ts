@@ -31,13 +31,23 @@ function rsvsToBlock(rsvs: Reservation[], timeSettings: TimeSettings, resourceNa
 	let startTime = timeIdx(rsv.startTime, timeSettings);
 	let endTime = timeIdx(rsv.endTime, timeSettings);
 	let width = getWidth(rsv);
+	let startSpace = -1;
+	//check for pre-assigned lane
+	if (rsv.lanes.length > 0) {
+		let nSpaces = resourceNames.length;
+		let lane = resourceNames.indexOf(rsv.lanes[0]);
+		//make sure there's enough room for all require spaces
+		if (nSpaces - lane >= width) {
+			startSpace = lane;
+		}
+	}
 
 	return {
 		rsvs,
 		startTime,
 		endTime,
 		width,
-		startSpace: -1
+		startSpace
 	};
 }
 
@@ -80,6 +90,22 @@ function emptyBlock(
 	return true;
 }
 
+function insertPreassigned(spacesByTimes: Grid, blk: Block, blkIdx: number) {
+	let valid = emptyBlock(
+		spacesByTimes,
+		blk.startSpace,
+		blk.startSpace + blk.width,
+		blk.startTime,
+		blk.endTime
+	);
+	for (let i = blk.startSpace; i < blk.startSpace + blk.width; i++) {
+		for (let j = blk.startTime; j < blk.endTime; j++) {
+			spacesByTimes[i][j] = blkIdx;
+		}
+	}
+	return valid;
+}
+
 function insertUnassigned(spacesByTimes: Grid, blk: Block, blkIdx: number) {
 	for (let i = 0; i <= spacesByTimes.length - blk.width; i++) {
 		if (emptyBlock(spacesByTimes, i, i + blk.width, blk.startTime, blk.endTime)) {
@@ -103,18 +129,23 @@ export function assignPoolSpaces(rsvs: Reservation[], dateStr: string) {
 		.map(() => Array(timeSettings.nTimes).fill(-1));
 
 	let blocks = createBuddyGroups(rsvs).map((grp) => rsvsToBlock(grp, timeSettings, resourceNames));
+	blocks.sort((a, b) => (a.startSpace == -1 ? 1 : -1));
 
+	let success = true;
 	for (let i = 0; i < blocks.length; i++) {
 		let blk = blocks[i];
-		let success = insertUnassigned(spacesByTimes, blk, i);
-		if (!success) {
-			//not enough spaces; this should never happen unless there's a bug
-			return {
-				status: 'error'
-			};
+		if (blk.startSpace >= 0) {
+			success = insertPreassigned(spacesByTimes, blk, i);
+		} else {
+			success = insertUnassigned(spacesByTimes, blk, i);
 		}
+		if (!success) break;
 	}
 
 	let schedule = blocksToDisplayData(blocks, resourceNames.length, timeSettings.nTimes);
-	return { status: 'success', schedule };
+
+	//error indicates conflicting assignments; either there's a bug or the admin made a mistake
+	//    even if there's an error, we still display the schedule to help the admin to debug
+	let status = success ? 'success' : 'error';
+	return { status, schedule };
 }
