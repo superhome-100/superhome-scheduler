@@ -31,7 +31,7 @@ function rsvsToBlock(rsvs: Reservation[], timeSettings: TimeSettings, resourceNa
 	let startTime = timeIdx(rsv.startTime, timeSettings);
 	let endTime = timeIdx(rsv.endTime, timeSettings);
 	let width = getWidth(rsv);
-	let startSpace = -1;
+	let startSpace = -1; // -1 == unassigned
 	//check for pre-assigned lane
 	if (rsv.lanes.length > 0) {
 		let nSpaces = resourceNames.length;
@@ -98,6 +98,8 @@ function insertPreassigned(spacesByTimes: Grid, blk: Block, blkIdx: number) {
 		blk.startTime,
 		blk.endTime
 	);
+	//even if valid==false, we still assign the block here in order to make
+	//debugging easier for the admin
 	for (let i = blk.startSpace; i < blk.startSpace + blk.width; i++) {
 		for (let j = blk.startTime; j < blk.endTime; j++) {
 			spacesByTimes[i][j] = blkIdx;
@@ -124,11 +126,15 @@ function insertUnassigned(spacesByTimes: Grid, blk: Block, blkIdx: number) {
 export function assignPoolSpaces(rsvs: Reservation[], dateStr: string) {
 	let timeSettings = getTimeSettings(dateStr);
 	let resourceNames = Settings.getPoolLanes(dateStr);
+
+	// each tile in the grid represents one space in the pool for one timeslot
+	// the value of the tile is an index into the blocks array (-1 == unassigned)
 	let spacesByTimes: Grid = Array(resourceNames.length)
 		.fill(null)
 		.map(() => Array(timeSettings.nTimes).fill(-1));
 
 	let blocks = createBuddyGroups(rsvs).map((grp) => rsvsToBlock(grp, timeSettings, resourceNames));
+	//move pre-assigned to front
 	blocks.sort((a, b) => (a.startSpace == -1 ? 1 : -1));
 
 	let success = true;
