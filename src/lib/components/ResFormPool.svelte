@@ -55,12 +55,7 @@
 	<div class="[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5" slot="categoryLabels">
 		{#if adminView(viewOnly)}
 			{#if category === 'pool'}
-				{#if rsv?.resType === 'course' && (rsv?.numStudents || 1) > Settings.getMaxOccupantsPerLane()}
-					<div><label for="formLane1">1st Lane</label></div>
-					<div><label for="formLane2">2nd Lane</label></div>
-				{:else}
-					<div><label for="formLane1">Lane</label></div>
-				{/if}
+				<div><label for="formLane">Lane</label></div>
 			{:else if category === 'classroom'}
 				<div><label for="formRoom">Room</label></div>
 			{/if}
@@ -77,23 +72,13 @@
 		{#if adminView(viewOnly)}
 			{#if category === 'pool'}
 				<div>
-					<select id="formLane1" name="lane1" value={rsv?.lanes[0]}>
+					<select id="formLane" name="lane" value={rsv?.lanes[0]}>
 						<option value="auto">Auto</option>
 						{#each lanes() as lane}
 							<option value={lane}>{lane}</option>
 						{/each}
 					</select>
 				</div>
-				{#if rsv.resType === 'course' && rsv.numStudents > Settings.getMaxOccupantsPerLane()}
-					<div>
-						<select id="formLane2" name="lane2" value={rsv.lanes[1]}>
-							<option value="auto">Auto</option>
-							{#each lanes() as lane}
-								<option value={lane}>{lane}</option>
-							{/each}
-						</select>
-					</div>
-				{/if}
 			{:else if category === 'classroom'}
 				<div>
 					<select id="formRoom" name="room" value={rsv.room}>
