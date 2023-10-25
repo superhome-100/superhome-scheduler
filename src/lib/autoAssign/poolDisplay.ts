@@ -1,5 +1,5 @@
 import type { Reservation } from '$types';
-import type { Block } from './assignPoolSpacesSimple';
+import type { Block } from './assignPoolSpaces';
 
 const getNextBlock = (blocks: Block[], space: number, time: number) => {
 	let { idx } = blocks.reduce(
