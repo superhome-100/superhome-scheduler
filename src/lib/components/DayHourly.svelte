@@ -79,17 +79,15 @@
 		return lines;
 	};
 
-	const spaceStyling = (width, relSpace) => {
-		if (width === 1) {
+	const spaceStyling = (styleType) => {
+		if (styleType == 'single') {
 			return 'mx-0.5 rounded-lg';
+		} else if (styleType == 'start') {
+			return 'ms-0.5 rounded-s-xl';
+		} else if (styleType == 'end') {
+			return 'me-0.5 rounded-e-xl';
 		} else {
-			if (relSpace == 0) {
-				return 'ms-0.5 rounded-s-xl';
-			} else if (relSpace == width - 1) {
-				return 'me-0.5 rounded-e-xl';
-			} else {
-				return 'rounded-none';
-			}
+			return 'rounded-none';
 		}
 	};
 
@@ -125,29 +123,28 @@
 							{#if assignment.status === 'success'}
 								{#if assignment.schedule[i * resInfo.occupancy + j]}
 									<div style="height: 0.5rem" />
-									{#each assignment.schedule[i * resInfo.occupancy + j] as { nSlots, cls, data, width, relativeSpace }}
-										{#if cls === 'rsv'}
+									{#each assignment.schedule[i * resInfo.occupancy + j] as blk}
+										{#if blk.blkType === 'rsv'}
 											<div
 												class="rsv {category} bg-fixed {spaceStyling(
-													width,
-													relativeSpace
+													blk.styleType
 												)} mb-1 text-sm cursor-pointer hover:font-semibold"
-												style="height: {rowHeight * (nSlots / slotDiv) - blkMgn}rem"
-												on:click={showViewRsvs(data)}
+												style="height: {rowHeight * (blk.nSlots / slotDiv) - blkMgn}rem"
+												on:click={showViewRsvs(blk.data)}
 											>
 												<div class="block indicator w-full">
-													{#if relativeSpace === width - 1}
-														<span class="rsv-indicator {badgeColor(data)}" />
+													{#if ['single', 'end'].includes(blk.styleType)}
+														<span class="rsv-indicator {badgeColor(blk.data)}" />
 													{/if}
-													{#if relativeSpace == 0}
-														{#each formatTag(data, nSlots, width, slotWidthPx) as line}
+													{#if ['single', 'start'].includes(blk.styleType)}
+														{#each formatTag(blk.data, blk.nSlots, blk.width, slotWidthPx) as line}
 															<div>{line}</div>
 														{/each}
 													{/if}
 												</div>
 											</div>
 										{:else}
-											<div style="height: {rowHeight * (nSlots / slotDiv)}rem" />
+											<div style="height: {rowHeight * (blk.nSlots / slotDiv)}rem" />
 										{/if}
 									{/each}
 								{/if}
