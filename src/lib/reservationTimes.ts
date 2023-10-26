@@ -83,15 +83,20 @@ const maxEnd = (stns: SettingsManager, dateStr: string, cat: ReservationCategory
 const nRes = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
 	Math.floor((maxEnd(stns, dateStr, cat) - minStart(stns, dateStr, cat)) / inc(stns, dateStr));
 
-export const startTimes = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
-	Array(nRes(stns, dateStr, cat))
+export const getStartEndTimes = (
+	stns: SettingsManager,
+	dateStr: string,
+	cat: ReservationCategory
+) =>
+	Array(nRes(stns, dateStr, cat) + 1)
 		.fill(undefined)
 		.map((v, i) => dtu.minToTimeStr(minStart(stns, dateStr, cat) + i * inc(stns, dateStr)));
 
+export const startTimes = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
+	getStartEndTimes(stns, dateStr, cat).slice(0, -1);
+
 export const endTimes = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
-	Array(nRes(stns, dateStr, cat))
-		.fill(undefined)
-		.map((v, i) => dtu.minToTimeStr(minStart(stns, dateStr, cat) + (i + 1) * inc(stns, dateStr)));
+	getStartEndTimes(stns, dateStr, cat).slice(1);
 
 export function minValidDate(stns: SettingsManager, category: ReservationCategory) {
 	let today = dtu.PanglaoDate();
