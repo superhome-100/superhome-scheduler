@@ -1,4 +1,4 @@
-import { inc, startTimes } from '$lib/reservationTimes';
+import { getStartEndTimes } from '$lib/reservationTimes';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { Settings } from '$lib/client/settings';
 import { getNumberOfOccupants } from '$utils/reservations';
@@ -6,30 +6,12 @@ import { blocksToDisplayData } from './poolDisplay';
 import type { Reservation } from '$types';
 import { ReservationCategory } from '$types';
 
-const getTimeSettings = (dateStr: string) => {
-	let incT = inc(Settings, dateStr);
-	let sTs = startTimes(Settings, dateStr, ReservationCategory.pool);
-	let nTimes = sTs.length;
-	let minTime = timeStrToMin(sTs[0]);
-	return {
-		inc: incT,
-		nTimes,
-		minTime
-	};
-};
-
-type TimeSettings = ReturnType<typeof getTimeSettings>;
-
-const timeIdx = (time: string, timeSettings: TimeSettings) => {
-	return (timeStrToMin(time) - timeSettings.minTime) / timeSettings.inc;
-};
-
 const getWidth = (rsv: Reservation) => getNumberOfOccupants([rsv]) + rsv.buddies.length;
 
-function rsvsToBlock(rsvs: Reservation[], timeSettings: TimeSettings, resourceNames: string[]) {
+function rsvsToBlock(rsvs: Reservation[], startEndTimes: string[], resourceNames: string[]) {
 	let rsv = rsvs[0];
-	let startTime = timeIdx(rsv.startTime, timeSettings);
-	let endTime = timeIdx(rsv.endTime, timeSettings);
+	let startTime = startEndTimes.indexOf(rsv.startTime);
+	let endTime = startEndTimes.indexOf(rsv.endTime);
 	let width = getWidth(rsv);
 	let startSpace = -1; // -1 == unassigned
 	//check for pre-assigned lane
@@ -124,16 +106,17 @@ function insertUnassigned(spacesByTimes: Grid, blk: Block, blkIdx: number) {
 }
 
 export function assignPoolSpaces(rsvs: Reservation[], dateStr: string) {
-	let timeSettings = getTimeSettings(dateStr);
+	let startEndTimes = getStartEndTimes(Settings, dateStr, ReservationCategory.pool);
+	let nStartTimes = startEndTimes.length - 1;
 	let resourceNames = Settings.getPoolLanes(dateStr);
 
 	// each tile in the grid represents one space in the pool for one timeslot
 	// the value of the tile is an index into the blocks array (-1 == unassigned)
 	let spacesByTimes: Grid = Array(resourceNames.length)
 		.fill(null)
-		.map(() => Array(timeSettings.nTimes).fill(-1));
+		.map(() => Array(nStartTimes).fill(-1));
 
-	let blocks = createBuddyGroups(rsvs).map((grp) => rsvsToBlock(grp, timeSettings, resourceNames));
+	let blocks = createBuddyGroups(rsvs).map((grp) => rsvsToBlock(grp, startEndTimes, resourceNames));
 	//move pre-assigned to front
 	blocks.sort((a, b) => (a.startSpace == -1 ? 1 : -1));
 
@@ -148,7 +131,7 @@ export function assignPoolSpaces(rsvs: Reservation[], dateStr: string) {
 		if (!success) break;
 	}
 
-	let schedule = blocksToDisplayData(blocks, resourceNames.length, timeSettings.nTimes);
+	let schedule = blocksToDisplayData(blocks, resourceNames.length, nStartTimes);
 
 	//error indicates conflicting assignments; either there's a bug or the admin made a mistake
 	//    even if there's an error, we still display the schedule to help the admin to debug
