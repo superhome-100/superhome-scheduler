@@ -92,9 +92,7 @@
 	};
 
 	$: innerWidth = 0;
-	$: slotWidthPx = parseInt(
-		(innerWidth * 88) / (resInfo.occupancy * resInfo.resources.length) / 100
-	);
+	$: slotWidthPx = parseInt((innerWidth * 88) / resInfo.resources.length / 100);
 </script>
 
 <svelte:window bind:innerWidth />
@@ -104,7 +102,7 @@
 {:else}
 	{#if assignment.status === 'error'}
 		<div class="font-semibold text-red-600 text-xl text-center">Error assigning reservations!</div>
-		<div class="text-sm text-center mb-2">Please report this error to the admin</div>
+		<div class="text-sm text-center mb-4">Please report this error to the admin</div>
 	{/if}
 	<div class="row text-xs sm:text-base">
 		<div class="column w-[12%] m-0 text-center">
@@ -116,39 +114,33 @@
 		{#each resInfo.resources as resource, i}
 			<div class="column text-center" style="width: {88 / resInfo.resources.length}%">
 				<div class="font-semibold">{resInfo.name} {resource}</div>
-				<div class="row">
-					{#each [...Array(resInfo.occupancy).keys()] as j}
-						<div class="column" style="width: {100 / resInfo.occupancy}%">
-							{#if assignment.schedule[i * resInfo.occupancy + j]}
-								<div style="height: 0.5rem" />
-								{#each assignment.schedule[i * resInfo.occupancy + j] as blk}
-									{#if blk.blkType === 'rsv'}
-										<div
-											class="rsv {category} bg-fixed {spaceStyling(
-												blk.styleType
-											)} mb-1 text-sm cursor-pointer hover:font-semibold"
-											style="height: {rowHeight * (blk.nSlots / slotDiv) - blkMgn}rem"
-											on:click={showViewRsvs(blk.data)}
-										>
-											<div class="block indicator w-full">
-												{#if ['single', 'end'].includes(blk.styleType)}
-													<span class="rsv-indicator {badgeColor(blk.data)}" />
-												{/if}
-												{#if ['single', 'start'].includes(blk.styleType)}
-													{#each formatTag(blk.data, blk.nSlots, blk.width, slotWidthPx) as line}
-														<div>{line}</div>
-													{/each}
-												{/if}
-											</div>
-										</div>
-									{:else}
-										<div style="height: {rowHeight * (blk.nSlots / slotDiv)}rem" />
+				{#if assignment.schedule[i]}
+					<div style="height: 0.5rem" />
+					{#each assignment.schedule[i] as blk}
+						{#if blk.blkType === 'rsv'}
+							<div
+								class="rsv {category} bg-fixed {spaceStyling(
+									blk.styleType
+								)} mb-1 text-sm cursor-pointer hover:font-semibold"
+								style="height: {rowHeight * (blk.nSlots / slotDiv) - blkMgn}rem"
+								on:click={showViewRsvs(blk.data)}
+							>
+								<div class="block indicator w-full">
+									{#if ['single', 'end'].includes(blk.styleType)}
+										<span class="rsv-indicator {badgeColor(blk.data)}" />
 									{/if}
-								{/each}
-							{/if}
-						</div>
+									{#if ['single', 'start'].includes(blk.styleType)}
+										{#each formatTag(blk.data, blk.nSlots, blk.width, slotWidthPx) as line}
+											<div>{line}</div>
+										{/each}
+									{/if}
+								</div>
+							</div>
+						{:else}
+							<div style="height: {rowHeight * (blk.nSlots / slotDiv)}rem" />
+						{/if}
 					{/each}
-				</div>
+				{/if}
 			</div>
 		{/each}
 	</div>

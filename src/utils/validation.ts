@@ -125,10 +125,9 @@ export function checkPoolSpaceAvailable(
 			let end = timeStrToMin(rsv.endTime);
 			return start <= time && end > time;
 		});
-		let mpl = settings.getMaxOccupantsPerLane(sub.date);
 		let numDivers = getNumberOfOccupants([...thisSlotOverlap, sub]) + sub.buddies.length;
 		let nLanes = settings.getPoolLanes(sub.date).length;
-		if (numDivers > nLanes * mpl) {
+		if (numDivers > nLanes) {
 			return {
 				status: 'error',
 				message:
