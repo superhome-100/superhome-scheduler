@@ -86,7 +86,6 @@ export enum SettingTypes {
 	classrooms = 'classrooms',
 	maxChargeableOWPerMonth = 'maxChargeableOWPerMonth',
 	maxClassroomEndTime = 'maxClassroomEndTime',
-	maxOccupantsPerLane = 'maxOccupantsPerLane',
 	maxPoolEndTime = 'maxPoolEndTime',
 	minClassroomStartTime = 'minClassroomStartTime',
 	minPoolStartTime = 'minPoolStartTime',

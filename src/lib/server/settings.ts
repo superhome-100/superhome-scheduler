@@ -32,12 +32,9 @@ export function parseSettingsTbl(
 		let name = e.name!;
 		let v: any = e.value!;
 		if (
-			[
-				'maxOccupantsPerLane',
-				'maxChargeableOWPerMonth',
-				'refreshIntervalSeconds',
-				'reservationLeadTimeDays'
-			].includes(name)
+			['maxChargeableOWPerMonth', 'refreshIntervalSeconds', 'reservationLeadTimeDays'].includes(
+				name
+			)
 		) {
 			v = parseInt(v);
 		}

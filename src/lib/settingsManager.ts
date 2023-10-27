@@ -39,9 +39,6 @@ export const getSettingsManager = (settings: Settings) => {
 		getMaxClassroomEndTime: (date?: string) => {
 			return <string>getOn(settings.maxClassroomEndTime, date);
 		},
-		getMaxOccupantsPerLane: (date?: string) => {
-			return <number>getOn(settings.maxOccupantsPerLane, date);
-		},
 		getMaxPoolEndTime: (date?: string) => {
 			return <string>getOn(settings.maxPoolEndTime, date);
 		},
