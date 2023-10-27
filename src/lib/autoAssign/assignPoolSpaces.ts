@@ -15,10 +15,10 @@ function rsvsToBlock(rsvs: Reservation[], startEndTimes: string[], resourceNames
 	let width = getWidth(rsv);
 	let startSpace = -1; // -1 == unassigned
 	//check for pre-assigned lane
-	if (rsv.lanes.length > 0) {
+	if (rsv.lanes[0] != 'auto') {
 		let nSpaces = resourceNames.length;
 		let lane = resourceNames.indexOf(rsv.lanes[0]);
-		//make sure there's enough room for all require spaces
+		//make sure there's enough room for all required spaces
 		if (nSpaces - lane >= width) {
 			startSpace = lane;
 		}
@@ -55,13 +55,19 @@ function createBuddyGroups(rsvs: Reservation[]) {
 export type Block = ReturnType<typeof rsvsToBlock>;
 type Grid = number[][];
 
-function emptyBlock(
-	spacesByTimes: Grid,
-	startSpace: number,
-	endSpace: number,
-	startTime: number,
-	endTime: number
-) {
+function emptyBlock({
+	spacesByTimes,
+	startSpace,
+	endSpace,
+	startTime,
+	endTime
+}: {
+	spacesByTimes: Grid;
+	startSpace: number;
+	endSpace: number;
+	startTime: number;
+	endTime: number;
+}) {
 	for (let i = startSpace; i < endSpace; i++) {
 		for (let j = startTime; j < endTime; j++) {
 			if (spacesByTimes[i][j] >= 0) {
@@ -73,13 +79,13 @@ function emptyBlock(
 }
 
 function insertPreassigned(spacesByTimes: Grid, blk: Block, blkIdx: number) {
-	let valid = emptyBlock(
+	let valid = emptyBlock({
 		spacesByTimes,
-		blk.startSpace,
-		blk.startSpace + blk.width,
-		blk.startTime,
-		blk.endTime
-	);
+		startSpace: blk.startSpace,
+		endSpace: blk.startSpace + blk.width,
+		startTime: blk.startTime,
+		endTime: blk.endTime
+	});
 	//even if valid==false, we still assign the block here in order to make
 	//debugging easier for the admin
 	for (let i = blk.startSpace; i < blk.startSpace + blk.width; i++) {
@@ -92,7 +98,15 @@ function insertPreassigned(spacesByTimes: Grid, blk: Block, blkIdx: number) {
 
 function insertUnassigned(spacesByTimes: Grid, blk: Block, blkIdx: number) {
 	for (let i = 0; i <= spacesByTimes.length - blk.width; i++) {
-		if (emptyBlock(spacesByTimes, i, i + blk.width, blk.startTime, blk.endTime)) {
+		if (
+			emptyBlock({
+				spacesByTimes,
+				startSpace: i,
+				endSpace: i + blk.width,
+				startTime: blk.startTime,
+				endTime: blk.endTime
+			})
+		) {
 			blk.startSpace = i;
 			for (let j = i; j < i + blk.width; j++) {
 				for (let k = blk.startTime; k < blk.endTime; k++) {

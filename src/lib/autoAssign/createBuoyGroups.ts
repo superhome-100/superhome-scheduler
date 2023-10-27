@@ -1,5 +1,6 @@
 import type { Buoys } from '$lib/server/xata.codegen';
 import type { Submission } from '$types';
+import { ReservationType } from '$types';
 
 const sortBuddies = (grp: Submission[]) => {
 	//deepest to shallowest
@@ -54,7 +55,7 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 	// first add all rsvs with resType==course or 3+ buddies to their own buoys
 	for (let i = buddyGrps.length - 1; i >= 0; i--) {
 		let bg = buddyGrps[i];
-		if (bg[0].resType === 'course' || bg.length >= 3) {
+		if (bg[0].resType === ReservationType.course || bg.length >= 3) {
 			buoyGrps.push(buddyGrps.splice(i, 1)[0]);
 		}
 	}
@@ -63,7 +64,7 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 	// create buoy groups of 2 or 3 divers from the remaining groups
 
 	// helper for creating a buoy group from buddy groups and updating buddyGrps
-	const update = (bgs: Submission[][], idxs: number[]) => {
+	const createBuoyGroup = (bgs: Submission[][], idxs: number[]) => {
 		const bg = bgs.reduce((acc, g) => acc.concat(g), []);
 		buoyGrps.push(sortBuddies(bg));
 		for (let i of idxs.sort().reverse()) {
@@ -78,7 +79,7 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 		if (searchIdx == buddyGrps.length) {
 			// couldnt find a good group of 3
 			if (curBg.length == 2) {
-				update([curBg], [0]);
+				createBuoyGroup([curBg], [0]);
 			} else {
 				// cant have a group with only one diver; find the best existing buoyGroup
 				// to add this diver to
@@ -92,16 +93,22 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 					if (curBg.length == 2) {
 						// create a group of 2 rather than combine
 						// buddies with disparate maxDepths
-						update([curBg], [0]);
+						createBuoyGroup([curBg], [0]);
 					} else {
 						// curBg.length == 1 and we can't have a buoy with only one diver, so
 						// we must resort to combining buddies with disparate maxDepths
-						update([curBg, candidateBg], [0, searchIdx]);
+						createBuoyGroup([curBg, candidateBg], [0, searchIdx]);
 					}
 				} else if (n == 2) {
-					matchOneOrTwo(curBg, candidateBg, searchIdx, searchIdx + 1, diffThresh);
+					matchOneOrTwo({
+						curBg,
+						nextBg: candidateBg,
+						nextBgIdx: searchIdx,
+						searchIdx: searchIdx + 1,
+						diffThresh
+					});
 				} else if (n == 3) {
-					update([curBg, candidateBg], [0, searchIdx]);
+					createBuoyGroup([curBg, candidateBg], [0, searchIdx]);
 				} else {
 					// n == 4
 					matchOne(curBg, searchIdx + 1, diffThresh);
@@ -116,31 +123,43 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 	// It could be curBg + nextBg + another group with one diver,
 	// or curBg plus another group of two
 	// Note: curBg and nextBg both consist of one diver each
-	const matchOneOrTwo = (
-		curBg: Submission[],
-		nextBg: Submission[],
-		nextBgIdx: number,
-		searchIdx: number,
-		diffThresh: number
-	) => {
+	const matchOneOrTwo = ({
+		curBg,
+		nextBg,
+		nextBgIdx,
+		searchIdx,
+		diffThresh
+	}: {
+		curBg: Submission[];
+		nextBg: Submission[];
+		nextBgIdx: number;
+		searchIdx: number;
+		diffThresh: number;
+	}) => {
 		if (searchIdx == buddyGrps.length) {
 			// couldnt find a good group of 3, so create group of 2
-			update([curBg, nextBg], [0, nextBgIdx]);
+			createBuoyGroup([curBg, nextBg], [0, nextBgIdx]);
 		} else {
 			let candidateBg = buddyGrps[searchIdx];
 			if (largeDepthDifference(curBg, candidateBg, diffThresh)) {
 				// create group of 2 rather than combine buddies w/ disparate maxDepths
-				update([curBg, nextBg], [0, nextBgIdx]);
+				createBuoyGroup([curBg, nextBg], [0, nextBgIdx]);
 			} else {
 				if (buoysMatch(curBg, candidateBg)) {
 					if (candidateBg.length == 1) {
-						update([curBg, nextBg, candidateBg], [0, nextBgIdx, searchIdx]);
+						createBuoyGroup([curBg, nextBg, candidateBg], [0, nextBgIdx, searchIdx]);
 					} else {
 						// candidateBg.length must equal 2
-						update([curBg, candidateBg], [0, searchIdx]);
+						createBuoyGroup([curBg, candidateBg], [0, searchIdx]);
 					}
 				} else {
-					matchOneOrTwo(curBg, nextBg, nextBgIdx, searchIdx + 1, diffThresh);
+					matchOneOrTwo({
+						curBg,
+						nextBg,
+						nextBgIdx,
+						searchIdx: searchIdx + 1,
+						diffThresh
+					});
 				}
 			}
 		}
@@ -153,7 +172,7 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 		//iterate from shallowest to deepest
 		for (let i = buoyGrps.length - 1; i >= 0; i--) {
 			let grp = buoyGrps[i];
-			if (buoysMatch(grp, [solo]) && grp[0].resType === 'autonomous') {
+			if (buoysMatch(grp, [solo]) && grp[0].resType === ReservationType.autonomous) {
 				if (grp.length == 2) {
 					grp.push(solo);
 				} else {
@@ -203,8 +222,8 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 	while (buddyGrps.length > 0) {
 		//debugPrint();
 		const bg = buddyGrps[0];
-		if (bg[0].resType === 'course') {
-			update([bg], [0]);
+		if (bg[0].resType === ReservationType.course) {
+			createBuoyGroup([bg], [0]);
 		} else {
 			matchOne(bg, 1, maxDepthDiff);
 		}

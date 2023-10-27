@@ -53,7 +53,7 @@ function assignPreAssigned(
 	}
 }
 
-function sortByFewestAdditionalOpts(
+function sortByFewestExtraOpts(
 	candidates: { buoy: Buoys; idx: number }[],
 	grpMaxDepth: number,
 	grpOpts: BuoyOpts
@@ -61,13 +61,13 @@ function sortByFewestAdditionalOpts(
 	const numOpts = (opts: Buoys | BuoyOpts) => {
 		return (opts.pulley ? 1 : 0) + (opts.bottomPlate ? 1 : 0) + (opts.largeBuoy ? 1 : 0);
 	};
-	const additionalOpts = (buoy: Buoys) => Math.max(0, numOpts(buoy) - numOpts(grpOpts));
+	const numExtraOpts = (buoy: Buoys) => Math.max(0, numOpts(buoy) - numOpts(grpOpts));
 	const depthDiff = (buoy: Buoys) => buoy.maxDepth! - grpMaxDepth;
 
 	candidates.sort((a, b) =>
-		additionalOpts(a.buoy) > additionalOpts(b.buoy)
+		numExtraOpts(a.buoy) > numExtraOpts(b.buoy)
 			? 1
-			: additionalOpts(b.buoy) > additionalOpts(a.buoy)
+			: numExtraOpts(b.buoy) > numExtraOpts(a.buoy)
 			? -1
 			: depthDiff(a.buoy) - depthDiff(b.buoy)
 	);
@@ -119,8 +119,8 @@ function assignAuto(
 			}, 0);
 			candidates = candidates.filter((cand) => countMatches(cand.buoy, grpOpts) == maxMatches);
 
-			// of these, choose the one with fewest additional opts and closest maxDepth
-			sortByFewestAdditionalOpts(candidates, grpMaxDepth, grpOpts);
+			// of these, choose the one with fewest extra opts and closest maxDepth
+			sortByFewestExtraOpts(candidates, grpMaxDepth, grpOpts);
 		} else {
 			// all remaining buoys are less than group maxDepth
 			// candidates[0] will be the buoy with largest maxDepth
