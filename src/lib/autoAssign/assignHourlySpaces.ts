@@ -2,25 +2,43 @@ import { getStartEndTimes } from '$lib/reservationTimes';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { Settings } from '$lib/client/settings';
 import { getNumberOfOccupants } from '$utils/reservations';
-import { blocksToDisplayData } from './poolDisplay';
+import { blocksToDisplayData } from './hourlyDisplay';
 import type { Reservation } from '$types';
 import { ReservationCategory } from '$types';
 
-const getWidth = (rsv: Reservation) => getNumberOfOccupants([rsv]) + rsv.buddies.length;
+const getWidth = (rsv: Reservation) =>
+	rsv.category == ReservationCategory.pool ? getNumberOfOccupants([rsv]) + rsv.buddies.length : 1;
 
-function rsvsToBlock(rsvs: Reservation[], startEndTimes: string[], resourceNames: string[]) {
+function rsvsToBlock({
+	rsvs,
+	startEndTimes,
+	category,
+	resourceNames
+}: {
+	rsvs: Reservation[];
+	startEndTimes: string[];
+	category: ReservationCategory;
+	resourceNames: string[];
+}) {
 	let rsv = rsvs[0];
 	let startTime = startEndTimes.indexOf(rsv.startTime);
 	let endTime = startEndTimes.indexOf(rsv.endTime);
 	let width = getWidth(rsv);
 	let startSpace = -1; // -1 == unassigned
-	//check for pre-assigned lane
-	if (rsv.lanes[0] != 'auto') {
-		let nSpaces = resourceNames.length;
-		let lane = resourceNames.indexOf(rsv.lanes[0]);
-		//make sure there's enough room for all required spaces
-		if (nSpaces - lane >= width) {
-			startSpace = lane;
+	if (category == ReservationCategory.pool) {
+		//check for pre-assigned lane
+		if (rsv.lanes[0] != 'auto') {
+			let nSpaces = resourceNames.length;
+			let lane = resourceNames.indexOf(rsv.lanes[0]);
+			//make sure there's enough room for all required spaces
+			if (nSpaces - lane >= width) {
+				startSpace = lane;
+			}
+		}
+	} else {
+		//classroom
+		if (rsv.room != 'auto') {
+			startSpace = resourceNames.indexOf(rsv.room);
 		}
 	}
 
@@ -119,18 +137,29 @@ function insertUnassigned(spacesByTimes: Grid, blk: Block, blkIdx: number) {
 	return blk.startSpace >= 0;
 }
 
-export function assignPoolSpaces(rsvs: Reservation[], dateStr: string) {
-	let startEndTimes = getStartEndTimes(Settings, dateStr, ReservationCategory.pool);
+export function assignHourlySpaces(
+	rsvs: Reservation[],
+	dateStr: string,
+	category: ReservationCategory
+) {
+	let startEndTimes = getStartEndTimes(Settings, dateStr, category);
 	let nStartTimes = startEndTimes.length - 1;
-	let resourceNames = Settings.getPoolLanes(dateStr);
+	let resourceNames: string[];
+	if (category == ReservationCategory.pool) {
+		resourceNames = Settings.getPoolLanes(dateStr);
+	} else {
+		resourceNames = Settings.getClassrooms(dateStr);
+	}
 
-	// each tile in the grid represents one space in the pool for one timeslot
+	// each tile in the grid represents one space in the pool/one classroom for one timeslot
 	// the value of the tile is an index into the blocks array (-1 == unassigned)
 	let spacesByTimes: Grid = Array(resourceNames.length)
 		.fill(null)
 		.map(() => Array(nStartTimes).fill(-1));
 
-	let blocks = createBuddyGroups(rsvs).map((grp) => rsvsToBlock(grp, startEndTimes, resourceNames));
+	let blocks = createBuddyGroups(rsvs).map((grp) =>
+		rsvsToBlock({ rsvs: grp, startEndTimes, category, resourceNames })
+	);
 	//move pre-assigned to front
 	blocks.sort((a, b) => (a.startSpace == -1 ? 1 : -1));
 

@@ -1,2 +1,2 @@
 export * from './assignRsvsToBuoys';
-export * from './assignPoolSpaces';
+export * from './assignHourlySpaces';

@@ -3,7 +3,7 @@ import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils';
 import { reservations, user, users, viewMode } from './stores';
 import { Settings } from './client/settings';
 import { get } from 'svelte/store';
-import { assignPoolSpaces } from './autoAssign';
+import { assignHourlySpaces } from './autoAssign';
 
 export function monthArr(year, month, reservations) {
 	let daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -76,128 +76,13 @@ export const badgeColor = (rsvs) => {
 	return approved ? 'bg-[#00FF00]' : 'bg-[#FFFF00]';
 };
 
-function assignClassrooms(rsvs, dateStr) {
-	let rooms = Settings.getClassrooms(dateStr);
-	let schedule = Array(rooms.length)
-		.fill()
-		.map(() => {
-			return [
-				{
-					nSlots: 0,
-					cls: 'filler',
-					data: []
-				}
-			];
-		});
-
-	let sTs = startTimes(Settings, dateStr, 'classroom');
-	let nTimes = sTs.length;
-	let minTime = timeStrToMin(sTs[0]);
-	let incT = inc(Settings, dateStr);
-	let timeIdx = (time) => (timeStrToMin(time) - minTime) / incT;
-
-	rsvs.sort((a, b) => (a.room != 'auto' ? -1 : b.room != 'auto' ? 1 : 0));
-	rsvs.forEach((rsv) => (rsv.unassigned = rsv.room === 'auto'));
-
-	const lastBlk = (r) => schedule[r][schedule[r].length - 1];
-	const continuingBlk = (blk, rsv) => blk.cls === 'rsv' && blk.data[0].id === rsv.id;
-	const newBlk = (blk, rsv, t) =>
-		rsv.unassigned && ((blk.cls === 'rsv' && blk.end === t) || blk.cls === 'filler');
-
-	for (let t = 0; t < nTimes; t++) {
-		let unassigned = Array(rooms.length)
-			.fill()
-			.map(() => true);
-		for (let rsv of rsvs) {
-			let start = timeIdx(rsv.startTime);
-			let end = timeIdx(rsv.endTime);
-			if (start <= t && t < end) {
-				if (rsv.room !== 'auto') {
-					// pre-assigned
-					let r = rooms.indexOf(rsv.room);
-					let curBlk = lastBlk(r);
-					if (curBlk.cls == 'rsv') {
-						if (curBlk.data[0].id === rsv.id) {
-							curBlk.nSlots++;
-						} else {
-							schedule[r].push({
-								nSlots: 1,
-								cls: 'rsv',
-								data: [rsv],
-								relativeSpace: 0,
-								width: 1
-							});
-						}
-					} else {
-						schedule[r].push({
-							nSlots: 1,
-							cls: 'rsv',
-							data: [rsv],
-							relativeSpace: 0,
-							width: 1
-						});
-					}
-					unassigned[r] = false;
-				} else {
-					// unassigned
-					for (let r = 0; r < rooms.length; r++) {
-						let curBlk = lastBlk(r);
-						if (continuingBlk(curBlk, rsv)) {
-							curBlk.nSlots++;
-							unassigned[r] = false;
-							break;
-						} else if (newBlk(curBlk, rsv, t)) {
-							rsv.unassigned = false;
-							schedule[r].push({
-								start,
-								end,
-								nSlots: 1,
-								cls: 'rsv',
-								data: [rsv],
-								relativeSpace: 0,
-								width: 1
-							});
-							unassigned[r] = false;
-							break;
-						}
-					}
-				}
-			}
-		}
-		for (let r = 0; r < unassigned.length; r++) {
-			if (unassigned[r]) {
-				let curBlk = lastBlk(r);
-				if (curBlk.cls == 'filler') {
-					curBlk.nSlots++;
-				} else {
-					schedule[r].push({
-						nSlots: 1,
-						cls: 'filler',
-						data: []
-					});
-				}
-			}
-		}
-	}
-	return {
-		status: 'success',
-		schedule
-	};
-}
-
 export function getDaySchedule(rsvs, datetime, category) {
 	let today = datetimeToLocalDateStr(datetime);
 	rsvs = rsvs.filter(
 		(v) =>
 			['pending', 'confirmed'].includes(v.status) && v.category === category && v.date === today
 	);
-	let result;
-	if (category === 'pool') {
-		result = assignPoolSpaces(rsvs, today);
-	} else if (category === 'classroom') {
-		result = assignClassrooms(rsvs, today);
-	}
-
+	let result = assignHourlySpaces(rsvs, today, category);
 	return result;
 }
 
