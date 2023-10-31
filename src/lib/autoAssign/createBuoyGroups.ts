@@ -207,7 +207,7 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 	};
 
 	while (buddyGrps.length > 0) {
-		debugPrint();
+		//debugPrint();
 		matchOne(buddyGrps[0], 1, maxDepthDiff);
 	}
 	//debugPrint();
