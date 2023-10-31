@@ -177,33 +177,18 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 					grp.push(solo);
 				} else {
 					//grp already has at least 3 divers
-					let buoyA: Submission[], buoyB: Submission[];
-					if (grp.filter((rsv) => rsv.buddies.length == 1).length > 0) {
-						//this group has a pair of buddies that requested to dive together
-						//Note: this also means that the group size must be exactly 3
-						//      because groups of 4 are only possible when 4 buddies request
-						//      to dive together
-						//keep the two buddies together and split off the third diver
-						for (let j = 0; j < grp.length; j++) {
-							if (grp[j].buddies.length == 0) {
-								let buddy = grp.splice(j, 1)[0];
-								buoyA = grp;
-								buoyB = [buddy, solo];
-								break;
-							}
-						}
-					} else {
-						// split off the last diver
-						buoyA = grp.slice(0, grp.length - 1);
-						buoyB = [grp[grp.length - 1], solo];
+					//split off one of the divers and create a new group of 2
+					let idx = grp.length - 1;
+					if (grp.filter((rsv, i) => rsv.buddies.length == 1).length > 0) {
+						//choose the diver with no buddies
+						idx = grp.reduce((idx, rsv, i) => (rsv.buddies.length == 0 ? i : idx), idx);
 					}
-					buoyGrps.splice(i, 1);
-					buoyGrps.push(buoyA!);
-					buoyGrps.push(buoyB!);
+					let buddy = grp.splice(idx, 1)[0];
+					buoyGrps.push([buddy, solo]);
 				}
 				added = true;
 				break;
-			} //buoysMatch
+			}
 		}
 		if (!added) {
 			// none of the existing groups are autonomous; create group of 1
@@ -213,20 +198,17 @@ function createBuoyGroupsFromBuddyGroups(buddyGrps: Submission[][], maxDepthDiff
 	};
 
 	const debugPrint = () => {
-		console.log('buddyGrps:');
-		console.log(buddyGrps.map((bg) => bg.map((rsv) => rsv.maxDepth)));
-		console.log('buoyGrps:');
-		console.log(buoyGrps.map((bg) => bg.map((rsv) => rsv.maxDepth)));
+		console.log(
+			'buddyGrps: ' + buddyGrps.map((bg) => bg.reduce((str, rsv) => str + rsv.maxDepth + ' ', ' '))
+		);
+		console.log(
+			'buoyGrps: ' + buoyGrps.map((bg) => bg.reduce((str, rsv) => str + rsv.maxDepth + ' ', ' '))
+		);
 	};
 
 	while (buddyGrps.length > 0) {
-		//debugPrint();
-		const bg = buddyGrps[0];
-		if (bg[0].resType === ReservationType.course) {
-			createBuoyGroup([bg], [0]);
-		} else {
-			matchOne(bg, 1, maxDepthDiff);
-		}
+		debugPrint();
+		matchOne(buddyGrps[0], 1, maxDepthDiff);
 	}
 	//debugPrint();
 	return buoyGrps;
