@@ -7,7 +7,7 @@ import { getUsersById } from '$lib/server/user';
 import type { SettingsManager } from '$lib/client/settings';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getNumberOfOccupants } from './reservations';
-import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
+import { assignRsvsToBuoys } from '$lib/autoAssign';
 import { getXataClient } from '$lib/server/xata-old';
 
 export class ValidationError extends Error {}
@@ -99,8 +99,8 @@ export function checkOWSpaceAvailable(
 	existingReservations: Reservation[]
 ) {
 	let buddyGroup = simulateBuddyGroup(sub);
-	let result = assignRsvsToBuoys(buoys, [...buddyGroup, ...existingReservations]);
-	if (result.status === 'error') {
+	let { unassigned } = assignRsvsToBuoys(buoys, [...buddyGroup, ...existingReservations]);
+	if (unassigned.length > 0) {
 		return {
 			status: 'error',
 			message:
@@ -108,7 +108,7 @@ export function checkOWSpaceAvailable(
 				'Please either check back later or try a different date/time'
 		};
 	} else {
-		return result;
+		return { status: 'success' };
 	}
 }
 
@@ -125,10 +125,9 @@ export function checkPoolSpaceAvailable(
 			let end = timeStrToMin(rsv.endTime);
 			return start <= time && end > time;
 		});
-		let mpl = settings.getMaxOccupantsPerLane(sub.date);
 		let numDivers = getNumberOfOccupants([...thisSlotOverlap, sub]) + sub.buddies.length;
 		let nLanes = settings.getPoolLanes(sub.date).length;
-		if (numDivers > nLanes * mpl) {
+		if (numDivers > nLanes) {
 			return {
 				status: 'error',
 				message:

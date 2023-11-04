@@ -103,16 +103,15 @@
 
 	const resInfo = () => {
 		let dateStr = datetimeToLocalDateStr($viewedDate);
+		let resources, name;
 		if (category === 'pool') {
-			let lanes = Settings.getPoolLanes(dateStr);
-			let occ = Settings.getMaxOccupantsPerLane(dateStr);
-			let label = Settings.getPoolLabel(dateStr);
-			return { resources: lanes, occupancy: occ, name: label };
+			resources = Settings.getPoolLanes(dateStr);
+			name = Settings.getPoolLabel(dateStr);
 		} else if (category === 'classroom') {
-			let rooms = Settings.getClassrooms(dateStr);
-			let label = Settings.getClassroomLabel(dateStr);
-			return { resources: rooms, occupancy: 1, name: label };
+			resources = Settings.getClassrooms(dateStr);
+			name = Settings.getClassroomLabel(dateStr);
 		}
+		return { resources, name };
 	};
 
 	const toggleBuoyLock = async (lock) => {
