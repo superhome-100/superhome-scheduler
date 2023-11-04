@@ -21,9 +21,6 @@
 		rsv.status = upd.status;
 		if (rsv.category === 'pool') {
 			rsv.lanes[0] = upd.lanes[0];
-			if (upd.lanes.length > 1) {
-				rsv.lanes[1] = upd.lanes[1];
-			}
 		} else if (rsv.category === 'openwater') {
 			rsv.buoy = upd.buoy;
 		} else if (rsv.category === 'classroom') {
@@ -40,22 +37,6 @@
 			? 'pending'
 			: undefined;
 		data.set('status', status);
-
-		if (data.has('lane2')) {
-			if (
-				(data.get('lane1') === 'auto' && data.get('lane2') !== 'auto') ||
-				(data.get('lane1') !== 'auto' && data.get('lane2') === 'auto')
-			) {
-				popup('Either both lanes must be assigned or both must be auto');
-				cancel();
-				return;
-			}
-			if (data.get('lane1') !== 'auto' && data.get('lane1') === data.get('lane2')) {
-				popup('Cannot assign same value for 1st and 2nd Lane');
-				cancel();
-				return;
-			}
-		}
 
 		dispatch('submit', { rsv });
 
