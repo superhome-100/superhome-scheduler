@@ -184,7 +184,7 @@ export const throwIfUserIsDisabled = async (userIds: string[]) => {
 		if (user == null) throw new Error('invalid user Id');
 		if (user.status === 'disabled') {
 			throw new ValidationError(
-				`${user.nickname} does not have permission to use this app; please contact the admin for help`
+				`Please contact the admin to activate the account for ${user.nickname}`
 			);
 		}
 	});
