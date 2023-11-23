@@ -69,12 +69,7 @@
 	async function initializeUserSessionData(setViewMode = 'admin') {
 		if ($user == null) {
 			$loginState = 'out';
-		} else if ($user.status === 'disabled') {
-			popup(
-				'You have signed up SuperHOME Scheduler, please contact SuperHOME admins to activate your account'
-			);
-			callLogout();
-		} else if ($user.status === 'active') {
+		} else {
 			$loginState = 'in';
 
 			const maxDateStr = datetimeToLocalDateStr(new Date());
@@ -95,9 +90,6 @@
 			if ($user.privileges === 'admin') {
 				$viewMode = setViewMode;
 			}
-		} else {
-			// in case the admin made a typo in the status field of the Xata UI
-			throw new Error('Unknown user status!');
 		}
 	}
 

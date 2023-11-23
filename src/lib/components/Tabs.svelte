@@ -4,6 +4,7 @@
 
 <script>
 	export let tabIndex = 0;
+	export let disableNav = false;
 	import { swipe } from 'svelte-gestures';
 	import { setContext, onDestroy } from 'svelte';
 	import { writable } from 'svelte/store';
@@ -41,9 +42,11 @@
 		},
 
 		selectTab: (tab) => {
-			const i = tabs.indexOf(tab);
-			selectedTab.set(tab);
-			selectedPanel.set(panels[i]);
+			if (!disableNav) {
+				const i = tabs.indexOf(tab);
+				selectedTab.set(tab);
+				selectedPanel.set(panels[i]);
+			}
 		},
 
 		selectedTab,
@@ -64,18 +67,22 @@
 	}
 
 	function handleKeypress(e) {
-		if (e.keyCode == 37) {
-			prevTab();
-		} else if (e.keyCode == 39) {
-			nextTab();
+		if (!disableNav) {
+			if (e.keyCode == 37) {
+				prevTab();
+			} else if (e.keyCode == 39) {
+				nextTab();
+			}
 		}
 	}
 
 	function handleSwipe(event) {
-		if (event.detail.direction === 'left') {
-			nextTab();
-		} else if (event.detail.direction === 'right') {
-			prevTab();
+		if (!disableNav) {
+			if (event.detail.direction === 'left') {
+				nextTab();
+			} else if (event.detail.direction === 'right') {
+				prevTab();
+			}
 		}
 	}
 </script>

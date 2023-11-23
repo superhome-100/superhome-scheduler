@@ -2,12 +2,12 @@ import type { Reservation, Submission } from '$types';
 import type { BuoysRecord } from '$lib/server/xata.codegen';
 import { ReservationType, ReservationCategory, OWTime } from '$types';
 
-import { startTimes, beforeResCutoff, beforeCancelCutoff } from '$lib/reservationTimes.js';
+import { getStartEndTimes, beforeResCutoff, beforeCancelCutoff } from '$lib/reservationTimes.js';
 import { getUsersById } from '$lib/server/user';
 import type { SettingsManager } from '$lib/client/settings';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getNumberOfOccupants } from './reservations';
-import { assignRsvsToBuoys } from '$lib/autoAssignOpenWater.js';
+import { assignRsvsToBuoys } from '$lib/autoAssign';
 import { getXataClient } from '$lib/server/xata-old';
 
 export class ValidationError extends Error {}
@@ -99,8 +99,8 @@ export function checkOWSpaceAvailable(
 	existingReservations: Reservation[]
 ) {
 	let buddyGroup = simulateBuddyGroup(sub);
-	let result = assignRsvsToBuoys(buoys, [...buddyGroup, ...existingReservations]);
-	if (result.status === 'error') {
+	let { unassigned } = assignRsvsToBuoys(buoys, [...buddyGroup, ...existingReservations]);
+	if (unassigned.length > 0) {
 		return {
 			status: 'error',
 			message:
@@ -108,7 +108,7 @@ export function checkOWSpaceAvailable(
 				'Please either check back later or try a different date/time'
 		};
 	} else {
-		return result;
+		return { status: 'success' };
 	}
 }
 
@@ -117,18 +117,17 @@ export function checkPoolSpaceAvailable(
 	sub: Submission,
 	overlapping: Reservation[]
 ) {
-	let startTs = startTimes(settings, sub.date, sub.category);
-	for (let i = startTs.indexOf(sub.startTime); i < startTs.indexOf(sub.endTime); i++) {
-		let time = timeStrToMin(startTs[i]);
+	let startEndTs = getStartEndTimes(settings, sub.date, sub.category);
+	for (let i = startEndTs.indexOf(sub.startTime); i < startEndTs.indexOf(sub.endTime); i++) {
+		let time = timeStrToMin(startEndTs[i]);
 		let thisSlotOverlap = overlapping.filter((rsv) => {
 			let start = timeStrToMin(rsv.startTime);
 			let end = timeStrToMin(rsv.endTime);
 			return start <= time && end > time;
 		});
-		let mpl = settings.getMaxOccupantsPerLane(sub.date);
 		let numDivers = getNumberOfOccupants([...thisSlotOverlap, sub]) + sub.buddies.length;
 		let nLanes = settings.getPoolLanes(sub.date).length;
-		if (numDivers > nLanes * mpl) {
+		if (numDivers > nLanes) {
 			return {
 				status: 'error',
 				message:
@@ -185,7 +184,7 @@ export const throwIfUserIsDisabled = async (userIds: string[]) => {
 		if (user == null) throw new Error('invalid user Id');
 		if (user.status === 'disabled') {
 			throw new ValidationError(
-				`${user.nickname} does not have permission to use this app; please contact the admin for help`
+				`Please contact the admin to activate the account for ${user.nickname}`
 			);
 		}
 	});

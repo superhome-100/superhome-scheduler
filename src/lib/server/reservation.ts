@@ -478,10 +478,7 @@ export async function adminUpdate(formData: AppFormData) {
 
 	const cat = formData.get('category');
 	if (cat === 'pool') {
-		rsv.lanes = [formData.get('lane1')];
-		if (formData.has('lane2')) {
-			rsv.lanes[1] = formData.get('lane2');
-		}
+		rsv.lanes = [formData.get('lane')];
 	} else if (cat === 'openwater') {
 		rsv.buoy = formData.get('buoy');
 	} else if (cat === 'classroom') {
