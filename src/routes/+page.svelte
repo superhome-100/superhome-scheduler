@@ -6,6 +6,10 @@
 	import { minValidDateStr } from '$lib/reservationTimes';
 	import { Settings } from '$lib/client/settings';
 	import { user, stateLoaded, loginState } from '$lib/stores';
+
+	let modalOpened = false;
+	const onOpen = () => (modalOpened = true);
+	const onClose = () => (modalOpened = false);
 </script>
 
 {#if $stateLoaded && $loginState === 'in'}
@@ -14,19 +18,19 @@
 		<span class="text-lg font-semibold">{$user.name.split(' ')[0]}'s Reservations</span>
 		<Modal><ReservationDialog dateFn={(cat) => minValidDateStr(Settings, cat)} /></Modal>
 	</span>
-	<Tabs>
+	<Tabs disableNav={modalOpened}>
 		<TabList>
 			<Tab>Upcoming</Tab>
 			<Tab>Completed</Tab>
 		</TabList>
 
 		<TabPanel>
-			<Modal>
+			<Modal on:open={onOpen} on:close={onClose}>
 				<MyReservations resPeriod="upcoming" />
 			</Modal>
 		</TabPanel>
 		<TabPanel>
-			<Modal>
+			<Modal on:open={onOpen} on:close={onClose}>
 				<MyReservations resPeriod="past" />
 			</Modal>
 		</TabPanel>

@@ -12,6 +12,7 @@ import { upsertOWReservationAdminComments } from '$lib/server/ow';
 
 const adminUpdateGeneric = async ({ request }) => {
 	const data = await request.formData();
+	console.log('adminUpdateGeneric', data);
 	const record = await adminUpdate(data);
 	return { record };
 };
@@ -20,9 +21,11 @@ export const actions = {
 	submitReservation: async ({ request }) => {
 		try {
 			const data = await request.formData();
+			console.log('submitReservation', data);
 			const record = await submitReservation(data);
 			return record;
 		} catch (e) {
+			console.error('error submitReservation', e);
 			if (e instanceof ValidationError) {
 				return fail(400, { error: e.message });
 			} else {
@@ -32,10 +35,12 @@ export const actions = {
 	},
 	modifyReservation: async ({ request }) => {
 		const data = await request.formData();
+		console.log('modifyReservation', data);
 		try {
 			const record = await modifyReservation(data);
 			return record;
 		} catch (e) {
+			console.error('error modifyReservation', e);
 			if (e instanceof ValidationError) {
 				return fail(400, { error: e.message });
 			} else {
@@ -46,9 +51,11 @@ export const actions = {
 	cancelReservation: async ({ request }) => {
 		try {
 			const data = await request.formData();
+			console.log('cancelReservation', data);
 			const record = await cancelReservation(data);
 			return record;
 		} catch (e) {
+			console.error('error cancelReservation', e);
 			if (e instanceof ValidationError) {
 				return fail(400, { error: e.message });
 			} else {
