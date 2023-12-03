@@ -5,23 +5,23 @@
 		boatAssignments,
 		reservations,
 		profileSrc,
-		user,
 		viewMode,
 		viewedDate
 	} from '$lib/stores';
 	import { datetimeToLocalDateStr as dtToLDS } from '$lib/datetimeUtils';
-	import { displayTag } from '$lib/utils.js';
 	import { assignRsvsToBuoys } from '$lib/autoAssign';
 	import { getContext, onMount } from 'svelte';
 	import AdminComment from '$lib/components/AdminComment.svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
-	import { badgeColor, buoyDesc } from '$lib/utils.js';
 	import { Settings } from '$lib/client/settings';
 	import { getOWAdminComments } from '$lib/api';
+	import type { Buoy, Reservation, Submission } from '$types';
+	import DayOpenWaterSubmissionsCard from './DayOpenWaterSubmissionsCard.svelte';
+	import { buoyDesc } from '$lib/utils';
 
 	const { open } = getContext('simple-modal');
 
-	const showViewRsvs = (rsvs) => {
+	const showViewRsvs = (rsvs: Submission[]) => {
 		open(RsvTabs, {
 			rsvs,
 			hasForm: true,
@@ -33,8 +33,12 @@
 		open(AdminComment, { date, buoy });
 	};
 
-	function getOpenWaterSchedule(rsvs, datetime) {
-		let schedule = {};
+	function getOpenWaterSchedule(rsvs: Reservation[], datetime: Date) {
+		type Assignment = Record<string, Submission[]>;
+		let schedule: Record<'AM' | 'PM', Assignment> = {
+			AM: {},
+			PM: {}
+		};
 		let today = dtToLDS(datetime);
 		rsvs = rsvs.filter(
 			(v) =>
@@ -47,58 +51,14 @@
 				$buoys,
 				rsvs.filter((rsv) => rsv.owTime === owTime)
 			);
-			schedule[owTime] = result.assignments;
+			// what happened to result.unsassigned?
+			schedule[owTime as 'AM' | 'PM'] = result.assignments;
 		}
 
 		return schedule;
 	}
 
 	$: schedule = getOpenWaterSchedule($reservations, $viewedDate);
-
-	const heightUnit = 2; //rem
-	const blkMgn = 0.25; // dependent on tailwind margin styling
-
-	// TODO: remove this, this should be done by css automatically but would require full reorganization of html
-	$: rowHeights = $buoys.reduce((o, b) => {
-		let nRes = Math.max(
-			schedule.AM[b.name] ? schedule.AM[b.name].length : 0,
-			schedule.PM[b.name] ? schedule.PM[b.name].length : 0
-		);
-		const hasAdminComments =
-			$adminComments[date] && $adminComments[date].some((c) => c.buoy === b.name);
-		const multiplier = nRes + (hasAdminComments ? 1 : 0);
-		const baseHeight = multiplier * heightUnit;
-		o[b.name] = {
-			header: baseHeight,
-			buoy: baseHeight - blkMgn,
-			margins: [...Array(multiplier).keys()].map((idx) => {
-				const outer = (multiplier * heightUnit - blkMgn - 1.25 * multiplier) / 2;
-				let top, btm;
-				if (idx == 0) {
-					top = outer;
-					btm = 0;
-				} else if (idx == multiplier - 1) {
-					top = 0;
-					btm = outer;
-				} else {
-					top = 0;
-					btm = 0;
-				}
-				return top + 'rem 0 ' + btm + 'rem 0';
-			})
-		};
-		return o;
-	}, {});
-
-	const rsvClass = (rsv) => {
-		if (rsv.user.id === $user.id) {
-			return 'border border-transparent rounded-2xl bg-lime-300 text-black';
-		} else {
-			return '';
-		}
-	};
-
-	const buoyInUse = (sched, b) => sched.AM[b] != undefined || sched.PM[b] != undefined;
 
 	const sortByBoat = (buoys, asn) => {
 		let sorted = [...buoys];
@@ -190,9 +150,6 @@
 		}
 	};
 
-	$: owTimeColWidth = () => ($viewMode === 'admin' ? 'w-[33%]' : 'w-[40%]');
-	$: boatColWidth = () => ($viewMode === 'admin' ? 'w-[18%]' : 'w-[10%]');
-	$: buoyColWidth = () => ($viewMode === 'admin' ? 'w-[16%]' : 'w-[10%]');
 	const boatCountPos = (profileSrc) => {
 		if (profileSrc != null) {
 			return 'top-[50px] sm:top-[120px] md:top-[110px]';
@@ -206,18 +163,35 @@
 	});
 
 	type BuoyGrouping = {
-		buoy: string;
+		buoy: Buoy;
 		boat?: string | null;
-		amReservations?: Reservation[];
+		amReservations?: Submission[];
+		pmReservations?: Submission[];
+		amAdminComment?: string;
+		pmAdminComment?: string;
 	};
 	let buoyGroupings: BuoyGrouping[] = [];
 
 	$: {
-		buoyGroupings = $buoys.map((v) => {
-			return {
-				buoy: v.name!
-			};
-		});
+		const today = dtToLDS($viewedDate);
+		const todayFilter = (r: Submission) =>
+			r.date === today && r.category === 'openwater' && ['pending', 'confirmed'].includes(r.status);
+		const todaysReservations = $reservations.filter(todayFilter);
+		const comments = $adminComments[today] || [];
+		buoyGroupings = $buoys
+			.map((v) => {
+				const amComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'AM');
+				const pmComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'PM');
+				return {
+					buoy: v,
+					boat: $boatAssignments[today]?.[v.name!],
+					amReservations: todaysReservations.filter((r) => r.owTime === 'AM' && r.buoy === v.name),
+					pmReservations: todaysReservations.filter((r) => r.owTime === 'PM' && r.buoy === v.name),
+					amAdminComment: amComment?.comment,
+					pmAdminComment: pmComment?.comment
+				};
+			})
+			.filter((v) => v.amReservations.length > 0 || v.pmReservations.length > 0);
 
 		console.log(buoyGroupings);
 	}
@@ -241,60 +215,40 @@
 {#if Settings.getOpenForBusiness(dtToLDS($viewedDate)) === false}
 	<div class="font-semibold text-3xl text-center">Closed</div>
 {:else}
-	<!-- TODO: fix structure
-simplify, instead of having an isolated column for buoy, boat, ap, pm then each having a child w/ a computed height
-it should be,
-	remove height and width computation
-
-	organize row data before rendering anything
-
-	table header
-		buoy | boat | AM | PM
-	rows
-		#each rows // this should be only once
-			value | value | component | component
-
-	move buoy grouping component/card into a separate file
--->
-	<div class="row">
-		<div class="column text-center {buoyColWidth()}">
-			<div class="font-semibold">buoy</div>
-			{#each displayBuoys as buoy (buoy.name)}
-				{#if buoyInUse(schedule, buoy.name)}
-					{#if $viewMode === 'admin'}
-						<div
-							class="cursor-pointer flex mx-2 sm:mx-4 md:mx-8 lg:mx-6 xl:mx-12 items-center justify-between font-semibold"
-							style="height: {rowHeights[buoy.name].header}rem"
-							on:click={showAdminCommentForm(date, buoy.name)}
-						>
-							<span class="text-xl">{buoy.name}</span>
-							<span class="text-sm">{buoyDesc(buoy)}</span>
-						</div>
-					{:else}
-						<div
-							class="flex items-center justify-center font-semibold"
-							style="height: {rowHeights[buoy.name].header}rem"
-						>
-							{buoy.name}
-						</div>
-					{/if}
-				{/if}
-			{/each}
-		</div>
-		<div class="column text-center {boatColWidth()}">
-			<div class="font-semibold">boat</div>
-			{#each displayBuoys as buoy (buoy.name)}
-				{#if buoyInUse(schedule, buoy.name)}
-					<div
-						class="flex items-center justify-center"
-						style="height: {rowHeights[buoy.name].header}rem"
-					>
+	<section class="w-full relative block">
+		<header class="flex w-full gap-2 text-xs py-2">
+			<div class="flex-none w-12 min-w-12">buoy</div>
+			<div class="flex-none w-20  text-center" class:w-16={$viewMode === 'admin'}>boat</div>
+			<div class="grow text-center">AM</div>
+			<div class="grow text-center">PM</div>
+		</header>
+		<ul class="flex flex-col gap-3">
+			{#each buoyGroupings as grouping}
+				<li class="flex w-full gap-2 border-b-[1px] border-gray-200 border-opacity-20 pb-2">
+					<div class="flex-none w-12 min-w-12">
+						{#if $viewMode === 'admin'}
+							<!-- svelte-ignore a11y-click-events-have-key-events -->
+							<div
+								class="cursor-pointer font-semibold"
+								on:click={() => showAdminCommentForm(date, grouping.buoy)}
+							>
+								<span class="text-xl">{grouping.buoy.name}</span>
+								<br />
+								<span class="text-xs">{buoyDesc(grouping.buoy)}</span>
+							</div>
+						{:else}
+							<div class="flex items-center justify-center font-semibold">
+								{grouping.buoy.name}
+							</div>
+						{/if}
+					</div>
+					<div class="flex-none w-20 min-w-20 px-2 text-center" class:w-16={$viewMode === 'admin'}>
 						{#if $viewMode === 'admin'}
 							<select
 								class="text-sm h-6 w-16 xs:text-xl xs:h-8 xs:w-16"
-								name={buoy.name + '_boat'}
-								id={buoy.name + '_boat'}
-								value={displayValue(buoy.name)}
+								name={grouping.buoy.name + '_boat'}
+								id={grouping.buoy.name + '_boat'}
+								value={grouping.boat}
 								on:input={saveAssignments}
 							>
 								<option value="null" />
@@ -303,53 +257,32 @@ it should be,
 								{/each}
 							</select>
 						{:else}
-							{displayValue(buoy.name) ? displayValue(buoy.name) : ''}
+							{grouping.boat || 'UNASSIGNED'}
 						{/if}
 					</div>
-				{/if}
-			{/each}
-		</div>
-		{#each [{ cur: 'AM', other: 'PM' }, { cur: 'PM', other: 'AM' }] as { cur, other }}
-			<div class="column text-center {owTimeColWidth()}">
-				<div class="font-semibold">{cur}</div>
-				{#each displayBuoys as { name }}
-					{#if schedule[cur][name] != undefined}
-						<div
-							class="rsv whitespace-nowrap rounded-2xl overflow-hidden cursor-pointer openwater text-sm mb-1 mt-0.5"
-							style="height: {rowHeights[name].buoy}rem"
-							on:click={showViewRsvs(schedule[cur][name])}
-						>
-							{#each schedule[cur][name] as rsv, i}
-								<div class="block indicator w-full px-2">
-									<span class="rsv-indicator {badgeColor([rsv])}" />
-									<div
-										class="overflow-hidden {rsvClass(rsv)}"
-										style="margin: {rowHeights[name].margins[i]}"
-									>
-										{displayTag(rsv, $viewMode === 'admin')}
-									</div>
-								</div>
-							{/each}
-							{#if $adminComments[date]}
-								{#each $adminComments[date] as comment}
-									{#if comment.buoy == name && comment.am_pm === cur}
-										<div
-											class="flex flex-col text-sm p-0 text-gray-200"
-											style="margin: {rowHeights[name].margins[
-												rowHeights[name].margins.length - 1
-											]}"
-										>
-											ADMIN: {comment.comment}
-										</div>
-									{/if}
-								{/each}
-							{/if}
+					<div class="grow flex w-auto relative gap-2">
+						<div class="w-1/2">
+							<DayOpenWaterSubmissionsCard
+								submissions={grouping.amReservations || []}
+								onClick={() => {
+									showViewRsvs(grouping.amReservations || []);
+								}}
+								adminComment={grouping.amAdminComment}
+							/>
 						</div>
-					{:else if schedule[other][name] != undefined}
-						<div style="height: {rowHeights[name].header}rem" />
-					{/if}
-				{/each}
-			</div>
-		{/each}
-	</div>
+						<div class="w-1/2">
+							<DayOpenWaterSubmissionsCard
+								submissions={grouping.pmReservations || []}
+								onClick={() => {
+									console.log('event');
+									showViewRsvs(grouping.amReservations || []);
+								}}
+								adminComment={grouping.pmAdminComment}
+							/>
+						</div>
+					</div>
+				</li>
+			{/each}
+		</ul>
+	</section>
 {/if}

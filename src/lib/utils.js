@@ -1,7 +1,5 @@
-import { startTimes, inc } from './reservationTimes';
-import { datetimeToLocalDateStr, timeStrToMin } from './datetimeUtils';
+import { datetimeToLocalDateStr } from './datetimeUtils';
 import { reservations, user, users, viewMode } from './stores';
-import { Settings } from './client/settings';
 import { get } from 'svelte/store';
 import { assignHourlySpaces } from './autoAssign';
 
