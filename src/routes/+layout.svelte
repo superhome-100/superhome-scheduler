@@ -127,14 +127,9 @@
 			$users = resAppData.usersById!;
 			$stateLoaded = true;
 
-			const rsvById: { [id: string]: Reservation } = $reservations.reduce((obj, rsv) => {
-				obj[rsv.id] = rsv;
-				return obj;
-			}, {});
-			resAppData.reservations.forEach((rsv) => {
-				rsvById[rsv.id] = rsv;
-			});
-			$reservations = Object.values(rsvById).filter((rsv) => rsv.status !== 'canceled');
+			$reservations = [...(resAppData.reservations || [])].filter(
+				(rsv) => rsv.status !== 'canceled'
+			);
 
 			if (!intervalId) {
 				intervalId = setInterval(initApp, $settings.refreshInterval.default);

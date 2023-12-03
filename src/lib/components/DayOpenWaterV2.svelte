@@ -204,6 +204,23 @@
 	onMount(() => {
 		loadAdminComments();
 	});
+
+	type BuoyGrouping = {
+		buoy: string;
+		boat?: string | null;
+		amReservations?: Reservation[];
+	};
+	let buoyGroupings: BuoyGrouping[] = [];
+
+	$: {
+		buoyGroupings = $buoys.map((v) => {
+			return {
+				buoy: v.name!
+			};
+		});
+
+		console.log(buoyGroupings);
+	}
 </script>
 
 {#if $viewMode === 'admin'}
