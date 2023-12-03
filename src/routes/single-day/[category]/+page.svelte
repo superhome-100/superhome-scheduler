@@ -2,7 +2,7 @@
 	import { swipe } from 'svelte-gestures';
 	import { goto } from '$app/navigation';
 	import DayHourly from '$lib/components/DayHourly.svelte';
-	import DayOpenWater from '$lib/components/DayOpenWater.svelte';
+	import DayOpenWater from '$lib/components/DayOpenWaterV2.svelte';
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
 	import { datetimeToLocalDateStr, idx2month } from '$lib/datetimeUtils';
