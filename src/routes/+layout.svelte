@@ -127,6 +127,7 @@
 			$users = resAppData.usersById!;
 			$stateLoaded = true;
 
+			// TODO: create separate stores for OW, Pool and Classroom reservations prefilter ahead of use
 			$reservations = [...(resAppData.reservations || [])].filter(
 				(rsv) => rsv.status !== 'canceled'
 			);
