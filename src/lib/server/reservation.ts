@@ -474,7 +474,11 @@ export async function adminUpdate(formData: AppFormData) {
 	let rsv: Partial<EditableData<ReservationsRecord>> = {};
 
 	let id = formData.get('id');
-	rsv.status = formData.get('status');
+	let existing = await client.db.Reservations.read(id);
+
+	if (existing!.status != ReservationStatus.canceled) {
+		rsv.status = formData.get('status');
+	}
 
 	const cat = formData.get('category');
 	if (cat === 'pool') {
