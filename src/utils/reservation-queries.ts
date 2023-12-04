@@ -146,10 +146,12 @@ export function getTimeOverlapFilters(settings: SettingsManager, rsv: Submission
 					$all: [{ startTime: { $any: slots.beforeStart } }, { endTime: { $any: slots.afterEnd } }]
 				});
 			}
-			filters.push({
-				category: cat,
-				$any: timeFilt
-			});
+			if (timeFilt.length > 0) {
+				filters.push({
+					category: cat,
+					$any: timeFilt
+				});
+			}
 		}
 	}
 	return filters;
