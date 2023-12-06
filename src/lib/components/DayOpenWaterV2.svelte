@@ -4,7 +4,6 @@
 		buoys,
 		boatAssignments,
 		reservations,
-		profileSrc,
 		viewMode,
 		viewedDate
 	} from '$lib/stores';
@@ -150,14 +149,6 @@
 		}
 	};
 
-	const boatCountPos = (profileSrc) => {
-		if (profileSrc != null) {
-			return 'top-[50px] sm:top-[120px] md:top-[110px]';
-		} else {
-			return 'top-[100px] xs:top-[110px] lg:top-[100px]';
-		}
-	};
-
 	onMount(() => {
 		loadAdminComments();
 	});
@@ -192,16 +183,14 @@
 				};
 			})
 			.filter((v) => v.amReservations.length > 0 || v.pmReservations.length > 0);
-
-		console.log(buoyGroupings);
 	}
+
+	const boatColWidth = (viewMode) => (viewMode == 'admin' ? 'w-20' : 'w-8');
 </script>
 
 {#if $viewMode === 'admin'}
 	<div
-		class="fixed sm:text-xl left-1/2 lg:left-2/3 -translate-x-1/2 whitespace-nowrap w-fit {boatCountPos(
-			$profileSrc
-		)} opacity-70 z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1"
+		class="fixed sm:text-xl left-1/2 lg:left-2/3 -translate-x-1/2 whitespace-nowrap w-fit top-[50px] sm:top-[120px] md:top-[110px] opacity-70 z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1"
 	>
 		<span>boat counts:</span>
 		{#each boats as boat}
@@ -216,15 +205,17 @@
 	<div class="font-semibold text-3xl text-center">Closed</div>
 {:else}
 	<section class="w-full relative block">
-		<header class="flex w-full gap-2 text-xs py-2">
+		<header class="flex w-full gap-0.5 sm:gap-2 text-xs py-2">
 			<div class="flex-none w-12 min-w-12">buoy</div>
-			<div class="flex-none w-20  text-center" class:w-16={$viewMode === 'admin'}>boat</div>
+			<div class="flex-none {boatColWidth($viewMode)} text-center">boat</div>
 			<div class="grow text-center">AM</div>
 			<div class="grow text-center">PM</div>
 		</header>
-		<ul class="flex flex-col gap-3">
+		<ul class="flex flex-col gap-0.5 sm:gap-3">
 			{#each buoyGroupings as grouping}
-				<li class="flex w-full gap-2 border-b-[1px] border-gray-200 border-opacity-20 pb-2">
+				<li
+					class="flex items-center w-full gap-0.5 sm:gap-2 border-b-[1px] border-gray-200 border-opacity-20 pb-0.5 sm:pb-2"
+				>
 					<div class="flex-none w-12 min-w-12">
 						{#if $viewMode === 'admin'}
 							<!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -232,7 +223,7 @@
 								class="cursor-pointer font-semibold"
 								on:click={() => showAdminCommentForm(date, grouping.buoy)}
 							>
-								<span class="text-xl">{grouping.buoy.name}</span>
+								<span>{grouping.buoy.name}</span>
 								<br />
 								<span class="text-xs">{buoyDesc(grouping.buoy)}</span>
 							</div>
@@ -242,7 +233,7 @@
 							</div>
 						{/if}
 					</div>
-					<div class="flex-none w-20 min-w-20 px-2 text-center" class:w-16={$viewMode === 'admin'}>
+					<div class="flex-none {boatColWidth($viewMode)} px-2 text-center">
 						{#if $viewMode === 'admin'}
 							<select
 								class="text-sm h-6 w-16 xs:text-xl xs:h-8 xs:w-16"
@@ -260,7 +251,7 @@
 							{grouping.boat || 'UNASSIGNED'}
 						{/if}
 					</div>
-					<div class="grow flex w-auto relative gap-2">
+					<div class="grow flex w-auto relative gap-0.5 sm:gap-2">
 						<div class="w-1/2">
 							<DayOpenWaterSubmissionsCard
 								submissions={grouping.amReservations || []}
@@ -274,7 +265,6 @@
 							<DayOpenWaterSubmissionsCard
 								submissions={grouping.pmReservations || []}
 								onClick={() => {
-									console.log('event');
 									showViewRsvs(grouping.amReservations || []);
 								}}
 								adminComment={grouping.pmAdminComment}
