@@ -75,7 +75,7 @@
 	});
 
 	type BuoyGrouping = {
-		buoy: Buoy;
+		buoy: Buoy | { name: string };
 		boat?: string | null;
 		amReservations?: Submission[];
 		pmReservations?: Submission[];
@@ -86,7 +86,7 @@
 	let buoyGroupings: BuoyGrouping[] = [];
 
 	const getHeadCount = (rsvs: Submission[]) =>
-		rsvs.reduce((acc, rsv) => acc + (rsv.resType === 'course' ? (rsv.numStudents+1) : 1), 0);
+		rsvs.reduce((acc, rsv) => acc + (rsv.resType === 'course' ? rsv.numStudents + 1 : 1), 0);
 
 	$: {
 		// TODO: refactor looks expensive, might be an issue if there are a ton of reservations
@@ -95,21 +95,26 @@
 		const todayFilter = (r: Submission) =>
 			r.date === today && r.category === 'openwater' && ['pending', 'confirmed'].includes(r.status);
 		const todaysReservations = $reservations.filter(todayFilter);
+		console.log('$re', todaysReservations, today, $reservations);
 		const comments = $adminComments[today] || [];
-		buoyGroupings = $buoys
+		buoyGroupings = [...$buoys, { name: 'auto' }]
 			.map((v) => {
 				const amComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'AM');
 				const pmComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'PM');
-				const amReservations = todaysReservations.filter((r) => r.owTime === 'AM' && r.buoy === v.name);
-				const pmReservations = todaysReservations.filter((r) => r.owTime === 'PM' && r.buoy === v.name);
+				const amReservations = todaysReservations.filter(
+					(r) => r.owTime === 'AM' && r.buoy === v.name
+				);
+				const pmReservations = todaysReservations.filter(
+					(r) => r.owTime === 'PM' && r.buoy === v.name
+				);
 				return {
-					buoy: v,
+					buoy: v.name === 'auto' ? { name: 'auto' } : v,
 					boat: $boatAssignments[today]?.[v.name!],
 					amReservations,
 					pmReservations,
 					amAdminComment: amComment?.comment,
 					pmAdminComment: pmComment?.comment,
-					headCount: getHeadCount(amReservations) + getHeadCount(pmReservations),
+					headCount: getHeadCount(amReservations) + getHeadCount(pmReservations)
 				};
 			})
 			.sort((a, b) => +(a.boat || 0) - +(b.boat || 0))
@@ -127,7 +132,7 @@
 		{#each boats as boat}
 			<span class="font-bold">{boat}</span>
 			<span class="me-2 bg-teal-100 border border-black px-0.5"
-				>{buoyGroupings.filter((b) => b.boat === boat).reduce((a, b) => a+b.headCount ,0)}</span
+				>{buoyGroupings.filter((b) => b.boat === boat).reduce((a, b) => a + b.headCount, 0)}</span
 			>
 		{/each}
 	</div>

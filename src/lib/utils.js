@@ -94,6 +94,8 @@ export const isMyReservation = (rsv) => {
 
 export const buoyDesc = (buoy) => {
 	let desc = '';
+	if (buoy.name === 'auto') return desc;
+
 	if (buoy.largeBuoy) {
 		desc += 'L';
 	}
