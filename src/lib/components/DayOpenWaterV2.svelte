@@ -16,6 +16,7 @@
 	import type { Buoy, Submission } from '$types';
 	import DayOpenWaterSubmissionsCard from './DayOpenWaterSubmissionsCard.svelte';
 	import { buoyDesc } from '$lib/utils';
+	import { setBuoyToReservations } from '$lib/autoAssign';
 
 	const { open } = getContext('simple-modal');
 
@@ -75,7 +76,7 @@
 	});
 
 	type BuoyGrouping = {
-		buoy: Buoy | { name: string };
+		buoy: Buoy;
 		boat?: string | null;
 		amReservations?: Submission[];
 		pmReservations?: Submission[];
@@ -94,10 +95,11 @@
 		const today = dtToLDS($viewedDate);
 		const todayFilter = (r: Submission) =>
 			r.date === today && r.category === 'openwater' && ['pending', 'confirmed'].includes(r.status);
-		const todaysReservations = $reservations.filter(todayFilter);
-		console.log('$re', todaysReservations, today, $reservations);
+		let todaysReservations = $reservations.filter(todayFilter) as Submission[];
+		todaysReservations = setBuoyToReservations($buoys, todaysReservations);
+
 		const comments = $adminComments[today] || [];
-		buoyGroupings = [...$buoys, { name: 'auto' }]
+		buoyGroupings = [...$buoys]
 			.map((v) => {
 				const amComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'AM');
 				const pmComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'PM');
@@ -108,7 +110,7 @@
 					(r) => r.owTime === 'PM' && r.buoy === v.name
 				);
 				return {
-					buoy: v.name === 'auto' ? { name: 'auto' } : v,
+					buoy: v,
 					boat: $boatAssignments[today]?.[v.name!],
 					amReservations,
 					pmReservations,

@@ -156,10 +156,10 @@ export function assignRsvsToBuoys(buoys: Buoys[], rsvs: Submission[]) {
 	// filter shortSession and longSession rsvs into separate groups so
 	// that they are assigned to separate buoys
 	let rsvsByDuration: Submission[][] = [[], []];
-	rsvs.forEach((rsv) => {
+	for (let rsv of rsvs) {
 		if (rsv.shortSession) rsvsByDuration[0].push(rsv);
 		else rsvsByDuration[1].push(rsv);
-	});
+	}
 
 	// try to avoid assigning divers with max depths that differ by
 	// more than maxDepthDiff to the same buoy; if no better option
@@ -173,4 +173,13 @@ export function assignRsvsToBuoys(buoys: Buoys[], rsvs: Submission[]) {
 
 	let result = assignBuoyGroupsToBuoys(buoys, buoyGrps);
 	return result;
+}
+
+export function setBuoyToReservations(buoys: Buoys[], rsvs: Submission[]): Submission[] {
+	const { assignments, unassigned } = assignRsvsToBuoys(buoys, rsvs);
+	for (const [buoyName, rsvs] of Object.entries(assignments)) {
+		rsvs.forEach((rsv) => (rsv.buoy = buoyName));
+	}
+	const assignedReservations = Object.values(assignments).flat();
+	return [...unassigned, ...assignedReservations];
 }
