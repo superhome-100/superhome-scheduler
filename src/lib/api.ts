@@ -1,3 +1,4 @@
+import type { Buoy, Reservation } from '$types';
 import type { UsersRecord, BuoyGroupings } from './server/xata.codegen';
 
 // TODO: fix this type
@@ -5,7 +6,7 @@ export const getBuoys = async () => {
 	const response = await fetch('/api/getBuoys');
 	const data = (await response.json()) as {
 		status: 'success' | 'error';
-		buoys: any[];
+		buoys: Buoy[];
 	};
 	return data;
 };
@@ -62,7 +63,7 @@ export const getAppData = async (minDateStr: string) => {
 
 	const data = (await response.json()) as {
 		status: 'success' | 'error';
-		reservations?: any[];
+		reservations?: Reservation[];
 		usersById?: {
 			[uid: string]: UsersRecord;
 		};
