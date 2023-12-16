@@ -8,13 +8,12 @@
 		viewedDate
 	} from '$lib/stores';
 	import { datetimeToLocalDateStr as dtToLDS } from '$lib/datetimeUtils';
-	import { assignRsvsToBuoys } from '$lib/autoAssign';
 	import { getContext, onMount } from 'svelte';
 	import AdminComment from '$lib/components/AdminComment.svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { Settings } from '$lib/client/settings';
 	import { getOWAdminComments } from '$lib/api';
-	import type { Buoy, Reservation, Submission } from '$types';
+	import type { Buoy, Submission } from '$types';
 	import DayOpenWaterSubmissionsCard from './DayOpenWaterSubmissionsCard.svelte';
 	import { buoyDesc } from '$lib/utils';
 
@@ -32,33 +31,6 @@
 		open(AdminComment, { date, buoy });
 	};
 
-	function getOpenWaterSchedule(rsvs: Reservation[], datetime: Date) {
-		type Assignment = Record<string, Submission[]>;
-		let schedule: Record<'AM' | 'PM', Assignment> = {
-			AM: {},
-			PM: {}
-		};
-		let today = dtToLDS(datetime);
-		rsvs = rsvs.filter(
-			(v) =>
-				v.date === today &&
-				v.category === 'openwater' &&
-				['pending', 'confirmed'].includes(v.status)
-		);
-		for (let owTime of ['AM', 'PM']) {
-			let result = assignRsvsToBuoys(
-				$buoys,
-				rsvs.filter((rsv) => rsv.owTime === owTime)
-			);
-			// what happened to result.unsassigned?
-			schedule[owTime as 'AM' | 'PM'] = result.assignments;
-		}
-
-		return schedule;
-	}
-
-	$: schedule = getOpenWaterSchedule($reservations, $viewedDate);
-
 	$: date = dtToLDS($viewedDate);
 	$: boats = Settings.getBoats(date);
 
@@ -73,23 +45,6 @@
 	$: {
 		$viewedDate && loadAdminComments();
 	}
-
-	const getBoatCount = (schedule, assignments, boat) => {
-		let count = 0;
-		if (assignments != null) {
-			for (let buoy in assignments) {
-				if (schedule.AM[buoy] && assignments[buoy] === boat) {
-					for (let rsv of schedule.AM[buoy]) {
-						count++;
-						if (rsv.resType === 'course') {
-							count += rsv.numStudents;
-						}
-					}
-				}
-			}
-		}
-		return count;
-	};
 
 	const saveAssignments = async (e) => {
 		e.target.blur();
@@ -126,8 +81,12 @@
 		pmReservations?: Submission[];
 		amAdminComment?: string;
 		pmAdminComment?: string;
+		headCount: number;
 	};
 	let buoyGroupings: BuoyGrouping[] = [];
+
+	const getHeadCount = (rsvs: Submission[]) =>
+		rsvs.reduce((acc, rsv) => acc + (rsv.resType === 'course' ? (rsv.numStudents+1) : 1), 0);
 
 	$: {
 		const today = dtToLDS($viewedDate);
@@ -136,16 +95,20 @@
 		const todaysReservations = $reservations.filter(todayFilter);
 		const comments = $adminComments[today] || [];
 		buoyGroupings = $buoys
+			// TODO: refactor looks expensive, might be an issue if there are a ton of reservations
 			.map((v) => {
 				const amComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'AM');
 				const pmComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'PM');
+				const amReservations = todaysReservations.filter((r) => r.owTime === 'AM' && r.buoy === v.name);
+				const pmReservations = todaysReservations.filter((r) => r.owTime === 'PM' && r.buoy === v.name);
 				return {
 					buoy: v,
 					boat: $boatAssignments[today]?.[v.name!],
-					amReservations: todaysReservations.filter((r) => r.owTime === 'AM' && r.buoy === v.name),
-					pmReservations: todaysReservations.filter((r) => r.owTime === 'PM' && r.buoy === v.name),
+					amReservations,
+					pmReservations,
 					amAdminComment: amComment?.comment,
-					pmAdminComment: pmComment?.comment
+					pmAdminComment: pmComment?.comment,
+					headCount: getHeadCount(amReservations) + getHeadCount(pmReservations),
 				};
 			})
 			.sort((a, b) => +(a.boat || 0) - +(b.boat || 0))
@@ -163,7 +126,7 @@
 		{#each boats as boat}
 			<span class="font-bold">{boat}</span>
 			<span class="me-2 bg-teal-100 border border-black px-0.5"
-				>{getBoatCount(schedule, $boatAssignments[date], boat)}</span
+				>{buoyGroupings.filter((b) => b.boat === boat).reduce((a, b) => a+b.headCount ,0)}</span
 			>
 		{/each}
 	</div>
