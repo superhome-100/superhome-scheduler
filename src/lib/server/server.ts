@@ -2,6 +2,8 @@ import { getXataClient } from '$lib/server/xata-old';
 import ObjectsToCsv from 'objects-to-csv';
 import JSZip from 'jszip';
 
+import type { Buoy } from '../../types';
+
 const xata = getXataClient();
 
 export async function getBackUpZip(branch: string) {
@@ -20,7 +22,7 @@ export async function getBackUpZip(branch: string) {
 
 export async function getBuoys() {
 	const buoys = await xata.db.Buoys.getAll();
-	return buoys;
+	return buoys as Buoy[];
 }
 
 export async function getUserActiveNotifications(userId: string) {
