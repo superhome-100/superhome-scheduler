@@ -59,33 +59,8 @@
 
 	$: schedule = getOpenWaterSchedule($reservations, $viewedDate);
 
-	const sortByBoat = (buoys, asn) => {
-		let sorted = [...buoys];
-		if (asn != null) {
-			sorted.sort((a, b) => {
-				if (asn[a.name] && asn[a.name] !== 'null') {
-					if (asn[b.name] && asn[b.name] !== 'null') {
-						if (parseInt(asn[a.name]) > parseInt(asn[b.name])) {
-							return 1;
-						} else {
-							return -1;
-						}
-					} else {
-						return 1;
-					}
-				} else if (asn[b.name] && asn[b.name] !== 'null') {
-					return -1;
-				} else {
-					return 0;
-				}
-			});
-		}
-		return sorted;
-	};
-
 	$: date = dtToLDS($viewedDate);
 	$: boats = Settings.getBoats(date);
-	$: displayBuoys = sortByBoat($buoys, $boatAssignments[date]);
 
 	const loadAdminComments = async () => {
 		if (date) {
@@ -98,15 +73,6 @@
 	$: {
 		$viewedDate && loadAdminComments();
 	}
-	const displayValue = (buoy) => {
-		if ($boatAssignments[date] === undefined) {
-			$boatAssignments[date] = {};
-		}
-		if ($boatAssignments[date][buoy] === undefined) {
-			$boatAssignments[date][buoy] = null;
-		}
-		return $boatAssignments[date][buoy];
-	};
 
 	const getBoatCount = (schedule, assignments, boat) => {
 		let count = 0;
@@ -182,10 +148,11 @@
 					pmAdminComment: pmComment?.comment
 				};
 			})
+			.sort((a, b) => +(a.boat || 0) - +(b.boat || 0))
 			.filter((v) => v.amReservations.length > 0 || v.pmReservations.length > 0);
 	}
 
-	const boatColWidth = (viewMode) => (viewMode == 'admin' ? 'w-20' : 'w-8');
+	$: isAdmin = $viewMode === 'admin';
 </script>
 
 {#if $viewMode === 'admin'}
@@ -207,7 +174,7 @@
 	<section class="w-full relative block">
 		<header class="flex w-full gap-0.5 sm:gap-2 text-xs py-2">
 			<div class="flex-none w-12 min-w-12">buoy</div>
-			<div class="flex-none {boatColWidth($viewMode)} text-center">boat</div>
+			<div class="flex-none text-center" class:w-20={isAdmin} class:w-8={!isAdmin}>boat</div>
 			<div class="grow text-center">AM</div>
 			<div class="grow text-center">PM</div>
 		</header>
@@ -233,7 +200,7 @@
 							</div>
 						{/if}
 					</div>
-					<div class="flex-none {boatColWidth($viewMode)} px-2 text-center">
+					<div class="flex-none px-2 text-center" class:w-20={isAdmin} class:w-8={!isAdmin}>
 						{#if $viewMode === 'admin'}
 							<select
 								class="text-sm h-6 w-16 xs:text-xl xs:h-8 xs:w-16"
