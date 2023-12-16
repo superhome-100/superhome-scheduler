@@ -89,13 +89,14 @@
 		rsvs.reduce((acc, rsv) => acc + (rsv.resType === 'course' ? (rsv.numStudents+1) : 1), 0);
 
 	$: {
+		// TODO: refactor looks expensive, might be an issue if there are a ton of reservations
+		// eventually todayFilter should be eliminated if its possible to just get from store reservations limited for today and of type ow only
 		const today = dtToLDS($viewedDate);
 		const todayFilter = (r: Submission) =>
 			r.date === today && r.category === 'openwater' && ['pending', 'confirmed'].includes(r.status);
 		const todaysReservations = $reservations.filter(todayFilter);
 		const comments = $adminComments[today] || [];
 		buoyGroupings = $buoys
-			// TODO: refactor looks expensive, might be an issue if there are a ton of reservations
 			.map((v) => {
 				const amComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'AM');
 				const pmComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'PM');
