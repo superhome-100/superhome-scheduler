@@ -27,13 +27,17 @@ export async function addUser({
 		nickname: userName,
 		status: 'disabled',
 		email,
-		firebaseUID,
+		firebaseUID
 	});
 	await xata.db.UserPriceTemplates.create({ user: record.id, priceTemplate: 'regular' });
 	return record;
 }
 
-export async function updateUserEmailAndFirebaseUID(userId: string, email: string, firebaseUID: string) {
+export async function updateUserEmailAndFirebaseUID(
+	userId: string,
+	email: string,
+	firebaseUID: string
+) {
 	const record = await xata.db.Users.update(userId, { email, firebaseUID });
 	return record;
 }
@@ -58,10 +62,10 @@ export async function authenticateUser(data: AuthenticateUserArgs) {
 	const isFacebook = data.providerId === 'facebook.com';
 
 	let record;
-	const [providerMatch, emailMatch ] = await Promise.all([
-		isFacebook ?
-			xata.db.Users.filter({ facebookId: data.userId }).getMany({ pagination: { size: 1 } }):
-			xata.db.Users.filter({ googleId: data.userId }).getMany({ pagination: { size: 1 } }),
+	const [providerMatch, emailMatch] = await Promise.all([
+		isFacebook
+			? xata.db.Users.filter({ facebookId: data.userId }).getMany({ pagination: { size: 1 } })
+			: xata.db.Users.filter({ googleId: data.userId }).getMany({ pagination: { size: 1 } }),
 		xata.db.Users.filter({ email: data.email }).getMany({ pagination: { size: 1 } })
 	]);
 
@@ -77,8 +81,8 @@ export async function authenticateUser(data: AuthenticateUserArgs) {
 	} else if (!emailMatch.length && providerMatch.length) {
 		await updateUserEmailAndFirebaseUID(providerMatch[0].id, data.email, data.firebaseUID);
 		record = providerMatch[0];
-	}else {
-		record = emailMatch[0] ||  providerMatch[0];
+	} else {
+		record = emailMatch[0] || providerMatch[0];
 	}
 	return record;
 }
