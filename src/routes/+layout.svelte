@@ -147,33 +147,36 @@
 	});
 
 	onMount(() => {
-		return auth.onAuthStateChanged(async (user) => {
-			console.log("auth user:", user);
-			if (user) {
-				$loginState = 'in';
-				$sessionAuth = {
-					email: user.email || '',
-					uid: user.uid, // firebase uid
-					displayName: user.displayName || 'nameless',
-					provider: user.providerId as 'google.com' | 'facebook.com',
-					providerId: user.providerData[0].providerId, // facebook or google
-					photoURL: user.photoURL || '',
-				};
-				await authenticateUser({
-					userId: user.providerData[0].uid,
-					providerId: user.providerData[0].providerId,
-					userName: user.displayName || 'nameless',
-					photoURL: user.photoURL || '',
-					email: user.email || '',
-					firebaseUID: user.uid,
-				});
-			} else {
-				$loginState = 'out';
-				goto('/login');
+		return auth.onAuthStateChanged(
+			async (user) => {
+				console.log('auth user:', user);
+				if (user) {
+					$loginState = 'in';
+					$sessionAuth = {
+						email: user.email || '',
+						uid: user.uid, // firebase uid
+						displayName: user.displayName || 'nameless',
+						provider: user.providerId as 'google.com' | 'facebook.com',
+						providerId: user.providerData[0].providerId, // facebook or google
+						photoURL: user.photoURL || ''
+					};
+					await authenticateUser({
+						userId: user.providerData[0].uid,
+						providerId: user.providerData[0].providerId,
+						userName: user.displayName || 'nameless',
+						photoURL: user.photoURL || '',
+						email: user.email || '',
+						firebaseUID: user.uid
+					});
+				} else {
+					$loginState = 'out';
+					goto('/login');
+				}
+			},
+			(error) => {
+				console.error(error);
 			}
-		}, (error) => {
-			console.error(error);
-		});
+		);
 	});
 </script>
 

@@ -12,7 +12,8 @@ export interface LoginUserData {
 }
 export async function POST({ cookies, request }: RequestEvent) {
 	try {
-		const { userId, userName, photoURL, email, providerId, firebaseUID } = (await request.json()) as LoginUserData;
+		const { userId, userName, photoURL, email, providerId, firebaseUID } =
+			(await request.json()) as LoginUserData;
 		const record = await authenticateUser({
 			userId,
 			userName,

@@ -5,7 +5,6 @@
 		typeof window !== 'undefined' && window.navigator
 			? navigator.userAgent.includes('FBAN') || navigator.userAgent.includes('FBAV')
 			: false;
-
 </script>
 
 <div id="app" class="flex px-1 mx-auto w-full">
@@ -13,7 +12,6 @@
 		<slot />
 	</main>
 </div>
-
 
 {#if isFacebook}
 	<article class="fixed text-center top-0 w-full h-full bg-orange-400 p-20">
