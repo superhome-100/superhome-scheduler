@@ -12,10 +12,10 @@
 	const onClose = () => (modalOpened = false);
 </script>
 
-{#if $stateLoaded && $loginState === 'in'}
+{#if $stateLoaded && $loginState === 'in' && $user != null}
 	<span class="flex items-center justify-between mr-2">
 		<span />
-		<span class="text-lg font-semibold">{$user.name.split(' ')[0]}'s Reservations</span>
+		<span class="text-lg font-semibold">{($user?.name || "").split(' ')[0]}'s Reservations</span>
 		<Modal><ReservationDialog dateFn={(cat) => minValidDateStr(Settings, cat)} /></Modal>
 	</span>
 	<Tabs disableNav={modalOpened}>
