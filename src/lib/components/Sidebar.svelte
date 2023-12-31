@@ -24,8 +24,6 @@
 
 	const schedulerDoc =
 		'https://docs.google.com/document/d/1FQ828hDuuPRnQ7QWYMykSv9bT3Lmxi0amLsFyTjnyuM/edit?usp=share_link';
-	const facilitiesDoc =
-		'https://docs.google.com/document/d/11YbqoY5U_sxTduhAVCYpFmPd_QdaHuC8JhXrxgE1358/edit?usp=share_link';
 
 	let drawerHidden = true;
 	$: activateClickOutside = !drawerHidden && width < breakPoint;
@@ -208,7 +206,11 @@
 					/>
 				</SidebarDropdownWrapper>
 				<SidebarItem label="How to use this app" target="_blank" href={schedulerDoc} />
-				<SidebarItem label="Facilities Guide" target="_blank" href={facilitiesDoc} />
+				<SidebarItem
+					label="Facilities Guide"
+					target="_blank"
+					href="https://www.freedivesuperhome.com/facility-guideline"
+				/>
 			</SidebarGroup>
 		</SidebarWrapper>
 	</Sidebar>
