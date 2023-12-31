@@ -1,10 +1,27 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import '../../app.postcss';
+	import { auth } from '$lib/firebase';
+	import { goto } from '$app/navigation';
 
 	$: isFacebook =
 		typeof window !== 'undefined' && window.navigator
 			? navigator.userAgent.includes('FBAN') || navigator.userAgent.includes('FBAV')
 			: false;
+
+	onMount(() => {
+		return auth.onAuthStateChanged(
+			async (user) => {
+				console.log('auth user:', user);
+				if (user) {
+					goto('/');
+				}
+			},
+			(error) => {
+				console.error(error);
+			}
+		);
+	});
 </script>
 
 <div id="app" class="flex px-1 mx-auto w-full">

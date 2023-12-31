@@ -6,7 +6,7 @@ const XATA_API_KEY = 'xau_9xJINLTWEBX1d0EyWIi7YL9QinLT2TEv1';
 const dev = new XataClient({ apiKey: XATA_API_KEY, branch: 'dev' });
 const main = new XataClient({ apiKey: XATA_API_KEY, branch: 'main' });
 
-async function getAll(xata: XataClient, dateStr:string): Promise<Record<string, any[]>> {
+async function getAll(xata: XataClient, dateStr: string): Promise<Record<string, any[]>> {
 	let Settings = await xata.db.Settings.getAll();
 	let Buoys = await xata.db.Buoys.getAll();
 	let Users = await xata.db.Users.getAll();
@@ -14,15 +14,16 @@ async function getAll(xata: XataClient, dateStr:string): Promise<Record<string, 
 	const now = dayjs(dateStr);
 	const nowMinus7 = now.subtract(7, 'day');
 	// list of dates from 7 days ago to 7 days from now in string format
-	const dates = Array.from({ length: 14 }).map((_, i) => nowMinus7.add(i, 'day').format('YYYY-MM-DD'));
+	const dates = Array.from({ length: 14 }).map((_, i) =>
+		nowMinus7.add(i, 'day').format('YYYY-MM-DD')
+	);
 
-	let Reservations = await xata.db.Reservations
-		.filter({
-			// PS: date is string not Date
-			'date': {
-				$any: dates
-			}
-		})
+	let Reservations = await xata.db.Reservations.filter({
+		// PS: date is string not Date
+		date: {
+			$any: dates
+		}
+	})
 		.select(['*', 'user'])
 		.getAll();
 	let Boats = await xata.db.Boats.getAll();
