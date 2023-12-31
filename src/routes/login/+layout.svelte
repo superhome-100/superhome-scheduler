@@ -12,7 +12,6 @@
 	onMount(() => {
 		return auth.onAuthStateChanged(
 			async (user) => {
-				console.log('auth user:', user);
 				if (user) {
 					goto('/');
 				}
