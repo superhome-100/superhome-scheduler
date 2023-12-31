@@ -3,11 +3,9 @@
 	import _ from 'lodash';
 	import dayjs from 'dayjs';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
 	import { toast, Toaster } from 'svelte-french-toast';
-	import { FacebookAuth } from '@beyonk/svelte-social-auth';
 	import { onMount } from 'svelte';
-	import { PUBLIC_FACEBOOK_APP_ID } from '$env/static/public';
+	import { sessionAuth } from '$lib/stores/auth';
 
 	// done move this 2 lines this has to initialize first
 	// everything above should have nothing to do with with the settings store
@@ -17,8 +15,7 @@
 
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import Nprogress from '$lib/components/Nprogress.svelte';
-	import Spinner from '$lib/components/spinner.svelte';
-	import Popup, { popup } from '$lib/components/Popup.svelte';
+	import Popup from '$lib/components/Popup.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Notification from '$lib/components/Notification.svelte';
 	import {
@@ -36,7 +33,7 @@
 		profileSrc
 	} from '$lib/stores';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
-	import { login, logout } from '$lib/authentication';
+	import { logout, authenticateUser } from '$lib/authentication';
 	import {
 		getAppData,
 		getBoatAssignments,
@@ -45,16 +42,9 @@
 		getUserPastReservations,
 		getUserNotifications
 	} from '$lib/api';
+	import { auth } from '$lib/firebase';
 
 	let intervalId: number | undefined;
-
-	$: if ($loginState === 'out' && $page.route.id != '/') {
-		goto('/');
-	}
-	$: isFacebook =
-		typeof window !== 'undefined' && window.navigator
-			? navigator.userAgent.includes('FBAN') || navigator.userAgent.includes('FBAV')
-			: false;
 
 	let isLoading = false;
 
@@ -142,26 +132,12 @@
 		}
 	}
 
-	const getUserFromAuth = async (e: any) => {
-		$loginState = 'pending';
-		const uid = _.get(e, 'detail.userId', '');
-		const accessToken = _.get(e, 'detail.accessToken', '');
-		if (uid) {
-			await login(uid, accessToken, true);
-			await initializeUserSessionData();
-		} else {
-			$loginState = 'out';
-		}
-	};
-
 	onMount(() => {
-		if (!isFacebook) {
-			// @ts-ignore
-			toast.promise(initApp(), {
-				loading: 'loading...',
-				error: 'Loading error'
-			});
-		}
+		// @ts-ignore
+		toast.promise(initApp(), {
+			loading: 'loading...',
+			error: 'Loading error'
+		});
 
 		return () => {
 			if (intervalId) {
@@ -170,45 +146,49 @@
 		};
 	});
 
-	const loginVisible = (state) => (state === 'pending' ? 'invisible' : 'visible');
+	onMount(() => {
+		return auth.onAuthStateChanged(
+			async (user) => {
+				console.log('auth user:', user);
+				if (user) {
+					$loginState = 'in';
+					$sessionAuth = {
+						email: user.email || '',
+						uid: user.uid, // firebase uid
+						displayName: user.displayName || 'nameless',
+						provider: user.providerId as 'google.com' | 'facebook.com',
+						providerId: user.providerData[0].providerId, // facebook or google
+						photoURL: user.photoURL || ''
+					};
+					await authenticateUser({
+						userId: user.providerData[0].uid,
+						providerId: user.providerData[0].providerId,
+						userName: user.displayName || 'nameless',
+						photoURL: user.photoURL || '',
+						email: user.email || '',
+						firebaseUID: user.uid
+					});
+				} else {
+					$loginState = 'out';
+					goto('/login');
+				}
+			},
+			(error) => {
+				console.error(error);
+			}
+		);
+	});
 </script>
 
 <Nprogress />
 <Sidebar />
 <div id="app" class="flex px-1 mx-auto w-full">
 	<main class="lg:ml-72 w-full mx-auto">
-		{#if $loginState === 'in'}
-			<slot />
-		{:else}
-			{#if $loginState === 'pending'}
-				<div class="m-auto flex items-center justify-center pt-10">
-					<Spinner />
-				</div>
-			{/if}
-			<div class="{loginVisible($loginState)} m-auto flex items-center justify-center pt-10">
-				<FacebookAuth
-					appId={PUBLIC_FACEBOOK_APP_ID}
-					on:auth-success={getUserFromAuth}
-					on:auth-info={getUserFromAuth}
-				/>
-			</div>
-		{/if}
+		<slot />
 	</main>
 </div>
 
 <Toaster />
-
-{#if isFacebook}
-	<article class="fixed text-center top-0 w-full h-full bg-orange-400 p-20">
-		<h1 class="font-bold">Please don't use Facebook browser</h1>
-		<br />
-		<p>To use default browser:</p>
-		<ul>
-			<li><b>Android -</b> tap in the upper right-hand corner</li>
-			<li><b>iOS -</b> tap in the lower right-hand corner</li>
-		</ul>
-	</article>
-{/if}
 
 <Popup />
 
