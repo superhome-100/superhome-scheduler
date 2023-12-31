@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { auth } from '../../lib/firebase';
-	import { signInWithPopup, FacebookAuthProvider } from 'firebase/auth';
+	import { FacebookAuthProvider, signInWithRedirect } from 'firebase/auth';
 
 	// const loginWithGoogle = async () => {
 	//   const googleProvider = new GoogleAuthProvider();
@@ -9,7 +9,7 @@
 
 	const loginWithFacebook = async () => {
 		const facebookProvider = new FacebookAuthProvider();
-		await signInWithPopup(auth, facebookProvider);
+		await signInWithRedirect(auth, facebookProvider);
 	};
 </script>
 
