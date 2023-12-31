@@ -3,6 +3,7 @@ import { get } from 'svelte/store';
 import { page } from '$app/stores';
 import { goto } from '$app/navigation';
 import type { UsersRecord } from './server/xata.codegen';
+import { auth } from './firebase';
 
 interface authenticateUserArgs {
 	userId: string;
@@ -35,11 +36,12 @@ export async function logout() {
 	loginState.set('pending');
 	profileSrc.set(null);
 	user.set(null);
+	await auth.signOut();
+	await deleteSession();
+	loginState.set('out');
 	if (get(page).route.id !== '/login') {
 		goto('/login');
 	}
-	await deleteSession();
-	loginState.set('out');
 }
 
 async function deleteSession() {
