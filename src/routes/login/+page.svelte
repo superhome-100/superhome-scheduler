@@ -23,8 +23,8 @@
 	};
 </script>
 
-<div class="flex flex-col text-black w-48 gap-2">
+<div class="flex flex-col justify-center text-black w-48 gap-2">
 	<h3 class="text-white">Login with</h3>
 	<!-- <button on:click={loginWithGoogle}>Google</button> -->
-	<button on:click={loginWithFacebook}>Facebook</button>
+	<button on:click={loginWithFacebook} class="bg-[#1877F2] text-white">Facebook</button>
 </div>

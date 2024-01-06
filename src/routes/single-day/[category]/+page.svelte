@@ -194,28 +194,6 @@
 			<span><Chevron direction="left" /></span>
 			<span class="xs:text-xl pb-1 whitespace-nowrap">month view</span>
 		</a>
-		{#if $viewMode === 'admin' && category === 'openwater'}
-			<span>
-				<button
-					on:click={lockBuoys}
-					class="{highlightButton(
-						true,
-						buoyState
-					)} px-1 py-0 font-semibold border-black dark:border-white"
-				>
-					Lock
-				</button>
-				<button
-					on:click={unlockBuoys}
-					class="{highlightButton(
-						false,
-						buoyState
-					)} px-1 py-0 font-semibold border-black dark:border-white"
-				>
-					Unlock
-				</button>
-			</span>
-		{/if}
 	</div>
 	<br />
 	<div

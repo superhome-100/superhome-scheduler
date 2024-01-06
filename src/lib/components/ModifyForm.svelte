@@ -78,12 +78,10 @@
 				case 'success':
 					records = result.data.records;
 					for (let rsv of records.modified) {
-						let user = $users[rsv.user.id];
 						removeRsv(rsv.id);
 						$reservations.push(rsv);
 					}
 					for (let rsv of records.created) {
-						let user = $users[rsv.user.id];
 						$reservations.push(rsv);
 					}
 					for (let rsv of records.canceled) {
@@ -115,6 +113,7 @@
 	<div>
 		<div class="form-title">modify reservation</div>
 		<form method="POST" action="/?/modifyReservation" use:enhance={modifyReservation}>
+			<!-- TODO: each form should be its own modal quite hard to maintain -->
 			<input type="hidden" name="id" value={rsv.id} />
 			{#if rsv.category === 'pool'}
 				<ResFormPool {restrictModify} {rsv} {error} />

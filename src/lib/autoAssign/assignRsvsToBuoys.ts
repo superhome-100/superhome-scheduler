@@ -155,23 +155,31 @@ function assignBuoyGroupsToBuoys(buoys: Buoys[], grps: Submission[][]) {
 export function assignRsvsToBuoys(buoys: Buoys[], rsvs: Submission[]) {
 	// filter shortSession and longSession rsvs into separate groups so
 	// that they are assigned to separate buoys
-	let rsvsByDuration: Submission[][] = [[], []];
-	for (let rsv of rsvs) {
-		if (rsv.shortSession) rsvsByDuration[0].push(rsv);
-		else rsvsByDuration[1].push(rsv);
-	}
+	const reservationsWithBuoyAssigned = rsvs.filter((rsv) => rsv.buoy !== 'auto');
+	const unassignedReservations = rsvs.filter((rsv) => rsv.buoy === 'auto');
+
+	const shortSession: Submission[] = unassignedReservations.filter((rsv) => rsv.shortSession);
+	const longSession: Submission[] = unassignedReservations.filter((rsv) => !rsv.shortSession);
 
 	// try to avoid assigning divers with max depths that differ by
 	// more than maxDepthDiff to the same buoy; if no better option
 	// is available, divers may still be assigned to the same buoy
 	const maxDepthDiff = 15;
 
-	let buoyGrps: Submission[][] = [];
-	for (let rsvsDur of rsvsByDuration) {
-		buoyGrps = buoyGrps.concat(createBuoyGroups(rsvsDur, maxDepthDiff));
-	}
+	const buoyGrps: Submission[][] = [
+		...createBuoyGroups(shortSession, maxDepthDiff),
+		...createBuoyGroups(longSession, maxDepthDiff)
+	];
 
-	let result = assignBuoyGroupsToBuoys(buoys, buoyGrps);
+	const result = assignBuoyGroupsToBuoys(buoys, buoyGrps);
+
+	for (let rsv of reservationsWithBuoyAssigned) {
+		if (!result.assignments[rsv.buoy]) {
+			result.assignments[rsv.buoy] = [rsv];
+		} else {
+			result.assignments[rsv.buoy].push(rsv);
+		}
+	}
 	return result;
 }
 
