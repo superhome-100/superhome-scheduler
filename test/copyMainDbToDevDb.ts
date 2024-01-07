@@ -1,10 +1,13 @@
+import dotenv from 'dotenv';
 import dayjs from 'dayjs';
 import { XataClient } from '../src/lib/server/xata.codegen.js'; // has to stay .js even though its .ts ... weird
 
-const XATA_API_KEY = 'xau_9xJINLTWEBX1d0EyWIi7YL9QinLT2TEv1';
+dotenv.config({
+	path: '.env'
+});
 
-const dev = new XataClient({ apiKey: XATA_API_KEY, branch: 'dev' });
-const main = new XataClient({ apiKey: XATA_API_KEY, branch: 'main' });
+const dev = new XataClient({ apiKey: process.env.XATA_API_KEY, branch: 'dev' });
+const main = new XataClient({ apiKey: process.env.XATA_API_KEY, branch: 'main' });
 
 async function getAll(xata: XataClient, dateStr: string): Promise<Record<string, any[]>> {
 	let Settings = await xata.db.Settings.getAll();

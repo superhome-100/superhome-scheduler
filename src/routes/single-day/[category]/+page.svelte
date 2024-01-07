@@ -223,6 +223,12 @@
 		use:swipe={{ timeframe: 300, minSwipeDistance: 10, touchAction: 'pan-y' }}
 		on:swipe={swipeHandler}
 	>
+		<!-- // TODO: break apart this should be on separate pages 
+			ie: /openwater/yyyy/mm/dd 
+				/pool/yyyy/mm/dd
+				/classroom/yyyy/mm/dd
+			move ow first
+		-->
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
 			{#if category === 'pool'}
 				<DayHourly {category} resInfo={resInfo()} />

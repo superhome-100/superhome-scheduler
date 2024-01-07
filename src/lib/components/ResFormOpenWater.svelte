@@ -69,11 +69,11 @@
 	<div slot="categoryInputs">
 		{#if adminView(viewOnly)}
 			<div>
-				<select id="formBuoy" name="buoy" value={rsv.buoy}>
+				<select id="formBuoy" name="buoy" value={rsv?.buoy}>
 					<option value="auto">Auto</option>
 					{#each sortedBuoys as buoy}
 						<option value={buoy.name}
-							>{buoyIsAssigned(buoy.name)}{buoy.name + ' - ' + buoyDesc(buoy)}</option
+							>{buoyIsAssigned(buoy?.name)}{buoy.name + ' - ' + buoyDesc(buoy)}</option
 						>
 					{/each}
 				</select>

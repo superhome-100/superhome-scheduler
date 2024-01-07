@@ -155,31 +155,32 @@ function assignBuoyGroupsToBuoys(buoys: Buoys[], grps: Submission[][]) {
 export function assignRsvsToBuoys(buoys: Buoys[], rsvs: Submission[]) {
 	// filter shortSession and longSession rsvs into separate groups so
 	// that they are assigned to separate buoys
-	let rsvsByDuration: Submission[][] = [[], []];
-	for (let rsv of rsvs) {
-		if (rsv.shortSession) rsvsByDuration[0].push(rsv);
-		else rsvsByDuration[1].push(rsv);
-	}
+	const shortSession = rsvs.filter((rsv) => rsv.shortSession);
+	const longSession = rsvs.filter((rsv) => !rsv.shortSession);
 
 	// try to avoid assigning divers with max depths that differ by
 	// more than maxDepthDiff to the same buoy; if no better option
 	// is available, divers may still be assigned to the same buoy
 	const maxDepthDiff = 15;
 
-	let buoyGrps: Submission[][] = [];
-	for (let rsvsDur of rsvsByDuration) {
-		buoyGrps = buoyGrps.concat(createBuoyGroups(rsvsDur, maxDepthDiff));
-	}
+	// sorted group of divers whose depths are close enough
+	const buoyGrps: Submission[][] = [
+		...createBuoyGroups(shortSession, maxDepthDiff),
+		...createBuoyGroups(longSession, maxDepthDiff)
+	];
 
-	let result = assignBuoyGroupsToBuoys(buoys, buoyGrps);
-	return result;
+	return assignBuoyGroupsToBuoys(buoys, buoyGrps);
 }
 
-export function setBuoyToReservations(buoys: Buoys[], rsvs: Submission[]): Submission[] {
+type TempSubmission = Submission & { _buoy?: string }; // _buoy is the suggested buoy not final
+export function setBuoyToReservations(buoys: Buoys[], rsvs: Submission[]): TempSubmission[] {
 	const { assignments, unassigned } = assignRsvsToBuoys(buoys, rsvs);
-	for (const [buoyName, rsvs] of Object.entries(assignments)) {
-		rsvs.forEach((rsv) => (rsv.buoy = buoyName));
-	}
-	const assignedReservations = Object.values(assignments).flat();
-	return [...unassigned, ...assignedReservations];
+	const tempSubmissions = [
+		...unassigned,
+		...Object.entries(assignments).flatMap(([buoyName, rsvs]) =>
+			// _buoy prevents buoy from being saved but also allows O*n rendering is possible
+			rsvs.map((rsv) => ({ ...rsv, _buoy: buoyName }))
+		)
+	];
+	return tempSubmissions;
 }
