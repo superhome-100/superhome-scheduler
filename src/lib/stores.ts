@@ -5,7 +5,14 @@ import type { Settings, Buoy, Reservation } from '$types';
 
 // TODO: Add specific types for each store
 export const buoys = writable<Buoy[]>([]);
-export const boatAssignments = writable<any>({});
+
+interface BoatAssignments {
+	[date: string]: {
+		[buoyId: string]: string | null;
+	};
+}
+
+export const boatAssignments = writable<BoatAssignments>({});
 export const canSubmit = writable<boolean>(false);
 export const loginState = writable<'pending' | 'in' | 'out'>('pending');
 export const notifications = writable<any[]>([]);
