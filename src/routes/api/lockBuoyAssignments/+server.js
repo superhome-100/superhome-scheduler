@@ -16,16 +16,17 @@ export async function POST({ request }) {
 		rsvs = rsvs.map((rsv) => {
 			return { ...rsv };
 		});
-		let updates = [];
+		const updates = [];
 		if (lock) {
 			let buoys = await xata.db.Buoys.getAll();
 			for (let owTime of ['AM', 'PM']) {
-				let result = assignRsvsToBuoys(
+				const { assignments } = assignRsvsToBuoys(
 					buoys,
 					rsvs.filter((rsv) => rsv.owTime === owTime)
 				);
-				for (let buoy of buoys) {
-					let toAsn = result.assignments[buoy.name];
+
+				for (const buoy of buoys) {
+					let toAsn = assignments[buoy.name];
 					if (toAsn != undefined) {
 						updates.push(
 							...toAsn.map((rsv) => {

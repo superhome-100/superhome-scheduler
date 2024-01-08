@@ -95,8 +95,8 @@
 		const today = dtToLDS($viewedDate);
 		const todayFilter = (r: Submission) =>
 			r.date === today && r.category === 'openwater' && ['pending', 'confirmed'].includes(r.status);
-		let todaysReservations = $reservations.filter(todayFilter) as Submission[];
-		todaysReservations = setBuoyToReservations($buoys, todaysReservations);
+		const initialReservations = $reservations.filter(todayFilter) as Submission[];
+		const todaysReservations = setBuoyToReservations($buoys, initialReservations);
 
 		const comments = $adminComments[today] || [];
 		buoyGroupings = [...$buoys]
@@ -104,10 +104,10 @@
 				const amComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'AM');
 				const pmComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'PM');
 				const amReservations = todaysReservations.filter(
-					(r) => r.owTime === 'AM' && r.buoy === v.name
+					(r) => r.owTime === 'AM' && r._buoy === v.name
 				);
 				const pmReservations = todaysReservations.filter(
-					(r) => r.owTime === 'PM' && r.buoy === v.name
+					(r) => r.owTime === 'PM' && r._buoy === v.name
 				);
 				return {
 					buoy: v,
