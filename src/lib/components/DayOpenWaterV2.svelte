@@ -207,7 +207,7 @@
 							<DayOpenWaterSubmissionsCard
 								submissions={grouping.pmReservations || []}
 								onClick={() => {
-									showViewRsvs(grouping.amReservations || []);
+									showViewRsvs(grouping.pmReservations || []);
 								}}
 								adminComment={grouping.pmAdminComment}
 							/>
