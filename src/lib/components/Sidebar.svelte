@@ -211,6 +211,11 @@
 					target="_blank"
 					href="https://www.freedivesuperhome.com/facility-guideline"
 				/>
+				<SidebarItem
+					label="Messenger Group"
+					target="_blank"
+					href="https://m.me/j/Abaj0BzT0Q8K85gO/"
+				/>
 			</SidebarGroup>
 		</SidebarWrapper>
 	</Sidebar>
