@@ -96,24 +96,27 @@
 		const todayFilter = (r: Submission) =>
 			r.date === today && r.category === 'openwater' && ['pending', 'confirmed'].includes(r.status);
 		const initialReservations = $reservations.filter(todayFilter) as Submission[];
-		const todaysReservations = setBuoyToReservations($buoys, initialReservations);
+
+		const amReservations = setBuoyToReservations(
+			$buoys,
+			initialReservations.filter((r) => r.owTime === 'AM')
+		);
+		const pmReservations = setBuoyToReservations(
+			$buoys,
+			initialReservations.filter((r) => r.owTime === 'PM')
+		);
 
 		const comments = $adminComments[today] || [];
 		buoyGroupings = [...$buoys]
 			.map((v) => {
 				const amComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'AM');
 				const pmComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'PM');
-				const amReservations = todaysReservations.filter(
-					(r) => r.owTime === 'AM' && r._buoy === v.name
-				);
-				const pmReservations = todaysReservations.filter(
-					(r) => r.owTime === 'PM' && r._buoy === v.name
-				);
+
 				return {
 					buoy: v,
 					boat: $boatAssignments[today]?.[v.name!],
-					amReservations,
-					pmReservations,
+					amReservations: amReservations.filter((r) => r._buoy === v.name),
+					pmReservations: pmReservations.filter((r) => r._buoy === v.name),
 					amAdminComment: amComment?.comment,
 					pmAdminComment: pmComment?.comment,
 					headCount: getHeadCount(amReservations) + getHeadCount(pmReservations)
