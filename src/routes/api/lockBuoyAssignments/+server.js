@@ -37,11 +37,8 @@ export async function POST({ request }) {
 				}
 			}
 		} else {
-			updates = rsvs.map((rsv) => {
-				return { id: rsv.id, buoy: 'auto' };
-			});
+			rsvs.forEach((rsv) => updates.push({ id: rsv.id, buoy: 'auto' }));
 		}
-
 		let reservations = await xata.db.Reservations.update(updates);
 		return json({ status: 'success', reservations });
 	} catch (error) {

@@ -57,6 +57,7 @@
 		if ($boatAssignments[date] == null) {
 			$boatAssignments[date] = {};
 		}
+
 		$boatAssignments[date][buoy] = boat;
 
 		let response = await fetch('/api/assignBuoysToBoats', {
@@ -66,6 +67,7 @@
 		});
 		let data = await response.json();
 		if (data.status === 'success') {
+			console.log('succesful boat buoy assignment update');
 			$boatAssignments[date] = JSON.parse(data.record.assignments);
 			$boatAssignments = { ...$boatAssignments };
 		}
@@ -76,6 +78,7 @@
 	});
 
 	type BuoyGrouping = {
+		id: string;
 		buoy: Buoy;
 		boat?: string | null;
 		amReservations?: Submission[];
@@ -113,13 +116,14 @@
 				const pmComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'PM');
 
 				return {
+					id: `group_${v.name}`,
 					buoy: v,
-					boat: $boatAssignments[today]?.[v.name!],
+					boat: $boatAssignments[today]?.[v.name!] || null,
 					amReservations: amReservations.filter((r) => r._buoy === v.name),
 					pmReservations: pmReservations.filter((r) => r._buoy === v.name),
 					amAdminComment: amComment?.comment,
 					pmAdminComment: pmComment?.comment,
-					headCount: getHeadCount(amReservations) + getHeadCount(pmReservations)
+					headCount: getHeadCount(amReservations)
 				};
 			})
 			.sort((a, b) => +(a.boat || 0) - +(b.boat || 0))
@@ -153,7 +157,7 @@
 			<div class="grow text-center">PM</div>
 		</header>
 		<ul class="flex flex-col gap-0.5 sm:gap-3">
-			{#each buoyGroupings as grouping}
+			{#each buoyGroupings as grouping (grouping.id)}
 				<li
 					class="flex items-center w-full gap-0.5 sm:gap-2 border-b-[1px] border-gray-200 border-opacity-20 pb-0.5 sm:pb-2"
 				>
@@ -180,7 +184,7 @@
 								class="text-sm h-6 w-16 xs:text-xl xs:h-8 xs:w-16"
 								name={grouping.buoy.name + '_boat'}
 								id={grouping.buoy.name + '_boat'}
-								value={grouping.boat}
+								bind:value={grouping.boat}
 								on:input={saveAssignments}
 							>
 								<option value="null" />
@@ -206,7 +210,7 @@
 							<DayOpenWaterSubmissionsCard
 								submissions={grouping.pmReservations || []}
 								onClick={() => {
-									showViewRsvs(grouping.amReservations || []);
+									showViewRsvs(grouping.pmReservations || []);
 								}}
 								adminComment={grouping.pmAdminComment}
 							/>
