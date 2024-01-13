@@ -1,16 +1,22 @@
-<script>
+<script lang="ts">
 	import { adminComments } from '$lib/stores';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { OWTime } from '$types';
 	import { enhance } from '$app/forms';
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-french-toast';
-	export let date;
-	export let buoy;
+
+	export let date: string;
+	export let buoy: string;
 
 	const { close } = getContext('simple-modal');
 
-	const getThisRsvAdminComments = (date, buoy, owTime, adminComments) => {
+	const getThisRsvAdminComments = (
+		date: string,
+		buoy: string,
+		owTime: string,
+		adminComments: string
+	) => {
 		if (adminComments[date]) {
 			for (let ac of adminComments[date]) {
 				if (ac.buoy == buoy && ac.am_pm == owTime) {

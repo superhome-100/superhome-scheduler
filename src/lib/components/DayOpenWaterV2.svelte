@@ -28,7 +28,7 @@
 		});
 	};
 
-	const showAdminCommentForm = (date, buoy) => {
+	const showAdminCommentForm = (date: string, buoy: string) => {
 		open(AdminComment, { date, buoy });
 	};
 
@@ -168,7 +168,7 @@
 							<!-- svelte-ignore a11y-click-events-have-key-events -->
 							<div
 								class="cursor-pointer font-semibold"
-								on:click={() => showAdminCommentForm(date, grouping.buoy)}
+								on:click={() => showAdminCommentForm(date, grouping.buoy.name)}
 							>
 								<span>{grouping.buoy.name}</span>
 								<br />
