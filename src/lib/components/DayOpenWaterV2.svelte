@@ -90,7 +90,6 @@
 	let buoyGroupings: BuoyGrouping[] = [];
 
 	const getHeadCount = (rsvs: Submission[]) => {
-		console.log(rsvs);
 		return rsvs.reduce((acc, rsv) => acc + (rsv.resType === 'course' ? rsv.numStudents + 1 : 1), 0);
 	};
 
