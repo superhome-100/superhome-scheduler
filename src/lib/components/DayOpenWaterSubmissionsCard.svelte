@@ -3,6 +3,7 @@
 	import { displayTag } from '$lib/utils.js';
 	import { badgeColor } from '$lib/utils.js';
 	import { user } from '$lib/stores';
+	import _ from 'lodash';
 
 	export let submissions: Submission[];
 	export let adminView: boolean = false;
@@ -26,7 +27,7 @@
 		<div
 			class="bg-gradient-to-br from-openwater-bg-from to-openwater-bg-to text-openwater-fg py-0.5 sm:py-2 pr-1 flex flex-col rounded-md cursor-pointer text-sm"
 		>
-			{#each submissions as rsv, i}
+			{#each _.sortBy(submissions, 'user.id') as rsv, i}
 				<div class="flex items-center w-full px-2">
 					<div class="flex-1 text-xs lg:text-base {curUserStyling(rsv)} overflow-auto break-all">
 						{displayTag(rsv, adminView)}

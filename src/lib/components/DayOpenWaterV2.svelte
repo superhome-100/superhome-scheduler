@@ -89,8 +89,10 @@
 	};
 	let buoyGroupings: BuoyGrouping[] = [];
 
-	const getHeadCount = (rsvs: Submission[]) =>
-		rsvs.reduce((acc, rsv) => acc + (rsv.resType === 'course' ? rsv.numStudents + 1 : 1), 0);
+	const getHeadCount = (rsvs: Submission[]) => {
+		console.log(rsvs);
+		return rsvs.reduce((acc, rsv) => acc + (rsv.resType === 'course' ? rsv.numStudents + 1 : 1), 0);
+	};
 
 	$: {
 		// TODO: refactor looks expensive, might be an issue if there are a ton of reservations
@@ -114,16 +116,17 @@
 			.map((v) => {
 				const amComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'AM');
 				const pmComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'PM');
-
+				const buoyAmReservation = amReservations.filter((r) => r._buoy === v.name);
 				return {
 					id: `group_${v.name}`,
 					buoy: v,
 					boat: $boatAssignments[today]?.[v.name!] || null,
-					amReservations: amReservations.filter((r) => r._buoy === v.name),
+					amReservations: buoyAmReservation,
 					pmReservations: pmReservations.filter((r) => r._buoy === v.name),
 					amAdminComment: amComment?.comment,
 					pmAdminComment: pmComment?.comment,
-					headCount: getHeadCount(amReservations)
+					// only AM headcount is necessary
+					headCount: getHeadCount(buoyAmReservation)
 				};
 			})
 			.sort((a, b) => +(a.boat || 0) - +(b.boat || 0))
