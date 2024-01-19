@@ -164,21 +164,15 @@
 					class="flex items-center w-full gap-0.5 sm:gap-2 border-b-[1px] border-gray-200 border-opacity-20 pb-0.5 sm:pb-2"
 				>
 					<div class="flex-none w-12 min-w-12">
-						{#if $viewMode === 'admin'}
-							<!-- svelte-ignore a11y-click-events-have-key-events -->
-							<div
-								class="cursor-pointer font-semibold"
-								on:click={() => showAdminCommentForm(date, grouping.buoy.name)}
-							>
-								<span>{grouping.buoy.name}</span>
-								<br />
-								<span class="text-xs">{buoyDesc(grouping.buoy)}</span>
-							</div>
-						{:else}
-							<div class="flex items-center justify-center font-semibold">
-								{grouping.buoy.name}
-							</div>
-						{/if}
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
+						<div
+							class="cursor-pointer font-semibold"
+							on:click={() => isAdmin && showAdminCommentForm(date, grouping.buoy.name)}
+						>
+							<span>{grouping.buoy.name}</span>
+							<br />
+							<span class="text-xs">{buoyDesc(grouping.buoy)}</span>
+						</div>
 					</div>
 					<div class="flex-none px-2 text-center" class:w-20={isAdmin} class:w-8={!isAdmin}>
 						{#if $viewMode === 'admin'}
