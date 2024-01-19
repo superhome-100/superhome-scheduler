@@ -2,7 +2,7 @@
 	import { swipe } from 'svelte-gestures';
 	import { goto } from '$app/navigation';
 	import DayHourly from '$lib/components/DayHourly.svelte';
-	import DayOpenWater from '$lib/components/DayOpenWater.svelte';
+	import DayOpenWater from '$lib/components/DayOpenWaterV2.svelte';
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
 	import { datetimeToLocalDateStr, idx2month } from '$lib/datetimeUtils';
@@ -223,6 +223,12 @@
 		use:swipe={{ timeframe: 300, minSwipeDistance: 10, touchAction: 'pan-y' }}
 		on:swipe={swipeHandler}
 	>
+		<!-- // TODO: break apart this should be on separate pages 
+			ie: /openwater/yyyy/mm/dd 
+				/pool/yyyy/mm/dd
+				/classroom/yyyy/mm/dd
+			move ow first
+		-->
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
 			{#if category === 'pool'}
 				<DayHourly {category} resInfo={resInfo()} />

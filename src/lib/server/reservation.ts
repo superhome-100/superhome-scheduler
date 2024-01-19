@@ -392,14 +392,18 @@ async function createBuddyEntriesForUpdate(sub: Reservation, orig: Reservation) 
 	return { modify, create, cancel };
 }
 
-function unpackModifyForm(formData: AppFormData, orig: Reservation): Reservation {
-	let status =
+async function unpackModifyForm(formData: AppFormData, orig: Reservation): Promise<Reservation> {
+	const status =
 		orig.category == ReservationCategory.openwater
 			? ReservationStatus.pending
 			: ReservationStatus.confirmed;
-	const buoy = [ReservationType.cbs, ReservationType.proSafety].includes(orig.resType)
-		? orig.buoy
-		: 'auto';
+
+	const settings = await initSettings();
+	const brc = beforeResCutoff(settings, orig.date, getStartTime(settings, orig), orig.category);
+	const buoy =
+		[ReservationType.cbs, ReservationType.proSafety].includes(orig.resType) || !brc
+			? orig.buoy
+			: 'auto';
 
 	return {
 		id: formData.get('id'),
@@ -427,9 +431,9 @@ function unpackModifyForm(formData: AppFormData, orig: Reservation): Reservation
 		createdAt: orig.createdAt,
 		owner: true,
 		status,
-		lanes: ['auto'],
+		lanes: brc ? ['auto'] : orig.lanes,
 		buoy,
-		room: 'auto',
+		room: brc ? 'auto' : orig.room,
 		price: orig.price,
 		updatedAt: new Date()
 	};
@@ -438,7 +442,7 @@ function unpackModifyForm(formData: AppFormData, orig: Reservation): Reservation
 export async function modifyReservation(formData: AppFormData) {
 	let id = formData.get('id');
 	let [orig] = await convertFromXataToAppType([await client.db.Reservations.read(id)]);
-	let sub = unpackModifyForm(formData, orig);
+	let sub = await unpackModifyForm(formData, orig);
 
 	let { create, modify, cancel } = await createBuddyEntriesForUpdate(sub, orig);
 
