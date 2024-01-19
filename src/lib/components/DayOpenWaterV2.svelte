@@ -206,6 +206,7 @@
 									showViewRsvs(grouping.amReservations || []);
 								}}
 								adminComment={grouping.amAdminComment}
+								adminView={isAdmin}
 							/>
 						</div>
 						<div class="w-1/2">
@@ -215,6 +216,7 @@
 									showViewRsvs(grouping.pmReservations || []);
 								}}
 								adminComment={grouping.pmAdminComment}
+								adminView={isAdmin}
 							/>
 						</div>
 					</div>
