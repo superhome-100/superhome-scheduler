@@ -18,7 +18,6 @@
 	import { badgeColor, buoyDesc } from '$lib/utils.js';
 	import { Settings } from '$lib/client/settings';
 	import { getOWAdminComments } from '$lib/api';
-	import type { BuoyGroupings } from '$lib/server/xata.codegen';
 
 	const { open } = getContext('simple-modal');
 

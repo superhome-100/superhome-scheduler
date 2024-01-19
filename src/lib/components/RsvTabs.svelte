@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { getContext } from 'svelte';
 	import { Tab, Tabs, TabList, TabPanel } from '$lib/tabs.js';
 	import ViewForm from '$lib/components/ViewForm.svelte';
@@ -6,9 +6,10 @@
 	import { user, users } from '$lib/stores';
 	import { beforeResCutoff, beforeCancelCutoff } from '$lib/reservationTimes';
 	import { Settings } from '$lib/client/settings.ts';
+	import type { Submission } from '$types';
 
-	export let rsvs;
-	export let hasForm;
+	export let rsvs: Submission[];
+	export let hasForm: boolean;
 	export let disableModify = false;
 
 	const { close } = getContext('simple-modal');

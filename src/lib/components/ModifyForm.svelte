@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { OWTime } from '$types';
+	import { OWTime, type Submission } from '$types';
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-french-toast';
 	import { enhance } from '$app/forms';
@@ -12,7 +12,7 @@
 	import { removeRsv, cleanUpFormDataBuddyFields } from '$lib/utils.js';
 
 	export let hasForm = false;
-	export let rsv;
+	export let rsv: Submission;
 
 	let error = '';
 	const { close, hideModal, showModal } = getContext('simple-modal');
