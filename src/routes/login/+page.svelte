@@ -12,6 +12,8 @@
 
 	const loginWithFacebook = async () => {
 		const facebookProvider = new FacebookAuthProvider();
+		facebookProvider.addScope('email');
+
 		await signInWithRedirect(auth, facebookProvider);
 		// if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
 		// 	// Use popup for Safari
