@@ -23,7 +23,7 @@ export async function POST({ cookies, request }: RequestEvent) {
 		});
 
 		// TODO: replace this with firebase session auth setup
-		if (cookies.get('sessionid') === undefined) {
+		if (cookies.get('sessionid') === undefined && record) {
 			const session = await createSession(record);
 			let expires = new Date();
 			expires.setMonth(expires.getMonth() + 1);
