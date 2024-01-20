@@ -12,18 +12,19 @@
 
 	const loginWithFacebook = async () => {
 		const facebookProvider = new FacebookAuthProvider();
-		if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
-			// Use popup for Safari
-			try {
-				await signInWithPopup(auth, facebookProvider);
-			} catch (error) {
-				console.error(error);
-				await signInWithRedirect(auth, facebookProvider);
-			}
-		} else {
-			// Use redirect for other browsers
-			await signInWithRedirect(auth, facebookProvider);
-		}
+		await signInWithRedirect(auth, facebookProvider);
+		// if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
+		// 	// Use popup for Safari
+		// 	try {
+		// 		await signInWithPopup(auth, facebookProvider);
+		// 	} catch (error) {
+		// 		console.error(error);
+		// 		await signInWithRedirect(auth, facebookProvider);
+		// 	}
+		// } else {
+		// 	// Use redirect for other browsers
+		// 	await signInWithRedirect(auth, facebookProvider);
+		// }
 	};
 
 	onMount(() => {
