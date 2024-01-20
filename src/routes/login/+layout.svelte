@@ -10,7 +10,7 @@
 			: false;
 
 	onMount(() => {
-		return auth.onAuthStateChanged(
+		return auth.onIdTokenChanged(
 			async (user) => {
 				if (user) {
 					goto('/');
