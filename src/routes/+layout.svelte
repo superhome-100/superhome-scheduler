@@ -147,7 +147,7 @@
 	});
 
 	onMount(() => {
-		return auth.onAuthStateChanged(
+		return auth.onIdTokenChanged(
 			async (user) => {
 				if (user) {
 					$loginState = 'in';
