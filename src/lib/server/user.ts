@@ -60,29 +60,30 @@ interface AuthenticateUserArgs {
 }
 export async function authenticateUser(data: AuthenticateUserArgs) {
 	const isFacebook = data.providerId === 'facebook.com';
+	const email = data.email.trim().toLowerCase();
 
 	let record;
 	const [providerMatch, emailMatch] = await Promise.all([
 		isFacebook
-			? xata.db.Users.filter({ facebookId: data.userId }).getMany({ pagination: { size: 1 } })
-			: xata.db.Users.filter({ googleId: data.userId }).getMany({ pagination: { size: 1 } }),
-		xata.db.Users.filter({ email: data.email }).getMany({ pagination: { size: 1 } })
+			? xata.db.Users.filter({ facebookId: data.userId }).getFirst()
+			: xata.db.Users.filter({ googleId: data.userId }).getFirst(),
+		email ? xata.db.Users.filter({ email }).getFirst() : null
 	]);
 
-	if (!providerMatch.length && !emailMatch.length) {
+	if (!providerMatch && !emailMatch) {
 		/* user does not exist yet */
 		record = await addUser({
 			firebaseUID: data.firebaseUID,
 			providerId: data.providerId,
 			providerUserId: data.userId,
-			email: data.email,
+			email,
 			userName: data.userName
 		});
-	} else if (!emailMatch.length && providerMatch.length) {
-		await updateUserEmailAndFirebaseUID(providerMatch[0].id, data.email, data.firebaseUID);
-		record = providerMatch[0];
+	} else if (!emailMatch && providerMatch) {
+		await updateUserEmailAndFirebaseUID(providerMatch.id, email, data.firebaseUID);
+		record = providerMatch;
 	} else {
-		record = emailMatch[0] || providerMatch[0];
+		record = emailMatch || providerMatch;
 	}
 	return record;
 }
