@@ -149,6 +149,7 @@
 	onMount(() => {
 		return auth.onIdTokenChanged(
 			async (user) => {
+				console.log('change:', user)
 				if (user) {
 					$loginState = 'in';
 					$sessionAuth = {
