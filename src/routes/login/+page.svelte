@@ -15,7 +15,10 @@
 		const facebookProvider = new FacebookAuthProvider();
 		facebookProvider.addScope('email');
 
-		if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)  && !/iPad|iPhone|iPod/.test(navigator.platform)) {
+		if (
+			/^((?!chrome|android).)*safari/i.test(navigator.userAgent) &&
+			!/iPad|iPhone|iPod/.test(navigator.platform)
+		) {
 			// Use popup for Safari
 			try {
 				await signInWithPopup(auth, facebookProvider);
@@ -38,12 +41,12 @@
 			}
 		});
 	});
-
-
 </script>
 
 <div class="flex flex-col text-black w-48 gap-2">
 	<h3 class="text-white">Login with</h3>
 	<!-- <button on:click={loginWithGoogle}>Google</button> -->
-	<button disabled={['loading','in'].includes(session)} on:click={loginWithFacebook}>Facebook</button>
+	<button disabled={['loading', 'in'].includes(session)} on:click={loginWithFacebook}
+		>Facebook</button
+	>
 </div>

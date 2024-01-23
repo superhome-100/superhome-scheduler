@@ -8,5 +8,11 @@
 			"path": "/api/updatePrices",
 			"schedule": "00 02,14 * * *"
 		}
+	],
+	"rewrites": [
+		{
+			"source": "/__/auth/handler",
+			"destination": "https://freedive-superhome.firebaseapp.com/__/auth/handler"
+		}
 	]
 }

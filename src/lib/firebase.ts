@@ -8,7 +8,7 @@ import { getAuth } from 'firebase/auth';
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
 	apiKey: 'AIzaSyB6j8kYAR977Iy0HHvf3k6yzu1f0_2Cl7I',
-	authDomain: 'freedive-superhome.firebaseapp.com',
+	authDomain: 'app-dev.freedivesuperhome.com',
 	projectId: 'freedive-superhome',
 	storageBucket: 'freedive-superhome.appspot.com',
 	messagingSenderId: '1021894750641',
