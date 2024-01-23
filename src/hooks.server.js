@@ -12,7 +12,13 @@ export async function handle({ event, resolve }) {
         !['host', 'content-length', 'transfer-encoding'].includes(key.toLowerCase())
       )
     );
-    const proxyResponse = await axios.get(redirectUrl.toString(), { headers });
+
+		const isJsFile = pathname.endsWith('.js');
+    const axiosOptions = isJsFile ? { headers, responseType: 'arraybuffer' } : { headers };
+
+    const proxyResponse = await axios.get(redirectUrl.toString(), {
+			...axiosOptions,
+		});
     const proxyHeaders = Object.fromEntries(
       Object.entries(proxyResponse.headers).map(([key, value]) => [key, String(value)])
     );
