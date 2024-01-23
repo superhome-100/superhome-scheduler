@@ -14,23 +14,12 @@
 		session = 'loading';
 		const facebookProvider = new FacebookAuthProvider();
 		facebookProvider.addScope('email');
-		await signInWithPopup(auth, facebookProvider);
-
-		// if (
-		// 	/^((?!chrome|android).)*safari/i.test(navigator.userAgent) &&
-		// 	!/iPad|iPhone|iPod/.test(navigator.platform)
-		// ) {
-		// 	// Use popup for Safari
-		// 	try {
-		// 		await signInWithPopup(auth, facebookProvider);
-		// 	} catch (error) {
-		// 		console.error(error);
-		// 		await signInWithRedirect(auth, facebookProvider);
-		// 	}
-		// } else {
-		// 	// Use redirect for other browsers
-		// 	await signInWithRedirect(auth, facebookProvider);
-		// }
+    const isChromeDesktop = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor) && !/Android/.test(navigator.userAgent);
+    if (isChromeDesktop) {
+      await signInWithRedirect(auth, facebookProvider);
+    } else {
+      await signInWithPopup(auth, facebookProvider);
+    }
 	};
 
 	onMount(() => {
