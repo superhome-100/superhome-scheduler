@@ -45,6 +45,7 @@
 	"dependencies": {
 		"@beyonk/svelte-social-auth": "^3.0.0",
 		"@xata.io/client": "^0.28.3",
+		"axios": "^1.6.5",
 		"daisyui": "^2.51.5",
 		"dayjs": "^1.11.9",
 		"firebase": "^10.7.1",
