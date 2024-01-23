@@ -17,6 +17,6 @@
 		{
 			"source": "/__/auth/action",
 			"destination": "https://freedive-superhome.firebaseapp.com/__/auth/action"
-		},
+		}
 	]
 }
