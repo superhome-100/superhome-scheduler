@@ -19,14 +19,11 @@ export async function handle({ event, resolve }) {
     const proxyResponse = await axios.get(redirectUrl.toString(), {
 			...axiosOptions,
 		});
-		let responseData;
+		let responseData = await proxyResponse.data
 		if (isJsFile) {
 			// If it's a JS file, read the data as an ArrayBuffer and convert it to a Blob
 			const arrayBuffer = await proxyResponse.data;
 			responseData = new Blob([arrayBuffer], { type: proxyResponse.headers.get('content-type') });
-		} else {
-			// Otherwise, just use the text data
-			responseData = await proxyResponse.text();
 		}
     const proxyHeaders = Object.fromEntries(
       Object.entries(proxyResponse.headers).map(([key, value]) => [key, String(value)])
