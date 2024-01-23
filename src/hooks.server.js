@@ -21,7 +21,8 @@ export async function handle({ event, resolve }) {
     const { status } = proxyResponse;
 
     let responseData;
-    if (pathname.endsWith('.js')) {
+		const isJs = pathname.endsWith('.js');
+    if (isJs) {
       // If it's a JS file, read the data as an ArrayBuffer and convert it to a Blob
       const arrayBuffer = await proxyResponse.arrayBuffer();
       responseData = new Blob([arrayBuffer], { type: proxyHeaders['content-type'] });
@@ -29,10 +30,16 @@ export async function handle({ event, resolve }) {
       // Otherwise, just use the text data
       responseData = await proxyResponse.text();
     }
+		if (!isJs) {
+			proxyHeaders['content-type'] = 'text/html';
+		}
 
     return new Response(responseData, {
       status,
-      headers: proxyHeaders
+      headers: {
+				...proxyResponse.headers,
+				...proxyHeaders,
+			}
     });
   }
 
