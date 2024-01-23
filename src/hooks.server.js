@@ -4,13 +4,16 @@ export async function handle({ event, resolve }) {
 	if (pathname.startsWith('/__/')) {
 		const redirectUrl = new URL(`https://freedive-superhome.firebaseapp.com${pathname}`);
 		redirectUrl.search = search; // copy URL parameters
-		const response = await fetch(redirectUrl.toString(), event.request);
-		console.log(response)
-		return response;
+		return new Response(null, {
+			status: 302,
+			headers: {
+				...event.request.headers,
+				location: redirectUrl.toString()
+			}
+		})
 	}
 
-	const response = await resolve(event);
-	response.headers.set('x-custom-header', 'potato');
+	const response = await resolve(event)
 
 	return response;
 }
