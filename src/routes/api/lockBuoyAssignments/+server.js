@@ -40,10 +40,11 @@ export async function POST({ request }) {
 				return { id: rsv.id, buoy: 'auto' };
 			});
 		}
-
+		console.log('lockBuoyAssignments', updates);
 		let reservations = await xata.db.Reservations.update(updates);
 		return json({ status: 'success', reservations });
 	} catch (error) {
+		console.error('error lockBuoyAssignments', error);
 		return json({ status: 'error', error });
 	}
 }
