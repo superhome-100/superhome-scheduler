@@ -14,12 +14,15 @@
 		session = 'loading';
 		const facebookProvider = new FacebookAuthProvider();
 		facebookProvider.addScope('email');
-    const isChromeDesktop = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor) && !/Android/.test(navigator.userAgent);
-    if (isChromeDesktop) {
-      await signInWithRedirect(auth, facebookProvider);
-    } else {
-      await signInWithPopup(auth, facebookProvider);
-    }
+		const isChromeDesktop =
+			/Chrome/.test(navigator.userAgent) &&
+			/Google Inc/.test(navigator.vendor) &&
+			!/Android/.test(navigator.userAgent);
+		if (isChromeDesktop) {
+			await signInWithRedirect(auth, facebookProvider);
+		} else {
+			await signInWithPopup(auth, facebookProvider);
+		}
 	};
 
 	onMount(() => {
