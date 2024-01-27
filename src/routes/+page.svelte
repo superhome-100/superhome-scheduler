@@ -12,7 +12,7 @@
 	const onClose = () => (modalOpened = false);
 </script>
 
-{#if $stateLoaded && $loginState === 'in' && $user != null}
+{#if $user != null}
 	<span class="flex items-center justify-between mr-2">
 		<span />
 		<span class="text-lg font-semibold">{($user?.name || '').split(' ')[0]}'s Reservations</span>
@@ -35,4 +35,6 @@
 			</Modal>
 		</TabPanel>
 	</Tabs>
+{:else}
+	<h1>loading data...</h1>
 {/if}
