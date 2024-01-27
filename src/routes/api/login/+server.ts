@@ -2,15 +2,28 @@ import { json, type RequestEvent } from '@sveltejs/kit';
 import { createSession } from '$lib/server/session';
 import { authenticateUser } from '$lib/server/user';
 
+export interface LoginUserData {
+	userId: string;
+	userName: string;
+	photoURL: string;
+	email: string;
+	providerId: string;
+	firebaseUID: string;
+}
 export async function POST({ cookies, request }: RequestEvent) {
 	try {
-		const { userId, userName, photoURL } = (await request.json()) as {
-			userId: string;
-			userName: string;
-			photoURL: string;
-		};
-		const record = await authenticateUser(userId, userName);
-		if (cookies.get('sessionid') === undefined) {
+		const { userId, userName, photoURL, email, providerId, firebaseUID } =
+			(await request.json()) as LoginUserData;
+		const record = await authenticateUser({
+			userId,
+			userName,
+			email,
+			providerId,
+			firebaseUID
+		});
+
+		// TODO: replace this with firebase session auth setup
+		if (cookies.get('sessionid') === undefined && record) {
 			const session = await createSession(record);
 			let expires = new Date();
 			expires.setMonth(expires.getMonth() + 1);

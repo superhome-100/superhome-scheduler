@@ -6,7 +6,7 @@
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { popup } from './Popup.svelte';
 	import { reservations, user, users } from '$lib/stores';
-	import { adminView } from '$lib/utils.js';
+	import { adminView, removeRsv } from '$lib/utils.js';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { toast } from 'svelte-french-toast';
 
@@ -16,17 +16,6 @@
 	const dispatch = createEventDispatcher();
 
 	const { close } = getContext('simple-modal');
-
-	const copyChanges = (rsv, upd) => {
-		rsv.status = upd.status;
-		if (rsv.category === 'pool') {
-			rsv.lanes[0] = upd.lanes[0];
-		} else if (rsv.category === 'openwater') {
-			rsv.buoy = upd.buoy;
-		} else if (rsv.category === 'classroom') {
-			rsv.room = upd.room;
-		}
-	};
 
 	const adminUpdate = async ({ form, data, action, cancel }) => {
 		let status = action.href.includes('Confirmed')
@@ -44,8 +33,8 @@
 			switch (result.type) {
 				case 'success':
 					let updated = result.data.record;
-					copyChanges(rsv, updated);
-					$reservations = [...$reservations];
+					removeRsv(rsv.id);
+					$reservations = [...$reservations, updated];
 					toast.success('Reservation updated!');
 					break;
 				default:
