@@ -6,20 +6,20 @@ import { getAuth } from 'firebase/auth';
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-let authDomain:string;
+let authDomain: string;
 const host = typeof window !== 'undefined' ? window.location.hostname : '';
 switch (host) {
-  case 'app-dev.freedivesuperhome.com':
-    authDomain = 'app-dev.freedivesuperhome.com';
-    break;
-  case 'app.freedivesuperhome.com':
-    authDomain = 'app.freedivesuperhome.com';
-    break;
+	case 'app-dev.freedivesuperhome.com':
+		authDomain = 'app-dev.freedivesuperhome.com';
+		break;
+	case 'app.freedivesuperhome.com':
+		authDomain = 'app.freedivesuperhome.com';
+		break;
 	case 'localhost':
 	case 'localhost:5173': // adjust the port if necessary
-  default:
-    authDomain = 'freedive-superhome.firebaseapp.com';
-    break;
+	default:
+		authDomain = 'freedive-superhome.firebaseapp.com';
+		break;
 }
 
 const firebaseConfig = {
