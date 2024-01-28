@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { auth } from '../../lib/firebase';
 	import { FacebookAuthProvider, signInWithRedirect, signInWithPopup } from 'firebase/auth';
+	import { goto } from '$app/navigation';
 
 	let session: 'loading' | 'in' | 'out' = 'loading';
 
@@ -31,6 +32,7 @@
 				session = 'out';
 			} else {
 				session = 'in';
+				goto('/'); // redirect to home page after login
 			}
 		});
 	});

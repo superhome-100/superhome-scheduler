@@ -30,6 +30,7 @@ export async function authenticateUser(userData: authenticateUserArgs) {
 		loginState.set('in');
 	}
 	user.set(data.record || null);
+	return data.record;
 }
 
 export async function logout() {
