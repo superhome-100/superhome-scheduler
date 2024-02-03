@@ -124,7 +124,7 @@ const getWidth = (rsv) => getNumberOfOccupants([rsv]) + rsv.buddies.length;
 function rsvToBlock(rsv, minTime, inc, resourceNames) {
 	let startTime = (timeStrToMin(rsv.startTime) - minTime) / inc;
 	let endTime = (timeStrToMin(rsv.endTime) - minTime) / inc;
-	let occ = Settings.getMaxOccupantsPerLane(rsv.date);
+	let occ = 1;
 	let width = getWidth(rsv);
 	let startSpaces;
 	if (rsv.category === 'pool') {
@@ -171,12 +171,12 @@ function insertUnAssigned(spacesByTimes, laneWidth, blk) {
 	return { status: 'success' };
 }
 
-export function assignPoolSpaces(rsvs, dateStr) {
+export function oldAssignPoolSpaces(rsvs, dateStr) {
 	let incT = inc(Settings, dateStr);
 	let sTs = startTimes(Settings, dateStr, 'pool');
 	let nTimes = sTs.length;
 	let minTime = timeStrToMin(sTs[0]);
-	let laneWidth = Settings.getMaxOccupantsPerLane(dateStr);
+	let laneWidth = 1;
 	let nSpaces = laneWidth * Settings.getPoolLanes(dateStr).length;
 	let spacesByTimes = Array(nSpaces)
 		.fill()
@@ -250,6 +250,14 @@ function setRelativeSpace(sByT, space, t, blk) {
 	}
 }
 
+const getStyleType = (width, startSpace, space) => {
+	if (width <= 1) {
+		return 'single';
+	} else {
+		return space == startSpace ? 'start' : space == startSpace + width - 1 ? 'end' : 'middle';
+	}
+};
+
 function patchSchedule(sByT) {
 	let schedule = Array(sByT.length)
 		.fill()
@@ -258,27 +266,34 @@ function patchSchedule(sByT) {
 		});
 	let nSlots = sByT[0].length;
 
+	const getStartSpace = (space, t) =>
+		space > 0 && sByT[space - 1][t] && sByT[space - 1][t].id == sByT[space][t].id
+			? getStartSpace(space - 1, t)
+			: space;
+
 	for (let t = 0; t < nSlots; t++) {
 		for (let space = 0; space < schedule.length; space++) {
 			let data = patchData(sByT[space][t]);
-			let cls = data.length == 0 ? 'filler' : 'rsv';
-			let width = cls == 'filler' ? 0 : getWidth(data[0]);
+			let blkType = data.length == 0 ? 'filler' : 'rsv';
+			let width = blkType == 'filler' ? 0 : getWidth(data[0]);
 			let curBlk = t == 0 ? null : schedule[space][schedule[space].length - 1];
-			if (curBlk == null || curBlk.cls != cls) {
+			if (curBlk == null || curBlk.blkType != blkType) {
 				let blk = {
 					nSlots: 1,
-					cls,
+					blkType,
 					data,
-					width
+					width,
+					styleType: getStyleType(width, blkType == 'rsv' ? getStartSpace(space, t) : null, space)
 				};
 				schedule[space].push(blk);
-			} else if (cls === 'rsv') {
+			} else if (blkType === 'rsv') {
 				if (dataAreDifferent(data, curBlk.data)) {
 					let blk = {
 						nSlots: 1,
-						cls,
+						blkType,
 						data,
-						width
+						width,
+						styleType: getStyleType(width, blkType == 'rsv' ? getStartSpace(space, t) : null, space)
 					};
 					schedule[space].push(blk);
 				} else {
@@ -288,7 +303,7 @@ function patchSchedule(sByT) {
 				curBlk.nSlots += 1;
 			}
 			let lastBlk = schedule[space][schedule[space].length - 1];
-			if (cls === 'rsv' && lastBlk.nSlots == 1) {
+			if (blkType === 'rsv' && lastBlk.nSlots == 1) {
 				setRelativeSpace(sByT, space, t, lastBlk);
 			}
 		}
