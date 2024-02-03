@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { auth } from '../../lib/firebase';
 	import { FacebookAuthProvider, signInWithRedirect, signInWithPopup } from 'firebase/auth';
+	import { goto } from '$app/navigation';
 
 	let session: 'loading' | 'in' | 'out' = 'loading';
 
@@ -14,18 +15,14 @@
 		session = 'loading';
 		const facebookProvider = new FacebookAuthProvider();
 		facebookProvider.addScope('email');
-
-		if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)  && !/iPad|iPhone|iPod/.test(navigator.platform)) {
-			// Use popup for Safari
-			try {
-				await signInWithPopup(auth, facebookProvider);
-			} catch (error) {
-				console.error(error);
-				await signInWithRedirect(auth, facebookProvider);
-			}
-		} else {
-			// Use redirect for other browsers
+		const isChromeDesktop =
+			/Chrome/.test(navigator.userAgent) &&
+			/Google Inc/.test(navigator.vendor) &&
+			!/Android/.test(navigator.userAgent);
+		if (isChromeDesktop) {
 			await signInWithRedirect(auth, facebookProvider);
+		} else {
+			await signInWithPopup(auth, facebookProvider);
 		}
 	};
 
@@ -35,15 +32,16 @@
 				session = 'out';
 			} else {
 				session = 'in';
+				goto('/'); // redirect to home page after login
 			}
 		});
 	});
-
-
 </script>
 
 <div class="flex flex-col text-black w-48 gap-2">
 	<h3 class="text-white">Login with</h3>
 	<!-- <button on:click={loginWithGoogle}>Google</button> -->
-	<button disabled={['loading','in'].includes(session)} on:click={loginWithFacebook}>Facebook</button>
+	<button disabled={['loading', 'in'].includes(session)} on:click={loginWithFacebook}
+		>Facebook</button
+	>
 </div>

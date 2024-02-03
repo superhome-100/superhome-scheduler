@@ -149,7 +149,7 @@
 	onMount(() => {
 		return auth.onIdTokenChanged(
 			async (user) => {
-				console.log('change:', user)
+				console.log('change:', user);
 				if (user) {
 					$loginState = 'in';
 					$sessionAuth = {
@@ -160,7 +160,7 @@
 						providerId: user.providerData[0].providerId, // facebook or google
 						photoURL: user.photoURL || ''
 					};
-					await authenticateUser({
+					const usersRecord = await authenticateUser({
 						userId: user.providerData[0].uid,
 						providerId: user.providerData[0].providerId,
 						userName: user.displayName || 'nameless',
@@ -168,6 +168,11 @@
 						email: user.email || '',
 						firebaseUID: user.uid
 					});
+					if (usersRecord) {
+						$user = usersRecord;
+					} else {
+						goto('/login');
+					}
 				} else {
 					$loginState = 'out';
 					goto('/login');

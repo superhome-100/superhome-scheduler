@@ -10,19 +10,31 @@ import { fail } from '@sveltejs/kit';
 import { updateNickname } from '$lib/server/user';
 import { upsertOWReservationAdminComments } from '$lib/server/ow';
 
+import { doTransaction } from '$lib/server/firestore';
+
 const adminUpdateGeneric = async ({ request }) => {
 	const data = await request.formData();
 	console.log('adminUpdateGeneric', data);
-	const record = await adminUpdate(data);
+	const category = data.get('category');
+	let record;
+	await doTransaction(category, async () => {
+		record = await adminUpdate(data);
+	});
 	return { record };
 };
 
 export const actions = {
 	submitReservation: async ({ request }) => {
 		try {
+			// add firestore locking here if pool or classroom
 			const data = await request.formData();
-			console.log('submitReservation', data);
-			const record = await submitReservation(data);
+			const category = data.get('category');
+			let record;
+
+			await doTransaction(category, async () => {
+				record = await submitReservation(data);
+			});
+
 			return record;
 		} catch (e) {
 			console.error('error submitReservation', e);
@@ -31,13 +43,19 @@ export const actions = {
 			} else {
 				throw e;
 			}
+		} finally {
+			// add firestore unlocking here
 		}
 	},
 	modifyReservation: async ({ request }) => {
 		const data = await request.formData();
 		console.log('modifyReservation', data);
 		try {
-			const record = await modifyReservation(data);
+			const category = data.get('category');
+			let record;
+			await doTransaction(category, async () => {
+				record = await modifyReservation(data);
+			});
 			return record;
 		} catch (e) {
 			console.error('error modifyReservation', e);
@@ -46,13 +64,19 @@ export const actions = {
 			} else {
 				throw e;
 			}
+		} finally {
+			// add firestore unlocking here
 		}
 	},
 	cancelReservation: async ({ request }) => {
 		try {
 			const data = await request.formData();
 			console.log('cancelReservation', data);
-			const record = await cancelReservation(data);
+			const category = data.get('category');
+			let record;
+			await doTransaction(category, async () => {
+				record = await cancelReservation(data);
+			});
 			return record;
 		} catch (e) {
 			console.error('error cancelReservation', e);

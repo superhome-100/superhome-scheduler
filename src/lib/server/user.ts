@@ -26,7 +26,7 @@ export async function addUser({
 		name: userName,
 		nickname: userName,
 		status: 'disabled',
-		email,
+		email: email || null,
 		firebaseUID
 	});
 	await xata.db.UserPriceTemplates.create({ user: record.id, priceTemplate: 'regular' });
