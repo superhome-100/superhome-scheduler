@@ -1,5 +1,4 @@
 import { getStartEndTimes } from '$lib/reservationTimes';
-import { timeStrToMin } from '$lib/datetimeUtils';
 import { Settings } from '$lib/client/settings';
 import { getNumberOfOccupants } from '$utils/reservations';
 import { blocksToDisplayData } from './hourlyDisplay';
@@ -73,69 +72,82 @@ function createBuddyGroups(rsvs: Reservation[]) {
 export type Block = ReturnType<typeof rsvsToBlock>;
 type Grid = number[][];
 
-function emptyBlock({
-	spacesByTimes,
-	startSpace,
-	endSpace,
-	startTime,
-	endTime
-}: {
-	spacesByTimes: Grid;
-	startSpace: number;
-	endSpace: number;
-	startTime: number;
-	endTime: number;
-}) {
-	for (let i = startSpace; i < endSpace; i++) {
-		for (let j = startTime; j < endTime; j++) {
-			if (spacesByTimes[i][j] >= 0) {
+const slotIsAvailable = (sByT: Grid, slot: number, blk: Block) => {
+	for (let i = blk.startTime; i < blk.endTime; i++) {
+		for (let j = 0; j < blk.width; j++) {
+			if (sByT[slot + j][i] != -1) {
 				return false;
 			}
 		}
 	}
 	return true;
-}
+};
 
-function insertPreassigned(spacesByTimes: Grid, blk: Block, blkIdx: number) {
-	let valid = emptyBlock({
-		spacesByTimes,
-		startSpace: blk.startSpace,
-		endSpace: blk.startSpace + blk.width,
-		startTime: blk.startTime,
-		endTime: blk.endTime
-	});
-	//even if valid==false, we still assign the block here in order to make
-	//debugging easier for the admin
-	for (let i = blk.startSpace; i < blk.startSpace + blk.width; i++) {
+const addBlock = (sByT: Grid, slot: number, blk: Block, blkIdx: number) => {
+	for (let i = 0; i < blk.width; i++) {
 		for (let j = blk.startTime; j < blk.endTime; j++) {
-			spacesByTimes[i][j] = blkIdx;
+			sByT[slot + i][j] = blkIdx;
 		}
 	}
-	return valid;
-}
+};
 
-function insertUnassigned(spacesByTimes: Grid, blk: Block, blkIdx: number) {
-	for (let i = 0; i <= spacesByTimes.length - blk.width; i++) {
-		if (
-			emptyBlock({
-				spacesByTimes,
-				startSpace: i,
-				endSpace: i + blk.width,
-				startTime: blk.startTime,
-				endTime: blk.endTime
-			})
-		) {
-			blk.startSpace = i;
-			for (let j = i; j < i + blk.width; j++) {
-				for (let k = blk.startTime; k < blk.endTime; k++) {
-					spacesByTimes[j][k] = blkIdx;
-				}
-			}
-			break;
+const removeBlock = (sByT: Grid, slot: number, blk: Block) => {
+	for (let i = 0; i < blk.width; i++) {
+		for (let j = blk.startTime; j < blk.endTime; j++) {
+			sByT[slot + i][j] = -1;
 		}
 	}
-	return blk.startSpace >= 0;
-}
+};
+
+type Stats = { nrec: number };
+const bfAssignAllRecurse = (grid: Grid, blocks: Block[], curIdx: number, stats: Stats): boolean => {
+	if (curIdx == blocks.length) {
+		// found solution
+		return true;
+	}
+
+	const next = blocks[curIdx];
+	for (let j = 0; j < grid.length - next.width + 1; j++) {
+		if (slotIsAvailable(grid, j, next)) {
+			addBlock(grid, j, next, curIdx + 1);
+			stats.nrec++;
+			if (bfAssignAllRecurse(grid, blocks, curIdx + 1, stats)) {
+				// found solution
+				next.startSpace = j;
+				return true;
+			} else {
+				//remove this assignment from the grid and try the next assignment
+				removeBlock(grid, j, next);
+			}
+		}
+	}
+
+	// failed to find a solution with this arrangement
+	return false;
+};
+
+const bruteForceAssignAll = (blocks: Block[], nResources: number, nStartTimes: number) => {
+	// iterate through all possible assignments of reservations to resource slots and return
+	// the first assignment that works for all reservations
+
+	// each tile in the spacesByTimes grid represents one space in the pool/one classroom for one timeslot
+	// the value of the tile is an index into the blocks array (-1 == unassigned)
+	let spacesByTimes: Grid = Array(nResources)
+		.fill(null)
+		.map(() => Array(nStartTimes).fill(-1));
+
+	const stats = { nrec: 0 };
+	const success = bfAssignAllRecurse(spacesByTimes, blocks, 0, stats);
+
+	/*
+	if (success) {
+		console.log('found solution after ' + stats.nrec + ' recursions');
+	} else {
+		console.log('no solution');
+	}*/
+
+	return success;
+};
 
 export function assignHourlySpaces(
 	rsvs: Reservation[],
@@ -150,34 +162,16 @@ export function assignHourlySpaces(
 	} else {
 		resourceNames = Settings.getClassrooms(dateStr);
 	}
-
-	// each tile in the grid represents one space in the pool/one classroom for one timeslot
-	// the value of the tile is an index into the blocks array (-1 == unassigned)
-	let spacesByTimes: Grid = Array(resourceNames.length)
-		.fill(null)
-		.map(() => Array(nStartTimes).fill(-1));
+	const nResources = resourceNames.length;
 
 	let blocks = createBuddyGroups(rsvs).map((grp) =>
 		rsvsToBlock({ rsvs: grp, startEndTimes, category, resourceNames })
 	);
-	//move pre-assigned to front
-	blocks.sort((a, b) => (a.startSpace == -1 ? 1 : -1));
+	let success = bruteForceAssignAll(blocks, nResources, nStartTimes);
+	let schedule = blocksToDisplayData(blocks, nResources, nStartTimes);
 
-	let success = true;
-	for (let i = 0; i < blocks.length; i++) {
-		let blk = blocks[i];
-		if (blk.startSpace >= 0) {
-			success = insertPreassigned(spacesByTimes, blk, i);
-		} else {
-			success = insertUnassigned(spacesByTimes, blk, i);
-		}
-		if (!success) break;
-	}
-
-	let schedule = blocksToDisplayData(blocks, resourceNames.length, nStartTimes);
-
-	//error indicates conflicting assignments; either there's a bug or the admin made a mistake
-	//    even if there's an error, we still display the schedule to help the admin to debug
+	//error most likely indicates conflicting assignments due to a bug
+	//even if there's an error, we still display the schedule to help the admin to debug
 	let status = success ? 'success' : 'error';
 	return { status, schedule };
 }
