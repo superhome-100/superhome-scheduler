@@ -1,7 +1,8 @@
 import { datetimeToLocalDateStr } from './datetimeUtils';
 import { reservations, user, users, viewMode } from './stores';
 import { get } from 'svelte/store';
-import { assignHourlySpaces } from './autoAssign';
+import { assignHourlySpaces, oldAssignPoolSpaces } from './autoAssign';
+import { ReservationCategory } from '$types';
 
 export function monthArr(year, month, reservations) {
 	let daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -80,7 +81,12 @@ export function getDaySchedule(rsvs, datetime, category) {
 		(v) =>
 			['pending', 'confirmed'].includes(v.status) && v.category === category && v.date === today
 	);
-	let result = assignHourlySpaces(rsvs, today, category);
+	let result;
+	if (category == ReservationCategory.classroom) {
+		result = assignHourlySpaces(rsvs, today, category);
+	} else if (category == ReservationCategory.pool) {
+		result = oldAssignPoolSpaces(rsvs, today);
+	}
 	return result;
 }
 
