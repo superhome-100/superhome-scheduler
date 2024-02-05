@@ -72,7 +72,7 @@ function getMinBreaksPathRec(
 	return pathObj;
 }
 
-function insertPreAssigned(spacesByTimes: Grid, blk: Block) {
+export function insertPreAssigned(spacesByTimes: Grid, blk: Block) {
 	for (let t = blk.startTime; t < blk.endTime; t++) {
 		let startSpace = blk.spacePath[t - blk.startTime];
 		for (let s = 0; s < blk.width; s++) {
@@ -111,7 +111,7 @@ function removeAssigned(spacesByTimes: Grid, blocks: Block[]) {
 	}
 }
 
-const tryInsertUnassigned = (spacesByTimes: Grid, unAsn: Block[]) => {
+export const tryInsertUnassigned = (spacesByTimes: Grid, unAsn: Block[]) => {
 	let failedIdx = -1;
 	const brokenIds = [];
 	let nBreaks = 0;
@@ -128,40 +128,44 @@ const tryInsertUnassigned = (spacesByTimes: Grid, unAsn: Block[]) => {
 	return { failedIdx, brokenIds, nBreaks };
 };
 
-const searchForBestOrdering = (MAX_TRIALS: number, spacesByTimes: Grid, unAssigned: Block[]) => {
-	let bestOrder: Block[] = [];
+export const searchForBestOrdering = (MAX_TRIALS: number, spacesByTimes: Grid, blocks: Block[]) => {
+	let bestOrder = [...blocks];
 	let minBreaks = Infinity;
-	for (let trial = 0; trial < MAX_TRIALS; trial++) {
-		const { failedIdx, brokenIds, nBreaks } = tryInsertUnassigned(spacesByTimes, unAssigned);
+	let nTrials = 0;
+	while (nTrials < MAX_TRIALS) {
+		nTrials++;
+		const { failedIdx, brokenIds, nBreaks } = tryInsertUnassigned(spacesByTimes, blocks);
 		if (failedIdx >= 0) {
 			// not possible to assign all blocks with this ordering
 			// move the unassignable block to the front of the list and try again
-			console.log('failure', failedIdx, unAssigned[failedIdx].rsvs);
-			removeAssigned(spacesByTimes, unAssigned);
-			const blk = unAssigned.splice(failedIdx, 1)[0];
-			unAssigned = [blk, ...unAssigned];
+			//console.log('failure', failedIdx, blocks[failedIdx]);
+			removeAssigned(spacesByTimes, blocks);
+			const blk = blocks.splice(failedIdx, 1)[0];
+			blocks = [blk, ...blocks];
 		} else if (brokenIds.length > 0) {
 			// assignment succeeded but with at least one broken path
 			// save the min-break assignment and continue searching for a better one
 			if (nBreaks < minBreaks) {
 				minBreaks = nBreaks;
-				bestOrder = [...unAssigned];
+				bestOrder = [...blocks];
 			}
 			//move blocks with broken paths to front
+			brokenIds.sort((a, b) => b - a);
 			const brkn = brokenIds.reduce((brkn: Block[], idx) => {
-				brkn.push(unAssigned.splice(idx, 1)[0]);
+				brkn.push(blocks.splice(idx, 1)[0]);
 				return brkn;
 			}, []);
-			unAssigned = [...brkn, ...unAssigned];
-			console.log('broken', brkn);
-			removeAssigned(spacesByTimes, unAssigned);
+			blocks = [...brkn, ...blocks];
+			//console.log('broken', brkn);
+			removeAssigned(spacesByTimes, blocks);
 		} else {
-			bestOrder = [...unAssigned];
-			removeAssigned(spacesByTimes, unAssigned);
+			//console.log('optimal order found');
+			bestOrder = [...blocks];
+			removeAssigned(spacesByTimes, blocks);
 			break;
 		}
 	}
-	return bestOrder;
+	return { bestOrder, nTrials };
 };
 
 export function assignHourlySpaces(
@@ -212,9 +216,8 @@ export function assignHourlySpaces(
 	// exist).
 	// We limit the number of trials because trying all possible orderings is O(n!)
 	const MAX_TRIALS = 10;
-	const bestOrder = searchForBestOrdering(MAX_TRIALS, spacesByTimes, unAsn);
+	const { bestOrder } = searchForBestOrdering(MAX_TRIALS, spacesByTimes, unAsn);
 	const { failedIdx } = tryInsertUnassigned(spacesByTimes, bestOrder);
-
 	let success = failedIdx == -1;
 	const schedule = blocksToDisplayData([...preAsn, ...bestOrder], nSpaces, nStartTimes);
 
