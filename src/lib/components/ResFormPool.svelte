@@ -74,7 +74,7 @@
 				<div>
 					<!-- admin lane/room assignments are disabled due to the possibility that
 				a fixed assignment could make it impossible to auto-assign the remaining reservations -->
-					<select disabled id="formLane" name="lane" value={rsv?.lanes[0]}>
+					<select id="formLane" name="lane" value={rsv?.lanes[0]}>
 						<option value="auto">Auto</option>
 						{#each lanes() as lane}
 							<option value={lane}>{lane}</option>
@@ -83,7 +83,7 @@
 				</div>
 			{:else if category === 'classroom'}
 				<div>
-					<select disabled id="formRoom" name="room" value={rsv.room}>
+					<select id="formRoom" name="room" value={rsv.room}>
 						<option value="auto">Auto</option>
 						{#each rooms() as room}
 							<option value={room}>{room}</option>

@@ -1,81 +1,15 @@
 import { getStartEndTimes } from '$lib/reservationTimes';
 import { Settings } from '$lib/client/settings';
-import { getNumberOfOccupants } from '$utils/reservations';
+import { rsvsToBlock, createBuddyGroups } from './hourlyUtils';
+import type { Block, Grid } from './hourlyUtils';
 import { blocksToDisplayData } from './hourlyDisplay';
 import type { Reservation } from '$types';
 import { ReservationCategory } from '$types';
 
-const getWidth = (rsv: Reservation) =>
-	rsv.category == ReservationCategory.pool ? getNumberOfOccupants([rsv]) + rsv.buddies.length : 1;
-
-function rsvsToBlock({
-	rsvs,
-	startEndTimes,
-	category,
-	resourceNames
-}: {
-	rsvs: Reservation[];
-	startEndTimes: string[];
-	category: ReservationCategory;
-	resourceNames: string[];
-}) {
-	let rsv = rsvs[0];
-	let startTime = startEndTimes.indexOf(rsv.startTime);
-	let endTime = startEndTimes.indexOf(rsv.endTime);
-	let width = getWidth(rsv);
-	let startSpace = -1; // -1 == unassigned
-	if (category == ReservationCategory.pool) {
-		//check for pre-assigned lane
-		if (rsv.lanes[0] != 'auto') {
-			let nSpaces = resourceNames.length;
-			let lane = resourceNames.indexOf(rsv.lanes[0]);
-			//make sure there's enough room for all required spaces
-			if (nSpaces - lane >= width) {
-				startSpace = lane;
-			}
-		}
-	} else {
-		//classroom
-		if (rsv.room != 'auto') {
-			startSpace = resourceNames.indexOf(rsv.room);
-		}
-	}
-
-	return {
-		rsvs,
-		startTime,
-		endTime,
-		width,
-		startSpace
-	};
-}
-
-function createBuddyGroups(rsvs: Reservation[]) {
-	let remaining = [...rsvs];
-	let grps = [];
-	let isBuddy = (a: Reservation, b: Reservation) => {
-		return a.buddies.includes(b.user.id) && a.startTime == b.startTime;
-	};
-	while (remaining.length > 0) {
-		let next = remaining.splice(0, 1)[0];
-		let bg = [next];
-		for (let i = remaining.length - 1; i >= 0; i--) {
-			if (isBuddy(next, remaining[i])) {
-				bg.push(remaining.splice(i, 1)[0]);
-			}
-		}
-		grps.push(bg);
-	}
-	return grps;
-}
-
-export type Block = ReturnType<typeof rsvsToBlock>;
-type Grid = number[][];
-
 const slotIsAvailable = (sByT: Grid, slot: number, blk: Block) => {
 	for (let i = blk.startTime; i < blk.endTime; i++) {
 		for (let j = 0; j < blk.width; j++) {
-			if (sByT[slot + j][i] != -1) {
+			if (sByT[slot + j][i]) {
 				return false;
 			}
 		}
@@ -83,10 +17,10 @@ const slotIsAvailable = (sByT: Grid, slot: number, blk: Block) => {
 	return true;
 };
 
-const addBlock = (sByT: Grid, slot: number, blk: Block, blkIdx: number) => {
+const addBlock = (sByT: Grid, slot: number, blk: Block) => {
 	for (let i = 0; i < blk.width; i++) {
 		for (let j = blk.startTime; j < blk.endTime; j++) {
-			sByT[slot + i][j] = blkIdx;
+			sByT[slot + i][j] = true;
 		}
 	}
 };
@@ -94,7 +28,7 @@ const addBlock = (sByT: Grid, slot: number, blk: Block, blkIdx: number) => {
 const removeBlock = (sByT: Grid, slot: number, blk: Block) => {
 	for (let i = 0; i < blk.width; i++) {
 		for (let j = blk.startTime; j < blk.endTime; j++) {
-			sByT[slot + i][j] = -1;
+			sByT[slot + i][j] = false;
 		}
 	}
 };
@@ -109,11 +43,11 @@ const bfAssignAllRecurse = (grid: Grid, blocks: Block[], curIdx: number, stats: 
 	const next = blocks[curIdx];
 	for (let j = 0; j < grid.length - next.width + 1; j++) {
 		if (slotIsAvailable(grid, j, next)) {
-			addBlock(grid, j, next, curIdx + 1);
+			addBlock(grid, j, next);
 			stats.nrec++;
 			if (bfAssignAllRecurse(grid, blocks, curIdx + 1, stats)) {
 				// found solution
-				next.startSpace = j;
+				next.spacePath.fill(j);
 				return true;
 			} else {
 				//remove this assignment from the grid and try the next assignment
@@ -130,11 +64,11 @@ const bruteForceAssignAll = (blocks: Block[], nResources: number, nStartTimes: n
 	// iterate through all possible assignments of reservations to resource slots and return
 	// the first assignment that works for all reservations
 
-	// each tile in the spacesByTimes grid represents one space in the pool/one classroom for one timeslot
-	// the value of the tile is an index into the blocks array (-1 == unassigned)
+	// each tile in the spacesByTimes grid represents one space in the pool/one classroom
+	// for one timeslot (true == assigned, false == unassigned)
 	let spacesByTimes: Grid = Array(nResources)
 		.fill(null)
-		.map(() => Array(nStartTimes).fill(-1));
+		.map(() => Array(nStartTimes).fill(false));
 
 	const stats = { nrec: 0 };
 	const success = bfAssignAllRecurse(spacesByTimes, blocks, 0, stats);
