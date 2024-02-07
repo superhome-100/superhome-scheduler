@@ -72,8 +72,6 @@
 		{#if adminView(viewOnly)}
 			{#if category === 'pool'}
 				<div>
-					<!-- admin lane/room assignments are disabled due to the possibility that
-				a fixed assignment could make it impossible to auto-assign the remaining reservations -->
 					<select id="formLane" name="lane" value={rsv?.lanes[0]}>
 						<option value="auto">Auto</option>
 						{#each lanes() as lane}
