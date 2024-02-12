@@ -3,7 +3,7 @@ import type { ReservationsRecord } from './xata.codegen';
 import type { AppFormData, Reservation, ReservationXata, Submission } from '$types';
 
 import { ReservationCategory, ReservationStatus, ReservationType, OWTime } from '$types';
-import { timeStrToMin } from '$lib/datetimeUtils';
+import { timeStrToMin, isValidProSafetyCutoff } from '$lib/datetimeUtils';
 import { getXataClient } from '$lib/server/xata-old';
 import { getTimeOverlapFilters } from '$utils/reservation-queries';
 import { initSettings, type SettingsManager } from './settings';
@@ -229,6 +229,11 @@ async function throwIfSubmissionIsInvalid(sub: Submission) {
 	let userIds = [sub.user.id, ...sub.buddies];
 
 	await throwIfUserIsDisabled(userIds);
+
+	if (sub.resType === 'proSafety') {
+		const isValid = isValidProSafetyCutoff(sub.date);
+		if (!isValid) throw new ValidationError('PRO_SAFETY reservation should be done before 4PM.');
+	}
 
 	if (!beforeResCutoff(settings, sub.date, getStartTime(settings, sub), sub.category)) {
 		throw new ValidationError(
