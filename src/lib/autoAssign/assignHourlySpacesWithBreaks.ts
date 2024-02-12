@@ -215,7 +215,7 @@ export function assignHourlySpaces(
 	// (the ideal assignment has zero breaks for all blocks, but this is not guaranteed to
 	// exist).
 	// We limit the number of trials because trying all possible orderings is O(n!)
-	const MAX_TRIALS = 10;
+	const MAX_TRIALS = 100;
 	const { bestOrder } = searchForBestOrdering(MAX_TRIALS, spacesByTimes, unAsn);
 	const { failedIdx } = tryInsertUnassigned(spacesByTimes, bestOrder);
 	let success = failedIdx == -1;
