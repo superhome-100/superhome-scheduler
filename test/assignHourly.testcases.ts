@@ -71,7 +71,7 @@ const typicalCase_oneFullTimeSlot: Block[] = [
 	}
 ];
 
-const worstCase_allFull_noZeroBreakSolutions: Block[] = [
+const hardCase_allFull_noZeroBreakSolutions: Block[] = [
 	{
 		spacePath: [-1, -1, -1, -1, -1, -1],
 		startTime: 18,
@@ -271,7 +271,7 @@ type AssignHourlyTestDesc = {
 	nBreaks: number;
 };
 
-export const TESTS: AssignHourlyTestDesc[] = [
+export const ASSIGNABLE: AssignHourlyTestDesc[] = [
 	{
 		shortDesc: 'simplest case',
 		longDesc: 'simplest case - 1 block',
@@ -289,9 +289,9 @@ export const TESTS: AssignHourlyTestDesc[] = [
 		nBreaks: 0
 	},
 	{
-		shortDesc: 'worst case - no zero-break solutions',
-		longDesc: 'worst case, 50 blocks, all time slots full, no zero-break solutions',
-		blocks: worstCase_allFull_noZeroBreakSolutions,
+		shortDesc: 'hard case - no zero-break solutions',
+		longDesc: 'hard case, 50 blocks, all time slots full, no zero-break solutions',
+		blocks: hardCase_allFull_noZeroBreakSolutions,
 		maxTrials: 100,
 		failedIdx: -1,
 		nBreaks: 4
