@@ -101,7 +101,9 @@
 	<div class="font-semibold text-3xl text-center">Closed</div>
 {:else}
 	{#if assignment.status === 'error'}
-		<div class="font-semibold text-red-600 text-xl text-center">Error assigning reservations!</div>
+		<div class="font-semibold text-red-600 text-xl text-center">
+			Error assigning reservations!
+		</div>
 		<div class="text-sm text-center mb-4">Please report this error to the admin</div>
 	{/if}
 	<div class="row text-xs sm:text-base">
