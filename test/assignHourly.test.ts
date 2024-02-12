@@ -5,7 +5,8 @@ import {
 	tryInsertUnassigned,
 	insertPreAssigned
 } from '../src/lib/autoAssign/assignHourlySpacesWithBreaks.js';
-import { TESTS } from './assignHourly.testcases';
+import { ASSIGNABLE } from './assignHourly.testcases';
+import UNASSIGNABLE from './assignHourly.testcases.unassignable';
 
 const nStart = 24;
 const nLane = 8;
@@ -123,12 +124,14 @@ const generateTestCase = (nFull: number) => {
 const gridFromBlocks = (blocks: Block[]) => {
 	const grid = createGrid();
 	for (let i = 0; i < blocks.length; i++) {
-		addBlock(grid, blocks[i], i);
+		if (blocks[i].spacePath[0] > -1) {
+			addBlock(grid, blocks[i], i);
+		}
 	}
 	return grid;
 };
 
-const execute_test = (MAX_TRIALS: number, blocks: Block[]) => {
+const execute_test = (MAX_TRIALS: number, blocks: Block[], verbose = false) => {
 	// separate pre-assigned and unassigned
 	let { preAsn, unAsn } = blocks.reduce(
 		({ preAsn, unAsn }: { [key: string]: Block[] }, blk) => {
@@ -152,34 +155,53 @@ const execute_test = (MAX_TRIALS: number, blocks: Block[]) => {
 
 	const { bestOrder, nTrials } = searchForBestOrdering(MAX_TRIALS, spacesByTimes, unAsn);
 	const { failedIdx, nBreaks } = tryInsertUnassigned(spacesByTimes, bestOrder);
-	if (failedIdx == -1) {
+	if (verbose) {
 		const grid = gridFromBlocks([...preAsn, ...bestOrder]);
 		printGrid(grid);
-		console.log('found solution with ' + nBreaks + ' breaks after ' + nTrials + ' trials');
-	} else {
-		console.log('no solution found');
+		if (failedIdx == -1) {
+			console.log('found solution with ' + nBreaks + ' breaks after ' + nTrials + ' trials');
+		} else {
+			console.log('no solution found. cant assign ', bestOrder[failedIdx]);
+		}
 	}
-	return { failedIdx, nBreaks };
+	return { failedIdx, nBreaks, bestOrder };
 };
 
-for (const testCase of TESTS) {
+for (const testCase of ASSIGNABLE) {
 	test(testCase.shortDesc, () => {
 		console.log(testCase.longDesc);
-		const { failedIdx, nBreaks } = execute_test(testCase.maxTrials, testCase.blocks);
-		expect(failedIdx == testCase.failedIdx);
-		expect(nBreaks == testCase.nBreaks);
+		const { failedIdx, nBreaks } = execute_test(testCase.maxTrials, testCase.blocks, true);
+		expect(failedIdx).to.equal(testCase.failedIdx);
+		expect(nBreaks).to.equal(testCase.nBreaks);
+	});
+}
+
+for (let i = 0; i < UNASSIGNABLE.length; i++) {
+	test('unassignable case ' + (i + 1) + ' - no solutions', () => {
+		console.log('unassignable case ' + i + ' - numBlocks: ' + UNASSIGNABLE[i].length);
+		const { failedIdx } = execute_test(100, UNASSIGNABLE[i], true);
+		expect(failedIdx).to.toBeGreaterThan(-1);
 	});
 }
 
 const N_RANDOM_TESTS = 0;
+const verbose = false;
 if (N_RANDOM_TESTS > 0) {
 	test('Informational Only: ' + N_RANDOM_TESTS + ' random tests', () => {
+		let nBroken = 0;
+		let nFail = 0;
 		for (let i = 0; i < N_RANDOM_TESTS; i++) {
 			const nFull = 1 + randI(nStart);
 			const blocks = generateTestCase(nFull);
-			console.log(blocks.length + ' blocks with >=' + nFull + ' full time slots');
-			const { failedIdx } = execute_test(100, blocks);
-			expect(failedIdx == -1);
+			if (verbose)
+				console.log(blocks.length + ' blocks with >=' + nFull + ' full time slots');
+			const { failedIdx, nBreaks } = execute_test(100, blocks, verbose);
+			if (failedIdx > -1) nFail++;
+			if (nBreaks > 0) nBroken++;
 		}
+		console.log('\nRANDOM TEST SUMMARY\n');
+		console.log(N_RANDOM_TESTS + ' total random tests');
+		console.log(nFail + ' total failed assignments');
+		console.log(nBroken + ' total breaks');
 	});
 }
