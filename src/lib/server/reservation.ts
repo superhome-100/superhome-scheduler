@@ -181,6 +181,7 @@ export function categoryIsBookable(settings: SettingsManager, sub: Submission): 
 	switch (sub.category) {
 		case ReservationCategory.pool:
 			isBookable = settings.getPoolBookable(sub.date);
+			console.log('poolIsBookable', isBookable);
 			break;
 		case ReservationCategory.openwater:
 			if (sub.owTime == OWTime.AM) {
