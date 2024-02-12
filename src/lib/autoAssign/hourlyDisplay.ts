@@ -1,29 +1,33 @@
 import type { Reservation } from '$types';
-import type { Block } from './assignHourlySpaces';
+import type { Block } from './hourlyUtils';
 
 const getNextBlock = (blocks: Block[], space: number, time: number) => {
 	let { idx } = blocks.reduce(
-		({ minStart, idx }, blk, i) =>
-			blk.startSpace <= space &&
-			space < blk.startSpace + blk.width &&
-			time <= blk.startTime &&
-			blk.startTime < minStart
-				? { minStart: blk.startTime, idx: i }
-				: { minStart, idx },
+		({ minStart, idx }, blk, i) => {
+			const tOffset = time - blk.startTime;
+			const relativeBlkStart = tOffset < 0 ? blk.startTime : tOffset + blk.startTime;
+			const startSpace = tOffset < 0 ? blk.spacePath[0] : blk.spacePath[tOffset];
+			if (
+				startSpace <= space &&
+				space < startSpace + blk.width &&
+				time <= relativeBlkStart &&
+				relativeBlkStart < minStart
+			) {
+				return { minStart: relativeBlkStart, idx: i };
+			} else {
+				return { minStart, idx };
+			}
+		},
 		{ minStart: Infinity, idx: -1 }
 	);
 	return blocks[idx];
 };
 
-const getStyleType = (blk: Block, space: number) => {
-	if (blk.width == 1) {
+export const getStyleType = (width: number, startSpace: number, space: number) => {
+	if (width == 1) {
 		return 'single';
 	} else {
-		return space == blk.startSpace
-			? 'start'
-			: space == blk.startSpace + blk.width - 1
-			? 'end'
-			: 'middle';
+		return space == startSpace ? 'start' : space == startSpace + width - 1 ? 'end' : 'middle';
 	}
 };
 
@@ -65,15 +69,23 @@ export function blocksToDisplayData(blocks: Block[], nSpaces: number, nTimeSlots
 				if (nextBlock.startTime > time) {
 					// add filler up until start of next rsv
 					schedule[space].push(filler(nextBlock.startTime - time));
+					time = nextBlock.startTime;
 				}
+				const tOffset = time - nextBlock.startTime;
+				const startSpace = nextBlock.spacePath[tOffset];
+				const unbrokenLength = nextBlock.spacePath
+					.slice(tOffset)
+					.reduce((n: number, s) => (s == startSpace ? n + 1 : n), 0);
+
 				schedule[space].push({
-					nSlots: nextBlock.endTime - nextBlock.startTime,
+					nSlots: unbrokenLength,
 					blkType: 'rsv',
 					width: nextBlock.width,
 					data: nextBlock.rsvs,
-					styleType: getStyleType(nextBlock, space)
+					styleType: getStyleType(nextBlock.width, startSpace, space)
 				});
-				time = nextBlock.endTime;
+
+				time += unbrokenLength;
 			} else {
 				// no more rsvs in this space: fill to end
 				schedule[space].push(filler(nTimeSlots - time));
