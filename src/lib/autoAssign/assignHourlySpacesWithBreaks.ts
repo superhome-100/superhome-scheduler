@@ -1,9 +1,10 @@
 import { getStartEndTimes } from '$lib/reservationTimes';
 import { Settings } from '$lib/client/settings';
-import { ReservationCategory, type Reservation } from '$types';
+import { ReservationCategory, type Reservation, ReservationType } from '$types';
 import type { Block, Grid } from './hourlyUtils';
 import { rsvsToBlock, createBuddyGroups } from './hourlyUtils';
 import { blocksToDisplayData } from './hourlyDisplay';
+import { getNumberOfOccupants } from '$utils/reservations';
 
 function getMinBreaksPath(spacesByTimes: Grid, width: number, startTime: number, endTime: number) {
 	let pathObj = getMinBreaksPathRec(spacesByTimes, width, startTime, endTime, {
@@ -72,7 +73,7 @@ function getMinBreaksPathRec(
 	return pathObj;
 }
 
-export function insertPreAssigned(spacesByTimes: Grid, blk: Block) {
+function insertPreAssigned(spacesByTimes: Grid, blk: Block) {
 	for (let t = blk.startTime; t < blk.endTime; t++) {
 		let startSpace = blk.spacePath[t - blk.startTime];
 		for (let s = 0; s < blk.width; s++) {
@@ -111,7 +112,7 @@ function removeAssigned(spacesByTimes: Grid, blocks: Block[]) {
 	}
 }
 
-export const tryInsertUnassigned = (spacesByTimes: Grid, unAsn: Block[]) => {
+const tryInsertUnassigned = (spacesByTimes: Grid, unAsn: Block[]) => {
 	let failedIdx = -1;
 	const brokenIds = [];
 	let nBreaks = 0;
@@ -128,7 +129,7 @@ export const tryInsertUnassigned = (spacesByTimes: Grid, unAsn: Block[]) => {
 	return { failedIdx, brokenIds, nBreaks };
 };
 
-export const searchForBestOrdering = (MAX_TRIALS: number, spacesByTimes: Grid, blocks: Block[]) => {
+const searchForBestOrdering = (MAX_TRIALS: number, spacesByTimes: Grid, blocks: Block[]) => {
 	let bestOrder = [...blocks];
 	let minBreaks = Infinity;
 	let nTrials = 0;
@@ -168,25 +169,34 @@ export const searchForBestOrdering = (MAX_TRIALS: number, spacesByTimes: Grid, b
 	return { bestOrder, nTrials };
 };
 
-export function assignHourlySpaces(
-	rsvs: Reservation[],
-	dateStr: string,
-	category: ReservationCategory
-) {
-	const startEndTimes = getStartEndTimes(Settings, dateStr, category);
-	const nStartTimes = startEndTimes.length - 1;
-	let resourceNames: string[];
-	if (category == ReservationCategory.pool) {
-		resourceNames = Settings.getPoolLanes(dateStr);
-	} else {
-		resourceNames = Settings.getClassrooms(dateStr);
-	}
-	const nSpaces = resourceNames.length;
-
-	const blocks = createBuddyGroups(rsvs).map((grp) =>
-		rsvsToBlock({ rsvs: grp, startEndTimes, category, resourceNames })
+function breakUpNextGroup(blocks: Block[]) {
+	const nextGrpIdx = blocks.reduce(
+		(idx, blk, blk_i) => (idx == -1 && blk.width > 1 ? blk_i : idx),
+		-1
 	);
+	const grp = blocks.splice(nextGrpIdx, 1)[0];
 
+	let rsvs: Reservation[] = [];
+	if (grp.rsvs[0].resType == ReservationType.course) {
+		const nSlots = getNumberOfOccupants(grp.rsvs);
+		for (let i = 0; i < nSlots; i++) {
+			rsvs.push({ ...grp.rsvs[0] });
+		}
+	} else {
+		rsvs = grp.rsvs;
+	}
+	for (const rsv of rsvs) {
+		blocks.push({
+			rsvs: [rsv],
+			startTime: grp.startTime,
+			endTime: grp.endTime,
+			width: 1,
+			spacePath: Array(grp.endTime - grp.startTime).fill(-1)
+		});
+	}
+}
+
+function initializeGrid(blocks: Block[], nSpaces: number, nStartTimes: number) {
 	// separate pre-assigned and unassigned
 	let { preAsn, unAsn } = blocks.reduce(
 		({ preAsn, unAsn }: { [key: string]: Block[] }, blk) => {
@@ -207,19 +217,66 @@ export function assignHourlySpaces(
 	for (let i = 0; i < preAsn.length; i++) {
 		insertPreAssigned(spacesByTimes, preAsn[i]);
 	}
+	return { spacesByTimes, preAsn, unAsn };
+}
 
-	// The order in which blocks are assigned can affect the quality of assignments that the
-	// minBreaksPath algorithm produces for all blocks, and it can even determine wether the
-	// algorithm is able to find any valid assignment, so we try up to MAX_TRIALS different
-	// orderings in order to increase the chance that we find the best possible assignment
-	// (the ideal assignment has zero breaks for all blocks, but this is not guaranteed to
-	// exist).
-	// We limit the number of trials because trying all possible orderings is O(n!)
-	const MAX_TRIALS = 10;
-	const { bestOrder } = searchForBestOrdering(MAX_TRIALS, spacesByTimes, unAsn);
-	const { failedIdx } = tryInsertUnassigned(spacesByTimes, bestOrder);
-	let success = failedIdx == -1;
-	const schedule = blocksToDisplayData([...preAsn, ...bestOrder], nSpaces, nStartTimes);
+export function assignBlockSpacePaths(
+	blocks: Block[],
+	nSpaces: number,
+	nStartTimes: number,
+	maxTrials: number
+) {
+	let state = initializeGrid(blocks, nSpaces, nStartTimes);
+	// The order in which blocks are assigned can affect the quality of assignments that the minBreaksPath
+	// algorithm produces, so we try up to maxTrials different orderings in order to increase the chance
+	// that we find the best possible assignment (the ideal assignment has zero breaks for all blocks,
+	// but this is not guaranteed to exist).
+	let searchResult = searchForBestOrdering(maxTrials, state.spacesByTimes, state.unAsn);
+	let assignResult = tryInsertUnassigned(state.spacesByTimes, searchResult.bestOrder);
 
-	return { status: success ? 'success' : 'error', schedule };
+	if (assignResult.failedIdx >= 0) {
+		//failed to find a valid assignment for the given blocks, so iteratively break up the
+		//next course/buddy group into separate blocks and try reassigning.  This is guaranteed
+		//to eventually succeed
+		while (assignResult.failedIdx >= 0) {
+			removeAssigned(state.spacesByTimes, searchResult.bestOrder);
+			breakUpNextGroup(blocks);
+			state = initializeGrid(blocks, nSpaces, nStartTimes);
+			searchResult = searchForBestOrdering(maxTrials, state.spacesByTimes, state.unAsn);
+			assignResult = tryInsertUnassigned(state.spacesByTimes, searchResult.bestOrder);
+		}
+	}
+	return {
+		status: assignResult.failedIdx == -1 ? 'success' : 'error',
+		failedIdx: assignResult.failedIdx,
+		bestOrder: searchResult.bestOrder,
+		nTrials: searchResult.nTrials,
+		nBreaks: assignResult.nBreaks
+	};
+}
+
+export function assignHourlySpaces(
+	rsvs: Reservation[],
+	dateStr: string,
+	category: ReservationCategory
+) {
+	const startEndTimes = getStartEndTimes(Settings, dateStr, category);
+	const nStartTimes = startEndTimes.length - 1;
+	let resourceNames: string[];
+	if (category == ReservationCategory.pool) {
+		resourceNames = Settings.getPoolLanes(dateStr);
+	} else {
+		resourceNames = Settings.getClassrooms(dateStr);
+	}
+	const nSpaces = resourceNames.length;
+
+	let blocks = createBuddyGroups(rsvs).map((grp) =>
+		rsvsToBlock({ rsvs: grp, startEndTimes, category, resourceNames })
+	);
+
+	// We limit the number of trials because searching all possible orderings is O(n!)
+	const MAX_TRIALS = 100;
+	let result = assignBlockSpacePaths(blocks, nSpaces, nStartTimes, MAX_TRIALS);
+	const schedule = blocksToDisplayData(blocks, nSpaces, nStartTimes);
+	return { status: result.status, schedule };
 }

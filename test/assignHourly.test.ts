@@ -1,11 +1,9 @@
 import { test, expect } from 'vitest';
 import type { Grid, Block } from '../src/lib/autoAssign/hourlyUtils';
-import {
-	searchForBestOrdering,
-	tryInsertUnassigned,
-	insertPreAssigned
-} from '../src/lib/autoAssign/assignHourlySpacesWithBreaks.js';
-import { TESTS } from './assignHourly.testcases';
+import { assignBlockSpacePaths } from '../src/lib/autoAssign/assignHourlySpacesWithBreaks';
+import { ReservationType, ReservationCategory } from '../src/types';
+import BASIC_TESTS from './assignHourly.testcases.basic';
+import FALLBACK_TESTS from './assignHourly.testcases.fallback';
 
 const nStart = 24;
 const nLane = 8;
@@ -59,13 +57,31 @@ const randomBlock = () => {
 	// total time limited to 8 slots (4 hours)
 	const end = start + 1 + randI(Math.min(nStart - start, 8));
 
-	// width limited to half the pool (nLane/2)
+	let rsvs: any[] = [];
+	const width = 1 + randI(nLane / 2);
+	if (Math.random() > 0.2) {
+		rsvs.push({
+			category: ReservationCategory.pool,
+			resType: ReservationType.course,
+			numStudents: Math.floor(width / 2)
+		});
+	} else {
+		for (let i = 0; i < width; i++) {
+			rsvs.push({ category: ReservationCategory.pool, resType: ReservationType.autonomous });
+		}
+	}
+	let spacePath: number[] = Array(end - start).fill(-1);
+	if (Math.random() > 1) {
+		//pre-assign
+		spacePath.fill(randI(nLane - width));
+	}
+
 	return {
 		startTime: start,
 		endTime: end,
-		width: 1 + randI(nLane / 2),
-		spacePath: Array(end - start).fill(-1),
-		rsvs: []
+		width,
+		spacePath,
+		rsvs
 	};
 };
 
@@ -128,58 +144,65 @@ const gridFromBlocks = (blocks: Block[]) => {
 	return grid;
 };
 
-const execute_test = (MAX_TRIALS: number, blocks: Block[]) => {
-	// separate pre-assigned and unassigned
-	let { preAsn, unAsn } = blocks.reduce(
-		({ preAsn, unAsn }: { [key: string]: Block[] }, blk) => {
-			if (blk.spacePath[0] == -1) {
-				unAsn.push(blk);
-			} else {
-				preAsn.push(blk);
-			}
-			return { preAsn, unAsn };
-		},
-		{ preAsn: [], unAsn: [] }
-	);
+const execute_test = (MAX_TRIALS: number, blocks: Block[], verbose = false) => {
+	const result = assignBlockSpacePaths(blocks, nLane, nStart, MAX_TRIALS);
 
-	const spacesByTimes = Array(nLane)
-		.fill(null)
-		.map(() => Array(nStart).fill(false));
-
-	for (let i = 0; i < preAsn.length; i++) {
-		insertPreAssigned(spacesByTimes, preAsn[i]);
-	}
-
-	const { bestOrder, nTrials } = searchForBestOrdering(MAX_TRIALS, spacesByTimes, unAsn);
-	const { failedIdx, nBreaks } = tryInsertUnassigned(spacesByTimes, bestOrder);
-	if (failedIdx == -1) {
-		const grid = gridFromBlocks([...preAsn, ...bestOrder]);
+	if (verbose) {
+		const grid = gridFromBlocks(blocks);
 		printGrid(grid);
-		console.log('found solution with ' + nBreaks + ' breaks after ' + nTrials + ' trials');
-	} else {
-		console.log('no solution found');
+		if (result.failedIdx == -1) {
+			console.log(
+				'found solution for ' +
+					blocks.length +
+					' blocks with ' +
+					result.nBreaks +
+					' breaks after ' +
+					result.nTrials +
+					' trials'
+			);
+		} else {
+			console.log("no solution found. can't assign ", result.bestOrder[result.failedIdx]);
+		}
 	}
-	return { failedIdx, nBreaks };
+	return result;
 };
 
-for (const testCase of TESTS) {
-	test(testCase.shortDesc, () => {
-		console.log(testCase.longDesc);
-		const { failedIdx, nBreaks } = execute_test(testCase.maxTrials, testCase.blocks);
-		expect(failedIdx == testCase.failedIdx);
-		expect(nBreaks == testCase.nBreaks);
+//
+// Run the tests
+//
+const VERBOSE = true;
+const ALL_TESTS = [...BASIC_TESTS, ...FALLBACK_TESTS];
+for (const testCase of ALL_TESTS) {
+	test(testCase.desc, () => {
+		expect(testCase.blocks.length).to.equal(testCase.blocksIn);
+		const { failedIdx, nBreaks } = execute_test(testCase.maxTrials, testCase.blocks, VERBOSE);
+		expect(testCase.blocks.length).to.equal(testCase.blocksOut);
+		expect(failedIdx).to.equal(-1);
+		expect(nBreaks).to.equal(testCase.nBreaks);
 	});
 }
 
-const N_RANDOM_TESTS = 0;
+const N_RANDOM_TESTS = 1000;
 if (N_RANDOM_TESTS > 0) {
-	test('Informational Only: ' + N_RANDOM_TESTS + ' random tests', () => {
+	test(N_RANDOM_TESTS + ' random tests', () => {
+		let nBroken = 0;
+		let nFail = 0;
+		let nSplit = 0;
 		for (let i = 0; i < N_RANDOM_TESTS; i++) {
 			const nFull = 1 + randI(nStart);
 			const blocks = generateTestCase(nFull);
-			console.log(blocks.length + ' blocks with >=' + nFull + ' full time slots');
-			const { failedIdx } = execute_test(100, blocks);
-			expect(failedIdx == -1);
+			const blocksIn = blocks.length;
+			const { failedIdx, nBreaks } = execute_test(100, blocks, false);
+			const blocksOut = blocks.length;
+			if (failedIdx > -1) nFail++;
+			if (nBreaks > 0) nBroken++;
+			if (blocksOut > blocksIn) nSplit++;
 		}
+		console.log('\nRANDOM TEST SUMMARY\n');
+		console.log(N_RANDOM_TESTS + ' total random tests');
+		console.log(nFail + ' total failed assignments');
+		console.log(nBroken + ' total assignments with breaks');
+		console.log(nSplit + ' total assignments with group splits');
+		expect(nFail).to.equal(0);
 	});
 }
