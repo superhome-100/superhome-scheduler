@@ -2,6 +2,7 @@ import { datetimeToLocalDateStr } from './datetimeUtils';
 import { reservations, user, users, viewMode } from './stores';
 import { get } from 'svelte/store';
 import { assignHourlySpaces } from './autoAssign';
+import { ReservationCategory } from '$types';
 
 export function monthArr(year, month, reservations) {
 	let daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -78,10 +79,11 @@ export function getDaySchedule(rsvs, datetime, category) {
 	let today = datetimeToLocalDateStr(datetime);
 	rsvs = rsvs.filter(
 		(v) =>
-			['pending', 'confirmed'].includes(v.status) && v.category === category && v.date === today
+			['pending', 'confirmed'].includes(v.status) &&
+			v.category === category &&
+			v.date === today
 	);
-	let result = assignHourlySpaces(rsvs, today, category);
-	return result;
+	return assignHourlySpaces(rsvs, today, category);
 }
 
 export const adminView = (viewOnly) => {
