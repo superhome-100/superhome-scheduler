@@ -100,3 +100,14 @@ export function toDateStr(date: { year: number; month: string; day: number }) {
 		`${date.day}`.padStart(2, '0')
 	);
 }
+
+export function isValidProSafetyCutoff(reservationDate: string) {
+	const now = dayjs().tz('Asia/Manila');
+	// TODO: get this config somewhere
+	const cutoff = dayjs(reservationDate)
+		.tz('Asia/Manila')
+		.subtract(1, 'day')
+		.set('hour', 16)
+		.set('minute', 0);
+	return now.isBefore(cutoff);
+}
