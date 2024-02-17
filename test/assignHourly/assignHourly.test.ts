@@ -1,7 +1,7 @@
 import { test, expect } from 'vitest';
-import type { Grid, Block } from '../src/lib/autoAssign/hourlyUtils';
-import { assignBlockSpacePaths } from '../src/lib/autoAssign/assignHourlySpacesWithBreaks';
-import { ReservationType, ReservationCategory } from '../src/types';
+import type { Grid, Block } from '$lib/autoAssign/hourlyUtils';
+import { assignBlockSpacePaths } from '$lib/autoAssign/assignHourlySpacesWithBreaks';
+import { ReservationType, ReservationCategory } from '$types';
 import BASIC_TESTS from './assignHourly.testcases.basic';
 import FALLBACK_TESTS from './assignHourly.testcases.fallback';
 
