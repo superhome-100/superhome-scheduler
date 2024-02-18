@@ -31,6 +31,7 @@ export async function authenticateUser(userData: authenticateUserArgs) {
 		record?: UsersRecord;
 		error?: string;
 	};
+	await localStorage.setItem('user_record_id', '');
 	if (data.status === 'error') {
 		loginState.set('out');
 	} else {
