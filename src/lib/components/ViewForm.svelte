@@ -64,9 +64,7 @@
 				<button formaction="/?/adminUpdatePending" class="bg-status-pending px-3 py-1"
 					>Pending</button
 				>
-				<button type="submit" class="bg-status-confirmed px-3 py-1" tabindex="6"
-					>Confirm</button
-				>
+				<button type="submit" class="bg-status-confirmed px-3 py-1" tabindex="6">Confirm</button>
 			</div>
 		{/if}
 	</form>
