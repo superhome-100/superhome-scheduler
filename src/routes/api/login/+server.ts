@@ -9,12 +9,15 @@ export interface LoginUserData {
 	email: string;
 	providerId: string;
 	firebaseUID: string;
+	userRecordId: string; // from the old fb account xata record id
 }
 export async function POST({ cookies, request }: RequestEvent) {
 	try {
-		const { userId, userName, photoURL, email, providerId, firebaseUID } =
+		const { userId, userName, photoURL, email, providerId, firebaseUID, userRecordId } =
 			(await request.json()) as LoginUserData;
+
 		const record = await authenticateUser({
+			userRecordId,
 			userId,
 			userName,
 			email,

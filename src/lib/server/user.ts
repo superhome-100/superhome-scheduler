@@ -57,35 +57,48 @@ interface AuthenticateUserArgs {
 	userName: string;
 	email: string;
 	providerId: string;
+	userRecordId: string;
 }
 export async function authenticateUser(data: AuthenticateUserArgs) {
+	let userRecord;
 	const isFacebook = data.providerId === 'facebook.com';
 	const email = data.email.trim().toLowerCase();
 
-	let record;
-	const [providerMatch, emailMatch] = await Promise.all([
-		isFacebook
-			? xata.db.Users.filter({ facebookId: data.userId }).getFirst()
-			: xata.db.Users.filter({ googleId: data.userId }).getFirst(),
-		email ? xata.db.Users.filter({ email }).getFirst() : null
-	]);
+	const overwriteEmail = !isFacebook && data.userRecordId;
 
-	if (!providerMatch && !emailMatch) {
-		/* user does not exist yet */
-		record = await addUser({
-			firebaseUID: data.firebaseUID,
-			providerId: data.providerId,
-			providerUserId: data.userId,
-			email,
-			userName: data.userName
-		});
-	} else if (!emailMatch && providerMatch) {
-		await updateUserEmailAndFirebaseUID(providerMatch.id, email, data.firebaseUID);
-		record = providerMatch;
+	if (overwriteEmail) {
+		console.log('doing overwrite email', data.userRecordId, email, data.firebaseUID);
+		const oldUserRecord = await xata.db.Users.read(data.userRecordId);
+		if (oldUserRecord && oldUserRecord.email !== email) {
+			await updateUserEmailAndFirebaseUID(data.userRecordId, email, data.firebaseUID);
+		}
+		userRecord = oldUserRecord;
 	} else {
-		record = emailMatch || providerMatch;
+		console.log('doing old matching');
+		const [providerMatch, emailMatch] = await Promise.all([
+			isFacebook
+				? xata.db.Users.filter({ facebookId: data.userId }).getFirst()
+				: xata.db.Users.filter({ googleId: data.userId }).getFirst(),
+			email ? xata.db.Users.filter({ email }).getFirst() : null
+		]);
+
+		if (!providerMatch && !emailMatch) {
+			/* user does not exist yet */
+			userRecord = await addUser({
+				firebaseUID: data.firebaseUID,
+				providerId: data.providerId,
+				providerUserId: data.userId,
+				email,
+				userName: data.userName
+			});
+		} else if (!emailMatch && providerMatch) {
+			await updateUserEmailAndFirebaseUID(providerMatch.id, email, data.firebaseUID);
+			userRecord = providerMatch;
+		} else {
+			userRecord = emailMatch || providerMatch;
+		}
 	}
-	return record;
+	return userRecord;
 }
 
 export async function getUserByCookies(cookies: Cookies) {
