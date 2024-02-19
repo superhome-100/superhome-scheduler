@@ -4,7 +4,8 @@
 	import { timeStrToMin, datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
 	import { canSubmit, user } from '$lib/stores';
 	import { Settings } from '$lib/client/settings';
-	import { adminView } from '$lib/utils.js';
+	import { adminView, resTypeModDisabled } from '$lib/utils.js';
+	import { ReservationType } from '$types';
 	import type { Reservation } from '$types';
 
 	const lanes = () => Settings.getPoolLanes();
@@ -39,8 +40,9 @@
 	};
 	let chosenStart = rsv == null ? getStartTimes(date, category)[0] : rsv.startTime;
 	let chosenEnd = rsv == null ? getStartTimes(date, category)[1] : rsv.endTime;
-	let autoOrCourse = rsv == null ? (resType == null ? 'autonomous' : resType) : rsv.resType;
-	let numStudents = rsv == null || rsv.resType !== 'course' ? 1 : rsv.numStudents;
+	let autoOrCourse =
+		rsv == null ? (resType == null ? ReservationType.autonomous : resType) : rsv.resType;
+	let numStudents = rsv == null || rsv.resType !== ReservationType.course ? 1 : rsv.numStudents;
 	$canSubmit = true;
 	$: showBuddyFields = autoOrCourse === 'autonomous';
 
@@ -108,13 +110,13 @@
 				{/each}
 			</select>
 		</div>
-		{#if disabled || resType != null || rsv != null}
+		{#if viewOnly || resType != null || resTypeModDisabled(rsv)}
 			<input type="hidden" name="resType" value={autoOrCourse} />
 		{/if}
 		<div>
 			<select
 				id="formResType"
-				disabled={disabled || resType != null || rsv != null}
+				disabled={viewOnly || resType != null || resTypeModDisabled(rsv)}
 				bind:value={autoOrCourse}
 				name="resType"
 			>
