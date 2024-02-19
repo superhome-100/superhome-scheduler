@@ -232,7 +232,8 @@ async function throwIfSubmissionIsInvalid(sub: Submission) {
 
 	if (sub.resType === 'proSafety') {
 		const isValid = isValidProSafetyCutoff(sub.date);
-		if (!isValid) throw new ValidationError('PRO_SAFETY reservation should be done before 4PM.');
+		if (!isValid)
+			throw new ValidationError('PRO_SAFETY reservation should be done before 4PM.');
 	}
 
 	if (!beforeResCutoff(settings, sub.date, getStartTime(settings, sub), sub.category)) {
@@ -419,7 +420,9 @@ async function unpackModifyForm(formData: AppFormData, orig: Reservation): Promi
 		owTime: formData.has('owTime')
 			? OWTime[formData.get('owTime') as keyof typeof OWTime]
 			: orig.owTime,
-		resType: orig.resType, //can't be changed
+		resType: formData.has('resType')
+			? ReservationType[formData.get('resType') as keyof typeof ReservationType]
+			: orig.resType,
 		numStudents: formData.has('numStudents')
 			? JSON.parse(formData.get('numStudents'))
 			: orig.numStudents,
