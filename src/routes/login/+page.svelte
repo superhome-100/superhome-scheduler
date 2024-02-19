@@ -1,28 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { auth } from '../../lib/firebase';
-	import { FacebookAuthProvider, signInWithRedirect, signInWithPopup } from 'firebase/auth';
+	import { auth, loginWithFacebook, loginWithGoogle } from '../../lib/firebase';
 	import { goto } from '$app/navigation';
 
 	let session: 'loading' | 'in' | 'out' = 'loading';
 
-	// const loginWithGoogle = async () => {
-	//   const googleProvider = new GoogleAuthProvider();
-	//   await signInWithPopup(auth, googleProvider);
-	// };
-
-	const loginWithFacebook = async () => {
+	const login = async (provider: 'facebook' | 'google') => {
 		session = 'loading';
-		const facebookProvider = new FacebookAuthProvider();
-		facebookProvider.addScope('email');
-		const isChromeDesktop =
-			/Chrome/.test(navigator.userAgent) &&
-			/Google Inc/.test(navigator.vendor) &&
-			!/Android/.test(navigator.userAgent);
-		if (isChromeDesktop) {
-			await signInWithRedirect(auth, facebookProvider);
+		if (provider === 'facebook') {
+			await loginWithFacebook();
 		} else {
-			await signInWithPopup(auth, facebookProvider);
+			await loginWithGoogle();
 		}
 	};
 
@@ -40,8 +28,10 @@
 
 <div class="flex flex-col text-black w-48 gap-2">
 	<h3 class="text-white">Login with</h3>
-	<!-- <button on:click={loginWithGoogle}>Google</button> -->
-	<button disabled={['loading', 'in'].includes(session)} on:click={loginWithFacebook}
+	<button disabled={['loading', 'in'].includes(session)} on:click={() => login('google')}
+		>Google</button
+	>
+	<button disabled={['loading', 'in'].includes(session)} on:click={() => login('facebook')}
 		>Facebook</button
 	>
 </div>

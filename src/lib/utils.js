@@ -79,9 +79,7 @@ export function getDaySchedule(rsvs, datetime, category) {
 	let today = datetimeToLocalDateStr(datetime);
 	rsvs = rsvs.filter(
 		(v) =>
-			['pending', 'confirmed'].includes(v.status) &&
-			v.category === category &&
-			v.date === today
+			['pending', 'confirmed'].includes(v.status) && v.category === category && v.date === today
 	);
 	return assignHourlySpaces(rsvs, today, category);
 }
