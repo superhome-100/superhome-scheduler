@@ -125,7 +125,9 @@
 		{#if isMyReservation(rsv) || adminView(viewOnly)}
 			<div>
 				<input
-					{disabled}
+					disabled={viewOnly ||
+						(restrictModify &&
+							(resTypeModDisabled(rsv) || resType != ReservationType.autonomous))}
 					type="number"
 					id="formMaxDepth"
 					class="w-14 valid:border-gray-500 required:border-red-500"
