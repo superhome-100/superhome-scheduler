@@ -100,7 +100,7 @@
 				<option value="course">Course/Coaching</option>
 				<option value="proSafety">Pay for ProSafety</option>
 				{#if date && Settings.getCbsAvailable(date)}
-					<option value="cbs">CBS</option>
+					<option value="cbs">Platform/CBS</option>
 				{/if}
 			</select>
 		</div>
