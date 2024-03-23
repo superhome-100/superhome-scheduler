@@ -104,7 +104,7 @@
 					<option value="proSafety">Pay for ProSafety</option>
 				{/if}
 				{#if date && Settings.getCbsAvailable(date)}
-					<option value="cbs">CBS</option>
+					<option value="cbs">Platform/CBS</option>
 				{/if}
 			</select>
 		</div>
@@ -235,33 +235,5 @@
 				<label for="formLargeBuoy">large buoy</label>
 			</div>
 		{/if}
-		<div>
-			{#if disabled}
-				<input type="hidden" name="O2OnBuoy" value={o2OnBuoy ? 'on' : 'off'} />
-			{/if}
-			<input
-				type="checkbox"
-				id="formO2OnBuoy"
-				name="O2OnBuoy"
-				checked={o2OnBuoy}
-				{disabled}
-				tabindex="5"
-			/>
-			<label for="formO2OnBuoy">O2 on buoy (additional fee)</label>
-		</div>
-		<div>
-			{#if disabled}
-				<input type="hidden" name="shortSession" value={shortSession ? 'on' : 'off'} />
-			{/if}
-			<input
-				type="checkbox"
-				id="formShortSession"
-				name="shortSession"
-				checked={shortSession}
-				{disabled}
-				tabindex="5"
-			/>
-			<label for="formShortSession">short session</label>
-		</div>
 	</div>
 </ResFormGeneric>
