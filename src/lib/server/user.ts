@@ -92,7 +92,9 @@ export async function authenticateUser(data: AuthenticateUserArgs) {
 				userName: data.userName
 			});
 		} else if (!emailMatch && providerMatch) {
-			await updateUserEmailAndFirebaseUID(providerMatch.id, email, data.firebaseUID);
+			if (!isFacebook) {
+				await updateUserEmailAndFirebaseUID(providerMatch.id, email, data.firebaseUID);
+			}
 			userRecord = providerMatch;
 		} else {
 			userRecord = emailMatch || providerMatch;
