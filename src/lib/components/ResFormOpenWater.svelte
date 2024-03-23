@@ -73,9 +73,7 @@
 					<option value="auto">Auto</option>
 					{#each sortedBuoys as buoy}
 						<option value={buoy.name}
-							>{buoyIsAssigned(buoy?.name)}{buoy.name +
-								' - ' +
-								buoyDesc(buoy)}</option
+							>{buoyIsAssigned(buoy?.name)}{buoy.name + ' - ' + buoyDesc(buoy)}</option
 						>
 					{/each}
 				</select>
@@ -110,12 +108,7 @@
 		</div>
 		{#if resType == ReservationType.course}
 			<div>
-				<select
-					id="formNumStudents"
-					disabled={viewOnly}
-					name="numStudents"
-					value={numStudents}
-				>
+				<select id="formNumStudents" disabled={viewOnly} name="numStudents" value={numStudents}>
 					{#each [...Array(restrictModify ? numStudents : 4).keys()] as n}
 						<option value={n + 1}>{n + 1}</option>
 					{/each}
@@ -126,8 +119,7 @@
 			<div>
 				<input
 					disabled={viewOnly ||
-						(restrictModify &&
-							(resTypeModDisabled(rsv) || resType != ReservationType.autonomous))}
+						(restrictModify && (resTypeModDisabled(rsv) || resType != ReservationType.autonomous))}
 					type="number"
 					id="formMaxDepth"
 					class="w-14 valid:border-gray-500 required:border-red-500"
@@ -167,14 +159,7 @@
 						value={pulley == null ? null : pulley ? 'on' : 'off'}
 					/>
 				{/if}
-				<input
-					type="radio"
-					id="formPulley"
-					name="pulley"
-					value="on"
-					checked={pulley}
-					{disabled}
-				/>
+				<input type="radio" id="formPulley" name="pulley" value="on" checked={pulley} {disabled} />
 				<label for="formPulley">pulley</label>
 				<input
 					type="radio"
@@ -190,11 +175,7 @@
 		{#if resType !== ReservationType.cbs}
 			<div>
 				{#if disabled}
-					<input
-						type="hidden"
-						name="extraBottomWeight"
-						value={extraBottomWeight ? 'on' : 'off'}
-					/>
+					<input type="hidden" name="extraBottomWeight" value={extraBottomWeight ? 'on' : 'off'} />
 				{/if}
 				<input
 					type="checkbox"

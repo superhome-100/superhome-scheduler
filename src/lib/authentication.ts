@@ -35,6 +35,7 @@ export async function authenticateUser(userData: authenticateUserArgs) {
 	if (data.status === 'error') {
 		loginState.set('out');
 	} else {
+		if (userRecordId) await localStorage.setItem('is_google_linked', 'true');
 		loginState.set('in');
 	}
 	user.set(data.record || null);
