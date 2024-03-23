@@ -103,6 +103,29 @@ export async function authenticateUser(data: AuthenticateUserArgs) {
 	return userRecord;
 }
 
+export async function getUserByEmail(email: string) {
+	const users = await xata.db.Users.filter({ email }).getAll();
+	let user = users[0];
+	if (users.length > 1) {
+		user = users.find((u) => u.status === 'active') || users[0];
+	}
+	return user;
+}
+
+export async function getUserByFirebaseUID(firebaseUID: string) {
+	const users = await xata.db.Users.filter({ firebaseUID }).getAll();
+	let user = users[0];
+	if (users.length > 1) {
+		user = users.find((u) => u.status === 'active') || users[0];
+	}
+	return users[0];
+}
+
+export async function getUserByFacebookId(facebookId: string) {
+	const user = await xata.db.Users.filter({ facebookId }).getFirst();
+	return user;
+}
+
 export async function getUserByCookies(cookies: Cookies) {
 	const sessionID = cookies.get('sessionid');
 	if (!sessionID) return undefined;
