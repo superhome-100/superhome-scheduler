@@ -43,7 +43,7 @@
 </script>
 
 <div class="flex flex-col text-black w-48 gap-2">
-	<h3 class="text-white">Login with</h3>
+	<h3 class="dark:text-white">Login with</h3>
 	{#if showStep === ShowStep.LOGIN_OPTION}
 		<button disabled={['loading', 'in'].includes(session)} on:click={triggerGoogleLogin}
 			>Google</button
@@ -52,7 +52,7 @@
 			>Facebook</button
 		>
 	{:else if showStep === ShowStep.NEW_OLD_USER_CONFIRMATION}
-		<p class="text-white">Do you have an existing superhome account via facebook?</p>
+		<p class="dark:text-white">Do you have an existing superhome account via facebook?</p>
 		<button
 			on:click={() => {
 				showStep = ShowStep.CONFIRM_LINK_GOOGLE;
@@ -60,7 +60,7 @@
 		>
 		<button on:click={() => login('google')}>No</button>
 	{:else if showStep === ShowStep.CONFIRM_LINK_GOOGLE}
-		<p class="text-white">Did you connect your google account on it already?</p>
+		<p class="dark:text-white">Did you connect your google account on it already?</p>
 		<button
 			on:click={() => {
 				window.localStorage.setItem('is_google_linked', 'true');
@@ -73,8 +73,8 @@
 			}}>No</button
 		>
 	{:else if showStep === ShowStep.REQUIRE_FB_LOGIN_FIRST}
-		<p class="text-white">Please login with Facebook first to link your Google account</p>
-		<p class="text-white">Click link google account at the sidebar after logging in</p>
+		<p class="dark:text-white">Please login with Facebook first to link your Google account</p>
+		<p class="dark:text-white">Click link google account at the sidebar after logging in</p>
 		<button on:click={() => login('facebook')}>Login with Facebook</button>
 	{/if}
 </div>
