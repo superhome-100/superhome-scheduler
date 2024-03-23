@@ -48,14 +48,6 @@
 
 	let isLoading = false;
 
-	async function callLogout() {
-		if (intervalId) {
-			clearInterval(intervalId);
-		}
-		intervalId = undefined;
-		await logout();
-	}
-
 	async function initializeUserSessionData(setViewMode = 'admin') {
 		if ($user == null) {
 			$loginState = 'out';
@@ -149,7 +141,6 @@
 	onMount(() => {
 		return auth.onIdTokenChanged(
 			async (user) => {
-				console.log('change:', user);
 				if (user) {
 					$loginState = 'in';
 					$sessionAuth = {

@@ -58,7 +58,8 @@
 			checkBool('bottomPlate') ||
 			checkBool('largeBuoy') ||
 			checkBool('O2OnBuoy') ||
-			checkBool('shortSession')
+			checkBool('shortSession') ||
+			checkString('resType')
 		);
 	};
 

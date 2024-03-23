@@ -21,7 +21,7 @@
 	import { toast } from 'svelte-french-toast';
 	import { logout } from '$lib/authentication';
 	import { page } from '$app/stores';
-
+	import { auth, loginWithGoogle, isGoogleLinked } from '$lib/firebase';
 	const schedulerDoc =
 		'https://docs.google.com/document/d/1FQ828hDuuPRnQ7QWYMykSv9bT3Lmxi0amLsFyTjnyuM/edit?usp=share_link';
 
@@ -216,6 +216,18 @@
 					target="_blank"
 					href="https://m.me/j/Abaj0BzT0Q8K85gO/"
 				/>
+				{#if !isGoogleLinked() && $user?.id && auth?.currentUser?.providerData[0].providerId === 'facebook.com'}
+					<SidebarItem
+						label="Link Google Account"
+						on:click={async () => {
+							if ($user?.id) window.localStorage.setItem('user_record_id', $user.id);
+							await loginWithGoogle();
+							// console.log(auth?.currentUser?.providerData[0].providerId);
+							// save current uid to local storage
+							// on login detect if uid exists in local storage
+						}}
+					/>
+				{/if}
 			</SidebarGroup>
 		</SidebarWrapper>
 	</Sidebar>

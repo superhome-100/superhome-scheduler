@@ -34,6 +34,10 @@ const removingBuddy = (orig: Reservation, sub: Reservation) =>
 	orig.resType === ReservationType.autonomous &&
 	orig.buddies.length > sub.buddies.length &&
 	sub.buddies.reduce((val, id) => orig.buddies.includes(id) && val, true);
+const changingCourseToAutonomous = (orig: Reservation, sub: Reservation) =>
+	orig.resType == ReservationType.course &&
+	sub.resType == ReservationType.autonomous &&
+	sub.buddies.length == 0;
 
 export function throwIfPastUpdateTime(
 	settings: SettingsManager,
@@ -45,11 +49,16 @@ export function throwIfPastUpdateTime(
 		//the only types of mods that are allowed after the res cutoff are:
 		// 1) reducing the number of students in a course
 		// 2) deleting a buddy's reservation
+		// 3) changing a course to an autonomous reservation type
 
 		const cutoffError =
 			'The modification window for this reservation date/time has expired; this reservation can no longer be modified';
 
-		if (!reducingStudents(orig, sub) && !removingBuddy(orig, sub)) {
+		if (
+			!reducingStudents(orig, sub) &&
+			!removingBuddy(orig, sub) &&
+			!changingCourseToAutonomous(orig, sub)
+		) {
 			throw new ValidationError(cutoffError);
 		} else if (!beforeCancelCutoff(settings, sub.date, startTime, sub.category)) {
 			//no mods allowed after cancel cutoff
