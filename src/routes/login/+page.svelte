@@ -1,9 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { auth, loginWithFacebook, loginWithGoogle } from '../../lib/firebase';
+	import { auth, loginWithFacebook, loginWithGoogle, isGoogleLinked } from '../../lib/firebase';
 	import { goto } from '$app/navigation';
 
 	let session: 'loading' | 'in' | 'out' = 'loading';
+
+	enum ShowStep {
+		LOGIN_OPTION,
+		NEW_OLD_USER_CONFIRMATION,
+		CONFIRM_LINK_GOOGLE,
+		REQUIRE_FB_LOGIN_FIRST
+	}
+	let showStep: ShowStep = ShowStep.LOGIN_OPTION;
 
 	const login = async (provider: 'facebook' | 'google') => {
 		session = 'loading';
@@ -24,14 +32,49 @@
 			}
 		});
 	});
+
+	const triggerGoogleLogin = async () => {
+		if (isGoogleLinked()) {
+			await loginWithGoogle();
+		} else {
+			showStep = ShowStep.NEW_OLD_USER_CONFIRMATION;
+		}
+	};
 </script>
 
 <div class="flex flex-col text-black w-48 gap-2">
 	<h3 class="text-white">Login with</h3>
-	<button disabled={['loading', 'in'].includes(session)} on:click={() => login('google')}
-		>Google</button
-	>
-	<button disabled={['loading', 'in'].includes(session)} on:click={() => login('facebook')}
-		>Facebook</button
-	>
+	{#if showStep === ShowStep.LOGIN_OPTION}
+		<button disabled={['loading', 'in'].includes(session)} on:click={triggerGoogleLogin}
+			>Google</button
+		>
+		<button disabled={['loading', 'in'].includes(session)} on:click={() => login('facebook')}
+			>Facebook</button
+		>
+	{:else if showStep === ShowStep.NEW_OLD_USER_CONFIRMATION}
+		<p class="text-white">Do you have an existing superhome account via facebook?</p>
+		<button
+			on:click={() => {
+				showStep = ShowStep.CONFIRM_LINK_GOOGLE;
+			}}>Yes</button
+		>
+		<button on:click={() => login('google')}>No</button>
+	{:else if showStep === ShowStep.CONFIRM_LINK_GOOGLE}
+		<p class="text-white">Did you connect your google account on it already?</p>
+		<button
+			on:click={() => {
+				window.localStorage.setItem('is_google_linked', 'true');
+				loginWithGoogle();
+			}}>Yes</button
+		>
+		<button
+			on:click={() => {
+				showStep = ShowStep.REQUIRE_FB_LOGIN_FIRST;
+			}}>No</button
+		>
+	{:else if showStep === ShowStep.REQUIRE_FB_LOGIN_FIRST}
+		<p class="text-white">Please login with Facebook first to link your Google account</p>
+		<p class="text-white">Click link google account at the sidebar after logging in</p>
+		<button on:click={() => login('facebook')}>Login with Facebook</button>
+	{/if}
 </div>

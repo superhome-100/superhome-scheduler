@@ -232,8 +232,7 @@ async function throwIfSubmissionIsInvalid(sub: Submission) {
 
 	if (sub.resType === 'proSafety') {
 		const isValid = isValidProSafetyCutoff(sub.date);
-		if (!isValid)
-			throw new ValidationError('PRO_SAFETY reservation should be done before 4PM.');
+		if (!isValid) throw new ValidationError('PRO_SAFETY reservation should be done before 4PM.');
 	}
 
 	if (!beforeResCutoff(settings, sub.date, getStartTime(settings, sub), sub.category)) {
