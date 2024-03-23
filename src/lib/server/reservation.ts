@@ -419,7 +419,9 @@ async function unpackModifyForm(formData: AppFormData, orig: Reservation): Promi
 		owTime: formData.has('owTime')
 			? OWTime[formData.get('owTime') as keyof typeof OWTime]
 			: orig.owTime,
-		resType: orig.resType, //can't be changed
+		resType: formData.has('resType')
+			? ReservationType[formData.get('resType') as keyof typeof ReservationType]
+			: orig.resType,
 		numStudents: formData.has('numStudents')
 			? JSON.parse(formData.get('numStudents'))
 			: orig.numStudents,

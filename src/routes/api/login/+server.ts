@@ -9,12 +9,15 @@ export interface LoginUserData {
 	email: string;
 	providerId: string;
 	firebaseUID: string;
+	userRecordId: string; // from the old fb account xata record id
 }
 export async function POST({ cookies, request }: RequestEvent) {
 	try {
-		const { userId, userName, photoURL, email, providerId, firebaseUID } =
+		const { userId, userName, photoURL, email, providerId, firebaseUID, userRecordId } =
 			(await request.json()) as LoginUserData;
+
 		const record = await authenticateUser({
+			userRecordId,
 			userId,
 			userName,
 			email,
@@ -22,8 +25,9 @@ export async function POST({ cookies, request }: RequestEvent) {
 			firebaseUID
 		});
 
-		// TODO: replace this with firebase session auth setup
-		if (cookies.get('sessionid') === undefined && record) {
+		// TODO: replace this with firebase session token auth setup
+		const sessionId = cookies.get('sessionid');
+		if (!sessionId && record) {
 			const session = await createSession(record);
 			let expires = new Date();
 			expires.setMonth(expires.getMonth() + 1);

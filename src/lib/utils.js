@@ -2,7 +2,7 @@ import { datetimeToLocalDateStr } from './datetimeUtils';
 import { reservations, user, users, viewMode } from './stores';
 import { get } from 'svelte/store';
 import { assignHourlySpaces } from './autoAssign';
-import { ReservationCategory } from '$types';
+import { ReservationCategory, ReservationType } from '$types';
 
 export function monthArr(year, month, reservations) {
 	let daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -79,9 +79,7 @@ export function getDaySchedule(rsvs, datetime, category) {
 	let today = datetimeToLocalDateStr(datetime);
 	rsvs = rsvs.filter(
 		(v) =>
-			['pending', 'confirmed'].includes(v.status) &&
-			v.category === category &&
-			v.date === today
+			['pending', 'confirmed'].includes(v.status) && v.category === category && v.date === today
 	);
 	return assignHourlySpaces(rsvs, today, category);
 }
@@ -110,3 +108,6 @@ export const buoyDesc = (buoy) => {
 	desc += buoy.maxDepth;
 	return desc;
 };
+
+// resType can only be changed from course to another type for existing rsvs
+export const resTypeModDisabled = (rsv) => rsv != null && rsv.resType != ReservationType.course;

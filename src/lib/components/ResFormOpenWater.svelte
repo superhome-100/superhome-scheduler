@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { canSubmit, buoys, reservations } from '$lib/stores';
-	import { adminView, buoyDesc, isMyReservation } from '$lib/utils.js';
+	import { adminView, buoyDesc, isMyReservation, resTypeModDisabled } from '$lib/utils.js';
 	import { Settings } from '$lib/client/settings';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 	import type { Reservation } from '$types';
@@ -22,7 +22,7 @@
 	let resType: ReservationType = rsv == null ? ReservationType.autonomous : rsv?.resType;
 	let maxDepth = rsv?.maxDepth || 1;
 	let owTime = rsv?.owTime || 'AM';
-	let numStudents = rsv?.resType !== 'course' ? 1 : rsv.numStudents;
+	let numStudents = rsv?.resType !== ReservationType.course ? 1 : rsv.numStudents;
 	let pulley = rsv?.pulley;
 	let extraBottomWeight = rsv?.extraBottomWeight || false;
 	let bottomPlate = rsv?.bottomPlate || false;
@@ -35,7 +35,7 @@
 	}
 	checkSubmit();
 
-	$: showBuddyFields = resType === 'autonomous';
+	$: showBuddyFields = resType === ReservationType.autonomous;
 	$: sortedBuoys = $buoys.sort((a, b) => (a.maxDepth > b.maxDepth ? 1 : -1));
 
 	const buoyIsAssigned = (name: string) => {
@@ -86,25 +86,27 @@
 			</select>
 			<input type="hidden" name="owTime" value={owTime} />
 		</div>
-		{#if disabled || rsv != null}
+		{#if viewOnly || resTypeModDisabled(rsv)}
 			<input type="hidden" name="resType" value={resType} />
 		{/if}
 		<div>
 			<select
 				id="formResType"
-				disabled={disabled || rsv != null}
+				disabled={viewOnly || resTypeModDisabled(rsv)}
 				bind:value={resType}
 				name="resType"
 			>
 				<option value="autonomous">Autonomous</option>
 				<option value="course">Course/Coaching</option>
-				<option value="proSafety">Pay for ProSafety</option>
+				{#if rsv == null}
+					<option value="proSafety">Pay for ProSafety</option>
+				{/if}
 				{#if date && Settings.getCbsAvailable(date)}
 					<option value="cbs">Platform/CBS</option>
 				{/if}
 			</select>
 		</div>
-		{#if resType == 'course'}
+		{#if resType == ReservationType.course}
 			<div>
 				<select id="formNumStudents" disabled={viewOnly} name="numStudents" value={numStudents}>
 					{#each [...Array(restrictModify ? numStudents : 4).keys()] as n}
@@ -116,7 +118,8 @@
 		{#if isMyReservation(rsv) || adminView(viewOnly)}
 			<div>
 				<input
-					{disabled}
+					disabled={viewOnly ||
+						(restrictModify && (resTypeModDisabled(rsv) || resType != ReservationType.autonomous))}
 					type="number"
 					id="formMaxDepth"
 					class="w-14 valid:border-gray-500 required:border-red-500"
@@ -135,7 +138,7 @@
 		slot="categoryOptionals"
 	>
 		<div>
-			{#if resType === 'autonomous'}
+			{#if resType === ReservationType.autonomous}
 				{#if disabled}
 					<input type="hidden" name="pulley" value={pulley ? 'on' : 'off'} />
 				{/if}
@@ -148,7 +151,7 @@
 					tabindex="5"
 				/>
 				<label for="formPulley">pulley</label>
-			{:else if resType === 'course'}
+			{:else if resType === ReservationType.course}
 				{#if disabled}
 					<input
 						type="hidden"
@@ -169,7 +172,7 @@
 				<label for="formNoPulley">no pulley</label>
 			{/if}
 		</div>
-		{#if resType !== 'cbs'}
+		{#if resType !== ReservationType.cbs}
 			<div>
 				{#if disabled}
 					<input type="hidden" name="extraBottomWeight" value={extraBottomWeight ? 'on' : 'off'} />

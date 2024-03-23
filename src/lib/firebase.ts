@@ -1,6 +1,12 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import {
+	GoogleAuthProvider,
+	signInWithRedirect,
+	signInWithPopup,
+	FacebookAuthProvider
+} from 'firebase/auth';
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -36,4 +42,35 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-export { auth, app };
+const loginWithGoogle = async () => {
+	const googleProvider = new GoogleAuthProvider();
+	const isChromeDesktop =
+		/Chrome/.test(navigator.userAgent) &&
+		/Google Inc/.test(navigator.vendor) &&
+		!/Android/.test(navigator.userAgent);
+	if (isChromeDesktop) {
+		await signInWithRedirect(auth, googleProvider);
+	} else {
+		await signInWithPopup(auth, googleProvider);
+	}
+};
+
+const loginWithFacebook = async () => {
+	const facebookProvider = new FacebookAuthProvider();
+	facebookProvider.addScope('email');
+	const isChromeDesktop =
+		/Chrome/.test(navigator.userAgent) &&
+		/Google Inc/.test(navigator.vendor) &&
+		!/Android/.test(navigator.userAgent);
+	if (isChromeDesktop) {
+		await signInWithRedirect(auth, facebookProvider);
+	} else {
+		await signInWithPopup(auth, facebookProvider);
+	}
+};
+
+const isGoogleLinked = () => {
+	return window?.localStorage.getItem('is_google_linked') === 'true';
+};
+
+export { auth, app, loginWithGoogle, loginWithFacebook, isGoogleLinked };
