@@ -43,8 +43,8 @@
 </script>
 
 <div class="flex flex-col text-black w-48 gap-2">
-	<h3 class="dark:text-white">Login with</h3>
 	{#if showStep === ShowStep.LOGIN_OPTION}
+		<h3 class="dark:text-white">Login with</h3>
 		<button disabled={['loading', 'in'].includes(session)} on:click={triggerGoogleLogin}
 			>Google</button
 		>
@@ -60,7 +60,8 @@
 		>
 		<button on:click={() => login('google')}>No</button>
 	{:else if showStep === ShowStep.CONFIRM_LINK_GOOGLE}
-		<p class="dark:text-white">Did you connect your google account on it already?</p>
+		<p class="dark:text-white">Did you link your google account on us already?</p>
+		<img src="/guide-link.webp" alt="guide" />
 		<button
 			on:click={() => {
 				window.localStorage.setItem('is_google_linked', 'true');
