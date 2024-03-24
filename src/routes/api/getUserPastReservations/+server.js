@@ -1,14 +1,16 @@
 import { json } from '@sveltejs/kit';
 import { getXataClient } from '$lib/server/xata-old';
 import { convertFromXataToAppType } from '$lib/server/reservation';
+import { getXataUserDocWithFirebaseToken } from '$lib/server/firestore';
 
 const xata = getXataClient();
 
 export async function POST({ request }) {
 	try {
-		let { user, maxDateStr } = await request.json();
+		const xataUser = await getXataUserDocWithFirebaseToken(request.headers);
+		let { maxDateStr } = await request.json();
 		let rawRsvs = await xata.db.Reservations.filter({
-			user,
+			user: xataUser.id,
 			date: { $le: maxDateStr },
 			status: 'confirmed'
 		}).getAll();

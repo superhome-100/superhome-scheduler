@@ -20,7 +20,6 @@ export const profileSrc = writable<any>(null);
 export const reservations = writable<Reservation[]>([]);
 export const settings = writable<Settings>();
 export const user = writable<UsersRecord | null>(null);
-export const userPastReservations = writable<any[]>([]);
 export const users = writable<{ [uid: string]: any }>([]);
 export const view = writable<string>('multi-day');
 export const viewedDate = writable<Date>(new Date());
