@@ -27,19 +27,16 @@
 		settings,
 		stateLoaded,
 		user,
-		userPastReservations,
 		users,
 		viewMode,
 		profileSrc
 	} from '$lib/stores';
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { logout, authenticateUser } from '$lib/authentication';
 	import {
 		getAppData,
 		getBoatAssignments,
 		getSession,
 		getBuoys,
-		getUserPastReservations,
 		getUserNotifications
 	} from '$lib/api';
 	import { auth } from '$lib/firebase';
@@ -54,17 +51,11 @@
 		} else {
 			$loginState = 'in';
 
-			const maxDateStr = datetimeToLocalDateStr(new Date());
-			const [userNotifications, reqReservations, reqBoatAssignments] = await Promise.all([
+			const [userNotifications, reqBoatAssignments] = await Promise.all([
 				getUserNotifications(),
-				getUserPastReservations($user.id, maxDateStr),
 				getBoatAssignments()
 			]);
 			$notifications = userNotifications;
-
-			if (reqReservations.status === 'success') {
-				$userPastReservations = reqReservations.userPastReservations;
-			}
 
 			if (reqBoatAssignments.status === 'success') {
 				$boatAssignments = reqBoatAssignments.assignments;

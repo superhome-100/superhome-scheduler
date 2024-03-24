@@ -2,8 +2,8 @@
 	import { datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
 	import { minuteOfDay, beforeCancelCutoff } from '$lib/reservationTimes';
 	import { timeStrToMin } from '$lib/datetimeUtils';
-	import { user, userPastReservations, reservations } from '$lib/stores';
-	import { getContext } from 'svelte';
+	import { user, reservations } from '$lib/stores';
+	import { getContext, onMount } from 'svelte';
 	import Modal from './Modal.svelte';
 	import CancelDialog from './CancelDialog.svelte';
 	import RsvTabs from './RsvTabs.svelte';
@@ -12,6 +12,7 @@
 	import type { Reservation, ReservationPeriod } from '$types';
 	import { ReservationCategory, ReservationStatus } from '$types';
 	import dayjs from 'dayjs';
+	import { getUserPastReservations } from '$lib/api';
 
 	export let resPeriod: ReservationPeriod = 'upcoming';
 
@@ -148,7 +149,10 @@
 		}
 	};
 
-	$: rsvGroups = groupRsvs(resPeriod, $reservations, $userPastReservations);
+	let loadingPastReservations = false;
+	let pastReservations: any[] = [];
+
+	$: rsvGroups = groupRsvs(resPeriod, $reservations, pastReservations);
 
 	const statusTextColor = {
 		[ReservationStatus.confirmed]: 'text-status-confirmed',
@@ -159,9 +163,24 @@
 	const totalThisMonth = (rsvs: Reservation[]): number => {
 		return rsvs.reduce((t, rsv) => (rsv.price ? t + rsv.price : t), 0);
 	};
+
+	onMount(async () => {
+		if (resPeriod === 'past') {
+			loadingPastReservations = true;
+			const maxDateStr = datetimeToLocalDateStr(new Date());
+			const { userPastReservations } = await getUserPastReservations(maxDateStr);
+			pastReservations = userPastReservations || [];
+			loadingPastReservations = false;
+		}
+	});
 </script>
 
 {#if $user}
+	{#if loadingPastReservations}
+		<div>Loading past reservations...</div>
+	{:else if rsvGroups.length === 0}
+		<div>No reservations found.</div>
+	{/if}
 	<table class="m-auto border-separate border-spacing-y-1">
 		<tbody>
 			{#each rsvGroups as { month, rsvs }}
