@@ -124,7 +124,7 @@
 					id="formMaxDepth"
 					class="w-14 valid:border-gray-500 required:border-red-500"
 					min="1"
-					max={$buoys.reduce((maxv, b) => Math.max(maxv, b.maxDepth), 0)}
+					max="140"
 					bind:value={maxDepth}
 					on:input={checkSubmit}
 					name="maxDepth"

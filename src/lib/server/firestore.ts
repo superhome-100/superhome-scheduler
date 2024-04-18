@@ -1,5 +1,6 @@
 import { FIREBASE_SERVICE_ACCOUNT_KEY, XATA_BRANCH } from '$env/static/private';
 import admin from 'firebase-admin';
+import { getUserByEmail, getUserByFirebaseUID, getUserByFacebookId } from './user';
 
 const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT_KEY);
 
@@ -26,4 +27,31 @@ export async function doTransaction(category: string, transaction: () => Promise
 	} else {
 		await transaction();
 	}
+}
+
+export async function getXataUserDocWithFirebaseToken(headers: Headers) {
+	const authorizationHeader = headers.get('authorization') || '';
+	const token = authorizationHeader.split('Bearer ')[1];
+	const decodedToken = await admin.auth().verifyIdToken(token);
+	const fbUser = await admin.auth().getUser(decodedToken.uid);
+	if (!fbUser) throw new Error('firebase user not found!');
+
+	let user;
+	if (fbUser.email) {
+		user = await getUserByEmail(fbUser.email);
+	}
+
+	if (!user && fbUser.uid) {
+		user = await getUserByFirebaseUID(fbUser.uid);
+	}
+
+	if (!user) {
+		const facebookId = fbUser.providerData.find((p) => p.providerId === 'facebook.com')?.uid;
+		if (!facebookId) throw new Error('facebookId not found!');
+		user = await getUserByFacebookId(facebookId);
+	}
+
+	if (!user) throw new Error('user not found!');
+
+	return user;
 }
