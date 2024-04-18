@@ -1,5 +1,6 @@
 import type { Buoy, Reservation } from '$types';
 import type { UsersRecord, BuoyGroupings } from './server/xata.codegen';
+import { auth } from '$lib/firebase';
 
 // TODO: fix this type
 export const getBuoys = async () => {
@@ -40,11 +41,15 @@ export const getBoatAssignments = async () => {
 	return data;
 };
 
-export const getUserPastReservations = async (uid: string, maxDateStr: string) => {
+export const getUserPastReservations = async (maxDateStr: string) => {
+	const token = await auth.currentUser?.getIdToken();
 	const response = await fetch('/api/getUserPastReservations', {
 		method: 'POST',
-		headers: { 'Content-type': 'application/json' },
-		body: JSON.stringify({ user: uid, maxDateStr })
+		headers: {
+			'Content-type': 'application/json',
+			Authorization: 'Bearer ' + token
+		},
+		body: JSON.stringify({ maxDateStr })
 	});
 	let data = (await response.json()) as {
 		status: 'success' | 'error';
