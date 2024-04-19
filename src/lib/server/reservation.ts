@@ -308,7 +308,7 @@ function unpackSubmitForm(formData: AppFormData): Submission {
 }
 
 export async function submitReservation(formData: AppFormData) {
-	let sub = unpackSubmitForm(formData);
+	const sub = unpackSubmitForm(formData);
 	await throwIfSubmissionIsInvalid(sub);
 	let entries = createBuddyEntriesForSubmit(sub);
 	let records = await convertFromXataToAppType(await client.db.Reservations.create(entries));

@@ -6,6 +6,7 @@
 	import type { Reservation } from '$types';
 	import { ReservationCategory, ReservationType } from '$types';
 	import { PanglaoDate } from '$lib/datetimeUtils';
+	import InputLabel from './tiny_components/InputLabel.svelte';
 
 	export let rsv: Reservation | null = null;
 	export let date: string = rsv?.date || PanglaoDate().toString();
@@ -35,7 +36,9 @@
 	}
 	checkSubmit();
 
-	$: showBuddyFields = resType === ReservationType.autonomous;
+	$: showBuddyFields = [ReservationType.autonomous, ReservationType.autonomousPlatform].includes(
+		resType
+	);
 	$: sortedBuoys = $buoys.sort((a, b) => (a.maxDepth > b.maxDepth ? 1 : -1));
 
 	const buoyIsAssigned = (name: string) => {
@@ -52,23 +55,9 @@
 </script>
 
 <ResFormGeneric {error} {viewOnly} {restrictModify} {showBuddyFields} bind:date bind:category {rsv}>
-	<div class="[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5" slot="categoryLabels">
+	<svelte:fragment slot="inputExtension">
 		{#if adminView(viewOnly)}
-			<div><label for="formBuoy">Buoy</label></div>
-		{/if}
-		<div><label for="formOwTime">Time</label></div>
-		<div><label for="formResType">Type</label></div>
-		{#if resType === 'course'}
-			<div><label for="formNumStudents"># Students</label></div>
-		{/if}
-		{#if isMyReservation(rsv) || adminView(viewOnly)}
-			<div><label for="formMaxDepth">Max Depth</label></div>
-		{/if}
-	</div>
-
-	<div slot="categoryInputs">
-		{#if adminView(viewOnly)}
-			<div>
+			<InputLabel label="Buoy" forInput="formBuoy">
 				<select id="formBuoy" name="buoy" value={rsv?.buoy}>
 					<option value="auto">Auto</option>
 					{#each sortedBuoys as buoy}
@@ -77,46 +66,38 @@
 						>
 					{/each}
 				</select>
-			</div>
+			</InputLabel>
 		{/if}
-		<div>
-			<select id="formOwTime" {disabled} name="owTimeManual" bind:value={owTime}>
-				<option value="AM">AM</option>
-				<option value="PM">PM</option>
-			</select>
-			<input type="hidden" name="owTime" value={owTime} />
-		</div>
-		{#if viewOnly || resTypeModDisabled(rsv)}
-			<input type="hidden" name="resType" value={resType} />
-		{/if}
-		<div>
+
+		<InputLabel label="Type" forInput="formResType">
 			<select
 				id="formResType"
 				disabled={viewOnly || resTypeModDisabled(rsv)}
 				bind:value={resType}
 				name="resType"
 			>
-				<option value="autonomous">Autonomous</option>
+				<option value="autonomous">Autonomous on Buoy</option>
 				<option value="course">Course/Coaching</option>
-				{#if rsv == null}
-					<option value="proSafety">Pay for ProSafety</option>
-				{/if}
+				<option value="autonomousPlatform">Autonomous on Platform</option>
+				<option value="autonomousPlatformCBS">Autonomous on Platform+CBS</option>
 				{#if date && Settings.getCbsAvailable(date)}
-					<option value="cbs">Platform/CBS</option>
+					<option value="cbs">Competition-Setup Training</option>
 				{/if}
 			</select>
-		</div>
-		{#if resType == ReservationType.course}
-			<div>
-				<select id="formNumStudents" disabled={viewOnly} name="numStudents" value={numStudents}>
-					{#each [...Array(restrictModify ? numStudents : 4).keys()] as n}
-						<option value={n + 1}>{n + 1}</option>
-					{/each}
-				</select>
-			</div>
-		{/if}
+			{#if viewOnly || resTypeModDisabled(rsv)}
+				<input type="hidden" name="resType" value={resType} />
+			{/if}
+		</InputLabel>
+
+		<InputLabel label="Time" forInput="formOwTime">
+			<select id="formOwTime" {disabled} name="owTimeManual" bind:value={owTime}>
+				<option value="AM">AM</option>
+				<option value="PM">PM</option>
+			</select>
+			<input type="hidden" name="owTime" value={owTime} />
+		</InputLabel>
 		{#if isMyReservation(rsv) || adminView(viewOnly)}
-			<div>
+			<InputLabel label="Max Depth" forInput="formMaxDepth">
 				<input
 					disabled={viewOnly ||
 						(restrictModify && (resTypeModDisabled(rsv) || resType != ReservationType.autonomous))}
@@ -130,9 +111,19 @@
 					name="maxDepth"
 					required={maxDepth == undefined}
 				/><span class="ml-1 text-sm dark:text-white">meters</span>
-			</div>
+			</InputLabel>
 		{/if}
-	</div>
+		{#if resType === 'course'}
+			<InputLabel label="# Students" forInput="formNumStudents">
+				<select id="formNumStudents" disabled={viewOnly} name="numStudents" value={numStudents}>
+					{#each [...Array(restrictModify ? numStudents : 4).keys()] as n}
+						<option value={n + 1}>{n + 1}</option>
+					{/each}
+				</select>
+			</InputLabel>
+		{/if}
+	</svelte:fragment>
+
 	<div
 		class="[&>div]:whitespace-nowrap [&>div]:ml-[20%] [&>div]:sm:ml-[30%] [&>div]:xs:mr-4 [&>div]:mr-2 [&>div]:text-sm [&>div]:dark:text-white text-left block-inline"
 		slot="categoryOptionals"
@@ -172,7 +163,7 @@
 				<label for="formNoPulley">no pulley</label>
 			{/if}
 		</div>
-		{#if resType !== ReservationType.cbs}
+		{#if resType === ReservationType.autonomous}
 			<div>
 				{#if disabled}
 					<input type="hidden" name="extraBottomWeight" value={extraBottomWeight ? 'on' : 'off'} />
