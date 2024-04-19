@@ -93,6 +93,7 @@ const throwIfNull = (rsv: any, field: string) => {
 //     assert that enum types have valid values,
 //     and that fields that shouldn't be null are not null
 export function throwIfReservationIsInvalid(rsv: ReservationXata | null): ReservationXata {
+	console.log('init:', rsv);
 	if (rsv == null) throw new Error('null reservation');
 	if (!Object.keys(ReservationCategory).includes(rsv.category!)) {
 		throw new Error(`invalid reservation category "${rsv.category}" for ${rsv.id}`);
@@ -108,6 +109,7 @@ export function throwIfReservationIsInvalid(rsv: ReservationXata | null): Reserv
 			throwIfNull(rsv, 'endTime');
 		}
 	}
+	console.log('TEST:', Object.keys(ReservationType), rsv);
 	if (!Object.keys(ReservationType).includes(rsv.resType!)) {
 		throw new Error(`invalid reservation type "${rsv.resType}" for ${rsv.id}`);
 	} else {
@@ -308,7 +310,7 @@ function unpackSubmitForm(formData: AppFormData): Submission {
 }
 
 export async function submitReservation(formData: AppFormData) {
-	let sub = unpackSubmitForm(formData);
+	const sub = unpackSubmitForm(formData);
 	await throwIfSubmissionIsInvalid(sub);
 	let entries = createBuddyEntriesForSubmit(sub);
 	let records = await convertFromXataToAppType(await client.db.Reservations.create(entries));
