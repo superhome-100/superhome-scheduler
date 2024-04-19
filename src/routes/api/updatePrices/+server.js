@@ -23,7 +23,9 @@ const unpackTemplate = (uT) => {
 			course: uT.priceTemplate.coachOW,
 			autonomous: uT.priceTemplate.autoOW,
 			cbs: uT.priceTemplate.cbsOW,
-			proSafety: uT.priceTemplate.proSafetyOW
+			proSafety: uT.priceTemplate.proSafetyOW,
+			autonomousPlatform: uT.priceTemplate.platformOW,
+			autonomousPlatformCBS: uT.priceTemplate.platformCBSOW
 		}
 	};
 };
