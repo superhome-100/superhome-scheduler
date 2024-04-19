@@ -25,7 +25,8 @@ const unpackTemplate = (uT) => {
 			cbs: uT.priceTemplate.cbsOW,
 			proSafety: uT.priceTemplate.proSafetyOW,
 			autonomousPlatform: uT.priceTemplate.platformOW,
-			autonomousPlatformCBS: uT.priceTemplate.platformCBSOW
+			autonomousPlatformCBS: uT.priceTemplate.platformCBSOW,
+			competitionSetupCBS: uT.priceTemplate['comp-setupOW']
 		}
 	};
 };
@@ -83,6 +84,7 @@ export async function GET() {
 
 			for (let uT of userTemplates) {
 				let tmp = unpackTemplate(uT);
+				console.log('TMP', tmp)
 				let nAutoOW = calcNAutoOW(uT.user.id, oldRsvs);
 				let rsvs = newRsvs.filter((rsv) => rsv.user.id === uT.user.id);
 				for (let rsv of rsvs) {

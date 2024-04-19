@@ -276,12 +276,16 @@ function unpackSubmitForm(formData: AppFormData): Submission {
 			? ReservationStatus.pending
 			: ReservationStatus.confirmed;
 	const resType = ReservationType[formData.get('resType') as keyof typeof ReservationType];
-	const buoy =
-		resType == ReservationType.cbs
-			? buoyCBS
-			: resType == ReservationType.proSafety
-			? buoyProSafety
-			: 'auto';
+	const buoy = [
+		ReservationType.cbs,
+		ReservationType.autonomousPlatformCBS,
+		ReservationType.autonomousPlatform,
+		ReservationType.competitionSetupCBS
+	].includes(resType)
+		? buoyCBS
+		: resType == ReservationType.proSafety
+		? buoyProSafety
+		: 'auto';
 	return {
 		user: JSON.parse(formData.get('user')),
 		date: formData.get('date'),
