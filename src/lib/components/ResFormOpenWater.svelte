@@ -79,6 +79,10 @@
 		[ReservationType.proSafety]: {
 			min: 0,
 			max: 89
+		},
+		[ReservationType.competitionSetupCBS]: {
+			min: 0,
+			max: 130
 		}
 	};
 </script>
@@ -111,7 +115,7 @@
 				<option value="autonomousPlatform">Autonomous on Platform</option>
 				<option value="autonomousPlatformCBS">Autonomous on Platform+CBS</option>
 				{#if date && Settings.getCbsAvailable(date)}
-					<option value="cbs">Competition-Setup Training</option>
+					<option value="competitionSetupCBS">Competition-Setup Training</option>
 				{/if}
 			</select>
 			{#if viewOnly || resTypeModDisabled(rsv)}

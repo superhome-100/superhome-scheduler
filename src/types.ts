@@ -48,7 +48,8 @@ export enum ReservationType {
 	cbs = 'cbs',
 	proSafety = 'proSafety',
 	autonomousPlatform = 'autonomousPlatform',
-	autonomousPlatformCBS = 'autonomousPlatformCBS'
+	autonomousPlatformCBS = 'autonomousPlatformCBS',
+	competitionSetupCBS = 'competitionSetupCBS'
 }
 
 export enum ReservationCategory {
