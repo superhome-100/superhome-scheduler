@@ -152,8 +152,9 @@
 
 <div class="row w-full">
 	<ul class="flex flex-col w-full px-8">
-		<!-- do not remove this -->
+		<!-- DONT REMOVE THIS, WE DONT HAVE SESSION MANAGEMENT YET -->
 		<input type="hidden" name="user" value={JSON.stringify({ id: $user.id })} />
+		<!-- yup dont remove it -->
 		{#if viewOnly}
 			<InputLabel forInput="formStatus" label="Status">
 				<input type="hidden" name="status" value={status} />

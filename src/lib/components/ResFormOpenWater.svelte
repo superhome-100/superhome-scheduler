@@ -36,9 +36,11 @@
 	}
 	checkSubmit();
 
-	$: showBuddyFields = [ReservationType.autonomous, ReservationType.autonomousPlatform].includes(
-		resType
-	);
+	$: showBuddyFields = [
+		ReservationType.autonomous,
+		ReservationType.autonomousPlatform,
+		ReservationType.autonomousPlatformCBS
+	].includes(resType);
 	$: sortedBuoys = $buoys.sort((a, b) => (a.maxDepth > b.maxDepth ? 1 : -1));
 
 	const buoyIsAssigned = (name: string) => {
@@ -51,6 +53,33 @@
 		).length > 0
 			? '*'
 			: '';
+	};
+
+	const minMax: Record<ReservationType, { min: number; max: number }> = {
+		[ReservationType.course]: {
+			min: 0,
+			max: 89
+		},
+		[ReservationType.autonomous]: {
+			min: 0,
+			max: 89
+		},
+		[ReservationType.autonomousPlatform]: {
+			min: 0,
+			max: 99
+		},
+		[ReservationType.autonomousPlatformCBS]: {
+			min: 90,
+			max: 130
+		},
+		[ReservationType.cbs]: {
+			min: 0,
+			max: 130
+		},
+		[ReservationType.proSafety]: {
+			min: 0,
+			max: 89
+		}
 	};
 </script>
 
@@ -75,9 +104,10 @@
 				disabled={viewOnly || resTypeModDisabled(rsv)}
 				bind:value={resType}
 				name="resType"
+				class="w-full"
 			>
-				<option value="autonomous">Autonomous on Buoy</option>
 				<option value="course">Course/Coaching</option>
+				<option value="autonomous">Autonomous on Buoy</option>
 				<option value="autonomousPlatform">Autonomous on Platform</option>
 				<option value="autonomousPlatformCBS">Autonomous on Platform+CBS</option>
 				{#if date && Settings.getCbsAvailable(date)}
@@ -104,8 +134,8 @@
 					type="number"
 					id="formMaxDepth"
 					class="w-14 valid:border-gray-500 required:border-red-500"
-					min="1"
-					max="140"
+					min={minMax[resType].min}
+					max={minMax[resType].max}
 					bind:value={maxDepth}
 					on:input={checkSubmit}
 					name="maxDepth"
@@ -163,7 +193,11 @@
 				<label for="formNoPulley">no pulley</label>
 			{/if}
 		</div>
+<<<<<<< HEAD
 		{#if resType === ReservationType.autonomous}
+=======
+		{#if [ReservationType.autonomous, ReservationType.autonomousPlatform, ReservationType.autonomousPlatformCBS].includes(resType)}
+>>>>>>> feature-new-options-ow
 			<div>
 				{#if disabled}
 					<input type="hidden" name="extraBottomWeight" value={extraBottomWeight ? 'on' : 'off'} />
