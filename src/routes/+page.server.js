@@ -30,7 +30,6 @@ export const actions = {
 			const data = await request.formData();
 			const category = data.get('category');
 			let record;
-
 			await doTransaction(category, async () => {
 				record = await submitReservation(data);
 			});

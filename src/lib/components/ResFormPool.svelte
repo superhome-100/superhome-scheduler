@@ -7,6 +7,7 @@
 	import { adminView, resTypeModDisabled } from '$lib/utils.js';
 	import { ReservationType } from '$types';
 	import type { Reservation } from '$types';
+	import InputLabel from './tiny_components/InputLabel.svelte';
 
 	const lanes = () => Settings.getPoolLanes();
 	const rooms = () => Settings.getClassrooms();
@@ -54,54 +55,39 @@
 </script>
 
 <ResFormGeneric {error} {viewOnly} {restrictModify} {showBuddyFields} bind:date bind:category {rsv}>
-	<div class="[&>div]:form-label [&>div]:h-8 [&>div]:m-0.5" slot="categoryLabels">
-		{#if adminView(viewOnly)}
-			{#if category === 'pool'}
-				<div><label for="formLane">Lane</label></div>
-			{:else if category === 'classroom'}
-				<div><label for="formRoom">Room</label></div>
-			{/if}
+	<svelte:fragment slot="inputExtension">
+		{#if adminView(viewOnly) && category === 'pool'}
+			<InputLabel forInput="formLane" label="Lane">
+				<!-- admin lane/room assignments are disabled due to the possibility that
+			a fixed assignment could make it impossible to auto-assign the remaining reservations -->
+				<select id="formLane" name="lane" value={rsv?.lanes[0]}>
+					<option value="auto">Auto</option>
+					{#each lanes() as lane}
+						<option value={lane}>{lane}</option>
+					{/each}
+				</select>
+			</InputLabel>
 		{/if}
-		<div><label for="formStart">Start Time</label></div>
-		<div><label for="formEnd">End Time</label></div>
-		<div><label for="formResType">Type </label></div>
-		{#if autoOrCourse === 'course'}
-			<div><label for="formNumStudents"># Students</label></div>
+		{#if adminView(viewOnly) && category === 'classroom'}
+			<InputLabel forInput="formRoom" label="Room">
+				<select id="formRoom" name="room" value={rsv.room}>
+					<option value="auto">Auto</option>
+					{#each rooms() as room}
+						<option value={room}>{room}</option>
+					{/each}
+				</select>
+			</InputLabel>
 		{/if}
-	</div>
 
-	<div slot="categoryInputs">
-		{#if adminView(viewOnly)}
-			{#if category === 'pool'}
-				<div>
-					<!-- admin lane/room assignments are disabled due to the possibility that
-				a fixed assignment could make it impossible to auto-assign the remaining reservations -->
-					<select id="formLane" name="lane" value={rsv?.lanes[0]}>
-						<option value="auto">Auto</option>
-						{#each lanes() as lane}
-							<option value={lane}>{lane}</option>
-						{/each}
-					</select>
-				</div>
-			{:else if category === 'classroom'}
-				<div>
-					<select id="formRoom" name="room" value={rsv.room}>
-						<option value="auto">Auto</option>
-						{#each rooms() as room}
-							<option value={room}>{room}</option>
-						{/each}
-					</select>
-				</div>
-			{/if}
-		{/if}
-		<div>
+		<InputLabel forInput="formStart" label="Start Time">
 			<select id="formStart" {disabled} bind:value={chosenStart} name="startTime">
 				{#each getStartTimes(date, category) as t}
 					<option value={t}>{t}</option>
 				{/each}
 			</select>
-		</div>
-		<div>
+		</InputLabel>
+
+		<InputLabel forInput="formEnd" label="End Time">
 			<select id="formEnd" {disabled} name="endTime" value={chosenEnd}>
 				{#each endTimes(Settings, date, category) as t}
 					{#if validEndTime(chosenStart, t)}
@@ -109,11 +95,12 @@
 					{/if}
 				{/each}
 			</select>
-		</div>
-		{#if viewOnly || resType != null || resTypeModDisabled(rsv)}
-			<input type="hidden" name="resType" value={autoOrCourse} />
-		{/if}
-		<div>
+		</InputLabel>
+
+		<InputLabel forInput="formResType" label="Type">
+			{#if viewOnly || resType != null || resTypeModDisabled(rsv)}
+				<input type="hidden" name="resType" value={autoOrCourse} />
+			{/if}
 			<select
 				id="formResType"
 				disabled={viewOnly || resType != null || resTypeModDisabled(rsv)}
@@ -123,18 +110,19 @@
 				<option value="autonomous">Autonomous</option>
 				<option value="course">Course/Coaching</option>
 			</select>
-		</div>
-		{#if resType != null}
-			<input type="hidden" name="resType" value={resType} />
-		{/if}
+			{#if resType != null}
+				<input type="hidden" name="resType" value={resType} />
+			{/if}
+		</InputLabel>
+
 		{#if autoOrCourse === 'course'}
-			<div>
+			<InputLabel forInput="formNumStudents" label="# Students">
 				<select disabled={viewOnly} value={numStudents} name="numStudents">
 					{#each [...Array(restrictModify ? numStudents : maxNumStudents).keys()] as n}
 						<option value={n + 1}>{n + 1}</option>
 					{/each}
 				</select>
-			</div>
+			</InputLabel>
 		{/if}
-	</div>
+	</svelte:fragment>
 </ResFormGeneric>
