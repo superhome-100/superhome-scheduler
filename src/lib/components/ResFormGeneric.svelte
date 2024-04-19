@@ -152,6 +152,8 @@
 
 <div class="row w-full">
 	<ul class="flex flex-col w-full px-8">
+		<!-- do not remove this -->
+		<input type="hidden" name="user" value={JSON.stringify({ id: $user.id })} />
 		{#if viewOnly}
 			<InputLabel forInput="formStatus" label="Status">
 				<input type="hidden" name="status" value={status} />
