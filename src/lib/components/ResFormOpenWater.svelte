@@ -193,11 +193,7 @@
 				<label for="formNoPulley">no pulley</label>
 			{/if}
 		</div>
-<<<<<<< HEAD
-		{#if resType === ReservationType.autonomous}
-=======
 		{#if [ReservationType.autonomous, ReservationType.autonomousPlatform, ReservationType.autonomousPlatformCBS].includes(resType)}
->>>>>>> feature-new-options-ow
 			<div>
 				{#if disabled}
 					<input type="hidden" name="extraBottomWeight" value={extraBottomWeight ? 'on' : 'off'} />
