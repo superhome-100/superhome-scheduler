@@ -10,6 +10,8 @@
 	import PlusIcon from '$lib/components/PlusIcon.svelte';
 	import DeleteIcon from '$lib/components/DeleteIcon.svelte';
 	import ExclamationCircle from '$lib/components/ExclamationCircle.svelte';
+	import InputLabel from './tiny_components/InputLabel.svelte';
+	import { Input } from 'flowbite-svelte';
 
 	export let rsv: Reservation | null;
 	export let date: string = rsv?.date || PanglaoDate().toString();
@@ -149,54 +151,17 @@
 <svelte:window on:keydown={navigateList} />
 
 <div class="row w-full">
-	<div class="column labels text-right w-[33%]">
+	<ul class="flex flex-col w-full px-8">
+		<!-- do not remove this -->
+		<input type="hidden" name="user" value={JSON.stringify({ id: $user.id })} />
 		{#if viewOnly}
-			<div class="form-label h-8 mb-1"><label for="formStatus">Status</label></div>
+			<InputLabel forInput="formStatus" label="Status">
+				<input type="hidden" name="status" value={status} />
+				<div>{rsv?.status}</div>
+			</InputLabel>
 		{/if}
-		<div class="form-label h-8 mb-0.5"><label for="formDate">Date</label></div>
-		<div class="form-label h-8 mb-0.5"><label for="formCategory">Category</label></div>
-		<slot name="categoryLabels" />
-
-		{#if showBuddyFields}
-			{#if viewOnly}
-				<div class="form-label h-8 mb-0.5"><label>Buddies</label></div>
-			{:else}
-				<div class="form-label h-8 mb-0.5">
-					<label>Add buddy</label>
-					<button
-						class="p-0"
-						type="button"
-						on:click={addBuddyField}
-						disabled={disabled || buddyFields.length == maxBuddies}
-						tabindex="1"
-					>
-						<PlusIcon svgClass="h-6 w-6" />
-					</button>
-				</div>
-			{/if}
-			{#if buddyFields.length > 1}
-				{#each buddyFields.slice(1) as bf}
-					<div class="h-8 mb-0.5" />
-				{/each}
-			{/if}
-		{/if}
-		{#if isMyReservation(rsv) || adminView(viewOnly)}
-			<div class="form-label h-8 mb-0.5"><label for="formComments">Comments</label></div>
-		{/if}
-	</div>
-	<div class="column inputs text-left w-[67%]">
-		{#if viewOnly}
-			<div class={statusStyle(rsv.status)}>
-				{rsv.status}
-			</div>
-		{/if}
-		<div>
-			<input type="hidden" name="user" value={JSON.stringify({ id: $user.id })} />
+		<InputLabel forInput="formDate" label="Date">
 			<input type="hidden" name="date" value={date} />
-			<input type="hidden" name="category" value={category} />
-			<input type="hidden" name="status" value={status} />
-		</div>
-		<div>
 			<input
 				type="date"
 				name="date"
@@ -207,8 +172,9 @@
 				bind:value={date}
 				{disabled}
 			/>
-		</div>
-		<div>
+		</InputLabel>
+		<InputLabel forInput="formCategory" label="Category">
+			<input type="hidden" name="category" value={category} />
 			<select
 				name="category"
 				id="formCategory"
@@ -219,12 +185,22 @@
 				<option value={ReservationCategory.openwater}>Open Water</option>
 				<option value={ReservationCategory.classroom}>Classroom</option>
 			</select>
-		</div>
-		<slot name="categoryInputs" />
+		</InputLabel>
+		<slot name="inputExtension" />
 		{#if showBuddyFields}
-			{#if buddyFields.length == 0}
-				<div class="h-8 mb-0.5" />
-			{:else}
+			<InputLabel forInput="forBuddies" label="Buddies">
+				{#if !viewOnly}
+					<button
+						class="flex dark:text-white"
+						type="button"
+						on:click={addBuddyField}
+						disabled={disabled || buddyFields.length == maxBuddies}
+						tabindex="1"
+					>
+						ADD BUDDY
+						<PlusIcon svgClass="h-6 w-6" />
+					</button>
+				{/if}
 				{#each buddyFields as bf (bf.id)}
 					<input type="hidden" value={bf.userId} name="buddy{bf.id}_id" />
 					<div class="relative table">
@@ -266,10 +242,10 @@
 						</ul>
 					{/if}
 				{/each}
-			{/if}
+			</InputLabel>
 		{/if}
 		{#if isMyReservation(rsv) || adminView(viewOnly)}
-			<div>
+			<InputLabel forInput="formComments" label="Comment">
 				<textarea
 					id="formComments"
 					name="comments"
@@ -278,9 +254,9 @@
 					tabindex="4"
 					{disabled}
 				/>
-			</div>
+			</InputLabel>
 		{/if}
-	</div>
+	</ul>
 </div>
 <div class="row w-full">
 	<div class="column w-full">
