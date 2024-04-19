@@ -142,7 +142,8 @@ const tables = [
 			{ name: 'cbsOW', type: 'int' },
 			{ name: 'proSafetyOW', type: 'int', defaultValue: '0' },
 			{ name: 'platformOW', type: 'int', defaultValue: '0' },
-			{ name: 'platformCBSOW', type: 'int', defaultValue: '0' }
+			{ name: 'platformCBSOW', type: 'int', defaultValue: '0' },
+			{ name: 'comp-setupOW', type: 'int', defaultValue: '0' }
 		],
 		revLinks: [{ column: 'priceTemplate', table: 'UserPriceTemplates' }]
 	},

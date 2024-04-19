@@ -25,7 +25,8 @@ const unpackTemplate = (uT) => {
 			cbs: uT.priceTemplate.cbsOW,
 			proSafety: uT.priceTemplate.proSafetyOW,
 			autonomousPlatform: uT.priceTemplate.platformOW,
-			autonomousPlatformCBS: uT.priceTemplate.platformCBSOW
+			autonomousPlatformCBS: uT.priceTemplate.platformCBSOW,
+			competitionSetupCBS: uT.priceTemplate['comp-setupOW']
 		}
 	};
 };
