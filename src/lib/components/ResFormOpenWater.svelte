@@ -197,7 +197,7 @@
 				<label for="formNoPulley">no pulley</label>
 			{/if}
 		</div>
-		{#if [ReservationType.autonomous, ReservationType.autonomousPlatform, ReservationType.autonomousPlatformCBS].includes(resType)}
+		{#if [ReservationType.autonomous, ReservationType.autonomousPlatform, ReservationType.autonomousPlatformCBS, ReservationType.course].includes(resType)}
 			<div>
 				{#if disabled}
 					<input type="hidden" name="extraBottomWeight" value={extraBottomWeight ? 'on' : 'off'} />
