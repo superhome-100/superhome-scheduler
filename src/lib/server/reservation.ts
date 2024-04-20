@@ -276,12 +276,7 @@ function unpackSubmitForm(formData: AppFormData): Submission {
 			? ReservationStatus.pending
 			: ReservationStatus.confirmed;
 	const resType = ReservationType[formData.get('resType') as keyof typeof ReservationType];
-	const buoy = [
-		ReservationType.cbs,
-		ReservationType.autonomousPlatformCBS,
-		ReservationType.autonomousPlatform,
-		ReservationType.competitionSetupCBS
-	].includes(resType)
+	const buoy = [ReservationType.cbs, ReservationType.competitionSetupCBS].includes(resType)
 		? buoyCBS
 		: resType == ReservationType.proSafety
 		? buoyProSafety
