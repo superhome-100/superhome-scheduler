@@ -9,6 +9,8 @@
 	import { adminView, removeRsv } from '$lib/utils.js';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { toast } from 'svelte-french-toast';
+	import { ReservationStatus, ReservationCategory } from '$types';
+	import { reject } from 'lodash';
 
 	export let hasForm = false;
 	export let rsv;
@@ -57,14 +59,22 @@
 		{/if}
 		<input type="hidden" name="id" value={rsv.id} />
 		{#if adminView(true)}
-			<div class="[&>*]:mx-auto w-full inline-flex items-center justify-between">
-				<button formaction="/?/adminUpdateRejected" class="bg-status-rejected px-3 py-1"
-					>Reject</button
-				>
-				<button formaction="/?/adminUpdatePending" class="bg-status-pending px-3 py-1"
-					>Pending</button
-				>
-				<button type="submit" class="bg-status-confirmed px-3 py-1" tabindex="6">Confirm</button>
+			<div class="w-full flex px-8 gap-2 items-center justify-between">
+				{#if rsv.status !== ReservationStatus.rejected}
+					<button formaction="/?/adminUpdateRejected" class="bg-status-rejected px-3 py-1 w-1/2"
+						>Reject</button
+					>
+				{/if}
+				{#if rsv.status !== ReservationStatus.pending}
+					<button formaction="/?/adminUpdatePending" class="bg-status-pending px-3 py-1 w-1/2"
+						>Pending</button
+					>
+				{/if}
+				{#if rsv.status !== ReservationStatus.confirmed}
+					<button type="submit" class="bg-status-confirmed px-3 py-1 w-1/2" tabindex="6"
+						>Confirm</button
+					>
+				{/if}
 			</div>
 		{/if}
 	</form>

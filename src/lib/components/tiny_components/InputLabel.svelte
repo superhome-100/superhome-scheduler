@@ -3,9 +3,9 @@
 	export let forInput = '';
 </script>
 
-<li class="flex mt-2">
-	<div class="w-[100px] dark:text-white text-right mt-2"><label for={forInput}>{label}</label></div>
-	<div class="flex-1">
+<li class="flex gap-2 mt-2">
+	<div class="w-[70px] dark:text-white text-right mt-1"><label for={forInput}>{label}</label></div>
+	<div class="flex-1 flex items-center">
 		<slot />
 	</div>
 </li>
