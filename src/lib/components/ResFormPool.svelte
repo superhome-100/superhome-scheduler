@@ -60,7 +60,7 @@
 			<InputLabel forInput="formLane" label="Lane">
 				<!-- admin lane/room assignments are disabled due to the possibility that
 			a fixed assignment could make it impossible to auto-assign the remaining reservations -->
-				<select id="formLane" name="lane" value={rsv?.lanes[0]}>
+				<select id="formLane" name="lane" class="w-full" value={rsv?.lanes[0]}>
 					<option value="auto">Auto</option>
 					{#each lanes() as lane}
 						<option value={lane}>{lane}</option>
@@ -70,7 +70,7 @@
 		{/if}
 		{#if adminView(viewOnly) && category === 'classroom'}
 			<InputLabel forInput="formRoom" label="Room">
-				<select id="formRoom" name="room" value={rsv.room}>
+				<select id="formRoom" name="room" class="w-full" value={rsv.room}>
 					<option value="auto">Auto</option>
 					{#each rooms() as room}
 						<option value={room}>{room}</option>
@@ -80,7 +80,7 @@
 		{/if}
 
 		<InputLabel forInput="formStart" label="Start Time">
-			<select id="formStart" {disabled} bind:value={chosenStart} name="startTime">
+			<select id="formStart" class="w-full" {disabled} bind:value={chosenStart} name="startTime">
 				{#each getStartTimes(date, category) as t}
 					<option value={t}>{t}</option>
 				{/each}
@@ -88,7 +88,7 @@
 		</InputLabel>
 
 		<InputLabel forInput="formEnd" label="End Time">
-			<select id="formEnd" {disabled} name="endTime" value={chosenEnd}>
+			<select id="formEnd" class="w-full" {disabled} name="endTime" value={chosenEnd}>
 				{#each endTimes(Settings, date, category) as t}
 					{#if validEndTime(chosenStart, t)}
 						<option value={t}>{t}</option>
@@ -103,6 +103,7 @@
 			{/if}
 			<select
 				id="formResType"
+				class="w-full"
 				disabled={viewOnly || resType != null || resTypeModDisabled(rsv)}
 				bind:value={autoOrCourse}
 				name="resType"

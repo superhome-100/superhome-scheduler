@@ -91,7 +91,7 @@
 	<svelte:fragment slot="inputExtension">
 		{#if adminView(viewOnly)}
 			<InputLabel label="Buoy" forInput="formBuoy">
-				<select id="formBuoy" name="buoy" value={rsv?.buoy}>
+				<select class="w-full" id="formBuoy" name="buoy" value={rsv?.buoy}>
 					<option value="auto">Auto</option>
 					{#each sortedBuoys as buoy}
 						<option value={buoy.name}
@@ -124,27 +124,28 @@
 		</InputLabel>
 
 		<InputLabel label="Time" forInput="formOwTime">
-			<select id="formOwTime" {disabled} name="owTimeManual" bind:value={owTime}>
+			<select id="formOwTime" class="w-full" {disabled} name="owTimeManual" bind:value={owTime}>
 				<option value="AM">AM</option>
 				<option value="PM">PM</option>
 			</select>
 			<input type="hidden" name="owTime" value={owTime} />
 		</InputLabel>
 		{#if isMyReservation(rsv) || adminView(viewOnly)}
-			<InputLabel label="Max Depth" forInput="formMaxDepth">
+			<InputLabel label="Target Depth" forInput="formMaxDepth">
 				<input
 					disabled={viewOnly ||
 						(restrictModify && (resTypeModDisabled(rsv) || resType != ReservationType.autonomous))}
 					type="number"
 					id="formMaxDepth"
-					class="w-14 valid:border-gray-500 required:border-red-500"
+					class="w-1/2 valid:border-gray-500 required:border-red-500"
 					min={minMax[resType].min}
 					max={minMax[resType].max}
 					bind:value={maxDepth}
 					on:input={checkSubmit}
 					name="maxDepth"
 					required={maxDepth == undefined}
-				/><span class="ml-1 text-sm dark:text-white">meters</span>
+				/>
+				<div class="w-1/2 text-sm dark:text-white">meters</div>
 			</InputLabel>
 		{/if}
 		{#if resType === 'course'}
@@ -158,10 +159,7 @@
 		{/if}
 	</svelte:fragment>
 
-	<div
-		class="[&>div]:whitespace-nowrap [&>div]:ml-[20%] [&>div]:sm:ml-[30%] [&>div]:xs:mr-4 [&>div]:mr-2 [&>div]:text-sm [&>div]:dark:text-white text-left block-inline"
-		slot="categoryOptionals"
-	>
+	<div class="dark:text-white flex flex-col items-start pl-[70px]" slot="categoryOptionals">
 		<div>
 			{#if resType === ReservationType.autonomous}
 				{#if disabled}
