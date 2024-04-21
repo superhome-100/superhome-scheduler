@@ -250,6 +250,16 @@ async function throwIfSubmissionIsInvalid(sub: Submission) {
 		);
 	}
 
+	if (
+		[ReservationType.autonomousPlatform, ReservationType.autonomousPlatformCBS].includes(
+			sub.resType
+		)
+	) {
+		if (sub.buddies?.length < 2) {
+			throw new ValidationError(`Booking this training type requires a minimum of 2 buddies.`);
+		}
+	}
+
 	await throwIfNoSpaceAvailable(settings, sub, allOverlappingRsvs);
 }
 
@@ -265,7 +275,6 @@ function createBuddyEntriesForSubmit(sub: Submission) {
 	return entries;
 }
 
-const buoyProSafety = 'PRO_SAFETY';
 const buoyCBS = 'CBS';
 
 function unpackSubmitForm(formData: AppFormData): Submission {
@@ -276,11 +285,10 @@ function unpackSubmitForm(formData: AppFormData): Submission {
 			? ReservationStatus.pending
 			: ReservationStatus.confirmed;
 	const resType = ReservationType[formData.get('resType') as keyof typeof ReservationType];
-	const buoy = [ReservationType.cbs, ReservationType.competitionSetupCBS].includes(resType)
-		? buoyCBS
-		: resType == ReservationType.proSafety
-		? buoyProSafety
-		: 'auto';
+	const buoy = ![ReservationType.cbs, ReservationType.competitionSetupCBS].includes(resType)
+		? 'auto'
+		: buoyCBS;
+
 	return {
 		user: JSON.parse(formData.get('user')),
 		date: formData.get('date'),
@@ -310,7 +318,8 @@ export async function submitReservation(formData: AppFormData) {
 	const sub = unpackSubmitForm(formData);
 	await throwIfSubmissionIsInvalid(sub);
 	let entries = createBuddyEntriesForSubmit(sub);
-	let records = await convertFromXataToAppType(await client.db.Reservations.create(entries));
+	const createdReservations = await client.db.Reservations.create(entries);
+	let records = await convertFromXataToAppType(createdReservations);
 	return { records };
 }
 
