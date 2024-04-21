@@ -133,9 +133,9 @@
 		'relative ml-2 top-0 border border-solid border-bg-gray-300 ' + 'rounded text-sm';
 
 	const bdColor: { [key in ReservationStatus]: string } = {
-		[ReservationStatus.confirmed]: 'dark:text-white',
+		[ReservationStatus.confirmed]: 'dark:text-white bg-green-600',
 		[ReservationStatus.pending]: 'dark:text-white',
-		[ReservationStatus.rejected]: 'dark:text-white'
+		[ReservationStatus.rejected]: 'dark:text-white bg-red-600'
 	};
 </script>
 
