@@ -60,21 +60,13 @@
 		<input type="hidden" name="id" value={rsv.id} />
 		{#if adminView(true)}
 			<div class="w-full flex px-8 gap-2 items-center justify-between">
-				{#if rsv.status !== ReservationStatus.rejected}
-					<button formaction="/?/adminUpdateRejected" class="bg-status-rejected px-3 py-1 w-1/2"
-						>Reject</button
-					>
-				{/if}
-				{#if rsv.status !== ReservationStatus.pending}
-					<button formaction="/?/adminUpdatePending" class="bg-status-pending px-3 py-1 w-1/2"
-						>Pending</button
-					>
-				{/if}
-				{#if rsv.status !== ReservationStatus.confirmed}
-					<button type="submit" class="bg-status-confirmed px-3 py-1 w-1/2" tabindex="6"
-						>Confirm</button
-					>
-				{/if}
+				<button formaction="/?/adminUpdateRejected" class="bg-status-rejected px-3 py-1 w-1/3"
+					>Reject</button
+				>
+				<button formaction="/?/adminUpdatePending" class="bg-status-pending px-3 py-1 w-1/3"
+					>Pending</button
+				>
+				<button type="submit" class="bg-status-confirmed px-3 py-1 w-1/3">Confirm</button>
 			</div>
 		{/if}
 	</form>
