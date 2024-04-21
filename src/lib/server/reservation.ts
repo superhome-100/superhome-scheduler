@@ -250,6 +250,16 @@ async function throwIfSubmissionIsInvalid(sub: Submission) {
 		);
 	}
 
+	if (
+		[ReservationType.autonomousPlatform, ReservationType.autonomousPlatformCBS].includes(
+			sub.resType
+		)
+	) {
+		if (sub.buddies?.length < 2) {
+			throw new ValidationError(`Booking this training type requires a minimum of 2 buddies.`);
+		}
+	}
+
 	await throwIfNoSpaceAvailable(settings, sub, allOverlappingRsvs);
 }
 
