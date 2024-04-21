@@ -4,13 +4,9 @@
 	import ResFormPool from './ResFormPool.svelte';
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
-	import { popup } from './Popup.svelte';
-	import { reservations, user, users } from '$lib/stores';
+	import { reservations } from '$lib/stores';
 	import { adminView, removeRsv } from '$lib/utils.js';
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { toast } from 'svelte-french-toast';
-	import { ReservationStatus, ReservationCategory } from '$types';
-	import { reject } from 'lodash';
 
 	export let hasForm = false;
 	export let rsv;
@@ -19,7 +15,7 @@
 
 	const { close } = getContext('simple-modal');
 
-	const adminUpdate = async ({ form, data, action, cancel }) => {
+	const adminUpdate = async ({ data, action }) => {
 		let status = action.href.includes('Confirmed')
 			? 'confirmed'
 			: action.href.includes('Rejected')
