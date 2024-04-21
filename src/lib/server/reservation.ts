@@ -276,12 +276,11 @@ function unpackSubmitForm(formData: AppFormData): Submission {
 			? ReservationStatus.pending
 			: ReservationStatus.confirmed;
 	const resType = ReservationType[formData.get('resType') as keyof typeof ReservationType];
-	const buoy =
-		resType == ReservationType.cbs
-			? buoyCBS
-			: resType == ReservationType.proSafety
-			? buoyProSafety
-			: 'auto';
+	const buoy = [ReservationType.cbs, ReservationType.competitionSetupCBS].includes(resType)
+		? buoyCBS
+		: resType == ReservationType.proSafety
+		? buoyProSafety
+		: 'auto';
 	return {
 		user: JSON.parse(formData.get('user')),
 		date: formData.get('date'),
@@ -308,7 +307,7 @@ function unpackSubmitForm(formData: AppFormData): Submission {
 }
 
 export async function submitReservation(formData: AppFormData) {
-	let sub = unpackSubmitForm(formData);
+	const sub = unpackSubmitForm(formData);
 	await throwIfSubmissionIsInvalid(sub);
 	let entries = createBuddyEntriesForSubmit(sub);
 	let records = await convertFromXataToAppType(await client.db.Reservations.create(entries));

@@ -4,10 +4,8 @@
 	import ResFormPool from './ResFormPool.svelte';
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
-	import { popup } from './Popup.svelte';
-	import { reservations, user, users } from '$lib/stores';
+	import { reservations } from '$lib/stores';
 	import { adminView, removeRsv } from '$lib/utils.js';
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { toast } from 'svelte-french-toast';
 
 	export let hasForm = false;
@@ -17,7 +15,7 @@
 
 	const { close } = getContext('simple-modal');
 
-	const adminUpdate = async ({ form, data, action, cancel }) => {
+	const adminUpdate = async ({ data, action }) => {
 		let status = action.href.includes('Confirmed')
 			? 'confirmed'
 			: action.href.includes('Rejected')
@@ -57,14 +55,14 @@
 		{/if}
 		<input type="hidden" name="id" value={rsv.id} />
 		{#if adminView(true)}
-			<div class="[&>*]:mx-auto w-full inline-flex items-center justify-between">
-				<button formaction="/?/adminUpdateRejected" class="bg-status-rejected px-3 py-1"
+			<div class="w-full flex px-8 gap-2 items-center justify-between">
+				<button formaction="/?/adminUpdateRejected" class="bg-status-rejected px-3 py-1 w-1/3"
 					>Reject</button
 				>
-				<button formaction="/?/adminUpdatePending" class="bg-status-pending px-3 py-1"
+				<button formaction="/?/adminUpdatePending" class="bg-status-pending px-3 py-1 w-1/3"
 					>Pending</button
 				>
-				<button type="submit" class="bg-status-confirmed px-3 py-1" tabindex="6">Confirm</button>
+				<button type="submit" class="bg-status-confirmed px-3 py-1 w-1/3">Confirm</button>
 			</div>
 		{/if}
 	</form>
