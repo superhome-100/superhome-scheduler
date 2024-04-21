@@ -10,6 +10,8 @@
 	import PlusIcon from '$lib/components/PlusIcon.svelte';
 	import DeleteIcon from '$lib/components/DeleteIcon.svelte';
 	import ExclamationCircle from '$lib/components/ExclamationCircle.svelte';
+	import InputLabel from './tiny_components/InputLabel.svelte';
+	import { Input } from 'flowbite-svelte';
 
 	export let rsv: Reservation | null;
 	export let date: string = rsv?.date || PanglaoDate().toString();
@@ -131,85 +133,48 @@
 		'relative ml-2 top-0 border border-solid border-bg-gray-300 ' + 'rounded text-sm';
 
 	const bdColor: { [key in ReservationStatus]: string } = {
-		[ReservationStatus.confirmed]: 'border-status-confirmed',
-		[ReservationStatus.pending]: 'border-status-pending',
-		[ReservationStatus.rejected]: 'border-status-rejected'
+		[ReservationStatus.confirmed]: 'dark:text-white bg-green-600',
+		[ReservationStatus.pending]: 'dark:text-white',
+		[ReservationStatus.rejected]: 'dark:text-white bg-red-600'
 	};
-
-	const statusStyle = (status: ReservationStatus) =>
-		'align-middle px-2 py-0 pb-1 mb-1 ml-2 w-fit ' +
-		'text-xl text-gray-500 dark:text-gray-300 ' +
-		'bg-white dark:bg-gray-500 ' +
-		'rounded-lg border ' +
-		bdColor[status] +
-		' ' +
-		'ring-1 ring-gray-500 dark:ring-gray-300';
 </script>
 
 <svelte:window on:keydown={navigateList} />
 
 <div class="row w-full">
-	<div class="column labels text-right w-[33%]">
+	<ul class="flex flex-col w-full px-8">
+		<!-- DONT REMOVE THIS, WE DONT HAVE SESSION MANAGEMENT YET -->
+		<input type="hidden" name="user" value={JSON.stringify({ id: $user.id })} />
+		<!-- yup dont remove it -->
 		{#if viewOnly}
-			<div class="form-label h-8 mb-1"><label for="formStatus">Status</label></div>
-		{/if}
-		<div class="form-label h-8 mb-0.5"><label for="formDate">Date</label></div>
-		<div class="form-label h-8 mb-0.5"><label for="formCategory">Category</label></div>
-		<slot name="categoryLabels" />
-
-		{#if showBuddyFields}
-			{#if viewOnly}
-				<div class="form-label h-8 mb-0.5"><label>Buddies</label></div>
-			{:else}
-				<div class="form-label h-8 mb-0.5">
-					<label>Add buddy</label>
-					<button
-						class="p-0"
-						type="button"
-						on:click={addBuddyField}
-						disabled={disabled || buddyFields.length == maxBuddies}
-						tabindex="1"
-					>
-						<PlusIcon svgClass="h-6 w-6" />
-					</button>
+			<InputLabel forInput="formStatus" label="Status">
+				<input type="hidden" name="status" value={status} />
+				<div
+					class={`p-1 bg-gray-600 w-full rounded-md ${
+						bdColor[rsv?.status || ReservationStatus.pending]
+					}`}
+				>
+					{rsv?.status.toUpperCase()}
 				</div>
-			{/if}
-			{#if buddyFields.length > 1}
-				{#each buddyFields.slice(1) as bf}
-					<div class="h-8 mb-0.5" />
-				{/each}
-			{/if}
+			</InputLabel>
 		{/if}
-		{#if isMyReservation(rsv) || adminView(viewOnly)}
-			<div class="form-label h-8 mb-0.5"><label for="formComments">Comments</label></div>
-		{/if}
-	</div>
-	<div class="column inputs text-left w-[67%]">
-		{#if viewOnly}
-			<div class={statusStyle(rsv.status)}>
-				{rsv.status}
-			</div>
-		{/if}
-		<div>
-			<input type="hidden" name="user" value={JSON.stringify({ id: $user.id })} />
+		<InputLabel forInput="formDate" label="Date">
 			<input type="hidden" name="date" value={date} />
-			<input type="hidden" name="category" value={category} />
-			<input type="hidden" name="status" value={status} />
-		</div>
-		<div>
 			<input
 				type="date"
 				name="date"
 				id="formDate"
-				class="w-44"
+				class="w-full"
 				min={minValidDateStr(Settings, category)}
 				max={maxValidDateStr(Settings)}
 				bind:value={date}
 				{disabled}
 			/>
-		</div>
-		<div>
+		</InputLabel>
+		<InputLabel forInput="formCategory" label="Category">
+			<input type="hidden" name="category" value={category} />
 			<select
+				class="w-full"
 				name="category"
 				id="formCategory"
 				bind:value={category}
@@ -219,57 +184,71 @@
 				<option value={ReservationCategory.openwater}>Open Water</option>
 				<option value={ReservationCategory.classroom}>Classroom</option>
 			</select>
-		</div>
-		<slot name="categoryInputs" />
+		</InputLabel>
+		<slot name="inputExtension" />
 		{#if showBuddyFields}
-			{#if buddyFields.length == 0}
-				<div class="h-8 mb-0.5" />
-			{:else}
-				{#each buddyFields as bf (bf.id)}
-					<input type="hidden" value={bf.userId} name="buddy{bf.id}_id" />
-					<div class="relative table">
-						<div class="table-cell align-middle">
-							<input
-								id={'buddy' + bf.id + '-input'}
-								type="text"
-								class="w-36 xs:w-44"
-								autocomplete="off"
-								name="buddy{bf.id}"
-								bind:value={bf.name}
-								on:input={matchUser}
-								on:focus={() => (currentBF = bf)}
-								use:focus
-								{disabled}
-								tabindex="2"
-							/>
-							{#if !viewOnly}
-								<button
-									class="dark:text-white p-0"
-									style="vertical-align:inherit"
-									type="button"
-									on:click={() => removeBuddyField(bf)}
-									{disabled}
-									tabindex="3"><DeleteIcon svgStyle={'h-6 w-6'} /></button
-								>
+			<InputLabel forInput="forBuddies" label="Buddies">
+				<div class="flex flex-col w-full px-1">
+					<ul class="flex flex-col">
+						{#each buddyFields as bf (bf.id)}
+							<input type="hidden" value={bf.userId} name="buddy{bf.id}_id" />
+							<div class="relative table">
+								<div class="flex">
+									<input
+										id={'buddy' + bf.id + '-input'}
+										type="text"
+										class="w-[90%]"
+										autocomplete="off"
+										name="buddy{bf.id}"
+										bind:value={bf.name}
+										on:input={matchUser}
+										on:focus={() => (currentBF = bf)}
+										use:focus
+										{disabled}
+										tabindex="2"
+									/>
+									{#if !viewOnly}
+										<button
+											class="dark:text-white p-0"
+											style="vertical-align:inherit"
+											type="button"
+											on:click={() => removeBuddyField(bf)}
+											{disabled}
+										>
+											<DeleteIcon svgStyle={'h-6 w-6'} />
+										</button>
+									{/if}
+								</div>
+							</div>
+							{#if bf?.matches && bf?.matches?.length > 0}
+								<ul class={autocompUlStyle}>
+									{#each bf.matches as m, i}
+										<BuddyMatch
+											itemLabel={m.nickname}
+											highlighted={i === hiLiteIndex}
+											on:click={() => setInputVal(m)}
+										/>
+									{/each}
+								</ul>
 							{/if}
-						</div>
-					</div>
-					{#if bf?.matches && bf?.matches?.length > 0}
-						<ul class={autocompUlStyle}>
-							{#each bf.matches as m, i}
-								<BuddyMatch
-									itemLabel={m.nickname}
-									highlighted={i === hiLiteIndex}
-									on:click={() => setInputVal(m)}
-								/>
-							{/each}
-						</ul>
+						{/each}
+					</ul>
+					{#if !viewOnly}
+						<button
+							class="flex dark:text-white w-full max-w-[80px]"
+							type="button"
+							on:click={addBuddyField}
+							disabled={disabled || buddyFields.length == maxBuddies}
+						>
+							ADD
+							<PlusIcon svgClass="h-6 w-6" />
+						</button>
 					{/if}
-				{/each}
-			{/if}
+				</div>
+			</InputLabel>
 		{/if}
 		{#if isMyReservation(rsv) || adminView(viewOnly)}
-			<div>
+			<InputLabel forInput="formComments" label="Comment">
 				<textarea
 					id="formComments"
 					name="comments"
@@ -278,9 +257,9 @@
 					tabindex="4"
 					{disabled}
 				/>
-			</div>
+			</InputLabel>
 		{/if}
-	</div>
+	</ul>
 </div>
 <div class="row w-full">
 	<div class="column w-full">
