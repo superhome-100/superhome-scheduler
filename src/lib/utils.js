@@ -47,7 +47,7 @@ export function cleanUpFormDataBuddyFields(formData) {
 	formData.delete('numBuddies');
 	let buddies = [];
 	for (let i = 0; i < numBuddies; i++) {
-		if (resType === 'autonomous') {
+		if (['autonomous', 'autonomousPlatform', 'autonomousPlatformCBS'].includes(resType)) {
 			let id = formData.get('buddy' + i + '_id');
 			if (id !== 'undefined') {
 				buddies.push(id);
