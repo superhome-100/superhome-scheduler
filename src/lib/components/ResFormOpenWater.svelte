@@ -111,11 +111,11 @@
 				class="w-full"
 			>
 				<option value="course">Course/Coaching</option>
-				<option value="autonomous">Autonomous on Buoy</option>
-				<option value="autonomousPlatform">Autonomous on Platform</option>
-				<option value="autonomousPlatformCBS">Autonomous on Platform+CBS</option>
+				<option value="autonomous">Autonomous on Buoy (0-89m)</option>
+				<option value="autonomousPlatform">Autonomous on Platform (0-99m)</option>
+				<option value="autonomousPlatformCBS">Autonomous on Platform+CBS (90-130m)</option>
 				{#if date && Settings.getCbsAvailable(date)}
-					<option value="competitionSetupCBS">Competition-Setup Training</option>
+					<option value="competitionSetupCBS">Competition-Setup Training (0-130m)</option>
 				{/if}
 			</select>
 			{#if viewOnly || resTypeModDisabled(rsv)}
