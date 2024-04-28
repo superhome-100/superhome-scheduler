@@ -11,7 +11,6 @@
 	import DeleteIcon from '$lib/components/DeleteIcon.svelte';
 	import ExclamationCircle from '$lib/components/ExclamationCircle.svelte';
 	import InputLabel from './tiny_components/InputLabel.svelte';
-	import { Input } from 'flowbite-svelte';
 
 	export let rsv: Reservation | null;
 	export let date: string = rsv?.date || PanglaoDate().toString();
@@ -137,6 +136,18 @@
 		[ReservationStatus.pending]: 'dark:text-white',
 		[ReservationStatus.rejected]: 'dark:text-white bg-red-600'
 	};
+
+	const onRemoveBuddy = (bf: BuddyData) => {
+		if (!rsv) {
+			removeBuddyField(bf);
+		} else if (
+			window.confirm(
+				"this action will delete this user's reservation after you press update, please confirm:"
+			)
+		) {
+			removeBuddyField(bf);
+		}
+	};
 </script>
 
 <svelte:window on:keydown={navigateList} />
@@ -212,7 +223,7 @@
 											class="dark:text-white p-0"
 											style="vertical-align:inherit"
 											type="button"
-											on:click={() => removeBuddyField(bf)}
+											on:click={() => onRemoveBuddy(bf)}
 											{disabled}
 										>
 											<DeleteIcon svgStyle={'h-6 w-6'} />

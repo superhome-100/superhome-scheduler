@@ -21,18 +21,16 @@
 	date = rsv?.date || (dateFn && dateFn(category)) || date;
 
 	let resType: ReservationType = rsv == null ? ReservationType.autonomous : rsv?.resType;
-	let maxDepth = rsv?.maxDepth || 1;
+	let maxDepth = rsv?.maxDepth || undefined;
 	let owTime = rsv?.owTime || 'AM';
 	let numStudents = rsv?.resType !== ReservationType.course ? 1 : rsv.numStudents;
 	let pulley = rsv?.pulley;
 	let extraBottomWeight = rsv?.extraBottomWeight || false;
 	let bottomPlate = rsv?.bottomPlate || false;
 	let largeBuoy = rsv?.largeBuoy || false;
-	let o2OnBuoy = rsv?.O2OnBuoy || false;
-	let shortSession = rsv?.shortSession || false;
 
 	function checkSubmit() {
-		$canSubmit = maxDepth > 0;
+		$canSubmit = maxDepth > 1;
 	}
 	checkSubmit();
 
@@ -61,11 +59,11 @@
 			max: 89
 		},
 		[ReservationType.autonomous]: {
-			min: 0,
+			min: 15,
 			max: 89
 		},
 		[ReservationType.autonomousPlatform]: {
-			min: 0,
+			min: 15,
 			max: 99
 		},
 		[ReservationType.autonomousPlatformCBS]: {
@@ -73,7 +71,7 @@
 			max: 130
 		},
 		[ReservationType.cbs]: {
-			min: 0,
+			min: 15,
 			max: 130
 		},
 		[ReservationType.proSafety]: {
@@ -81,7 +79,7 @@
 			max: 89
 		},
 		[ReservationType.competitionSetupCBS]: {
-			min: 0,
+			min: 15,
 			max: 130
 		}
 	};
@@ -137,7 +135,7 @@
 						(restrictModify && (resTypeModDisabled(rsv) || resType != ReservationType.autonomous))}
 					type="number"
 					id="formMaxDepth"
-					class="w-1/2 valid:border-gray-500 required:border-red-500"
+					class="w-[100px] valid:border-gray-500 required:border-red-500"
 					min={minMax[resType].min}
 					max={minMax[resType].max}
 					bind:value={maxDepth}
@@ -145,7 +143,7 @@
 					name="maxDepth"
 					required={maxDepth == undefined}
 				/>
-				<div class="w-1/2 text-sm dark:text-white">meters</div>
+				<div class="flex-1 text-sm dark:text-white text-left pl-2">meters</div>
 			</InputLabel>
 		{/if}
 		{#if resType === 'course'}

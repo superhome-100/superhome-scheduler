@@ -287,6 +287,11 @@ function createBuddyEntriesForSubmit(sub: Submission) {
 }
 
 const buoyCBS = 'CBS';
+const onCBSBuoy = [
+	ReservationType.cbs,
+	ReservationType.competitionSetupCBS,
+	ReservationType.autonomousPlatformCBS
+];
 
 function unpackSubmitForm(formData: AppFormData): Submission {
 	const category =
@@ -296,9 +301,7 @@ function unpackSubmitForm(formData: AppFormData): Submission {
 			? ReservationStatus.pending
 			: ReservationStatus.confirmed;
 	const resType = ReservationType[formData.get('resType') as keyof typeof ReservationType];
-	const buoy = ![ReservationType.cbs, ReservationType.competitionSetupCBS].includes(resType)
-		? 'auto'
-		: buoyCBS;
+	const buoy = !onCBSBuoy.includes(resType) ? 'auto' : buoyCBS;
 
 	return {
 		user: JSON.parse(formData.get('user')),
