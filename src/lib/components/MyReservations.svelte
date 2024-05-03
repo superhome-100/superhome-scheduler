@@ -134,7 +134,7 @@
 			return [{ rsvs: sorted }];
 		} else {
 			return sorted.reduce((grps, rsv) => {
-				const month = dayjs(rsv.date).format('MMMM');
+				const month = dayjs(rsv.date).format('MMMM-YYYY');
 				const monthGroup = grps.find((g) => g.month === month);
 				if (monthGroup) {
 					monthGroup.rsvs.push(rsv);
