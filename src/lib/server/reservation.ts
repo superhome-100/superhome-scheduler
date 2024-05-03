@@ -293,6 +293,8 @@ const onCBSBuoy = [
 	ReservationType.autonomousPlatformCBS
 ];
 
+const getBuoy = (resType: ReservationType) => (onCBSBuoy.includes(resType) ? buoyCBS : 'auto');
+
 function unpackSubmitForm(formData: AppFormData): Submission {
 	const category =
 		ReservationCategory[formData.get('category') as keyof typeof ReservationCategory];
@@ -301,7 +303,7 @@ function unpackSubmitForm(formData: AppFormData): Submission {
 			? ReservationStatus.pending
 			: ReservationStatus.confirmed;
 	const resType = ReservationType[formData.get('resType') as keyof typeof ReservationType];
-	const buoy = !onCBSBuoy.includes(resType) ? 'auto' : buoyCBS;
+	const buoy = getBuoy(resType);
 
 	return {
 		user: JSON.parse(formData.get('user')),
@@ -427,10 +429,10 @@ async function unpackModifyForm(formData: AppFormData, orig: Reservation): Promi
 
 	const settings = await initSettings();
 	const brc = beforeResCutoff(settings, orig.date, getStartTime(settings, orig), orig.category);
-	const buoy =
-		[ReservationType.cbs, ReservationType.proSafety].includes(orig.resType) || !brc
-			? orig.buoy
-			: 'auto';
+	const resType = formData.has('resType')
+		? ReservationType[formData.get('resType') as keyof typeof ReservationType]
+		: orig.resType;
+	const buoy = getBuoy(resType);
 
 	return {
 		id: formData.get('id'),
@@ -441,9 +443,7 @@ async function unpackModifyForm(formData: AppFormData, orig: Reservation): Promi
 		owTime: formData.has('owTime')
 			? OWTime[formData.get('owTime') as keyof typeof OWTime]
 			: orig.owTime,
-		resType: formData.has('resType')
-			? ReservationType[formData.get('resType') as keyof typeof ReservationType]
-			: orig.resType,
+		resType,
 		numStudents: formData.has('numStudents')
 			? JSON.parse(formData.get('numStudents'))
 			: orig.numStudents,
