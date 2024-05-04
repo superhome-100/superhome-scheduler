@@ -2,21 +2,14 @@
 	import { goto } from '$app/navigation';
 	import { viewedDate } from '$lib/stores';
 	import { PanglaoDate } from '$lib/datetimeUtils';
-	import dayjs from 'dayjs';
 
 	export let date;
 	export let rsvs;
 	export let category;
 
-	const getSingleDayOWPath = (date) => `/single-day/ow/${dayjs(date).format('YYYY-MM-DD')}`;
-
 	function handleClick() {
 		$viewedDate = date;
-		if (category === 'openwater') {
-			goto(getSingleDayOWPath(date));
-		} else {
-			goto('/single-day/{category}');
-		}
+		goto('/single-day/{category}');
 	}
 
 	const dateStyle = (date) => {
@@ -46,7 +39,7 @@
 </script>
 
 <div class="overflow-hidden h-full">
-	<a class="no-underline" href={category === 'openwater' ? getSingleDayOWPath(date):`/single-day/${category}`}>
+	<a class="no-underline" href="/single-day/{category}">
 		<div class="h-full" on:click={handleClick} on:keypress={handleClick}>
 			<p class="flex justify-center w-6 m-auto {dateStyle(date)}">
 				{date.getDate()}
