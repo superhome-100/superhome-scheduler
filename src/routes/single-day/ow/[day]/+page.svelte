@@ -1,11 +1,11 @@
 <script>
+	import { page } from '$app/stores';
 	import { swipe } from 'svelte-gestures';
 	import { goto } from '$app/navigation';
-	import DayHourly from '$lib/components/DayHourly.svelte';
 	import DayOpenWater from '$lib/components/DayOpenWaterV2.svelte';
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
-	import { datetimeToLocalDateStr, idx2month } from '$lib/datetimeUtils';
+	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import Modal from '$lib/components/Modal.svelte';
 	import { loginState, stateLoaded, view, viewMode, viewedDate, reservations } from '$lib/stores';
 	import { Settings } from '$lib/client/settings';
@@ -13,7 +13,12 @@
 	import { toast } from 'svelte-french-toast';
 	import dayjs from 'dayjs';
 
+	import { flagOWAmAsFull, listenToDateSetting } from '$lib/firestore';
+	import { onDestroy } from 'svelte';
+
 	export let data;
+
+	console.log('test', data);
 
 	let categories = [...CATEGORIES];
 
@@ -53,19 +58,15 @@
 	$view = 'single-day';
 	$: category = data.category;
 
-	function multiDayView() {
-		goto('/multi-day/{category}');
-	}
-
 	function prevDay() {
-		let prev = new Date($viewedDate);
-		prev.setDate($viewedDate.getDate() - 1);
-		$viewedDate = prev;
+		const prev = dayjs(data.day).subtract(1, 'day');
+		$viewedDate = prev.toDate();
+		goto(`/single-day/ow/${prev.format('YYYY-MM-DD')}`);
 	}
 	function nextDay() {
-		let next = new Date($viewedDate);
-		next.setDate($viewedDate.getDate() + 1);
-		$viewedDate = next;
+		const next = dayjs(data.day).add(1, 'day');
+		$viewedDate = next.toDate();
+		goto(`/single-day/ow/${next.format('YYYY-MM-DD')}`);
 	}
 
 	function handleKeypress(e) {
@@ -80,12 +81,12 @@
 				// down arrow
 				let i = categories.indexOf(category);
 				i = (i + 1) % categories.length;
-				goto(`/single-day/${categories[i]}`);
+				goto(`/single-day/ow`);
 			} else if (e.keyCode == 38) {
 				// up arrow
 				let i = categories.indexOf(category);
 				i = (categories.length + i - 1) % categories.length;
-				goto(`/single-day/${categories[i]}`);
+				goto(`/single-day/ow`);
 			}
 		}
 	}
@@ -143,6 +144,23 @@
 	};
 	const lockBuoys = async () => toggleBuoyLock(true);
 	const unlockBuoys = async () => toggleBuoyLock(false);
+
+	let isAmFull = false;
+
+	let unsubscribe;
+	$: $page, handleRouteChange();
+
+	function handleRouteChange() {
+		if (unsubscribe) unsubscribe();
+		// Place your route change detection logic here
+		unsubscribe = listenToDateSetting($page.params.day, (setting) => {
+			isAmFull = !!setting.ow_am_full;
+		});
+	}
+
+	onDestroy(() => {
+		if (unsubscribe) unsubscribe();
+	});
 </script>
 
 <svelte:window on:keydown={handleKeypress} />
@@ -151,13 +169,17 @@
 	<div class="[&>*]:mx-auto flex items-center justify-between">
 		<div class="dropdown h-8 mb-4">
 			<label tabindex="0" class="border border-gray-200 dark:border-gray-700 btn btn-fsh-dropdown"
-				>{category}</label
+				>Openwater</label
 			>
+			<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 			<ul tabindex="0" class="dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit">
 				{#each categories as cat}
 					{#if cat !== category}
 						<li>
-							<a class="text-xl active:bg-gray-300" href="/single-day/{cat}">
+							<a
+								class="text-xl active:bg-gray-300"
+								href={cat === 'openwater' ? `/single-day/ow/${data.day}` : `/single-day/{cat}`}
+							>
 								{cat}
 							</a>
 						</li>
@@ -173,8 +195,7 @@
 				<Chevron direction="right" svgClass="h-8 w-8" />
 			</span>
 			<span class="text-2xl ml-2">
-				{idx2month[$viewedDate.getMonth()]}
-				{$viewedDate.getDate()}
+				{dayjs(data.day).format('MMMM DD, YYYY')}
 			</span>
 		</div>
 		<span class="mr-2">
@@ -195,8 +216,8 @@
 			<span><Chevron direction="left" /></span>
 			<span class="xs:text-xl pb-1 whitespace-nowrap">month view</span>
 		</a>
-		{#if $viewMode === 'admin' && category === 'openwater'}
-			<span>
+		{#if $viewMode === 'admin'}
+			<div class="flex gap-2">
 				<button
 					on:click={lockBuoys}
 					class="{highlightButton(
@@ -215,7 +236,15 @@
 				>
 					Unlock
 				</button>
-			</span>
+				<button
+					class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
+					on:click={() => {
+						flagOWAmAsFull(new Date(data.day), !isAmFull);
+					}}
+				>
+					mark morning as {isAmFull ? 'not' : ''} full
+				</button>
+			</div>
 		{/if}
 	</div>
 	<br />
@@ -224,20 +253,8 @@
 		use:swipe={{ timeframe: 300, minSwipeDistance: 10, touchAction: 'pan-y' }}
 		on:swipe={swipeHandler}
 	>
-		<!-- // TODO: break apart this should be on separate pages 
-			ie: /openwater/yyyy/mm/dd 
-				/pool/yyyy/mm/dd
-				/classroom/yyyy/mm/dd
-			move ow first
-		-->
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			{#if category === 'pool'}
-				<DayHourly {category} resInfo={resInfo()} />
-			{:else if category === 'classroom'}
-				<DayHourly {category} resInfo={resInfo()} />
-			{:else if category == 'openwater'}
-				<DayOpenWater date={dayjs($viewedDate).format('YYYY-MM-DD')} />
-			{/if}
+			<DayOpenWater date={data.day} {isAmFull} />
 		</Modal>
 	</div>
 {/if}

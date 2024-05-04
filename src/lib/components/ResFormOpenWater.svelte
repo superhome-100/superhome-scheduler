@@ -7,6 +7,9 @@
 	import { ReservationCategory, ReservationType } from '$types';
 	import { PanglaoDate } from '$lib/datetimeUtils';
 	import InputLabel from './tiny_components/InputLabel.svelte';
+	import { onMount } from 'svelte';
+	import { listenToDateSetting } from '$lib/firestore';
+	import type { Unsubscribe } from 'firebase/firestore';
 
 	export let rsv: Reservation | null = null;
 	export let date: string = rsv?.date || PanglaoDate().toString();
@@ -83,9 +86,31 @@
 			max: 130
 		}
 	};
+
+	let unsubscribe: Unsubscribe;
+	let isAmFull = false;
+
+	const init = async () => {
+		if (unsubscribe) unsubscribe();
+		isAmFull = false;
+		unsubscribe = listenToDateSetting(new Date(date), (setting) => {
+			isAmFull = !!setting.ow_am_full;
+		});
+	};
+
+	$: date, init();
 </script>
 
-<ResFormGeneric {error} {viewOnly} {restrictModify} {showBuddyFields} bind:date bind:category {rsv}>
+<ResFormGeneric
+	{error}
+	{viewOnly}
+	{restrictModify}
+	{showBuddyFields}
+	bind:date
+	bind:category
+	{rsv}
+	extendDisabled={isAmFull && owTime === 'AM'}
+>
 	<svelte:fragment slot="inputExtension">
 		{#if adminView(viewOnly)}
 			<InputLabel label="Buoy" forInput="formBuoy">
@@ -122,11 +147,18 @@
 		</InputLabel>
 
 		<InputLabel label="Time" forInput="formOwTime">
-			<select id="formOwTime" class="w-full" {disabled} name="owTimeManual" bind:value={owTime}>
-				<option value="AM">AM</option>
-				<option value="PM">PM</option>
-			</select>
-			<input type="hidden" name="owTime" value={owTime} />
+			<div>
+				<select id="formOwTime" class="w-full" {disabled} name="owTimeManual" bind:value={owTime}>
+					<option value="AM">AM</option>
+					<option value="PM">PM</option>
+				</select>
+				<input type="hidden" name="owTime" value={owTime} />
+				{#if isAmFull && owTime === 'AM'}
+					<header class="bg-[#FF0000] text-white p-2 rounded-md">
+						Morning session is full please book in the afternoon/PM instead.
+					</header>
+				{/if}
+			</div>
 		</InputLabel>
 		{#if isMyReservation(rsv) || adminView(viewOnly)}
 			<InputLabel label="Target Depth" forInput="formMaxDepth">
