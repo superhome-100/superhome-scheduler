@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { adminComments, buoys, boatAssignments, viewMode, viewedDate } from '$lib/stores';
-	import { datetimeToLocalDateStr as dtToLDS } from '$lib/datetimeUtils';
+	import { adminComments, buoys, boatAssignments, viewMode } from '$lib/stores';
 	import { getContext, onMount } from 'svelte';
 	import AdminComment from '$lib/components/AdminComment.svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
@@ -13,6 +12,7 @@
 	import dayjs from 'dayjs';
 
 	export let date = dayjs().format('YYYY-MM-DD');
+	export let isAmFull = false;
 
 	let reservations: Reservation[] = [];
 
@@ -40,9 +40,6 @@
 			$adminComments[date] = [];
 		}
 	};
-	$: {
-		$viewedDate && loadAdminComments();
-	}
 
 	const saveAssignments = async (e) => {
 		e.target.blur();
@@ -155,7 +152,13 @@
 		{/each}
 	</div>
 {/if}
-{#if Settings.getOpenForBusiness(dtToLDS($viewedDate)) === false}
+
+{#if isAmFull}
+	<header class="bg-[#FF0000] text-white p-2 rounded-md">
+		Morning session is full please book in the afternoon instead.
+	</header>
+{/if}
+{#if Settings.getOpenForBusiness(date) === false}
 	<div class="font-semibold text-3xl text-center">Closed</div>
 {:else}
 	<section class="w-full relative block">
