@@ -1,4 +1,5 @@
 <script>
+	import { page } from '$app/stores';
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-french-toast';
 	import { enhance } from '$app/forms';
@@ -28,6 +29,12 @@
 					$reservations = [...$reservations, ...records];
 					toast.success('Reservation submitted!');
 					close();
+					if ($page.url.pathname.includes('/ow/')) {
+						setTimeout(() => {
+							// refresh page
+							location && location.reload();
+						}, 3000);
+					}
 					break;
 				case 'failure':
 					error = result.data.error;
