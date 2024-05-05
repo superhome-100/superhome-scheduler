@@ -18,8 +18,6 @@
 
 	export let data;
 
-	console.log('test', data);
-
 	let categories = [...CATEGORIES];
 
 	const getBuoyState = (date, rsvs, viewMode) => {
@@ -102,19 +100,6 @@
 			}
 		}
 	}
-
-	const resInfo = () => {
-		let dateStr = datetimeToLocalDateStr($viewedDate);
-		let resources, name;
-		if (category === 'pool') {
-			resources = Settings.getPoolLanes(dateStr);
-			name = Settings.getPoolLabel(dateStr);
-		} else if (category === 'classroom') {
-			resources = Settings.getClassrooms(dateStr);
-			name = Settings.getClassroomLabel(dateStr);
-		}
-		return { resources, name };
-	};
 
 	const toggleBuoyLock = async (lock) => {
 		const fn = async () => {
