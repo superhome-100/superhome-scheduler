@@ -11,7 +11,6 @@
 	import { Settings } from '$lib/client/settings';
 	import { CATEGORIES } from '$lib/constants.js';
 	import { toast } from 'svelte-french-toast';
-	import dayjs from 'dayjs';
 
 	export let data;
 
@@ -236,7 +235,7 @@
 			{:else if category === 'classroom'}
 				<DayHourly {category} resInfo={resInfo()} />
 			{:else if category == 'openwater'}
-				<DayOpenWater date={dayjs($viewedDate).format('YYYY-MM-DD')} />
+				<DayOpenWater />
 			{/if}
 		</Modal>
 	</div>
