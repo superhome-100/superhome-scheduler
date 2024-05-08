@@ -252,7 +252,7 @@
 					{disabled}
 					tabindex="5"
 				/>
-				<label for="formBottomPlate">bottom plate with tags</label>
+				<label for="formBottomPlate">bottom plate</label>
 			</div>
 			<div>
 				{#if disabled}
