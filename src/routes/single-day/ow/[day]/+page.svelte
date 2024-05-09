@@ -7,7 +7,7 @@
 	import Chevron from '$lib/components/Chevron.svelte';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import Modal from '$lib/components/Modal.svelte';
-	import { loginState, stateLoaded, view, viewMode, viewedDate, reservations } from '$lib/stores';
+	import { loginState, stateLoaded, view, viewMode, reservations } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants.js';
 	import { toast } from 'svelte-french-toast';
 	import dayjs from 'dayjs';
@@ -42,7 +42,7 @@
 			return null;
 		}
 	};
-	$: buoyState = getBuoyState($viewedDate, $reservations, $viewMode);
+	$: buoyState = getBuoyState(data.day, $reservations, $viewMode);
 
 	const highlightButton = (lock, buoyState) => {
 		if ((lock && buoyState === 'locked') || (!lock && buoyState === 'unlocked')) {
@@ -57,12 +57,10 @@
 
 	function prevDay() {
 		const prev = dayjs(data.day).subtract(1, 'day');
-		$viewedDate = prev.toDate();
 		goto(`/single-day/ow/${prev.format('YYYY-MM-DD')}`);
 	}
 	function nextDay() {
 		const next = dayjs(data.day).add(1, 'day');
-		$viewedDate = next.toDate();
 		goto(`/single-day/ow/${next.format('YYYY-MM-DD')}`);
 	}
 
@@ -101,13 +99,14 @@
 	}
 
 	const toggleBuoyLock = async (lock) => {
+		const day = data.day;
 		const fn = async () => {
-			let response = await fetch('/api/lockBuoyAssignments', {
+			const response = await fetch('/api/lockBuoyAssignments', {
 				method: 'POST',
 				headers: { 'Content-type': 'application/json' },
 				body: JSON.stringify({
 					lock,
-					date: datetimeToLocalDateStr($viewedDate)
+					date: day
 				})
 			});
 			let data = await response.json();
@@ -184,10 +183,7 @@
 		</div>
 		<span class="mr-2">
 			<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}
-				><ReservationDialog
-					{category}
-					dateFn={(cat) => datetimeToLocalDateStr($viewedDate)}
-				/></Modal
+				><ReservationDialog {category} dateFn={(cat) => data.day} /></Modal
 			>
 		</span>
 	</div>
