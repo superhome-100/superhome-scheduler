@@ -78,4 +78,8 @@
 		<p class="dark:text-white">Click link google account at the sidebar after logging in</p>
 		<button on:click={() => login('facebook')}>Login with Facebook</button>
 	{/if}
+	<a
+		class="dark:text-white underline"
+		target="_blank"
+		href="https://www.freeprivacypolicy.com/live/3cd67fba-2961-4800-b397-22e2a4eabe6e" rel="noreferrer">Privacy Policy</a>
 </div>
