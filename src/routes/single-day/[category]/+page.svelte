@@ -53,10 +53,6 @@
 	$view = 'single-day';
 	$: category = data.category;
 
-	function multiDayView() {
-		goto('/multi-day/{category}');
-	}
-
 	function prevDay() {
 		let prev = new Date($viewedDate);
 		prev.setDate($viewedDate.getDate() - 1);
@@ -143,6 +139,12 @@
 	};
 	const lockBuoys = async () => toggleBuoyLock(true);
 	const unlockBuoys = async () => toggleBuoyLock(false);
+
+	$: {
+		if (category === 'openwater') {
+			goto(`/single-day/openwater/${dayjs($viewedDate).format('YYYY-MM-DD')}`);
+		}
+	}
 </script>
 
 <svelte:window on:keydown={handleKeypress} />
@@ -157,7 +159,12 @@
 				{#each categories as cat}
 					{#if cat !== category}
 						<li>
-							<a class="text-xl active:bg-gray-300" href="/single-day/{cat}">
+							<a
+								class="text-xl active:bg-gray-300"
+								href="/single-day/{cat === 'openwater'
+									? `openwater/${dayjs($viewedDate).format('YYYY-MM-DD')}`
+									: cat}"
+							>
 								{cat}
 							</a>
 						</li>

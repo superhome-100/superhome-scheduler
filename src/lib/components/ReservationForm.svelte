@@ -29,7 +29,7 @@
 					$reservations = [...$reservations, ...records];
 					toast.success('Reservation submitted!');
 					close();
-					if ($page.url.pathname.includes('/ow/')) {
+					if ($page.url.pathname.includes('/openwater/')) {
 						setTimeout(() => {
 							// refresh page
 							location && location.reload();
