@@ -57,11 +57,11 @@
 
 	function prevDay() {
 		const prev = dayjs(data.day).subtract(1, 'day');
-		goto(`/single-day/ow/${prev.format('YYYY-MM-DD')}`);
+		goto(`/single-day/openwater/${prev.format('YYYY-MM-DD')}`);
 	}
 	function nextDay() {
 		const next = dayjs(data.day).add(1, 'day');
-		goto(`/single-day/ow/${next.format('YYYY-MM-DD')}`);
+		goto(`/single-day/openwater/${next.format('YYYY-MM-DD')}`);
 	}
 
 	function handleKeypress(e) {
@@ -161,7 +161,9 @@
 						<li>
 							<a
 								class="text-xl active:bg-gray-300"
-								href={cat === 'openwater' ? `/single-day/ow/${data.day}` : `/single-day/{cat}`}
+								href={cat === 'openwater'
+									? `/single-day/openwater/${data.day}`
+									: `/single-day/${cat}`}
 							>
 								{cat}
 							</a>
@@ -191,7 +193,7 @@
 	<div class="flex justify-between">
 		<a
 			class="inline-flex items-center border border-solid border-transparent hover:border-black rounded-lg pl-1.5 pr-4 py-0 hover:text-white hover:bg-gray-700"
-			href="/multi-day/{category}"
+			href="/multi-day/openwater"
 		>
 			<span><Chevron direction="left" /></span>
 			<span class="xs:text-xl pb-1 whitespace-nowrap">month view</span>

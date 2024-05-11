@@ -8,7 +8,7 @@
 	export let rsvs;
 	export let category;
 
-	const getSingleDayOWPath = (date) => `/single-day/ow/${dayjs(date).format('YYYY-MM-DD')}`;
+	const getSingleDayOWPath = (date) => `/single-day/openwater/${dayjs(date).format('YYYY-MM-DD')}`;
 
 	function handleClick() {
 		$viewedDate = date;
