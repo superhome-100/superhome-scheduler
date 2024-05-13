@@ -11,6 +11,7 @@
 	export let rsvs: Submission[];
 	export let hasForm: boolean;
 	export let disableModify = false;
+	export let onSubmit = () => null;
 
 	const { close } = getContext('simple-modal');
 
@@ -21,6 +22,7 @@
 
 	let tabIndex = 0;
 	const handleAdminSubmit = (event) => {
+		onSubmit();
 		let idx = rsvs.indexOf(event.detail.rsv);
 		if (idx == rsvs.length - 1) {
 			close();

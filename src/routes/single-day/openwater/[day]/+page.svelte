@@ -19,6 +19,8 @@
 
 	let categories = [...CATEGORIES];
 
+	let refreshTs = Date.now();
+
 	const getBuoyState = (date, rsvs, viewMode) => {
 		if (viewMode === 'admin') {
 			rsvs = rsvs.filter((rsv) => {
@@ -184,8 +186,15 @@
 			</span>
 		</div>
 		<span class="mr-2">
-			<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}
-				><ReservationDialog {category} dateFn={(cat) => data.day} /></Modal
+			<Modal on:open={() => (modalOpened = true)} on:close={() => {
+				modalOpened = false;
+				refreshTs = Date.now();
+			}}
+				><ReservationDialog {category} dateFn={(cat) => data.day}
+					onUpdate={() => {
+						refreshTs = Date.now();
+					}}	
+				/></Modal
 			>
 		</span>
 	</div>
@@ -236,7 +245,7 @@
 		on:swipe={swipeHandler}
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			<DayOpenWater date={data.day} {isAmFull} />
+			<DayOpenWater date={data.day} {isAmFull} refreshTs={refreshTs} />
 		</Modal>
 	</div>
 {/if}

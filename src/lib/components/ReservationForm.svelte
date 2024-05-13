@@ -1,5 +1,4 @@
 <script>
-	import { page } from '$app/stores';
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-french-toast';
 	import { enhance } from '$app/forms';
@@ -12,6 +11,7 @@
 	export let category = 'openwater';
 	export let dateFn;
 	export let hasForm = false;
+	export let onSubmit = () => null;
 
 	let error = '';
 	let date;
@@ -23,18 +23,13 @@
 		hideModal();
 
 		return async ({ result }) => {
+			onSubmit();
 			switch (result.type) {
 				case 'success':
 					let records = result.data.records;
 					$reservations = [...$reservations, ...records];
 					toast.success('Reservation submitted!');
 					close();
-					if ($page.url.pathname.includes('/openwater/')) {
-						setTimeout(() => {
-							// refresh page
-							location && location.reload();
-						}, 3000);
-					}
 					break;
 				case 'failure':
 					error = result.data.error;
