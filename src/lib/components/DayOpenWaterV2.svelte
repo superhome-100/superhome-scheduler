@@ -13,6 +13,8 @@
 
 	export let date = dayjs().format('YYYY-MM-DD');
 	export let isAmFull = false;
+	export let refreshTs = Date.now();
+
 
 	let reservations: Reservation[] = [];
 
@@ -22,7 +24,10 @@
 		open(RsvTabs, {
 			rsvs,
 			hasForm: true,
-			disableModify: $viewMode === 'admin'
+			disableModify: $viewMode === 'admin',
+			onSubmit: () => {
+				initialize();
+			}
 		});
 	};
 
@@ -135,7 +140,7 @@
 	});
 
 	$: {
-		date && initialize();
+		(date || refreshTs) && initialize();
 	}
 </script>
 
