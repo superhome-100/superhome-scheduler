@@ -84,7 +84,7 @@ export const getUserNotifications = async () => {
 };
 
 export const getOWAdminComments = async (date: string) => {
-	const response = await fetch(`/api/openwater/${date}/admin-comments`);
+	const response = await fetch(`/api/ow/${date}/admin-comments`);
 
 	let adminComments: BuoyGroupings[] = [];
 	try {
