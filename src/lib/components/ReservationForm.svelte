@@ -11,6 +11,7 @@
 	export let category = 'openwater';
 	export let dateFn;
 	export let hasForm = false;
+	export let onSubmit = () => null;
 
 	let error = '';
 	let date;
@@ -22,6 +23,7 @@
 		hideModal();
 
 		return async ({ result }) => {
+			onSubmit();
 			switch (result.type) {
 				case 'success':
 					let records = result.data.records;

@@ -19,6 +19,7 @@
 	export let showBuddyFields = true;
 	export let restrictModify = false;
 	export let error = '';
+	export let extendDisabled = false;
 
 	let disabled = viewOnly || restrictModify;
 
@@ -295,7 +296,7 @@
 				type="submit"
 				class="bg-gray-100 disabled:text-gray-400 px-3 py-1"
 				tabindex="6"
-				disabled={!$canSubmit}
+				disabled={!$canSubmit || extendDisabled}
 				hidden={viewOnly}
 			>
 				{#if rsv}
