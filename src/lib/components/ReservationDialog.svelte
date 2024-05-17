@@ -10,6 +10,7 @@
     loaded by the time the page renders, e.g. immediately after 
     a refresh */
 	export let dateFn;
+	export let onUpdate = () => null;
 
 	const { open } = getContext('simple-modal');
 
@@ -17,7 +18,8 @@
 		open(ReservationForm, {
 			category: category,
 			dateFn: dateFn,
-			hasForm: true
+			hasForm: true,
+			onSubmit: onUpdate,
 		});
 	};
 </script>

@@ -1,7 +1,6 @@
-import type { Buoy, Reservation } from '$types';
+import type { Buoy, Reservation, ReservationCategory } from '$types';
 import type { UsersRecord, BuoyGroupings } from './server/xata.codegen';
 import { auth } from '$lib/firebase';
-
 // TODO: fix this type
 export const getBuoys = async () => {
 	const response = await fetch('/api/getBuoys');
@@ -85,7 +84,7 @@ export const getUserNotifications = async () => {
 };
 
 export const getOWAdminComments = async (date: string) => {
-	const response = await fetch(`/api/ow/${date}/admin-comments`);
+	const response = await fetch(`/api/openwater/${date}/admin-comments`);
 
 	let adminComments: BuoyGroupings[] = [];
 	try {
@@ -99,4 +98,22 @@ export const getOWAdminComments = async (date: string) => {
 		console.error('getOWAdminComments: error getting admin ow comments', error);
 	}
 	return adminComments;
+};
+
+export const getReservationsByDate = async (date: string, category: ReservationCategory) => {
+	const token = await auth.currentUser?.getIdToken();
+	const response = await fetch('/api/getReservationsByDate', {
+		method: 'POST',
+		headers: {
+			'Content-type': 'application/json',
+			Authorization: 'Bearer ' + token
+		},
+		body: JSON.stringify({ date, category })
+	});
+	let data = (await response.json()) as {
+		status: 'success' | 'error';
+		reservations?: any[];
+		error?: string;
+	};
+	return data;
 };

@@ -1,22 +1,22 @@
 <script lang="ts">
-	import {
-		adminComments,
-		buoys,
-		boatAssignments,
-		reservations,
-		viewMode,
-		viewedDate
-	} from '$lib/stores';
-	import { datetimeToLocalDateStr as dtToLDS } from '$lib/datetimeUtils';
+	import { adminComments, buoys, boatAssignments, viewMode } from '$lib/stores';
 	import { getContext, onMount } from 'svelte';
 	import AdminComment from '$lib/components/AdminComment.svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { Settings } from '$lib/client/settings';
-	import { getOWAdminComments } from '$lib/api';
-	import type { Buoy, Submission } from '$types';
+	import { getOWAdminComments, getReservationsByDate } from '$lib/api';
+	import { type Buoy, type Submission, type Reservation, ReservationCategory } from '$types';
 	import DayOpenWaterSubmissionsCard from './DayOpenWaterSubmissionsCard.svelte';
 	import { buoyDesc } from '$lib/utils';
 	import { setBuoyToReservations } from '$lib/autoAssign';
+	import dayjs from 'dayjs';
+
+	export let date = dayjs().format('YYYY-MM-DD');
+	export let isAmFull = false;
+	export let refreshTs = Date.now();
+
+
+	let reservations: Reservation[] = [];
 
 	const { open } = getContext('simple-modal');
 
@@ -24,7 +24,10 @@
 		open(RsvTabs, {
 			rsvs,
 			hasForm: true,
-			disableModify: $viewMode === 'admin'
+			disableModify: $viewMode === 'admin',
+			onSubmit: () => {
+				initialize();
+			}
 		});
 	};
 
@@ -32,7 +35,6 @@
 		open(AdminComment, { date, buoy });
 	};
 
-	$: date = dtToLDS($viewedDate);
 	$: boats = Settings.getBoats(date);
 
 	const loadAdminComments = async () => {
@@ -43,9 +45,6 @@
 			$adminComments[date] = [];
 		}
 	};
-	$: {
-		$viewedDate && loadAdminComments();
-	}
 
 	const saveAssignments = async (e) => {
 		e.target.blur();
@@ -73,9 +72,50 @@
 		}
 	};
 
-	onMount(() => {
+	$: {
 		loadAdminComments();
-	});
+		getReservationsByDate(date, ReservationCategory.openwater).then((data) => {
+			if (data.reservations) {
+				reservations = data.reservations;
+			}
+		});
+	}
+
+	const initialize = async () => {
+		loadAdminComments();
+		const data = await getReservationsByDate(date, ReservationCategory.openwater);
+		if (data.reservations) {
+			reservations = data.reservations;
+			const amReservations = setBuoyToReservations(
+				$buoys,
+				reservations.filter((r) => r.owTime === 'AM')
+			);
+			const pmReservations = setBuoyToReservations(
+				$buoys,
+				reservations.filter((r) => r.owTime === 'PM')
+			);
+			const comments = $adminComments[date] || [];
+			buoyGroupings = [...$buoys]
+				.map((v) => {
+					const amComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'AM');
+					const pmComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'PM');
+					const buoyAmReservation = amReservations.filter((r) => r._buoy === v.name);
+					return {
+						id: `group_${v.name}`,
+						buoy: v,
+						boat: $boatAssignments[date]?.[v.name!] || null,
+						amReservations: buoyAmReservation,
+						pmReservations: pmReservations.filter((r) => r._buoy === v.name),
+						amAdminComment: amComment?.comment,
+						pmAdminComment: pmComment?.comment,
+						// only AM headcount is necessary
+						headCount: getHeadCount(buoyAmReservation)
+					};
+				})
+				.sort((a, b) => +(a.boat || 0) - +(b.boat || 0))
+				.filter((v) => v.amReservations.length > 0 || v.pmReservations.length > 0);
+		}
+	};
 
 	type BuoyGrouping = {
 		id: string;
@@ -93,46 +133,15 @@
 		return rsvs.reduce((acc, rsv) => acc + (rsv.resType === 'course' ? rsv.numStudents + 1 : 1), 0);
 	};
 
-	$: {
-		// TODO: refactor looks expensive, might be an issue if there are a ton of reservations
-		// eventually todayFilter should be eliminated if its possible to just get from store reservations limited for today and of type ow only
-		const today = dtToLDS($viewedDate);
-		const todayFilter = (r: Submission) =>
-			r.date === today && r.category === 'openwater' && ['pending', 'confirmed'].includes(r.status);
-		const initialReservations = $reservations.filter(todayFilter) as Submission[];
-
-		const amReservations = setBuoyToReservations(
-			$buoys,
-			initialReservations.filter((r) => r.owTime === 'AM')
-		);
-		const pmReservations = setBuoyToReservations(
-			$buoys,
-			initialReservations.filter((r) => r.owTime === 'PM')
-		);
-
-		const comments = $adminComments[today] || [];
-		buoyGroupings = [...$buoys]
-			.map((v) => {
-				const amComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'AM');
-				const pmComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'PM');
-				const buoyAmReservation = amReservations.filter((r) => r._buoy === v.name);
-				return {
-					id: `group_${v.name}`,
-					buoy: v,
-					boat: $boatAssignments[today]?.[v.name!] || null,
-					amReservations: buoyAmReservation,
-					pmReservations: pmReservations.filter((r) => r._buoy === v.name),
-					amAdminComment: amComment?.comment,
-					pmAdminComment: pmComment?.comment,
-					// only AM headcount is necessary
-					headCount: getHeadCount(buoyAmReservation)
-				};
-			})
-			.sort((a, b) => +(a.boat || 0) - +(b.boat || 0))
-			.filter((v) => v.amReservations.length > 0 || v.pmReservations.length > 0);
-	}
-
 	$: isAdmin = $viewMode === 'admin';
+
+	onMount(() => {
+		date && initialize();
+	});
+
+	$: {
+		(date || refreshTs) && initialize();
+	}
 </script>
 
 {#if $viewMode === 'admin'}
@@ -148,7 +157,13 @@
 		{/each}
 	</div>
 {/if}
-{#if Settings.getOpenForBusiness(dtToLDS($viewedDate)) === false}
+
+{#if isAmFull}
+	<header class="bg-[#FF0000] text-white p-2 rounded-md">
+		Morning session is full please book in the afternoon instead.
+	</header>
+{/if}
+{#if Settings.getOpenForBusiness(date) === false}
 	<div class="font-semibold text-3xl text-center">Closed</div>
 {:else}
 	<section class="w-full relative block">

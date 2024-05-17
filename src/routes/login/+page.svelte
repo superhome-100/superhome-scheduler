@@ -81,5 +81,7 @@
 	<a
 		class="dark:text-white underline"
 		target="_blank"
-		href="https://www.freeprivacypolicy.com/live/3cd67fba-2961-4800-b397-22e2a4eabe6e" rel="noreferrer">Privacy Policy</a>
+		href="https://www.freeprivacypolicy.com/live/3cd67fba-2961-4800-b397-22e2a4eabe6e"
+		rel="noreferrer">Privacy Policy</a
+	>
 </div>
