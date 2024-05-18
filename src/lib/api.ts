@@ -40,6 +40,20 @@ export const getBoatAssignments = async () => {
 	return data;
 };
 
+export const getBoatAssignmentsByDate = async (date: string) => {
+	const response = await fetch(`/api/ow/${date}/boat-assignments`);
+
+	const data = (await response.json()) as {
+		status: 'success' | 'error';
+		assignments?: {
+			[key: string]: any;
+		};
+		error?: string;
+	};
+
+	return data;
+};
+
 export const getUserPastReservations = async (maxDateStr: string) => {
 	const token = await auth.currentUser?.getIdToken();
 	const response = await fetch('/api/getUserPastReservations', {
@@ -84,7 +98,7 @@ export const getUserNotifications = async () => {
 };
 
 export const getOWAdminComments = async (date: string) => {
-	const response = await fetch(`/api/openwater/${date}/admin-comments`);
+	const response = await fetch(`/api/ow/${date}/admin-comments`);
 
 	let adminComments: BuoyGroupings[] = [];
 	try {

@@ -27,3 +27,30 @@ export const viewedMonth = writable<Date>(new Date());
 export const viewMode = writable<string>('normal');
 export const stateLoaded = writable<boolean>(false);
 export const adminComments = writable<{ [date: string]: BuoyGroupings[] }>({});
+
+// used for triggering refresh of data
+interface UpdateStates {
+	adminComments: number;
+	buoy: number;
+	reservations: number;
+	boat: number;
+}
+export const owUpdateStates = writable<Record<string, UpdateStates>>({});
+
+export const updateOWState = (
+	date: string,
+	prop: 'adminComments' | 'buoy' | 'reservations' | 'boat'
+) => {
+	owUpdateStates.update((states) => {
+		if (!states[date]) {
+			states[date] = {
+				adminComments: 0,
+				buoy: 0,
+				reservations: 0,
+				boat: 0
+			};
+		}
+		states[date][prop]++;
+		return states;
+	});
+};

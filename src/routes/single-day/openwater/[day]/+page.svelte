@@ -186,14 +186,18 @@
 			</span>
 		</div>
 		<span class="mr-2">
-			<Modal on:open={() => (modalOpened = true)} on:close={() => {
-				modalOpened = false;
-				refreshTs = Date.now();
-			}}
-				><ReservationDialog {category} dateFn={(cat) => data.day}
+			<Modal
+				on:open={() => (modalOpened = true)}
+				on:close={() => {
+					modalOpened = false;
+					refreshTs = Date.now();
+				}}
+				><ReservationDialog
+					{category}
+					dateFn={(cat) => data.day}
 					onUpdate={() => {
 						refreshTs = Date.now();
-					}}	
+					}}
 				/></Modal
 			>
 		</span>
@@ -245,7 +249,7 @@
 		on:swipe={swipeHandler}
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			<DayOpenWater date={data.day} {isAmFull} refreshTs={refreshTs} />
+			<DayOpenWater date={data.day} {isAmFull} {refreshTs} />
 		</Modal>
 	</div>
 {/if}
