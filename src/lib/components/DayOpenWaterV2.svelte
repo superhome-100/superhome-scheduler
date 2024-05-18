@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { adminComments, buoys, boatAssignments, viewMode } from '$lib/stores';
+	import { adminComments, buoys, viewMode, owUpdateStates } from '$lib/stores';
 	import { getContext, onMount } from 'svelte';
 	import AdminComment from '$lib/components/AdminComment.svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { Settings } from '$lib/client/settings';
-	import { getOWAdminComments, getReservationsByDate } from '$lib/api';
+	import { getOWAdminComments, getReservationsByDate, getBoatAssignmentsByDate } from '$lib/api';
 	import { type Buoy, type Submission, type Reservation, ReservationCategory } from '$types';
 	import DayOpenWaterSubmissionsCard from './DayOpenWaterSubmissionsCard.svelte';
 	import { buoyDesc } from '$lib/utils';
@@ -15,8 +15,15 @@
 	export let isAmFull = false;
 	export let refreshTs = Date.now();
 
+	// local ts detect if timestamp was updated
+	let isLoading = false;
+	let adminCommentsLastUpdate = 0;
+	let reservationsLastUpdate = 0;
 
 	let reservations: Reservation[] = [];
+	let boatAssignments: {
+		[buoyId: string]: string | null;
+	} = {};
 
 	const { open } = getContext('simple-modal');
 
@@ -46,6 +53,20 @@
 		}
 	};
 
+	const loadReservations = async () => {
+		const data = await getReservationsByDate(date, ReservationCategory.openwater);
+		if (data.reservations) {
+			reservations = data.reservations;
+		}
+	};
+
+	const loadBoatAssignments = async () => {
+		const res = await getBoatAssignmentsByDate(date);
+		if (res.status === 'success') {
+			boatAssignments = res.assignments || {};
+		}
+	};
+
 	const saveAssignments = async (e) => {
 		e.target.blur();
 		let buoy = e.target.id.split('_')[0];
@@ -53,39 +74,35 @@
 		if (boat === 'null') {
 			boat = null;
 		}
-		if ($boatAssignments[date] == null) {
-			$boatAssignments[date] = {};
-		}
 
-		$boatAssignments[date][buoy] = boat;
+		const assignments = {
+			...boatAssignments,
+			[buoy]: boat
+		};
 
 		let response = await fetch('/api/assignBuoysToBoats', {
 			method: 'POST',
 			headers: { 'Content-type': 'application/json' },
-			body: JSON.stringify({ date, assignments: $boatAssignments[date] })
+			body: JSON.stringify({ date, assignments })
 		});
 		let data = await response.json();
 		if (data.status === 'success') {
-			console.log('succesful boat buoy assignment update');
-			$boatAssignments[date] = JSON.parse(data.record.assignments);
-			$boatAssignments = { ...$boatAssignments };
+			boatAssignments = JSON.parse(data.record.assignments);
 		}
+		initialize();
 	};
 
-	$: {
-		loadAdminComments();
-		getReservationsByDate(date, ReservationCategory.openwater).then((data) => {
-			if (data.reservations) {
-				reservations = data.reservations;
-			}
-		});
-	}
-
+	const refreshAll = async () => {
+		adminCommentsLastUpdate = 0;
+		reservationsLastUpdate = 0;
+		isLoading = true;
+		await Promise.all([loadAdminComments(), loadReservations(), loadBoatAssignments()]);
+		initialize();
+		isLoading = false;
+	};
 	const initialize = async () => {
-		loadAdminComments();
-		const data = await getReservationsByDate(date, ReservationCategory.openwater);
-		if (data.reservations) {
-			reservations = data.reservations;
+		isLoading = true;
+		if (reservations) {
 			const amReservations = setBuoyToReservations(
 				$buoys,
 				reservations.filter((r) => r.owTime === 'AM')
@@ -103,7 +120,7 @@
 					return {
 						id: `group_${v.name}`,
 						buoy: v,
-						boat: $boatAssignments[date]?.[v.name!] || null,
+						boat: boatAssignments?.[v.name!] || null,
 						amReservations: buoyAmReservation,
 						pmReservations: pmReservations.filter((r) => r._buoy === v.name),
 						amAdminComment: amComment?.comment,
@@ -115,6 +132,7 @@
 				.sort((a, b) => +(a.boat || 0) - +(b.boat || 0))
 				.filter((v) => v.amReservations.length > 0 || v.pmReservations.length > 0);
 		}
+		isLoading = false;
 	};
 
 	type BuoyGrouping = {
@@ -135,13 +153,30 @@
 
 	$: isAdmin = $viewMode === 'admin';
 
-	onMount(() => {
-		date && initialize();
+	onMount(async () => {
+		if (date) {
+			await refreshAll();
+		}
 	});
 
 	$: {
-		(date || refreshTs) && initialize();
+		(date || refreshTs) && refreshAll();
 	}
+
+	owUpdateStates.subscribe(async (states) => {
+		isLoading = true;
+		const updates: Promise<void>[] = [];
+		if (states[date]?.adminComments !== adminCommentsLastUpdate) {
+			adminCommentsLastUpdate = states[date]?.adminComments || 0;
+			updates.push(loadAdminComments());
+		}
+		if (states[date]?.reservations !== reservationsLastUpdate) {
+			reservationsLastUpdate = states[date]?.reservations || 0;
+			updates.push(loadReservations());
+		}
+		await Promise.all(updates);
+		initialize();
+	});
 </script>
 
 {#if $viewMode === 'admin'}
@@ -157,7 +192,13 @@
 		{/each}
 	</div>
 {/if}
-
+{#if isLoading}
+	<div class="w-full">
+		<div class="h-1.5 w-full bg-pink-100 overflow-hidden">
+			<div class="progress w-full h-full bg-pink-500 left-right" />
+		</div>
+	</div>
+{/if}
 {#if isAmFull}
 	<header class="bg-[#FF0000] text-white p-2 rounded-md">
 		Morning session is full please book in the afternoon instead.
@@ -234,3 +275,24 @@
 		</ul>
 	</section>
 {/if}
+
+<style>
+	.progress {
+		animation: progress 1s infinite linear;
+	}
+
+	.left-right {
+		transform-origin: 0% 50%;
+	}
+	@keyframes progress {
+		0% {
+			transform: translateX(0) scaleX(0);
+		}
+		40% {
+			transform: translateX(0) scaleX(0.4);
+		}
+		100% {
+			transform: translateX(100%) scaleX(0.5);
+		}
+	}
+</style>

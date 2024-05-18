@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { adminComments } from '$lib/stores';
+	import { adminComments, updateOWState } from '$lib/stores';
 	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import { OWTime } from '$types';
 	import { enhance } from '$app/forms';
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-french-toast';
+	import type { BuoyGroupings } from '$lib/server/xata.codegen';
 
 	export let date: string;
 	export let buoy: string;
@@ -15,7 +16,7 @@
 		date: string,
 		buoy: string,
 		owTime: string,
-		adminComments: string
+		adminComments: Record<string, BuoyGroupings[]>
 	) => {
 		if (adminComments[date]) {
 			for (let ac of adminComments[date]) {
@@ -46,6 +47,8 @@
 						$adminComments[date].push(acRec);
 					}
 					$adminComments = { ...$adminComments };
+
+					updateOWState(date, 'adminComments');
 					break;
 				default:
 					console.error(result);

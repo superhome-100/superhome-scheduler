@@ -4,7 +4,7 @@
 	import ResFormPool from './ResFormPool.svelte';
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
-	import { reservations } from '$lib/stores';
+	import { reservations, updateOWState } from '$lib/stores';
 	import { adminView, removeRsv } from '$lib/utils.js';
 	import { toast } from 'svelte-french-toast';
 
@@ -33,6 +33,7 @@
 					let updated = result.data.record;
 					removeRsv(rsv.id);
 					$reservations = [...$reservations, updated];
+					updateOWState(rsv.date, 'reservations');
 					toast.success('Reservation updated!');
 					break;
 				default:

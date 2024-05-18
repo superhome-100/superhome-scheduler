@@ -19,7 +19,7 @@
 			category: category,
 			dateFn: dateFn,
 			hasForm: true,
-			onSubmit: onUpdate,
+			onSubmit: onUpdate
 		});
 	};
 </script>
