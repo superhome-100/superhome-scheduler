@@ -1,53 +1,33 @@
-<script>
+<script lang="ts">
 	import { page } from '$app/stores';
 	import { swipe } from 'svelte-gestures';
 	import { goto } from '$app/navigation';
 	import DayOpenWater from '$lib/components/DayOpenWaterV2.svelte';
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
 	import Modal from '$lib/components/Modal.svelte';
-	import { loginState, stateLoaded, view, viewMode, reservations } from '$lib/stores';
+	import { loginState, stateLoaded, view, viewMode } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants.js';
 	import { toast } from 'svelte-french-toast';
 	import dayjs from 'dayjs';
+	import type { Reservation } from '$types';
 
 	import { flagOWAmAsFull, listenToDateSetting } from '$lib/firestore';
 	import { onDestroy } from 'svelte';
 
 	export let data;
 
+	const category = 'openwater';
+
 	let categories = [...CATEGORIES];
 
 	let refreshTs = Date.now();
+	let reservations: Reservation[] = [];
 
-	const getBuoyState = (date, rsvs, viewMode) => {
-		if (viewMode === 'admin') {
-			rsvs = rsvs.filter((rsv) => {
-				return (
-					rsv.date === datetimeToLocalDateStr(date) &&
-					rsv.category === 'openwater' &&
-					['pending', 'confirmed'].includes(rsv.status)
-				);
-			});
-			let auto = true;
-			let notAuto = true;
-			for (let rsv of rsvs) {
-				if (rsv.buoy === 'auto') {
-					notAuto = false;
-				} else {
-					auto = false;
-				}
-			}
-			return auto ? 'unlocked' : notAuto ? 'locked' : 'mixed';
-		} else {
-			return null;
-		}
-	};
-	$: buoyState = getBuoyState(data.day, $reservations, $viewMode);
+	$: buoyState = reservations.every((rsv) => rsv.buoy === 'auto') ? 'unlocked' : 'locked';
 
-	const highlightButton = (lock, buoyState) => {
-		if ((lock && buoyState === 'locked') || (!lock && buoyState === 'unlocked')) {
+	const highlightButton = (active: boolean): string => {
+		if (active) {
 			return 'bg-openwater-bg-to text-white';
 		} else {
 			return 'bg-root-bg-light dark:bg-root-bg-dark';
@@ -55,7 +35,6 @@
 	};
 
 	$view = 'single-day';
-	$: category = data.category;
 
 	function prevDay() {
 		const prev = dayjs(data.day).subtract(1, 'day');
@@ -66,31 +45,9 @@
 		goto(`/single-day/openwater/${next.format('YYYY-MM-DD')}`);
 	}
 
-	function handleKeypress(e) {
-		if (!modalOpened) {
-			if (e.keyCode == 37) {
-				// left arrow key
-				prevDay();
-			} else if (e.keyCode == 39) {
-				// right arrow key
-				nextDay();
-			} else if (e.keyCode == 40) {
-				// down arrow
-				let i = categories.indexOf(category);
-				i = (i + 1) % categories.length;
-				goto(`/single-day/ow`);
-			} else if (e.keyCode == 38) {
-				// up arrow
-				let i = categories.indexOf(category);
-				i = (categories.length + i - 1) % categories.length;
-				goto(`/single-day/ow`);
-			}
-		}
-	}
-
 	let modalOpened = false;
 
-	function swipeHandler(event) {
+	function swipeHandler(event: any) {
 		if (!modalOpened) {
 			if (event.detail.direction === 'left') {
 				nextDay();
@@ -100,7 +57,7 @@
 		}
 	}
 
-	const toggleBuoyLock = async (lock) => {
+	const toggleBuoyLock = async (lock: boolean) => {
 		const day = data.day;
 		const fn = async () => {
 			const response = await fetch('/api/lockBuoyAssignments', {
@@ -113,16 +70,15 @@
 			});
 			let data = await response.json();
 			if (data.status === 'success') {
-				for (let rsv of data.reservations) {
-					$reservations.filter((r) => r.id === rsv.id)[0].buoy = rsv.buoy;
-				}
-				$reservations = [...$reservations];
+				refreshTs = Date.now();
+				reservations = data.reservations;
 				return Promise.resolve();
 			} else {
 				console.error(data.error);
 				return Promise.reject();
 			}
 		};
+		// @ts-ignore
 		toast.promise(fn(), {
 			error: 'buoy lock failed'
 		});
@@ -132,13 +88,13 @@
 
 	let isAmFull = false;
 
-	let unsubscribe;
+	let unsubscribe: () => void;
 	$: $page, handleRouteChange();
 
 	function handleRouteChange() {
 		if (unsubscribe) unsubscribe();
 		// Place your route change detection logic here
-		unsubscribe = listenToDateSetting($page.params.day, (setting) => {
+		unsubscribe = listenToDateSetting(new Date(data.day), (setting) => {
 			isAmFull = !!setting.ow_am_full;
 		});
 	}
@@ -147,8 +103,6 @@
 		if (unsubscribe) unsubscribe();
 	});
 </script>
-
-<svelte:window on:keydown={handleKeypress} />
 
 {#if $stateLoaded && $loginState === 'in'}
 	<div class="[&>*]:mx-auto flex items-center justify-between">
@@ -194,7 +148,7 @@
 				}}
 				><ReservationDialog
 					{category}
-					dateFn={(cat) => data.day}
+					dateFn={() => data.day}
 					onUpdate={() => {
 						refreshTs = Date.now();
 					}}
@@ -216,8 +170,7 @@
 				<button
 					on:click={lockBuoys}
 					class="{highlightButton(
-						true,
-						buoyState
+						buoyState === 'locked'
 					)} px-1 py-0 font-semibold border-black dark:border-white"
 				>
 					Lock
@@ -225,8 +178,7 @@
 				<button
 					on:click={unlockBuoys}
 					class="{highlightButton(
-						false,
-						buoyState
+						buoyState === 'unlocked'
 					)} px-1 py-0 font-semibold border-black dark:border-white"
 				>
 					Unlock
@@ -249,7 +201,14 @@
 		on:swipe={swipeHandler}
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			<DayOpenWater date={data.day} {isAmFull} {refreshTs} />
+			<DayOpenWater
+				date={data.day}
+				{isAmFull}
+				{refreshTs}
+				onUpdateReservations={(rsvs) => {
+					reservations = rsvs;
+				}}
+			/>
 		</Modal>
 	</div>
 {/if}
