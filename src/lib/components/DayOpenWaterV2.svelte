@@ -15,6 +15,8 @@
 	export let isAmFull = false;
 	export let refreshTs = Date.now();
 
+	export let onUpdateReservations: (reservations: Reservation[]) => void;
+
 	// local ts detect if timestamp was updated
 	let isLoading = false;
 	let adminCommentsLastUpdate = 0;
@@ -58,6 +60,7 @@
 		if (data.reservations) {
 			reservations = data.reservations;
 		}
+		onUpdateReservations(reservations);
 	};
 
 	const loadBoatAssignments = async () => {
@@ -94,6 +97,7 @@
 
 	const refreshAll = async () => {
 		adminCommentsLastUpdate = 0;
+		reservationsLastUpdate = 0;
 		reservationsLastUpdate = 0;
 		isLoading = true;
 		await Promise.all([loadAdminComments(), loadReservations(), loadBoatAssignments()]);

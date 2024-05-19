@@ -10,7 +10,7 @@
     loaded by the time the page renders, e.g. immediately after 
     a refresh */
 	export let dateFn;
-	export let onUpdate = () => null;
+	export let onUpdate = () => {};
 
 	const { open } = getContext('simple-modal');
 
