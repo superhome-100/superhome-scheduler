@@ -1,6 +1,8 @@
-import type { Buoy, Reservation, ReservationCategory } from '$types';
+import type { Buoy, Reservation, ReservationCategory, DateReservationSummary } from '$types';
 import type { UsersRecord, BuoyGroupings } from './server/xata.codegen';
 import { auth } from '$lib/firebase';
+import axios from 'axios';
+import { getYYYYMMDD } from './datetimeUtils';
 // TODO: fix this type
 export const getBuoys = async () => {
 	const response = await fetch('/api/getBuoys');
@@ -130,4 +132,35 @@ export const getReservationsByDate = async (date: string, category: ReservationC
 		error?: string;
 	};
 	return data;
+};
+
+export const getReservationSummary = async (startDate: Date, endDate: Date) => {
+	const token = await auth.currentUser?.getIdToken();
+	try {
+		if (token) {
+			const response = await axios.get(`/api/reports/reservations`, {
+				params: {
+					startDate: getYYYYMMDD(startDate),
+					endDate: getYYYYMMDD(endDate)
+				},
+				headers: {
+					'Content-type': 'application/json',
+					Authorization: 'Bearer ' + token
+				}
+			});
+
+			let data = response.data as
+				| {
+						status: 'error';
+						error: string;
+				  }
+				| {
+						status: 'success';
+						summary: Record<string, DateReservationSummary>;
+				  };
+			return data;
+		}
+	} catch (error) {
+		console.error('getReservationSummary: error getting reservation summary', error);
+	}
 };

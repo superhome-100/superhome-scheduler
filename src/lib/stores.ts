@@ -23,7 +23,6 @@ export const user = writable<UsersRecord | null>(null);
 export const users = writable<{ [uid: string]: any }>([]);
 export const view = writable<string>('multi-day');
 export const viewedDate = writable<Date>(new Date());
-export const viewedMonth = writable<Date>(new Date());
 export const viewMode = writable<string>('normal');
 export const stateLoaded = writable<boolean>(false);
 export const adminComments = writable<{ [date: string]: BuoyGroupings[] }>({});

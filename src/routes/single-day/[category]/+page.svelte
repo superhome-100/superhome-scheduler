@@ -143,6 +143,8 @@
 	$: {
 		if (category === 'openwater') {
 			goto(`/single-day/openwater/${dayjs($viewedDate).format('YYYY-MM-DD')}`);
+		} else if (category === 'pool') {
+			goto(`/single-day/pool/${dayjs($viewedDate).format('YYYY-MM-DD')}`);
 		}
 	}
 </script>
@@ -242,8 +244,6 @@
 				<DayHourly {category} resInfo={resInfo()} />
 			{:else if category === 'classroom'}
 				<DayHourly {category} resInfo={resInfo()} />
-			{:else if category == 'openwater'}
-				<DayOpenWater date={dayjs($viewedDate).format('YYYY-MM-DD')} />
 			{/if}
 		</Modal>
 	</div>
