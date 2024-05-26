@@ -1,14 +1,22 @@
 <script lang="ts">
 	import { startTimes, endTimes } from '$lib/reservationTimes';
-	import { reservations, users, viewedDate, viewMode } from '$lib/stores';
+	import { users, viewMode } from '$lib/stores';
 	import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils';
 	import { getContext } from 'svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { badgeColor, getDaySchedule } from '$lib/utils.js';
 	import { Settings } from '$lib/client/settings';
+	import LoadingBar from './LoadingBar.svelte';
+
+	import { getReservationsByDate } from '$lib/api';
+	import { ReservationCategory } from '$types';
 
 	export let resInfo;
-	export let category;
+	export let category: 'pool' | 'classroom';
+	export let date: string;
+
+	let reservations: Reservation[] = [];
+	let isLoading = false;
 
 	const { open } = getContext('simple-modal');
 
@@ -19,8 +27,8 @@
 			disableModify: $viewMode === 'admin'
 		});
 	};
-
-	$: assignment = getDaySchedule($reservations, $viewedDate, category);
+	console.log('reservations:', reservations);
+	$: assignment = getDaySchedule(reservations, date, category);
 
 	const rowHeight = 3;
 	const blkMgn = 0.25; // dependent on tailwind margin styling
@@ -35,7 +43,7 @@
 		return sph;
 	};
 
-	$: slotDiv = slotsPerHr(datetimeToLocalDateStr($viewedDate), category);
+	$: slotDiv = slotsPerHr(datetimeToLocalDateStr(date), category);
 
 	const displayTimes = (date, category) => {
 		let dateStr = datetimeToLocalDateStr(date);
@@ -93,11 +101,29 @@
 
 	$: innerWidth = 0;
 	$: slotWidthPx = parseInt((innerWidth * 88) / resInfo.resources.length / 100);
+
+	const loadReservations = async () => {
+		isLoading = true;
+		const res = await getReservationsByDate(
+			date,
+			category === 'pool' ? ReservationCategory.pool : ReservationCategory.classroom
+		);
+		if (res.status === 'success') {
+			reservations = res.reservations || [];
+		}
+		isLoading = false;
+	};
+
+	$: {
+		date && loadReservations();
+	}
 </script>
 
 <svelte:window bind:innerWidth />
-
-{#if Settings.getOpenForBusiness(datetimeToLocalDateStr($viewedDate)) === false}
+{#if isLoading}
+	<LoadingBar />
+{/if}
+{#if Settings.getOpenForBusiness(datetimeToLocalDateStr(date)) === false}
 	<div class="font-semibold text-3xl text-center">Closed</div>
 {:else}
 	{#if assignment.status === 'error'}
@@ -107,7 +133,7 @@
 	<div class="row text-xs sm:text-base">
 		<div class="column w-[12%] m-0 text-center">
 			<div style="height: 1lh" />
-			{#each displayTimes($viewedDate, category) as t}
+			{#each displayTimes(date, category) as t}
 				<div class="font-semibold" style="height: {rowHeight}rem">{t}</div>
 			{/each}
 		</div>

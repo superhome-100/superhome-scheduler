@@ -15,6 +15,7 @@
 	import { auth } from '$lib/firebase';
 
 	import dayjs from 'dayjs';
+	import LoadingBar from '$lib/components/LoadingBar.svelte';
 
 	export let data: {
 		category: ReservationCategory;
@@ -25,6 +26,7 @@
 	$view = 'multi-day';
 
 	let now = dayjs();
+	let isLoading = false;
 
 	function getWeeksInMonth(year: number = now.year(), month: number = now.month()) {
 		const startOfMonth = dayjs().year(year).month(month).startOf('month');
@@ -92,6 +94,7 @@
 
 	const loadSummary = async () => {
 		if (monthDates.length) {
+			isLoading = true;
 			const firstWeek = monthDates[0];
 			const lastWeek = monthDates[monthDates.length - 1];
 			const data = await getReservationSummary(
@@ -104,6 +107,7 @@
 					...data.summary
 				};
 			}
+			isLoading = false;
 		}
 	};
 
@@ -116,6 +120,9 @@
 
 <svelte:window on:keydown={handleKeypress} />
 
+{#if isLoading}
+	<LoadingBar />
+{/if}
 {#if $stateLoaded && $loginState === 'in'}
 	<div class="[&>*]:mx-auto flex items-center justify-between">
 		<div class="dropdown h-8 mb-4">

@@ -3,16 +3,11 @@ import type { BuoyGroupings, UsersRecord } from './server/xata.codegen';
 
 import type { Settings, Buoy, Reservation } from '$types';
 
+import { getBuoys, getIncomingReservations } from '$lib/api';
+
 // TODO: Add specific types for each store
 export const buoys = writable<Buoy[]>([]);
 
-interface BoatAssignments {
-	[date: string]: {
-		[buoyId: string]: string | null;
-	};
-}
-
-export const boatAssignments = writable<BoatAssignments>({});
 export const canSubmit = writable<boolean>(false);
 export const loginState = writable<'pending' | 'in' | 'out'>('pending');
 export const notifications = writable<any[]>([]);
@@ -26,6 +21,8 @@ export const viewedDate = writable<Date>(new Date());
 export const viewMode = writable<string>('normal');
 export const stateLoaded = writable<boolean>(false);
 export const adminComments = writable<{ [date: string]: BuoyGroupings[] }>({});
+
+export const incomingReservations = writable<Reservation[]>([]);
 
 // used for triggering refresh of data
 interface UpdateStates {
@@ -52,4 +49,16 @@ export const updateOWState = (
 		states[date][prop]++;
 		return states;
 	});
+};
+
+export const syncBuoys = async () => {
+	const res = await getBuoys();
+	buoys.set(res.buoys);
+};
+
+export const syncMyIncomingReservations = async () => {
+	const res = await getIncomingReservations();
+	if (res.status === 'success') {
+		incomingReservations.set(res.reservations || []);
+	}
 };

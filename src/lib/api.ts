@@ -28,20 +28,6 @@ export const getSession = async () => {
 	return data;
 };
 
-export const getBoatAssignments = async () => {
-	const response = await fetch('/api/getBoatAssignments');
-
-	const data = (await response.json()) as {
-		status: 'success' | 'error';
-		assignments?: {
-			[key: string]: any;
-		};
-		error?: string;
-	};
-
-	return data;
-};
-
 export const getBoatAssignmentsByDate = async (date: string) => {
 	const response = await fetch(`/api/ow/${date}/boat-assignments`);
 
@@ -74,22 +60,36 @@ export const getUserPastReservations = async (maxDateStr: string) => {
 	return data;
 };
 
-export const getAppData = async (minDateStr: string) => {
-	const response = await fetch('/api/getAppData', {
-		method: 'POST',
-		headers: { 'Content-type': 'application/json' },
-		body: JSON.stringify({ minDateStr })
+export const getIncomingReservations = async () => {
+	const token = await auth.currentUser?.getIdToken();
+	const response = await fetch('/api/users/reservations', {
+		headers: {
+			Authorization: 'Bearer ' + token
+		}
 	});
-
 	const data = (await response.json()) as {
 		status: 'success' | 'error';
 		reservations?: Reservation[];
-		usersById?: {
-			[uid: string]: UsersRecord;
-		};
 		error?: string;
 	};
 	return data;
+};
+
+export const getUsers = async () => {
+	try {
+		const response = await fetch('/api/getUsers');
+
+		const data = (await response.json()) as {
+			status: 'success' | 'error';
+			usersById?: {
+				[uid: string]: UsersRecord;
+			};
+			error?: string;
+		};
+		return data;
+	} catch (error) {
+		console.error(error);
+	}
 };
 
 // TODO: fix types
@@ -128,7 +128,7 @@ export const getReservationsByDate = async (date: string, category: ReservationC
 	});
 	let data = (await response.json()) as {
 		status: 'success' | 'error';
-		reservations?: any[];
+		reservations?: Reservation[];
 		error?: string;
 	};
 	return data;

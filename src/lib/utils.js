@@ -4,17 +4,6 @@ import { get } from 'svelte/store';
 import { assignHourlySpaces } from './autoAssign';
 import { ReservationType } from '$types';
 
-export function removeRsv(id) {
-	let rsvs = get(reservations);
-	for (let i = 0; i < rsvs.length; i++) {
-		if (id === rsvs[i].id) {
-			rsvs.splice(i, 1);
-			reservations.set(rsvs);
-			break;
-		}
-	}
-}
-
 export function cleanUpFormDataBuddyFields(formData) {
 	let resType = formData.get('resType');
 	let numBuddies = parseInt(formData.get('numBuddies'));

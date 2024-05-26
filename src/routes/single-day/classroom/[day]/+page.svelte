@@ -18,7 +18,7 @@
 
 	export let data;
 
-	const category = 'pool';
+	const category = 'classroom';
 
 	let categories = [...CATEGORIES];
 
@@ -29,11 +29,11 @@
 
 	function prevDay() {
 		const prev = dayjs(data.day).subtract(1, 'day');
-		goto(`/single-day/pool/${prev.format('YYYY-MM-DD')}`);
+		goto(`/single-day/classroom/${prev.format('YYYY-MM-DD')}`);
 	}
 	function nextDay() {
 		const next = dayjs(data.day).add(1, 'day');
-		goto(`/single-day/pool/${next.format('YYYY-MM-DD')}`);
+		goto(`/single-day/classroom/${next.format('YYYY-MM-DD')}`);
 	}
 
 	let modalOpened = false;
@@ -66,8 +66,8 @@
 	});
 
 	const resInfo = () => {
-		const resources = Settings.getPoolLanes(data.day);
-		const name = Settings.getPoolLabel(data.day);
+		const resources = Settings.getClassrooms(data.day);
+		const name = Settings.getClassroomLabel(data.day);
 		return { resources, name };
 	};
 </script>
@@ -76,7 +76,7 @@
 	<div class="[&>*]:mx-auto flex items-center justify-between">
 		<div class="dropdown h-8 mb-4">
 			<label tabindex="0" class="border border-gray-200 dark:border-gray-700 btn btn-fsh-dropdown"
-				>Pool</label
+				>Classroom</label
 			>
 			<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 			<ul tabindex="0" class="dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit">

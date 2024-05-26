@@ -115,12 +115,7 @@
 				{#each categories as cat}
 					{#if cat !== category}
 						<li>
-							<a
-								class="text-xl active:bg-gray-300"
-								href={cat === 'openwater'
-									? `/single-day/openwater/${data.day}`
-									: `/single-day/${cat}`}
-							>
+							<a class="text-xl active:bg-gray-300" href={`/single-day/${cat}/${data.day}`}>
 								{cat}
 							</a>
 						</li>

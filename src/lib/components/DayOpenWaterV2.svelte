@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { adminComments, buoys, viewMode, owUpdateStates } from '$lib/stores';
+	import { adminComments, viewMode, owUpdateStates, buoys, syncBuoys } from '$lib/stores';
 	import { getContext, onMount } from 'svelte';
 	import AdminComment from '$lib/components/AdminComment.svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { Settings } from '$lib/client/settings';
+	import LoadingBar from '$lib/components/LoadingBar.svelte';
 	import { getOWAdminComments, getReservationsByDate, getBoatAssignmentsByDate } from '$lib/api';
 	import { type Buoy, type Submission, type Reservation, ReservationCategory } from '$types';
 	import DayOpenWaterSubmissionsCard from './DayOpenWaterSubmissionsCard.svelte';
@@ -100,13 +101,18 @@
 		reservationsLastUpdate = 0;
 		reservationsLastUpdate = 0;
 		isLoading = true;
-		await Promise.all([loadAdminComments(), loadReservations(), loadBoatAssignments()]);
+		await Promise.all([
+			loadAdminComments(),
+			loadReservations(),
+			loadBoatAssignments(),
+			syncBuoys()
+		]);
 		initialize();
 		isLoading = false;
 	};
 	const initialize = async () => {
 		isLoading = true;
-		if (reservations) {
+		if (reservations && $buoys.length) {
 			const amReservations = setBuoyToReservations(
 				$buoys,
 				reservations.filter((r) => r.owTime === 'AM')
@@ -197,11 +203,7 @@
 	</div>
 {/if}
 {#if isLoading}
-	<div class="w-full">
-		<div class="h-1.5 w-full bg-pink-100 overflow-hidden">
-			<div class="progress w-full h-full bg-pink-500 left-right" />
-		</div>
-	</div>
+	<LoadingBar />
 {/if}
 {#if isAmFull}
 	<header class="bg-[#FF0000] text-white p-2 rounded-md">
@@ -279,24 +281,3 @@
 		</ul>
 	</section>
 {/if}
-
-<style>
-	.progress {
-		animation: progress 1s infinite linear;
-	}
-
-	.left-right {
-		transform-origin: 0% 50%;
-	}
-	@keyframes progress {
-		0% {
-			transform: translateX(0) scaleX(0);
-		}
-		40% {
-			transform: translateX(0) scaleX(0.4);
-		}
-		100% {
-			transform: translateX(100%) scaleX(0.5);
-		}
-	}
-</style>
