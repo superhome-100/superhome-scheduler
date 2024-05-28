@@ -122,3 +122,13 @@ export type Setting = {
 export type Settings = {
 	[key in SettingTypes]: Setting;
 };
+
+export type DateReservationSummary = {
+	pool: number;
+	openwater: {
+		AM: number;
+		PM: number;
+		total: number;
+	};
+	classroom: number;
+};

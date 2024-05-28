@@ -2,7 +2,7 @@
 	import { datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
 	import { minuteOfDay, beforeCancelCutoff } from '$lib/reservationTimes';
 	import { timeStrToMin } from '$lib/datetimeUtils';
-	import { user, reservations } from '$lib/stores';
+	import { user } from '$lib/stores';
 	import { getContext, onMount } from 'svelte';
 	import Modal from './Modal.svelte';
 	import CancelDialog from './CancelDialog.svelte';
@@ -13,6 +13,8 @@
 	import { ReservationCategory, ReservationStatus } from '$types';
 	import dayjs from 'dayjs';
 	import { getUserPastReservations } from '$lib/api';
+
+	import { incomingReservations, syncMyIncomingReservations } from '$lib/stores';
 
 	export let resPeriod: ReservationPeriod = 'upcoming';
 
@@ -152,7 +154,7 @@
 	let loadingPastReservations = false;
 	let pastReservations: any[] = [];
 
-	$: rsvGroups = groupRsvs(resPeriod, $reservations, pastReservations);
+	$: rsvGroups = groupRsvs(resPeriod, $incomingReservations, pastReservations);
 
 	const statusTextColor = {
 		[ReservationStatus.confirmed]: 'text-status-confirmed',
@@ -171,6 +173,8 @@
 			const { userPastReservations } = await getUserPastReservations(maxDateStr);
 			pastReservations = userPastReservations || [];
 			loadingPastReservations = false;
+		} else {
+			syncMyIncomingReservations();
 		}
 	});
 </script>

@@ -22,6 +22,8 @@
 	import { logout } from '$lib/authentication';
 	import { page } from '$app/stores';
 	import { auth, loginWithGoogle, isGoogleLinked } from '$lib/firebase';
+
+	export let day = '';
 	const schedulerDoc =
 		'https://docs.google.com/document/d/1FQ828hDuuPRnQ7QWYMykSv9bT3Lmxi0amLsFyTjnyuM/edit?usp=share_link';
 
@@ -186,20 +188,20 @@
 				<SidebarDropdownWrapper isOpen={true} label="Calendars">
 					<SidebarItem
 						label="Pool"
-						href="/{$view}/pool"
+						href="/{$view}/pool/{day}"
 						{spanClass}
 						on:click={toggleSide}
 						active={activeUrl === '/' + $view + '/pool'}
 					/>
 					<SidebarItem
 						label="Open Water"
-						href="/{$view}/openwater"
+						href="/{$view}/openwater/{day}"
 						{spanClass}
 						on:click={toggleSide}
 						active={activeUrl === '/' + $view + '/openwater'}
 					/><SidebarItem
 						label="Classroom"
-						href="/{$view}/classroom"
+						href="/{$view}/classroom/{day}"
 						{spanClass}
 						on:click={toggleSide}
 						active={activeUrl === '/' + $view + '/classroom'}
