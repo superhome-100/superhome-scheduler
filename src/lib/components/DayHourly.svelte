@@ -27,7 +27,6 @@
 			disableModify: $viewMode === 'admin'
 		});
 	};
-	console.log('reservations:', reservations);
 	$: assignment = getDaySchedule(reservations, date, category);
 
 	const rowHeight = 3;

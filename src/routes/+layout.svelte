@@ -2,7 +2,7 @@
 	import '../app.postcss';
 	import _ from 'lodash';
 	import { goto } from '$app/navigation';
-	import { toast, Toaster } from 'svelte-french-toast';
+	import { Toaster } from 'svelte-french-toast';
 	import { onMount } from 'svelte';
 	import { sessionAuth } from '$lib/stores/auth';
 	import { page } from '$app/stores';
@@ -34,6 +34,7 @@
 	import { auth } from '$lib/firebase';
 
 	let isLoading = false;
+	let authLoaded = false;
 
 	async function initializeUserSessionData(setViewMode = 'admin') {
 		if ($user == null) {
@@ -85,14 +86,11 @@
 	}
 
 	onMount(() => {
-		// @ts-ignore
-		toast.promise(initApp(), {
-			loading: 'loading...',
-			error: 'Loading error'
-		});
+		authLoaded = false;
 		return auth.onIdTokenChanged(
 			async (user) => {
 				if (user) {
+					await initApp(); // TODO: remove this eventually
 					$loginState = 'in';
 					$sessionAuth = {
 						email: user.email || '',
@@ -119,9 +117,11 @@
 					$loginState = 'out';
 					goto('/login');
 				}
+				authLoaded = true;
 			},
 			(error) => {
 				console.error(error);
+				authLoaded = true;
 			}
 		);
 	});
@@ -129,11 +129,14 @@
 
 <Nprogress />
 <Sidebar day={$page.params['day'] || ''} />
-<div id="app" class="flex px-1 mx-auto w-full">
-	<main class="lg:ml-72 w-full mx-auto">
-		<slot />
-	</main>
-</div>
+
+{#if authLoaded}
+	<div id="app" class="flex px-1 mx-auto w-full">
+		<main class="lg:ml-72 w-full mx-auto">
+			<slot />
+		</main>
+	</div>
+{/if}
 
 <Toaster />
 
