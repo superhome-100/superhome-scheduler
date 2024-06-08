@@ -24,7 +24,8 @@
 	let refreshTs = Date.now();
 	let reservations: Reservation[] = [];
 
-	$: buoyState = reservations.every((rsv) => rsv.buoy === 'auto') ? 'unlocked' : 'locked';
+	$: groupsHaveBeenAssignedBuoy = reservations.every((rsv) => rsv.buoy !== 'auto');
+	$: groupsAreAutoAssigned = reservations.every((rsv) => rsv.buoy === 'auto');
 
 	const highlightButton = (active: boolean): string => {
 		if (active) {
@@ -165,7 +166,7 @@
 				<button
 					on:click={lockBuoys}
 					class="{highlightButton(
-						buoyState === 'locked'
+						groupsHaveBeenAssignedBuoy
 					)} px-1 py-0 font-semibold border-black dark:border-white"
 				>
 					Lock
@@ -173,7 +174,7 @@
 				<button
 					on:click={unlockBuoys}
 					class="{highlightButton(
-						buoyState === 'unlocked'
+						groupsAreAutoAssigned
 					)} px-1 py-0 font-semibold border-black dark:border-white"
 				>
 					Unlock
