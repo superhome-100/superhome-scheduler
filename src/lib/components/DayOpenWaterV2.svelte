@@ -36,7 +36,7 @@
 			hasForm: true,
 			disableModify: $viewMode === 'admin',
 			onSubmit: () => {
-				initialize();
+				refreshAll();
 			}
 		});
 	};

@@ -24,7 +24,10 @@
 		open(RsvTabs, {
 			rsvs: rsvs,
 			hasForm: true,
-			disableModify: $viewMode === 'admin'
+			disableModify: $viewMode === 'admin',
+			onSubmit: () => {
+				loadReservations();
+			}
 		});
 	};
 	$: assignment = getDaySchedule(reservations, date, category);

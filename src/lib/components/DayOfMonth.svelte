@@ -20,14 +20,16 @@
 			{#if summary}
 				{#if category === 'openwater' && summary.openwater.total}
 					<div
-						class="mx-auto first-of-type:mt-2 first-of-type:mb-1 flex items-center justify-center text-sm rounded-xl h-6 w-16 px-1 rsv {category}"
+						class="mx-auto first-of-type:mt-2 first-of-type:mb-1 flex items-center justify-center text-sm rounded-xl h-6 w-10 md:w-16 px-1 rsv {category}"
 					>
-						AM +{summary.openwater.AM}
+						<span class="hidden md:inline">AM</span>
+						+{summary.openwater.AM}
 					</div>
 					<div
-						class="mx-auto first-of-type:mt-2 first-of-type:mb-1 flex items-center justify-center text-sm rounded-xl h-6 w-16 px-1 rsv {category}"
+						class="mx-auto first-of-type:mt-2 first-of-type:mb-1 flex items-center justify-center text-sm rounded-xl h-6 w-10 md:w-16 px-1 rsv {category}"
 					>
-						PM +{summary.openwater.PM}
+						<span class="hidden md:inline">PM</span>
+						+{summary.openwater.PM}
 					</div>
 				{/if}
 
