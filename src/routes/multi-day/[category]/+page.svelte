@@ -1,55 +1,61 @@
-<script>
+<script lang="ts">
 	import { swipe } from 'svelte-gestures';
 	import { goto } from '$app/navigation';
-	import { monthArr } from '$lib/utils.js';
 	import DayOfMonth from '$lib/components/DayOfMonth.svelte';
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
 	import { minValidDateStr } from '$lib/reservationTimes';
-	import { idx2month } from '$lib/datetimeUtils';
-	import { view, viewedMonth, reservations, loginState, stateLoaded } from '$lib/stores';
+	import { getYYYYMMDD, idx2month } from '$lib/datetimeUtils';
+	import { view, loginState, stateLoaded } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants.js';
 	import { Settings } from '$lib/client/settings';
+	import type { ReservationCategory, DateReservationSummary } from '$types';
+	import { getReservationSummary } from '$lib/api';
+	import { auth } from '$lib/firebase';
 
-	export let data;
+	import dayjs from 'dayjs';
+	import LoadingBar from '$lib/components/LoadingBar.svelte';
+
+	export let data: {
+		category: ReservationCategory;
+	};
 
 	let categories = [...CATEGORIES];
 
 	$view = 'multi-day';
 
-	$: gCategory = data.category;
-	$: gMonth = $viewedMonth.getMonth();
-	$: gYear = $viewedMonth.getFullYear();
-	$: gMonthArr = () =>
-		monthArr(
-			gYear,
-			gMonth,
-			$reservations.filter((rsv) => rsv.category === gCategory)
-		);
+	let now = dayjs();
+	let isLoading = false;
 
-	function handleDateChange() {
-		$viewedMonth = new Date(gYear, gMonth, 1);
+	function getWeeksInMonth(year: number = now.year(), month: number = now.month()) {
+		const startOfMonth = dayjs().year(year).month(month).startOf('month');
+		const endOfMonth = startOfMonth.endOf('month');
+
+		let date = startOfMonth.startOf('week');
+		const weeks = [];
+
+		while (date <= endOfMonth) {
+			const days = Array(7)
+				.fill(0)
+				.map((_, i) => date.add(i, 'day'));
+			weeks.push(days);
+			date = date.add(1, 'week');
+		}
+
+		return weeks;
 	}
 
+	$: monthDates = getWeeksInMonth(now.get('year'), now.get('month'));
+
+	let datesSummary: Record<string, DateReservationSummary> = {};
+
 	function prevMonth() {
-		if (gMonth == 0) {
-			gYear = gYear - 1;
-			gMonth = 11;
-		} else {
-			gMonth = gMonth - 1;
-		}
-		handleDateChange();
+		now = now.subtract(1, 'month');
 	}
 
 	function nextMonth() {
-		if (gMonth == 11) {
-			gYear = gYear + 1;
-			gMonth = 0;
-		} else {
-			gMonth = gMonth + 1;
-		}
-		handleDateChange();
+		now = now.add(1, 'month');
 	}
 
 	let modalOpened = false;
@@ -64,12 +70,12 @@
 				nextMonth();
 			} else if (e.keyCode == 40) {
 				// down arrow
-				let i = categories.indexOf(gCategory);
+				let i = categories.indexOf(data.category);
 				i = (i + 1) % categories.length;
 				goto(`/multi-day/${categories[i]}`);
 			} else if (e.keyCode == 38) {
 				// up arrow
-				let i = categories.indexOf(gCategory);
+				let i = categories.indexOf(data.category);
 				i = (categories.length + i - 1) % categories.length;
 				goto(`/multi-day/${categories[i]}`);
 			}
@@ -85,28 +91,47 @@
 			}
 		}
 	}
-	const catStyle = (cat) => {
-		return cat === 'pool'
-			? 'border-pool-bg-to'
-			: cat === 'openwater'
-			? 'border-openwater-bg-to'
-			: cat === 'classroom'
-			? 'border-classroom-bg-to'
-			: undefined;
+
+	const loadSummary = async () => {
+		if (monthDates.length) {
+			isLoading = true;
+			const firstWeek = monthDates[0];
+			const lastWeek = monthDates[monthDates.length - 1];
+			const data = await getReservationSummary(
+				firstWeek[0].toDate(),
+				lastWeek[lastWeek.length - 1].toDate()
+			);
+			if (data && data.status === 'success') {
+				datesSummary = {
+					...datesSummary,
+					...data.summary
+				};
+			}
+			isLoading = false;
+		}
 	};
+
+	$: {
+		auth.authStateReady().then(() => {
+			monthDates.length && loadSummary();
+		});
+	}
 </script>
 
 <svelte:window on:keydown={handleKeypress} />
 
+{#if isLoading}
+	<LoadingBar />
+{/if}
 {#if $stateLoaded && $loginState === 'in'}
 	<div class="[&>*]:mx-auto flex items-center justify-between">
 		<div class="dropdown h-8 mb-4">
 			<label tabindex="0" class="border border-gray-200 dark:border-gray-700 btn btn-fsh-dropdown"
-				>{gCategory}</label
+				>{data.category}</label
 			>
 			<ul tabindex="0" class="dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit">
 				{#each ['pool', 'openwater', 'classroom'] as cat}
-					{#if cat !== gCategory}
+					{#if cat !== data.category}
 						<li>
 							<a class="text-xl active:bg-gray-300" href="/multi-day/{cat}">
 								{cat}
@@ -123,12 +148,12 @@
 			<span on:click={nextMonth} on:keypress={nextMonth} class="cursor-pointer">
 				<Chevron direction="right" svgClass="h-6 w-6" />
 			</span>
-			<span class="text-2xl">{idx2month[gMonth]}</span>
+			<span class="text-2xl">{idx2month[now.get('month')]}</span>
 		</div>
 		<span class="">
 			<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}
 				><ReservationDialog
-					category={gCategory}
+					category={data.category}
 					dateFn={(cat) => minValidDateStr(Settings, cat)}
 				/></Modal
 			>
@@ -151,11 +176,19 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each gMonthArr() as week}
+				{#each monthDates as week}
 					<tr>
-						{#each week as { date, rsvs }}
-							<td class="{catStyle(gCategory)} align-top h-20 xs:h-24 border border-solid">
-								<DayOfMonth {date} category={gCategory} {rsvs} />
+						{#each week as date}
+							<td
+								class={`border-${data.category}-bg-to align-top h-20 xs:h-24 border border-solid ${
+									!date.isSame(now, 'month') && 'opacity-20 border-opacity-20'
+								}`}
+							>
+								<DayOfMonth
+									date={date.toDate()}
+									category={data.category}
+									summary={datesSummary[getYYYYMMDD(date)]}
+								/>
 							</td>
 						{/each}
 					</tr><tr />

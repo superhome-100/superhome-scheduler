@@ -1,6 +1,8 @@
-import type { Buoy, Reservation, ReservationCategory } from '$types';
+import type { Buoy, Reservation, ReservationCategory, DateReservationSummary } from '$types';
 import type { UsersRecord, BuoyGroupings } from './server/xata.codegen';
 import { auth } from '$lib/firebase';
+import axios from 'axios';
+import { getYYYYMMDD } from './datetimeUtils';
 // TODO: fix this type
 export const getBuoys = async () => {
 	const response = await fetch('/api/getBuoys');
@@ -20,20 +22,6 @@ export const getSession = async () => {
 		photoURL?: string;
 		user?: UsersRecord;
 		viewMode?: string;
-		error?: string;
-	};
-
-	return data;
-};
-
-export const getBoatAssignments = async () => {
-	const response = await fetch('/api/getBoatAssignments');
-
-	const data = (await response.json()) as {
-		status: 'success' | 'error';
-		assignments?: {
-			[key: string]: any;
-		};
 		error?: string;
 	};
 
@@ -72,22 +60,36 @@ export const getUserPastReservations = async (maxDateStr: string) => {
 	return data;
 };
 
-export const getAppData = async (minDateStr: string) => {
-	const response = await fetch('/api/getAppData', {
-		method: 'POST',
-		headers: { 'Content-type': 'application/json' },
-		body: JSON.stringify({ minDateStr })
+export const getIncomingReservations = async () => {
+	const token = await auth.currentUser?.getIdToken();
+	const response = await fetch('/api/users/reservations', {
+		headers: {
+			Authorization: 'Bearer ' + token
+		}
 	});
-
 	const data = (await response.json()) as {
 		status: 'success' | 'error';
 		reservations?: Reservation[];
-		usersById?: {
-			[uid: string]: UsersRecord;
-		};
 		error?: string;
 	};
 	return data;
+};
+
+export const getUsers = async () => {
+	try {
+		const response = await fetch('/api/getUsers');
+
+		const data = (await response.json()) as {
+			status: 'success' | 'error';
+			usersById?: {
+				[uid: string]: UsersRecord;
+			};
+			error?: string;
+		};
+		return data;
+	} catch (error) {
+		console.error(error);
+	}
 };
 
 // TODO: fix types
@@ -126,8 +128,39 @@ export const getReservationsByDate = async (date: string, category: ReservationC
 	});
 	let data = (await response.json()) as {
 		status: 'success' | 'error';
-		reservations?: any[];
+		reservations?: Reservation[];
 		error?: string;
 	};
 	return data;
+};
+
+export const getReservationSummary = async (startDate: Date, endDate: Date) => {
+	const token = await auth.currentUser?.getIdToken();
+	try {
+		if (token) {
+			const response = await axios.get(`/api/reports/reservations`, {
+				params: {
+					startDate: getYYYYMMDD(startDate),
+					endDate: getYYYYMMDD(endDate)
+				},
+				headers: {
+					'Content-type': 'application/json',
+					Authorization: 'Bearer ' + token
+				}
+			});
+
+			let data = response.data as
+				| {
+						status: 'error';
+						error: string;
+				  }
+				| {
+						status: 'success';
+						summary: Record<string, DateReservationSummary>;
+				  };
+			return data;
+		}
+	} catch (error) {
+		console.error('getReservationSummary: error getting reservation summary', error);
+	}
 };

@@ -23,6 +23,7 @@ export async function POST({ request }) {
 		const reservations = await convertFromXataToAppType(rawRsvs);
 		return json({ status: 'success', reservations });
 	} catch (error) {
+		console.error('Error in getReservationsByDate', error);
 		return json({ status: 'error', error });
 	}
 }

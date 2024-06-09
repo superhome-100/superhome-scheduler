@@ -1,9 +1,8 @@
 <script>
 	import { getContext } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { users, reservations } from '$lib/stores';
+	import { syncMyIncomingReservations, users } from '$lib/stores';
 	import { toast } from 'svelte-french-toast';
-	import { removeRsv } from '$lib/utils.js';
 	import { popup } from '$lib/components/Popup.svelte';
 
 	export let rsv;
@@ -27,16 +26,7 @@
 		return async ({ result }) => {
 			switch (result.type) {
 				case 'success':
-					let records = result.data.records;
-					for (let rsv of records.modified) {
-						removeRsv(rsv.id);
-						let user = $users[rsv.user.id];
-						$reservations.push(rsv);
-					}
-					for (let rsv of records.canceled) {
-						removeRsv(rsv.id);
-					}
-					$reservations = [...$reservations];
+					await syncMyIncomingReservations();
 					toast.success('Reservation canceled');
 					break;
 				case 'failure':

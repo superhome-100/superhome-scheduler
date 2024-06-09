@@ -2,44 +2,7 @@ import { datetimeToLocalDateStr } from './datetimeUtils';
 import { reservations, user, users, viewMode } from './stores';
 import { get } from 'svelte/store';
 import { assignHourlySpaces } from './autoAssign';
-import { ReservationCategory, ReservationType } from '$types';
-
-export function monthArr(year, month, reservations) {
-	let daysInMonth = new Date(year, month + 1, 0).getDate();
-	let firstDay = new Date(year, month, 1);
-	let startDay = 1 - firstDay.getDay();
-	let rows = Math.ceil((firstDay.getDay() + daysInMonth) / 7);
-	let month_a = Array(rows)
-		.fill()
-		.map((w, w_i) =>
-			Array(7)
-				.fill()
-				.map(function (d, d_i) {
-					let idx = w_i * 7 + d_i;
-					let date = new Date(year, month, startDay + idx);
-					let dateStr = datetimeToLocalDateStr(date);
-					let dayRsvs = [];
-					for (let rsv of reservations) {
-						if (rsv.date === dateStr && rsv.status != 'rejected') {
-							dayRsvs.push(rsv);
-						}
-					}
-					return { date, rsvs: dayRsvs };
-				})
-		);
-	return month_a;
-}
-
-export function removeRsv(id) {
-	let rsvs = get(reservations);
-	for (let i = 0; i < rsvs.length; i++) {
-		if (id === rsvs[i].id) {
-			rsvs.splice(i, 1);
-			reservations.set(rsvs);
-			break;
-		}
-	}
-}
+import { ReservationType } from '$types';
 
 export function cleanUpFormDataBuddyFields(formData) {
 	let resType = formData.get('resType');

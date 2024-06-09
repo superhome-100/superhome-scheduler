@@ -5,7 +5,7 @@
 	import ResFormPool from './ResFormPool.svelte';
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
-	import { reservations } from '$lib/stores';
+	import { reservations, syncMyIncomingReservations } from '$lib/stores';
 	import { cleanUpFormDataBuddyFields } from '$lib/utils.js';
 
 	export let category = 'openwater';
@@ -28,6 +28,7 @@
 				case 'success':
 					let records = result.data.records;
 					$reservations = [...$reservations, ...records];
+					syncMyIncomingReservations();
 					toast.success('Reservation submitted!');
 					close();
 					break;

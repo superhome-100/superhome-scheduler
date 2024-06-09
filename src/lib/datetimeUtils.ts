@@ -1,4 +1,4 @@
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 
@@ -93,14 +93,6 @@ export function timeLT(timeA: string, timeB: string) {
 	return !timeGE(timeA, timeB);
 }
 
-export function toDateStr(date: { year: number; month: string; day: number }) {
-	return (
-		`${date.year}-` +
-		`${month2idx[date.month] + 1}-`.padStart(3, '0') +
-		`${date.day}`.padStart(2, '0')
-	);
-}
-
 export function isValidProSafetyCutoff(reservationDate: string) {
 	const now = dayjs().tz('Asia/Manila');
 	// TODO: get this config somewhere
@@ -111,3 +103,5 @@ export function isValidProSafetyCutoff(reservationDate: string) {
 		.set('minute', 0);
 	return now.isBefore(cutoff);
 }
+
+export const getYYYYMMDD = (date: Date | string | Dayjs) => dayjs(date).format('YYYY-MM-DD');

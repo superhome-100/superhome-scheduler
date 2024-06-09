@@ -74,7 +74,6 @@ export async function authenticateUser(data: AuthenticateUserArgs) {
 		}
 		userRecord = oldUserRecord;
 	} else {
-		console.log('doing old matching');
 		const [providerMatch, emailMatch] = await Promise.all([
 			isFacebook
 				? xata.db.Users.filter({ facebookId: data.userId }).getFirst()

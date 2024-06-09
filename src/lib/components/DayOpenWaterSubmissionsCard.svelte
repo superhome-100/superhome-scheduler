@@ -13,7 +13,7 @@
 	export let adminComment: string = '';
 
 	const curUserStyling = (rsv) => {
-		if (rsv.user.id === $user.id) {
+		if (rsv.user.id === $user?.id) {
 			return 'border border-transparent rounded bg-lime-300 text-black';
 		} else {
 			return '';
