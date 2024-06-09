@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { canSubmit, buoys, reservations } from '$lib/stores';
+	import { canSubmit, reservations, buoys } from '$lib/stores';
 	import { adminView, buoyDesc, isMyReservation, resTypeModDisabled } from '$lib/utils.js';
 	import { Settings } from '$lib/client/settings';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
@@ -7,7 +7,6 @@
 	import { ReservationCategory, ReservationType } from '$types';
 	import { PanglaoDate } from '$lib/datetimeUtils';
 	import InputLabel from './tiny_components/InputLabel.svelte';
-	import { onMount } from 'svelte';
 	import { listenToDateSetting } from '$lib/firestore';
 	import type { Unsubscribe } from 'firebase/firestore';
 

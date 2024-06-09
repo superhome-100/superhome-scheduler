@@ -1,11 +1,11 @@
 <script lang="ts">
 	import '../app.postcss';
 	import _ from 'lodash';
-	import dayjs from 'dayjs';
 	import { goto } from '$app/navigation';
-	import { toast, Toaster } from 'svelte-french-toast';
+	import { Toaster } from 'svelte-french-toast';
 	import { onMount } from 'svelte';
 	import { sessionAuth } from '$lib/stores/auth';
+	import { page } from '$app/stores';
 
 	// done move this 2 lines this has to initialize first
 	// everything above should have nothing to do with with the settings store
@@ -19,47 +19,29 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import Notification from '$lib/components/Notification.svelte';
 	import {
-		boatAssignments,
-		buoys,
 		loginState,
 		notifications,
-		reservations,
 		settings,
 		stateLoaded,
 		user,
 		users,
 		viewMode,
-		profileSrc
+		profileSrc,
+		syncBuoys
 	} from '$lib/stores';
-	import { logout, authenticateUser } from '$lib/authentication';
-	import {
-		getAppData,
-		getBoatAssignments,
-		getSession,
-		getBuoys,
-		getUserNotifications
-	} from '$lib/api';
+	import { authenticateUser } from '$lib/authentication';
+	import { getUsers, getSession, getUserNotifications } from '$lib/api';
 	import { auth } from '$lib/firebase';
 
-	let intervalId: number | undefined;
-
 	let isLoading = false;
+	let authLoaded = false;
 
 	async function initializeUserSessionData(setViewMode = 'admin') {
 		if ($user == null) {
 			$loginState = 'out';
 		} else {
 			$loginState = 'in';
-
-			const [userNotifications, reqBoatAssignments] = await Promise.all([
-				getUserNotifications(),
-				getBoatAssignments()
-			]);
-			$notifications = userNotifications;
-
-			if (reqBoatAssignments.status === 'success') {
-				$boatAssignments = reqBoatAssignments.assignments;
-			}
+			$notifications = await getUserNotifications();
 			if ($user.privileges === 'admin') {
 				$viewMode = setViewMode;
 			}
@@ -73,41 +55,29 @@
 		}
 		try {
 			isLoading = true;
+			syncBuoys();
 
-			const oneWeekAgo = dayjs().locale('en-US').subtract(7, 'day').format('YYYY-MM-DD');
-			// TODO: this is super slow
-			const [, resBuoys, resAppData] = await Promise.all([
-				getSession().then((res) => {
-					if (res.status !== 'success') {
-						$loginState = 'out';
-						throw new Error('Could not get session from database');
-					} else {
-						$user = res.user || null;
-						$profileSrc = res.photoURL || '';
-						initializeUserSessionData(res.viewMode);
+			getUsers().then((res) => {
+				try {
+					if (res.status === 'error') {
+						throw new Error(res.error);
 					}
-				}),
-				getBuoys(),
-				getAppData(oneWeekAgo)
-			]);
-			if (resBuoys.status === 'error') {
-				throw new Error('Could not get buoys from database');
-			}
-			$buoys = resBuoys.buoys;
-			if (resAppData.status === 'error') {
-				throw new Error('Could not get application data from the database');
-			}
-			$users = resAppData.usersById!;
+					$users = res.usersById!;
+				} catch (error) {
+					console.error(error);
+				}
+			});
+			getSession().then((res) => {
+				if (res.status !== 'success') {
+					$loginState = 'out';
+					throw new Error('Could not get session from database');
+				} else {
+					$user = res.user || null;
+					$profileSrc = res.photoURL || '';
+					initializeUserSessionData(res.viewMode);
+				}
+			});
 			$stateLoaded = true;
-
-			// TODO: create separate stores for OW, Pool and Classroom reservations prefilter ahead of use
-			$reservations = [...(resAppData.reservations || [])].filter(
-				(rsv) => rsv.status !== 'canceled'
-			);
-
-			if (!intervalId) {
-				intervalId = setInterval(initApp, $settings.refreshInterval.default);
-			}
 		} catch (error) {
 			console.error(error);
 		} finally {
@@ -116,23 +86,11 @@
 	}
 
 	onMount(() => {
-		// @ts-ignore
-		toast.promise(initApp(), {
-			loading: 'loading...',
-			error: 'Loading error'
-		});
-
-		return () => {
-			if (intervalId) {
-				clearInterval(intervalId);
-			}
-		};
-	});
-
-	onMount(() => {
+		authLoaded = false;
 		return auth.onIdTokenChanged(
 			async (user) => {
 				if (user) {
+					await initApp(); // TODO: remove this eventually
 					$loginState = 'in';
 					$sessionAuth = {
 						email: user.email || '',
@@ -159,21 +117,26 @@
 					$loginState = 'out';
 					goto('/login');
 				}
+				authLoaded = true;
 			},
 			(error) => {
 				console.error(error);
+				authLoaded = true;
 			}
 		);
 	});
 </script>
 
 <Nprogress />
-<Sidebar />
-<div id="app" class="flex px-1 mx-auto w-full">
-	<main class="lg:ml-72 w-full mx-auto">
-		<slot />
-	</main>
-</div>
+<Sidebar day={$page.params['day'] || ''} />
+
+{#if authLoaded}
+	<div id="app" class="flex px-1 mx-auto w-full">
+		<main class="lg:ml-72 w-full mx-auto">
+			<slot />
+		</main>
+	</div>
+{/if}
 
 <Toaster />
 

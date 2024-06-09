@@ -7,9 +7,9 @@
 	import ResFormPool from './ResFormPool.svelte';
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
-	import { users, reservations } from '$lib/stores';
+	import { syncMyIncomingReservations } from '$lib/stores';
 	import { Settings } from '$lib/client/settings';
-	import { removeRsv, cleanUpFormDataBuddyFields } from '$lib/utils.js';
+	import { cleanUpFormDataBuddyFields } from '$lib/utils.js';
 
 	export let hasForm = false;
 	export let rsv: Submission;
@@ -78,19 +78,7 @@
 			switch (result.type) {
 				case 'success':
 					records = result.data.records;
-					for (let rsv of records.modified) {
-						let user = $users[rsv.user.id];
-						removeRsv(rsv.id);
-						$reservations.push(rsv);
-					}
-					for (let rsv of records.created) {
-						let user = $users[rsv.user.id];
-						$reservations.push(rsv);
-					}
-					for (let rsv of records.canceled) {
-						removeRsv(rsv.id);
-					}
-					$reservations = [...$reservations];
+					await syncMyIncomingReservations();
 					toast.success('Reservation updated!');
 					close();
 					break;
