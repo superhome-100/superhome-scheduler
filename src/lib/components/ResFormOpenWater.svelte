@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { canSubmit, reservations, buoys } from '$lib/stores';
 	import { adminView, buoyDesc, isMyReservation, resTypeModDisabled } from '$lib/utils.js';
-	import { Settings } from '$lib/client/settings';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 	import type { Reservation } from '$types';
 	import { ReservationCategory, ReservationType } from '$types';
@@ -9,6 +8,7 @@
 	import InputLabel from './tiny_components/InputLabel.svelte';
 	import { listenToDateSetting } from '$lib/firestore';
 	import type { Unsubscribe } from 'firebase/firestore';
+	import { displayTag } from '../../lib/utils';
 
 	export let rsv: Reservation | null = null;
 	export let date: string = rsv?.date || PanglaoDate().toString();
@@ -43,16 +43,13 @@
 	].includes(resType);
 	$: sortedBuoys = $buoys.sort((a, b) => (a.maxDepth > b.maxDepth ? 1 : -1));
 
-	const buoyIsAssigned = (name: string) => {
-		return $reservations.filter(
+	const buoyIsAssignedTo = (buoyName: string, reservations: Reservation[]) => {
+		const filteredReservations = $reservations.filter(
 			(other) =>
-				other.date === rsv.date &&
-				other.category === rsv.category &&
 				other.owTime === rsv.owTime &&
-				other.buoy === name
-		).length > 0
-			? '*'
-			: '';
+				other.buoy === buoyName);
+
+		return filteredReservations.map(r => displayTag(r)).join(', ')
 	};
 
 	const minMax: Record<ReservationType, { min: number; max: number }> = {
@@ -117,7 +114,7 @@
 					<option value="auto">Auto</option>
 					{#each sortedBuoys as buoy}
 						<option value={buoy.name}
-							>{buoyIsAssigned(buoy?.name)}{buoy.name + ' - ' + buoyDesc(buoy)}</option
+							>{buoy.name + ' - ' + buoyDesc(buoy)} - [{buoyIsAssignedTo(buoy?.name, $reservations)}]</option
 						>
 					{/each}
 				</select>

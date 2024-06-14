@@ -139,7 +139,6 @@ const searchForBestOrdering = (MAX_TRIALS: number, spacesByTimes: Grid, blocks: 
 		if (failedIdx >= 0) {
 			// not possible to assign all blocks with this ordering
 			// move the unassignable block to the front of the list and try again
-			//console.log('failure', failedIdx, blocks[failedIdx]);
 			removeAssigned(spacesByTimes, blocks);
 			const blk = blocks.splice(failedIdx, 1)[0];
 			blocks = [blk, ...blocks];
@@ -157,10 +156,8 @@ const searchForBestOrdering = (MAX_TRIALS: number, spacesByTimes: Grid, blocks: 
 				return brkn;
 			}, []);
 			blocks = [...brkn, ...blocks];
-			//console.log('broken', brkn);
 			removeAssigned(spacesByTimes, blocks);
 		} else {
-			//console.log('optimal order found');
 			bestOrder = [...blocks];
 			removeAssigned(spacesByTimes, blocks);
 			break;
