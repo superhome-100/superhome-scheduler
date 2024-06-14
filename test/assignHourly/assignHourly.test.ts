@@ -15,7 +15,6 @@ const createGrid = () => {
 };
 
 const printGrid = (sByT: Grid | NGrid) => {
-	console.log();
 	for (let i = 0; i < sByT.length + 1; i++) {
 		let row = '';
 		for (let j = 0; j < sByT[0].length + 1; j++) {
@@ -43,9 +42,7 @@ const printGrid = (sByT: Grid | NGrid) => {
 			}
 			if (i > 0 && j > 0 && j < sByT[0].length) row += ',';
 		}
-		console.log(row);
 	}
-	console.log();
 };
 
 const randI = (max: number) => {
