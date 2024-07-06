@@ -253,7 +253,7 @@ async function throwIfSubmissionIsInvalid(sub: Submission) {
 	const day = dayjs(sub.date).day();
 	const competitionSetupDays = [2, 5];
 	if (
-		[ReservationType.autonomousPlatform, ReservationType.autonomousPlatformCBS].includes(
+		[ReservationType.autonomousPlatformCBS].includes(
 			sub.resType
 		)
 	) {
