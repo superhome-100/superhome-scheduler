@@ -58,7 +58,7 @@ export async function GET({ request, url }: RequestEvent) {
 			const day = summary[date];
 			if (!day) continue;
 
-			const count = (reservation.numStudents || 0) + 1;
+			const count = reservation.resType === 'course' ? (reservation.numStudents || 0) + 1 : 1;
 			if (category === 'pool') {
 				day.pool += count;
 			} else if (category === 'classroom') {
