@@ -257,19 +257,19 @@ async function throwIfSubmissionIsInvalid(sub: Submission) {
 			sub.resType
 		)
 	) {
-		if (!competitionSetupDays.includes(day)) {
-			throw new ValidationError('This training type is only available during Tuesdays and Fridays');
+		if (competitionSetupDays.includes(day)) {
+			throw new ValidationError('This training type is not available during Tuesdays and Fridays');
 		}
 		if (sub.buddies?.length < 2) {
 			throw new ValidationError(`Booking this training type requires a minimum of 2 buddies.`);
 		}
 	}
 
-	// if (ReservationType.competitionSetupCBS === sub.resType && !competitionSetupDays.includes(day)) {
-	// 	throw new ValidationError(
-	// 		'Competition setup training is available only during Tuesdays and Fridays'
-	// 	);
-	// }
+	if (ReservationType.competitionSetupCBS === sub.resType && !competitionSetupDays.includes(day)) {
+		throw new ValidationError(
+			'Competition setup training is available only during Tuesdays and Fridays'
+		);
+	}
 
 	await throwIfNoSpaceAvailable(settings, sub, allOverlappingRsvs);
 }
