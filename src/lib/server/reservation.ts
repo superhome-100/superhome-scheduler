@@ -251,25 +251,27 @@ async function throwIfSubmissionIsInvalid(sub: Submission) {
 	}
 
 	const day = dayjs(sub.date).day();
-	const competitionSetupDays = [2, 5];
+	const tuesday = 2;
+	const friday = 5;
+	const competitionSetupDays = [tuesday, friday];
 	if (
-		[ReservationType.autonomousPlatformCBS].includes(
+		[ReservationType.autonomousPlatformCBS, ReservationType.autonomousPlatform].includes(
 			sub.resType
 		)
 	) {
 		if (!competitionSetupDays.includes(day)) {
-			throw new ValidationError('This training type is only available during Tuesdays and Fridays');
+			throw new ValidationError('This training type is not available during Tuesdays and Fridays');
 		}
 		if (sub.buddies?.length < 2) {
 			throw new ValidationError(`Booking this training type requires a minimum of 2 buddies.`);
 		}
 	}
 
-	// if (ReservationType.competitionSetupCBS === sub.resType && !competitionSetupDays.includes(day)) {
-	// 	throw new ValidationError(
-	// 		'Competition setup training is available only during Tuesdays and Fridays'
-	// 	);
-	// }
+	if (ReservationType.competitionSetupCBS === sub.resType && !competitionSetupDays.includes(day)) {
+		throw new ValidationError(
+			'Competition setup training is available only during Tuesdays and Fridays'
+		);
+	}
 
 	await throwIfNoSpaceAvailable(settings, sub, allOverlappingRsvs);
 }
