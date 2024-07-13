@@ -259,7 +259,7 @@ async function throwIfSubmissionIsInvalid(sub: Submission) {
 			sub.resType
 		)
 	) {
-		if (!competitionSetupDays.includes(day)) {
+		if (competitionSetupDays.includes(day)) {
 			throw new ValidationError('This training type is not available during Tuesdays and Fridays');
 		}
 		if (sub.buddies?.length < 2) {
