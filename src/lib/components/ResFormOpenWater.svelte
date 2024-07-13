@@ -9,6 +9,7 @@
 	import { listenToDateSetting } from '$lib/firestore';
 	import type { Unsubscribe } from 'firebase/firestore';
 	import { displayTag } from '../../lib/utils';
+	import { Settings } from '$lib/client/settings';
 
 	export let rsv: Reservation | null = null;
 	export let date: string = rsv?.date || PanglaoDate().toString();
