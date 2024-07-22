@@ -490,6 +490,9 @@ export async function modifyReservation(formData: AppFormData) {
 	}
 	if (sub.resType === ReservationType.course && orig.numStudents !== sub.numStudents) {
 		modify[0].status = ReservationStatus.pending;
+		if (sub.category === ReservationCategory.pool && sub.numStudents < orig.numStudents) {
+			modify[0].status = orig.status;
+		}
 	}
 	let modrecs = await client.db.Reservations.update(modify);
 	records.modified = await convertFromXataToAppType(modrecs);
