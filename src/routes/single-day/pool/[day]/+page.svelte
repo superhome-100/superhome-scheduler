@@ -16,6 +16,8 @@
 	import { onDestroy } from 'svelte';
 	import DayHourly from '$lib/components/DayHourly.svelte';
 
+	import { getCategoryDatePath } from '$lib/url';
+
 	export let data;
 
 	const category = 'pool';
@@ -29,11 +31,11 @@
 
 	function prevDay() {
 		const prev = dayjs(data.day).subtract(1, 'day');
-		goto(`/single-day/pool/${prev.format('YYYY-MM-DD')}`);
+		goto(getCategoryDatePath('pool', prev.toDate()));
 	}
 	function nextDay() {
 		const next = dayjs(data.day).add(1, 'day');
-		goto(`/single-day/pool/${next.format('YYYY-MM-DD')}`);
+		goto(getCategoryDatePath('pool', next.toDate()));
 	}
 
 	let modalOpened = false;
@@ -83,7 +85,7 @@
 				{#each categories as cat}
 					{#if cat !== category}
 						<li>
-							<a class="text-xl active:bg-gray-300" href={`/single-day/${cat}/${data.day}`}>
+							<a class="text-xl active:bg-gray-300" href={getCategoryDatePath(cat, data.day)}>
 								{cat}
 							</a>
 						</li>

@@ -12,9 +12,11 @@
 	import dayjs from 'dayjs';
 	import type { Reservation } from '$types';
 
-	import { flagOWAmAsFull, listenToDateSetting } from '$lib/firestore';
+	import { listenToDateSetting } from '$lib/firestore';
 	import { onDestroy } from 'svelte';
 	import DayHourly from '$lib/components/DayHourly.svelte';
+
+	import { getCategoryDatePath } from '$lib/url';
 
 	export let data;
 
@@ -29,11 +31,11 @@
 
 	function prevDay() {
 		const prev = dayjs(data.day).subtract(1, 'day');
-		goto(`/single-day/classroom/${prev.format('YYYY-MM-DD')}`);
+		goto(getCategoryDatePath(category, prev.format('YYYY-MM-DD')));
 	}
 	function nextDay() {
 		const next = dayjs(data.day).add(1, 'day');
-		goto(`/single-day/classroom/${next.format('YYYY-MM-DD')}`);
+		goto(getCategoryDatePath(category, next.format('YYYY-MM-DD')));
 	}
 
 	let modalOpened = false;
@@ -83,7 +85,7 @@
 				{#each categories as cat}
 					{#if cat !== category}
 						<li>
-							<a class="text-xl active:bg-gray-300" href={`/single-day/${cat}/${data.day}`}>
+							<a class="text-xl active:bg-gray-300" href={getCategoryDatePath(cat, data.day)}>
 								{cat}
 							</a>
 						</li>
@@ -123,7 +125,7 @@
 	<div class="flex justify-between">
 		<a
 			class="inline-flex items-center border border-solid border-transparent hover:border-black rounded-lg pl-1.5 pr-4 py-0 hover:text-white hover:bg-gray-700"
-			href="/multi-day/pool"
+			href="/multi-day/classroom"
 		>
 			<span><Chevron direction="left" /></span>
 			<span class="xs:text-xl pb-1 whitespace-nowrap">month view</span>

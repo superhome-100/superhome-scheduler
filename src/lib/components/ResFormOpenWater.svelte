@@ -46,11 +46,10 @@
 
 	const buoyIsAssignedTo = (buoyName: string, reservations: Reservation[]) => {
 		const filteredReservations = $reservations.filter(
-			(other) =>
-				other.owTime === rsv.owTime &&
-				other.buoy === buoyName);
+			(other) => other.owTime === rsv.owTime && other.buoy === buoyName
+		);
 
-		return filteredReservations.map(r => displayTag(r)).join(', ')
+		return filteredReservations.map((r) => displayTag(r)).join(', ');
 	};
 
 	const minMax: Record<ReservationType, { min: number; max: number }> = {
@@ -115,7 +114,10 @@
 					<option value="auto">Auto</option>
 					{#each sortedBuoys as buoy}
 						<option value={buoy.name}
-							>{buoy.name + ' - ' + buoyDesc(buoy)} - [{buoyIsAssignedTo(buoy?.name, $reservations)}]</option
+							>{buoy.name + ' - ' + buoyDesc(buoy)} - [{buoyIsAssignedTo(
+								buoy?.name,
+								$reservations
+							)}]</option
 						>
 					{/each}
 				</select>
