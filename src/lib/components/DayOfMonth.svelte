@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { getYYYYMMDD } from '$lib/datetimeUtils';
 	import type { ReservationCategory, DateReservationSummary } from '$types';
 	import dayjs from 'dayjs';
+
+	import { getCategoryDatePath } from '$lib/url';
 
 	export let date: Date | string;
 	export let category: ReservationCategory;
@@ -9,13 +10,13 @@
 </script>
 
 <div class="overflow-hidden h-full">
-	<a class="no-underline" href={`/single-day/${category}/${getYYYYMMDD(date)}`}>
+	<a class="no-underline" href={getCategoryDatePath(category, date)}>
 		<div class="h-full">
 			<p
 				class="flex justify-center w-6 m-auto {dayjs(date).isSame(dayjs(), 'date') &&
 					'rounded-[50%] bg-stone-300 dark:bg-stone-600'}"
 			>
-				{date.getDate()}
+				{dayjs(date).get('date')}
 			</p>
 			{#if summary}
 				{#if category === 'openwater' && summary.openwater.total}

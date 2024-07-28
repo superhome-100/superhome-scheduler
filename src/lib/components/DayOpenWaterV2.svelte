@@ -1,5 +1,12 @@
 <script lang="ts">
-	import { adminComments, viewMode, owUpdateStates, buoys, syncBuoys, reservations as reservationsStore } from '$lib/stores';
+	import {
+		adminComments,
+		viewMode,
+		owUpdateStates,
+		buoys,
+		syncBuoys,
+		reservations as reservationsStore
+	} from '$lib/stores';
 	import { getContext, onMount } from 'svelte';
 	import AdminComment from '$lib/components/AdminComment.svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';

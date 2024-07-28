@@ -15,6 +15,8 @@
 	import { flagOWAmAsFull, listenToDateSetting } from '$lib/firestore';
 	import { onDestroy } from 'svelte';
 
+	import { getCategoryDatePath } from '$lib/url';
+
 	export let data;
 
 	const category = 'openwater';
@@ -39,11 +41,11 @@
 
 	function prevDay() {
 		const prev = dayjs(data.day).subtract(1, 'day');
-		goto(`/single-day/openwater/${prev.format('YYYY-MM-DD')}`);
+		goto(getCategoryDatePath('openwater', prev.format('YYYY-MM-DD')));
 	}
 	function nextDay() {
 		const next = dayjs(data.day).add(1, 'day');
-		goto(`/single-day/openwater/${next.format('YYYY-MM-DD')}`);
+		goto(getCategoryDatePath('openwater', next.format('YYYY-MM-DD')));
 	}
 
 	let modalOpened = false;
@@ -116,7 +118,7 @@
 				{#each categories as cat}
 					{#if cat !== category}
 						<li>
-							<a class="text-xl active:bg-gray-300" href={`/single-day/${cat}/${data.day}`}>
+							<a class="text-xl active:bg-gray-300" href={getCategoryDatePath(cat, data.day)}>
 								{cat}
 							</a>
 						</li>
