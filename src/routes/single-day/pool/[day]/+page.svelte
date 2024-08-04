@@ -12,7 +12,7 @@
 	import dayjs from 'dayjs';
 	import type { Reservation } from '$types';
 
-	import { flagOWAmAsFull, listenToDateSetting } from '$lib/firestore';
+	import { listenToDateSetting, listenOnDateUpdate  } from '$lib/firestore';
 	import { onDestroy } from 'svelte';
 	import DayHourly from '$lib/components/DayHourly.svelte';
 
@@ -53,18 +53,24 @@
 	let isAmFull = false;
 
 	let unsubscribe: () => void;
+	let firestoreRefreshUnsub: () => void;
 	$: $page, handleRouteChange();
 
 	function handleRouteChange() {
 		if (unsubscribe) unsubscribe();
+		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
 		// Place your route change detection logic here
 		unsubscribe = listenToDateSetting(new Date(data.day), (setting) => {
 			isAmFull = !!setting.ow_am_full;
+		});
+		firestoreRefreshUnsub = listenOnDateUpdate(new Date(data.day), 'pool', () => {
+			refreshTs = Date.now();
 		});
 	}
 
 	onDestroy(() => {
 		if (unsubscribe) unsubscribe();
+		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
 	});
 
 	const resInfo = () => {
@@ -138,7 +144,7 @@
 		on:swipe={swipeHandler}
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			<DayHourly {category} resInfo={resInfo()} date={data.day} />
+			<DayHourly {category} {refreshTs} resInfo={resInfo()} date={data.day} />
 		</Modal>
 	</div>
 {/if}

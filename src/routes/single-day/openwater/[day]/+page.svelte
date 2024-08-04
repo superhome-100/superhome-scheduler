@@ -12,7 +12,7 @@
 	import dayjs from 'dayjs';
 	import type { Reservation } from '$types';
 
-	import { flagOWAmAsFull, listenToDateSetting } from '$lib/firestore';
+	import { flagOWAmAsFull, listenToDateSetting, listenOnDateUpdate } from '$lib/firestore';
 	import { onDestroy } from 'svelte';
 
 	import { getCategoryDatePath } from '$lib/url';
@@ -92,18 +92,24 @@
 	let isAmFull = false;
 
 	let unsubscribe: () => void;
+	let firestoreRefreshUnsub: () => void;
 	$: $page, handleRouteChange();
 
 	function handleRouteChange() {
 		if (unsubscribe) unsubscribe();
+		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
 		// Place your route change detection logic here
 		unsubscribe = listenToDateSetting(new Date(data.day), (setting) => {
 			isAmFull = !!setting.ow_am_full;
+		});
+		firestoreRefreshUnsub = listenOnDateUpdate(new Date(data.day), 'openwater', () => {
+			refreshTs = Date.now();
 		});
 	}
 
 	onDestroy(() => {
 		if (unsubscribe) unsubscribe();
+		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
 	});
 </script>
 
