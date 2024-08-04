@@ -14,6 +14,7 @@
 	export let resInfo;
 	export let category: 'pool' | 'classroom';
 	export let date: string;
+	export let refreshTs = Date.now();
 
 	let reservations: Reservation[] = [];
 	let isLoading = false;
@@ -117,7 +118,7 @@
 	};
 
 	$: {
-		date && loadReservations();
+		(date || refreshTs) && loadReservations();
 	}
 </script>
 

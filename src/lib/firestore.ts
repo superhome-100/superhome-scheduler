@@ -32,3 +32,11 @@ export function listenToDateSetting(date: Date, cb: (setting: DateSetting) => vo
 		cb((next.data() || defaultSetting) as DateSetting);
 	});
 }
+
+export function listenOnDateUpdate(date: Date, category: string, cb: () => void) {
+	const dateLockDoc = `locks/${category}_${dayjs(date).format('YYYY-MM-DD')}_${stage}`;
+	const dateSetting = doc(firestore, dateLockDoc);
+	return onSnapshot(dateSetting, (next) => {
+		cb();
+	});
+}

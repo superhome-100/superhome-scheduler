@@ -17,7 +17,7 @@ const adminUpdateGeneric = async ({ request }) => {
 	console.log('adminUpdateGeneric', data);
 	const category = data.get('category');
 	let record;
-	await doTransaction(category, async () => {
+	await doTransaction(category, data.get('date'), async () => {
 		record = await adminUpdate(data);
 	});
 	return { record };
@@ -30,7 +30,8 @@ export const actions = {
 			const data = await request.formData();
 			const category = data.get('category');
 			let record;
-			await doTransaction(category, async () => {
+
+			await doTransaction(category, data.get('date'), async () => {
 				record = await submitReservation(data);
 			});
 
@@ -52,7 +53,7 @@ export const actions = {
 		try {
 			const category = data.get('category');
 			let record;
-			await doTransaction(category, async () => {
+			await doTransaction(category, data.get('date'), async () => {
 				record = await modifyReservation(data);
 			});
 			return record;
@@ -73,7 +74,7 @@ export const actions = {
 			console.log('cancelReservation', data);
 			const category = data.get('category');
 			let record;
-			await doTransaction(category, async () => {
+			await doTransaction(category, data.get('date'), async () => {
 				record = await cancelReservation(data);
 			});
 			return record;
