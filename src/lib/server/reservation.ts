@@ -490,7 +490,7 @@ export async function modifyReservation(formData: AppFormData) {
 	}
 	if (sub.resType === ReservationType.course && orig.numStudents !== sub.numStudents) {
 		modify[0].status = ReservationStatus.pending;
-		if (sub.category === ReservationCategory.pool && sub.numStudents < orig.numStudents) {
+		if (sub.category === ReservationCategory.pool) {
 			modify[0].status = orig.status;
 		}
 	}
