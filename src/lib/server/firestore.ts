@@ -29,7 +29,7 @@ export async function doTransaction(category: string, date:string, transaction: 
 	}
 
 	try {
-		const docName = `${category}_${date}_${XATA_BRANCH}`;
+		const docName = `${category}_${date}_${XATA_BRANCH === 'main' ? 'prod':'dev'}`;
 		const doc = firestore.collection('locks').doc(docName);
 		await doc.set({
 			updated_at: admin.firestore.FieldValue.serverTimestamp()
