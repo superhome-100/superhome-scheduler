@@ -164,3 +164,15 @@ export const getReservationSummary = async (startDate: Date, endDate: Date) => {
 		console.error('getReservationSummary: error getting reservation summary', error);
 	}
 };
+
+export const approveAllPendingReservations = async (category: ReservationCategory, date: string) => {
+	const token = await auth.currentUser?.getIdToken();
+	await fetch('/api/approveAll', {
+		method: 'POST',
+		headers: {
+			'Content-type': 'application/json',
+			Authorization: 'Bearer ' + token
+		},
+		body: JSON.stringify({ category, date })
+	});
+}

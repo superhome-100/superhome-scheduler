@@ -11,6 +11,7 @@ import { updateNickname } from '$lib/server/user';
 import { upsertOWReservationAdminComments } from '$lib/server/ow';
 
 import { doTransaction } from '$lib/server/firestore';
+import { approveAllPendingReservations } from '$lib/server/reservation';
 
 const adminUpdateGeneric = async ({ request }) => {
 	const data = await request.formData();

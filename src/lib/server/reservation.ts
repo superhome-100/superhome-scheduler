@@ -591,3 +591,20 @@ export async function cancelReservation(formData: AppFormData) {
 
 	return { records };
 }
+
+export async function approveAllPendingReservations(category: ReservationType, date: string) {
+	const filters = {
+		date,
+		category,
+		status: ReservationStatus.pending
+	};
+	console.info('Approving all pending reservations for', category, date);
+	const pending = await client.db.Reservations.filter(filters).getAll();
+	const approved = pending.map((rsv) => {
+		return {
+			...rsv,
+			status: ReservationStatus.confirmed,
+		};
+	});
+	await client.db.Reservations.update(approved);
+}
