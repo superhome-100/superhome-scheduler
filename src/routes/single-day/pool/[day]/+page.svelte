@@ -10,13 +10,14 @@
 	import { CATEGORIES } from '$lib/constants.js';
 	import { toast } from 'svelte-french-toast';
 	import dayjs from 'dayjs';
-	import type { Reservation } from '$types';
+	import { ReservationCategory, type Reservation } from '$types';
 
 	import { listenToDateSetting, listenOnDateUpdate  } from '$lib/firestore';
 	import { onDestroy } from 'svelte';
 	import DayHourly from '$lib/components/DayHourly.svelte';
 
 	import { getCategoryDatePath } from '$lib/url';
+	import { approveAllPendingReservations } from '$lib/api.js';
 
 	export let data;
 
@@ -107,7 +108,7 @@
 				<Chevron direction="right" svgClass="h-8 w-8" />
 			</span>
 			<span class="text-2xl ml-2">
-				{dayjs(data.day).format('MMMM DD, YYYY')}
+				{dayjs(data.day).format('MMMM DD, YYYY dddd')}
 			</span>
 		</div>
 		<span class="mr-2">
@@ -136,6 +137,14 @@
 			<span><Chevron direction="left" /></span>
 			<span class="xs:text-xl pb-1 whitespace-nowrap">month view</span>
 		</a>
+		<button
+			class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
+			on:click={async () => {
+				await approveAllPendingReservations(ReservationCategory.pool, data.day);
+			}}
+		>
+			Approve All
+		</button>
 	</div>
 	<br />
 	<div
