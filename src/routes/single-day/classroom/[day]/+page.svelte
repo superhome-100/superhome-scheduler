@@ -6,7 +6,7 @@
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import { loginState, stateLoaded, view } from '$lib/stores';
+	import { loginState, stateLoaded, view, viewMode } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants.js';
 	import dayjs from 'dayjs';
 	import { ReservationCategory, type Reservation } from '$types';
@@ -25,7 +25,6 @@
 	let categories = [...CATEGORIES];
 
 	let refreshTs = Date.now();
-	let reservations: Reservation[] = [];
 
 	$view = 'single-day';
 
@@ -136,14 +135,17 @@
 			<span><Chevron direction="left" /></span>
 			<span class="xs:text-xl pb-1 whitespace-nowrap">month view</span>
 		</a>
-		<button
-			class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
-			on:click={async () => {
-				await approveAllPendingReservations(ReservationCategory.classroom, data.day);
-			}}
-		>
-			Approve All
-		</button>
+
+		{#if $viewMode === 'admin'}
+			<button
+				class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
+				on:click={async () => {
+					await approveAllPendingReservations(ReservationCategory.classroom, data.day);
+				}}
+			>
+				Approve All
+			</button>
+		{/if}
 	</div>
 	<br />
 	<div

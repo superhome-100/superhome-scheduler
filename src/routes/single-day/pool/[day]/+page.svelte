@@ -8,9 +8,8 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { loginState, stateLoaded, view, viewMode } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants.js';
-	import { toast } from 'svelte-french-toast';
 	import dayjs from 'dayjs';
-	import { ReservationCategory, type Reservation } from '$types';
+	import { ReservationCategory } from '$types';
 
 	import { listenToDateSetting, listenOnDateUpdate  } from '$lib/firestore';
 	import { onDestroy } from 'svelte';
@@ -26,7 +25,6 @@
 	let categories = [...CATEGORIES];
 
 	let refreshTs = Date.now();
-	let reservations: Reservation[] = [];
 
 	$view = 'single-day';
 
@@ -137,14 +135,16 @@
 			<span><Chevron direction="left" /></span>
 			<span class="xs:text-xl pb-1 whitespace-nowrap">month view</span>
 		</a>
-		<button
-			class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
-			on:click={async () => {
-				await approveAllPendingReservations(ReservationCategory.pool, data.day);
-			}}
-		>
-			Approve All
-		</button>
+		{#if $viewMode === 'admin'}
+			<button
+				class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
+				on:click={async () => {
+					await approveAllPendingReservations(ReservationCategory.pool, data.day);
+				}}
+			>
+				Approve All
+			</button>
+		{/if}
 	</div>
 	<br />
 	<div
