@@ -75,8 +75,8 @@ export async function getReservationsCsv(branch: string) {
 		records.map((ent) => {
 			return {
 				..._.omit(ent, ['user']),
-				name: ent.user!.name,
-				nickname: ent.user!.nickname
+				name: _.get(ent, 'user.name', 'no name'),
+				nickname: _.get(ent, 'user.nickname', 'no name'),
 			};
 		})
 	);
