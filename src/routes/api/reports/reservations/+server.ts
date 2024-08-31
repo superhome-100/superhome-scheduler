@@ -19,7 +19,7 @@ export async function GET({ request, url }: RequestEvent) {
 		const dateArray = [];
 		let currentDate: Dayjs = dayjs(startDate);
 
-		while (currentDate.isBefore(dayjs(endDate))) {
+		while (currentDate.isBefore(dayjs(endDate).add(1, 'day'))) {
 			dateArray.push(currentDate.format('YYYY-MM-DD'));
 			currentDate = currentDate.add(1, 'day');
 		}
