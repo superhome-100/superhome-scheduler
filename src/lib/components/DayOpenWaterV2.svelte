@@ -216,13 +216,12 @@
 			<div class="flex-none w-12 min-w-12">buoy</div>
 			<div class="flex-none text-center" class:w-20={isAdmin} class:w-8={!isAdmin}>boat</div>
 			<div class="grow text-center">
-				AM
+				<span>AM Count</span>
 
 				{#if $viewMode === 'admin'}
 					<div
 						class="sm:text-xl whitespace-nowrap w-fit opacity-70 z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1"
 					>
-						<span>boat count:</span>
 						{#each boats as boat}
 							<span class="font-bold ml-1">{boat}</span>
 							<span class=" bg-teal-100 border border-black px-0.5"
@@ -233,13 +232,12 @@
 				{/if}
 			</div>
 			<div class="grow text-center">
-				PM
+				<span>PM Count</span>
 
 				{#if $viewMode === 'admin'}
 					<div
 						class="sm:text-xl whitespace-nowrap w-fit opacity-70 z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1"
 					>
-						<span>boat count:</span>
 						{#each boats as boat}
 							<span class="font-bold ml-1">{boat}</span>
 							<span class=" bg-teal-100 border border-black px-0.5"
