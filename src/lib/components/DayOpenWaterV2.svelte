@@ -135,6 +135,7 @@
 					const amComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'AM');
 					const pmComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'PM');
 					const buoyAmReservation = amReservations.filter((r) => r._buoy === v.name);
+					const buoyPmReservation = pmReservations.filter((r) => r._buoy === v.name);
 					return {
 						id: `group_${v.name}`,
 						buoy: v,
@@ -144,7 +145,8 @@
 						amAdminComment: amComment?.comment,
 						pmAdminComment: pmComment?.comment,
 						// only AM headcount is necessary
-						headCount: getHeadCount(buoyAmReservation)
+						amHeadCount: getHeadCount(buoyAmReservation),
+						pmHeadCount: getHeadCount(buoyPmReservation)
 					};
 				})
 				.sort((a, b) => +(a.boat || 0) - +(b.boat || 0))
@@ -161,7 +163,8 @@
 		pmReservations?: Submission[];
 		amAdminComment?: string;
 		pmAdminComment?: string;
-		headCount: number;
+		amHeadCount: number;
+		pmHeadCount: number;
 	};
 	let buoyGroupings: BuoyGrouping[] = [];
 
@@ -197,19 +200,6 @@
 	});
 </script>
 
-{#if $viewMode === 'admin'}
-	<div
-		class="fixed sm:text-xl left-1/2 lg:left-2/3 -translate-x-1/2 whitespace-nowrap w-fit top-[50px] sm:top-[120px] md:top-[110px] opacity-70 z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1"
-	>
-		<span>boat counts:</span>
-		{#each boats as boat}
-			<span class="font-bold">{boat}</span>
-			<span class="me-2 bg-teal-100 border border-black px-0.5"
-				>{buoyGroupings.filter((b) => b.boat === boat).reduce((a, b) => a + b.headCount, 0)}</span
-			>
-		{/each}
-	</div>
-{/if}
 {#if isLoading}
 	<LoadingBar />
 {/if}
@@ -225,8 +215,40 @@
 		<header class="flex w-full gap-0.5 sm:gap-2 text-xs py-2">
 			<div class="flex-none w-12 min-w-12">buoy</div>
 			<div class="flex-none text-center" class:w-20={isAdmin} class:w-8={!isAdmin}>boat</div>
-			<div class="grow text-center">AM</div>
-			<div class="grow text-center">PM</div>
+			<div class="grow text-center">
+				AM
+
+				{#if $viewMode === 'admin'}
+					<div
+						class="sm:text-xl whitespace-nowrap w-fit opacity-70 z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1"
+					>
+						<span>boat count:</span>
+						{#each boats as boat}
+							<span class="font-bold ml-1">{boat}</span>
+							<span class=" bg-teal-100 border border-black px-0.5"
+								>{buoyGroupings.filter((b) => b.boat === boat).reduce((a, b) => a + b.amHeadCount, 0)}</span
+							>
+						{/each}
+					</div>
+				{/if}
+			</div>
+			<div class="grow text-center">
+				PM
+
+				{#if $viewMode === 'admin'}
+					<div
+						class="sm:text-xl whitespace-nowrap w-fit opacity-70 z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1"
+					>
+						<span>boat count:</span>
+						{#each boats as boat}
+							<span class="font-bold ml-1">{boat}</span>
+							<span class=" bg-teal-100 border border-black px-0.5"
+								>{buoyGroupings.filter((b) => b.boat === boat).reduce((a, b) => a + b.pmHeadCount, 0)}</span
+							>
+						{/each}
+					</div>
+				{/if}
+			</div>
 		</header>
 		<ul class="flex flex-col gap-0.5 sm:gap-3">
 			{#each buoyGroupings as grouping (grouping.id)}
