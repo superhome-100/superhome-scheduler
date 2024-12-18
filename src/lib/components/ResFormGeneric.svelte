@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { Reservation, BuddyData } from '$types';
+	import type {BuddyData, Reservation } from '$types';
+	import { ReservationType } from '$types';
 	import { ReservationStatus, ReservationCategory } from '$types';
 	import { canSubmit, user, users } from '$lib/stores';
 	import { Settings } from '$lib/client/settings';
@@ -20,6 +21,10 @@
 	export let restrictModify = false;
 	export let error = '';
 	export let extendDisabled = false;
+
+	export let discipline = '';
+	export let diveTime = '';
+	export let resType: ReservationType | null = null;
 
 	let disabled = viewOnly || restrictModify;
 
@@ -49,6 +54,35 @@
 
 	$: currentBF = { name: '', matches: [] } as BuddyData;
 
+	$: {
+		if (rsv) {
+			comments = rsv.comments;
+		}
+	}
+
+	$: {
+		if (resType === ReservationType.competitionSetupCBS) {
+			const disciplineRegex = /Discipline: [^\n]*/;
+			const diveTimeRegex = /Dive Time: [^\n]*/;
+
+
+			// Remove existing discipline and diveTime comments
+			comments = (comments ?? '').replace(disciplineRegex, '').replace(diveTimeRegex, '').trim();
+
+			// Append new discipline and diveTime comments if they are not empty
+			if (discipline) {
+			comments += `\nDiscipline: ${discipline}`;
+			}
+			if (diveTime) {
+			comments += `\nDive Time: ${diveTime}`;
+			}
+
+			// Trim any leading or trailing whitespace
+			comments = comments.trim();
+		} else {
+			comments = '';
+		}
+	}
 	const addBuddyField = () => {
 		buddyFields = [...buddyFields, { name: '', matches: [], id: buddyFields.length }];
 	};
