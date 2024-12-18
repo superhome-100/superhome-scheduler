@@ -31,6 +31,8 @@
 	let extraBottomWeight = rsv?.extraBottomWeight || false;
 	let bottomPlate = rsv?.bottomPlate || false;
 	let largeBuoy = rsv?.largeBuoy || false;
+	let discipline = 'FIM';
+	let diveTime = '1:00';
 
 	function checkSubmit() {
 		$canSubmit = maxDepth > 1;
@@ -106,6 +108,9 @@
 	bind:category
 	{rsv}
 	extendDisabled={isAmFull && owTime === 'AM'}
+	discipline={discipline}
+	diveTime={diveTime}
+	resType={resType}
 >
 	<svelte:fragment slot="inputExtension">
 		{#if adminView(viewOnly)}
@@ -184,6 +189,30 @@
 						<option value={n + 1}>{n + 1}</option>
 					{/each}
 				</select>
+			</InputLabel>
+		{/if}
+
+		{#if resType === 'competitionSetupCBS'}
+			<InputLabel label="Discipline" forInput="formNumStudents">
+				<select id="formDiscipline" disabled={viewOnly} name="discipline" bind:value={discipline} required
+				>
+					<option value="FIM">FIM</option>
+					<option value="CNF">CNF</option>
+					<option value="CWT">CWT</option>
+					<option value="CWTB">CWTB</option>
+				</select>
+			</InputLabel>
+			<InputLabel label="Dive Time" forInput="formMaxDepth">
+				<input
+					disabled={viewOnly || (restrictModify && resTypeModDisabled(rsv))}
+					id="formDiveTime"
+					class="w-[100px] valid:border-gray-500 required:border-red-500 text-white"
+					bind:value={diveTime}
+					on:input={checkSubmit}
+					name="diveTime"
+					required
+				/>
+				<div class="flex-1 text-sm dark:text-white text-left pl-2">minutes:seconds ie ( 4:30 )</div>
 			</InputLabel>
 		{/if}
 	</svelte:fragment>
