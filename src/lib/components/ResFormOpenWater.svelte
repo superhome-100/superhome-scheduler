@@ -9,6 +9,7 @@
 	import { listenToDateSetting } from '$lib/firestore';
 	import type { Unsubscribe } from 'firebase/firestore';
 	import { displayTag } from '../../lib/utils';
+	import { onMount } from 'svelte';
 	import { Settings } from '$lib/client/settings';
 
 	export let rsv: Reservation | null = null;
@@ -31,8 +32,8 @@
 	let extraBottomWeight = rsv?.extraBottomWeight || false;
 	let bottomPlate = rsv?.bottomPlate || false;
 	let largeBuoy = rsv?.largeBuoy || false;
-	let discipline = 'FIM';
-	let diveTime = '1:00';
+	let discipline: string | null = null;
+	let diveTime: string | null = null;
 
 	function checkSubmit() {
 		$canSubmit = maxDepth > 1;
@@ -97,6 +98,24 @@
 	};
 
 	$: date, init();
+
+	function extractValuesFromComments() {
+		// Remove \r characters from comments
+		const sanitizedComments = rsv?.comments.replace(/\r/g, '') ?? '';
+
+		const disciplineMatch = sanitizedComments.match(/Discipline: ([^\n]*)/);
+		const diveTimeMatch = sanitizedComments.match(/Dive Time: ([^\n]*)/);
+
+		discipline = disciplineMatch ? disciplineMatch[1] : null;
+		diveTime = diveTimeMatch ? diveTimeMatch[1] : null;
+	}
+
+	// Extract values on component mount
+	onMount(() => {
+		if (rsv?.resType === ReservationType.competitionSetupCBS) {
+			extractValuesFromComments();
+		}
+	});
 </script>
 
 <ResFormGeneric
@@ -206,10 +225,11 @@
 				<input
 					disabled={viewOnly || (restrictModify && resTypeModDisabled(rsv))}
 					id="formDiveTime"
-					class="w-[100px] valid:border-gray-500 required:border-red-500 text-white"
+					class="w-[100px] text-white"
 					bind:value={diveTime}
 					on:input={checkSubmit}
 					name="diveTime"
+					type="text"
 					required
 				/>
 				<div class="flex-1 text-sm dark:text-white text-left pl-2">minutes:seconds ie ( 4:30 )</div>

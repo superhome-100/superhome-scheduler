@@ -79,8 +79,6 @@
 
 			// Trim any leading or trailing whitespace
 			comments = comments.trim();
-		} else {
-			comments = '';
 		}
 	}
 	const addBuddyField = () => {
