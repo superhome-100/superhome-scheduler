@@ -396,9 +396,9 @@
 	<p class="mb-4">
 		Our Service may give You the ability to delete certain information about You from within the
 		Service. You may contact Us through <a
-		href="https://www.facebook.com/freedivesuperhome/"
+		href="https://www.facebook.com/freedivesuperhome2024/"
 		rel="external nofollow noopener"
-		target="_blank">https://www.facebook.com/freedivesuperhome/</a
+		target="_blank">https://www.facebook.com/freedivesuperhome2024/</a
 	> to request access to, correct, or delete any
 		personal information that You have provided to Us.
 	</p>
@@ -424,9 +424,9 @@
 	<ul>
 		<li>
 			By visiting this page on our website: <a
-				href="https://www.facebook.com/freedivesuperhome/"
+				href="https://www.facebook.com/freedivesuperhome2024/"
 				rel="external nofollow noopener"
-				target="_blank">https://www.facebook.com/freedivesuperhome/</a
+				target="_blank">https://www.facebook.com/freedivesuperhome2024/</a
 			>
 		</li>
 	</ul>
