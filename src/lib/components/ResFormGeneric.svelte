@@ -55,7 +55,7 @@
 	$: currentBF = { name: '', matches: [] } as BuddyData;
 
 	$: {
-		if (rsv) {
+		if (rsv && rsv.comments && !comments) {
 			comments = rsv.comments;
 		}
 	}
