@@ -254,7 +254,7 @@
 					bind:checked={allowAutoAdjust}
 					{disabled}
 				/>
-				<label form="formAllowAutoAdjust" class="text-white"
+				<label form="formAllowAutoAdjust" class="dark:text-white"
 					>auto-adjust to closest depth if no similar buddy available</label
 				>
 			</InputLabel>
