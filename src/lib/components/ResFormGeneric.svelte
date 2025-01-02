@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type {BuddyData, Reservation } from '$types';
+	import type { BuddyData, Reservation } from '$types';
 	import { ReservationType } from '$types';
 	import { ReservationStatus, ReservationCategory } from '$types';
 	import { canSubmit, user, users } from '$lib/stores';
@@ -65,16 +65,15 @@
 			const disciplineRegex = /Discipline: [^\n]*/;
 			const diveTimeRegex = /Dive Time: [^\n]*/;
 
-
 			// Remove existing discipline and diveTime comments
 			comments = (comments ?? '').replace(disciplineRegex, '').replace(diveTimeRegex, '').trim();
 
 			// Append new discipline and diveTime comments if they are not empty
 			if (discipline) {
-			comments += `\nDiscipline: ${discipline}`;
+				comments += `\nDiscipline: ${discipline}`;
 			}
 			if (diveTime) {
-			comments += `\nDive Time: ${diveTime}`;
+				comments += `\nDive Time: ${diveTime}`;
 			}
 
 			// Trim any leading or trailing whitespace

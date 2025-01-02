@@ -25,7 +25,9 @@
 			return formData.has(field) && parseInt(formData.get(field)) != original[field];
 		};
 		const checkBool = (field) => {
-			return (formData.get(field) == 'on') != original[field];
+			console.log('field', field, formData.get(field), original[field]);
+			const currentValue = original[field] == 'on' || original[field] === true;
+			return (formData.get(field) == 'on') != currentValue;
 		};
 
 		let buddies = JSON.parse(formData.get('buddies'));
@@ -46,7 +48,6 @@
 		} else if (original.pulley != null) {
 			return true;
 		}
-
 		return (
 			checkString('date') ||
 			checkString('comments') ||
@@ -59,7 +60,8 @@
 			checkBool('largeBuoy') ||
 			checkBool('O2OnBuoy') ||
 			checkBool('shortSession') ||
-			checkString('resType')
+			checkString('resType') ||
+			checkBool('allowAutoAdjust')
 		);
 	};
 

@@ -1,8 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { approveAllPendingReservations} from '$lib/server/reservation';
+import { approveAllPendingReservations } from '$lib/server/reservation';
 import { doTransaction } from '$lib/server/firestore';
-
-
 
 export async function POST({ request }: { request: Request }) {
 	try {

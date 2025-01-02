@@ -19,6 +19,7 @@
 
 	const submitReservation = async ({ data, cancel }) => {
 		error = '';
+		console.log(data);
 		cleanUpFormDataBuddyFields(data);
 		hideModal();
 

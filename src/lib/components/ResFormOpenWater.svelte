@@ -34,6 +34,7 @@
 	let largeBuoy = rsv?.largeBuoy || false;
 	let discipline: string | null = null;
 	let diveTime: string | null = null;
+	let allowAutoAdjust = rsv?.allowAutoAdjust ?? true;
 
 	function checkSubmit() {
 		$canSubmit = maxDepth > 1;
@@ -127,9 +128,9 @@
 	bind:category
 	{rsv}
 	extendDisabled={isAmFull && owTime === 'AM'}
-	discipline={discipline}
-	diveTime={diveTime}
-	resType={resType}
+	{discipline}
+	{diveTime}
+	{resType}
 >
 	<svelte:fragment slot="inputExtension">
 		{#if adminView(viewOnly)}
@@ -212,8 +213,13 @@
 		{/if}
 
 		{#if resType === 'competitionSetupCBS'}
-			<InputLabel label="Discipline" forInput="formNumStudents">
-				<select id="formDiscipline" disabled={viewOnly} name="discipline" bind:value={discipline} required
+			<InputLabel label="Discipline" forInput="formDiscipline">
+				<select
+					id="formDiscipline"
+					disabled={viewOnly}
+					name="discipline"
+					bind:value={discipline}
+					required
 				>
 					<option value="FIM">FIM</option>
 					<option value="CNF">CNF</option>
@@ -221,7 +227,7 @@
 					<option value="CWTB">CWTB</option>
 				</select>
 			</InputLabel>
-			<InputLabel label="Dive Time" forInput="formMaxDepth">
+			<InputLabel label="Dive Time" forInput="formDiveTime">
 				<input
 					disabled={viewOnly || (restrictModify && resTypeModDisabled(rsv))}
 					id="formDiveTime"
@@ -233,6 +239,24 @@
 					required
 				/>
 				<div class="flex-1 text-sm dark:text-white text-left pl-2">minutes:seconds ie ( 4:30 )</div>
+			</InputLabel>
+		{/if}
+
+		{#if resType === 'autonomous'}
+			<InputLabel label="auto-adjust" forInput="formAllowAutoAdjust">
+				{#if disabled}
+					<input type="hidden" name="allowAutoAdjust" value={allowAutoAdjust ? 'on' : 'off'} />
+				{/if}
+				<input
+					type="checkbox"
+					id="formAllowAutoAdjust"
+					name="allowAutoAdjust"
+					bind:checked={allowAutoAdjust}
+					{disabled}
+				/>
+				<label form="formAllowAutoAdjust" class="text-white"
+					>auto-adjust to closest depth if no similar buddy available</label
+				>
 			</InputLabel>
 		{/if}
 	</svelte:fragment>

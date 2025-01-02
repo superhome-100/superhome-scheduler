@@ -11,7 +11,7 @@
 	import dayjs from 'dayjs';
 	import { ReservationCategory } from '$types';
 
-	import { listenToDateSetting, listenOnDateUpdate  } from '$lib/firestore';
+	import { listenToDateSetting, listenOnDateUpdate } from '$lib/firestore';
 	import { onDestroy } from 'svelte';
 	import DayHourly from '$lib/components/DayHourly.svelte';
 

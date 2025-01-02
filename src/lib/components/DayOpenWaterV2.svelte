@@ -225,7 +225,9 @@
 						{#each boats as boat}
 							<span class="font-bold ml-1">{boat}</span>
 							<span class=" bg-teal-100 border border-black px-0.5"
-								>{buoyGroupings.filter((b) => b.boat === boat).reduce((a, b) => a + b.amHeadCount, 0)}</span
+								>{buoyGroupings
+									.filter((b) => b.boat === boat)
+									.reduce((a, b) => a + b.amHeadCount, 0)}</span
 							>
 						{/each}
 					</div>
@@ -241,7 +243,9 @@
 						{#each boats as boat}
 							<span class="font-bold ml-1">{boat}</span>
 							<span class=" bg-teal-100 border border-black px-0.5"
-								>{buoyGroupings.filter((b) => b.boat === boat).reduce((a, b) => a + b.pmHeadCount, 0)}</span
+								>{buoyGroupings
+									.filter((b) => b.boat === boat)
+									.reduce((a, b) => a + b.pmHeadCount, 0)}</span
 							>
 						{/each}
 					</div>
