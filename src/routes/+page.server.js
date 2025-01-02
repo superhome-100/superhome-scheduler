@@ -50,7 +50,6 @@ export const actions = {
 	},
 	modifyReservation: async ({ request }) => {
 		const data = await request.formData();
-		console.log('modifyReservation', data);
 		try {
 			const category = data.get('category');
 			let record;

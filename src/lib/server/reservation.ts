@@ -76,7 +76,7 @@ export async function getReservationsCsv(branch: string) {
 			return {
 				..._.omit(ent, ['user']),
 				name: _.get(ent, 'user.name', 'no name'),
-				nickname: _.get(ent, 'user.nickname', 'no name'),
+				nickname: _.get(ent, 'user.nickname', 'no name')
 			};
 		})
 	);
@@ -328,7 +328,8 @@ function unpackSubmitForm(formData: AppFormData): Submission {
 		owner: true,
 		status,
 		buoy,
-		lanes: ['auto']
+		lanes: ['auto'],
+		allowAutoAdjust: ['on', 'true'].includes(formData.get('allowAutoAdjust'))
 	};
 }
 
@@ -419,7 +420,7 @@ async function createBuddyEntriesForUpdate(sub: Reservation, orig: Reservation) 
 			}
 		}
 	}
-
+	console.log('modify', modify);
 	return { modify, create, cancel };
 }
 
@@ -466,7 +467,8 @@ async function unpackModifyForm(formData: AppFormData, orig: Reservation): Promi
 		buoy,
 		room: brc ? 'auto' : orig.room,
 		price: orig.price,
-		updatedAt: new Date()
+		updatedAt: new Date(),
+		allowAutoAdjust: ['on', 'true'].includes(formData.get('allowAutoAdjust'))
 	};
 }
 
@@ -604,7 +606,7 @@ export async function approveAllPendingReservations(category: ReservationType, d
 	const approved = pending.map((rsv) => {
 		return {
 			...rsv,
-			status: ReservationStatus.confirmed,
+			status: ReservationStatus.confirmed
 		};
 	});
 	await client.db.Reservations.update(approved);

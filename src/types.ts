@@ -25,6 +25,7 @@ export type Submission = {
 	status: ReservationStatus;
 	lanes: string[];
 	buoy: string;
+	allowAutoAdjust: boolean;
 };
 
 export type Reservation = Submission & {

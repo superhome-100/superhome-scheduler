@@ -38,6 +38,14 @@ xata auth login
 xata init
 ```
 
+## sync
+
+to sync database schema to your local code generated config
+
+```sh
+xata codegen
+```
+
 ## Dependencies
 
 [`pkgx`] will automagically make the package dependencies available to your environment.

@@ -165,7 +165,10 @@ export const getReservationSummary = async (startDate: Date, endDate: Date) => {
 	}
 };
 
-export const approveAllPendingReservations = async (category: ReservationCategory, date: string) => {
+export const approveAllPendingReservations = async (
+	category: ReservationCategory,
+	date: string
+) => {
 	const token = await auth.currentUser?.getIdToken();
 	await fetch('/api/approveAll', {
 		method: 'POST',
@@ -175,4 +178,4 @@ export const approveAllPendingReservations = async (category: ReservationCategor
 		},
 		body: JSON.stringify({ category, date })
 	});
-}
+};

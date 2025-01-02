@@ -45,6 +45,12 @@ const tables = [
 				type: 'bool',
 				notNull: true,
 				defaultValue: 'false'
+			},
+			{
+				name: 'allowAutoAdjust',
+				type: 'bool',
+				notNull: true,
+				defaultValue: 'true'
 			}
 		]
 	},

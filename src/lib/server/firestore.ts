@@ -14,7 +14,11 @@ const firestore = admin.firestore();
 
 // xata does not support ACID grade transaction yet
 // so we need to implement our own custom transaction we will just use firestore doc locking
-export async function doTransaction(category: string, date:string, transaction: () => Promise<void>) {
+export async function doTransaction(
+	category: string,
+	date: string,
+	transaction: () => Promise<void>
+) {
 	if (['pool', 'classroom'].includes(category)) {
 		const doc = firestore.collection('locks').doc([category, XATA_BRANCH].join('_'));
 		await firestore.runTransaction(async (t) => {
@@ -29,11 +33,14 @@ export async function doTransaction(category: string, date:string, transaction: 
 	}
 
 	try {
-		const docName = `${category}_${date}_${XATA_BRANCH === 'main' ? 'prod':'dev'}`;
+		const docName = `${category}_${date}_${XATA_BRANCH === 'main' ? 'prod' : 'dev'}`;
 		const doc = firestore.collection('locks').doc(docName);
-		await doc.set({
-			updated_at: admin.firestore.FieldValue.serverTimestamp()
-		}, { merge: true });
+		await doc.set(
+			{
+				updated_at: admin.firestore.FieldValue.serverTimestamp()
+			},
+			{ merge: true }
+		);
 	} catch (error) {
 		console.error(error);
 	}
