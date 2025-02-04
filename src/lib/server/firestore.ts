@@ -1,6 +1,7 @@
 import { FIREBASE_SERVICE_ACCOUNT_KEY, XATA_BRANCH } from '$env/static/private';
 import admin from 'firebase-admin';
 import { getUserByEmail, getUserByFirebaseUID, getUserByFacebookId } from './user';
+import dayjs from 'dayjs';
 
 const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT_KEY);
 
@@ -71,4 +72,22 @@ export async function getXataUserDocWithFirebaseToken(headers: Headers) {
 	if (!user) throw new Error('user not found!');
 
 	return user;
+}
+
+
+// export function listenToDateSetting(date: Date, cb: (setting: DateSetting) => void) {
+// 	const dateSetting = doc(firestore, `date_settings_${stage}/${dayjs(date).format('YYYY-MM-DD')}`);
+// 	return onSnapshot(dateSetting, (next) => {
+// 		cb((next.data() || defaultSetting) as DateSetting);
+// 	});
+// }
+
+interface DateSetting {
+	ow_am_full: boolean;
+}
+export async function getDateSetting(date: Date | string): Promise<DateSetting> {
+	const stage = process.env.PUBLIC_STAGE || 'prod';
+	const docName = `date_settings_${stage}/${dayjs(date).format('YYYY-MM-DD')}`;
+	console.log('docName', docName);
+	return (await firestore.doc(docName).get()).data() as DateSetting;
 }

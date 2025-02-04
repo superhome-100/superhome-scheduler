@@ -22,7 +22,6 @@ pnpm install
 Facebook Login requires `https`. Additional dependencies may need to be installed to enable this in your dev environment.
 
 ## dev
-
 ```bash
 pnpm dev
 ```
