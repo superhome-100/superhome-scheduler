@@ -127,7 +127,7 @@
 	bind:date
 	bind:category
 	{rsv}
-	extendDisabled={isAmFull && owTime === 'AM'}
+	extendDisabled={isAmFull && owTime === 'AM' && !rsv}
 	{discipline}
 	{diveTime}
 	{resType}

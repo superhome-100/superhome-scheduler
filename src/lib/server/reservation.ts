@@ -7,6 +7,7 @@ import { timeStrToMin, isValidProSafetyCutoff } from '$lib/datetimeUtils';
 import { getXataClient } from '$lib/server/xata-old';
 import { getTimeOverlapFilters } from '$utils/reservation-queries';
 import { initSettings, type SettingsManager } from './settings';
+import { getDateSetting } from './firestore';
 import {
 	getStartTime,
 	throwIfNoSpaceAvailable,
@@ -363,6 +364,14 @@ async function throwIfUpdateIsInvalid(sub: Reservation, orig: Reservation, ignor
 	// reservations that will overlap with the updated reservation
 	let userIds = [sub.user.id, ...sub.buddies];
 	throwIfOverlappingReservation(orig, allOverlappingRsvs, userIds);
+
+	// check if course and type ow, retrieve if day is ow am is full
+	if (sub.resType === ReservationType.course && sub.category === ReservationCategory.openwater) {
+		const settingDate = await getDateSetting(sub.date);
+		if (settingDate.ow_am_full && sub.numStudents > orig.numStudents) {
+			throw new ValidationError('The morning open water session is full for this date cannot increase the number of students.');
+		}
+	}
 
 	await throwIfNoSpaceAvailable(settings, sub, allOverlappingRsvs, ignore);
 }
