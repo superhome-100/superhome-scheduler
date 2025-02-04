@@ -85,9 +85,8 @@ export async function getXataUserDocWithFirebaseToken(headers: Headers) {
 interface DateSetting {
 	ow_am_full: boolean;
 }
-export async function getDateSetting(date: Date | string): Promise<DateSetting> {
+export async function getDateSetting(date: Date | string): Promise<DateSetting | null | undefined> {
 	const stage = process.env.PUBLIC_STAGE || 'prod';
 	const docName = `date_settings_${stage}/${dayjs(date).format('YYYY-MM-DD')}`;
-	console.log('docName', docName);
 	return (await firestore.doc(docName).get()).data() as DateSetting;
 }

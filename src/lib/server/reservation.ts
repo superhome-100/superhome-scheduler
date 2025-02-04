@@ -368,7 +368,7 @@ async function throwIfUpdateIsInvalid(sub: Reservation, orig: Reservation, ignor
 	// check if course and type ow, retrieve if day is ow am is full
 	if (sub.resType === ReservationType.course && sub.category === ReservationCategory.openwater) {
 		const settingDate = await getDateSetting(sub.date);
-		if (settingDate.ow_am_full && sub.numStudents > orig.numStudents) {
+		if (settingDate?.ow_am_full && sub.numStudents > orig.numStudents) {
 			throw new ValidationError('The morning open water session is full for this date cannot increase the number of students.');
 		}
 	}
