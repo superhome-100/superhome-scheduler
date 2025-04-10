@@ -310,7 +310,7 @@
 					{disabled}
 					tabindex="5"
 				/>
-				<label for="formBottomWeight">extra bottom weight</label>
+				<label for="formBottomWeight">deep fim training</label>
 			</div>
 			<div>
 				{#if disabled}
