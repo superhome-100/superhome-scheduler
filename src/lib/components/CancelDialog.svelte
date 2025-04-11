@@ -1,13 +1,21 @@
-<script>
+<script lang="ts">
 	import { getContext } from 'svelte';
 	import CancelForm from './CancelForm.svelte';
 	import TrashIcon from './TrashIcon.svelte';
 
-	export let rsv;
+	interface Reservation {
+		id: string;
+		[key: string]: any;
+	}
 
-	const { open } = getContext('simple-modal');
+	export let rsv: Reservation;
 
-	const showCancel = () => {
+	type ModalContext = {
+		open: (component: any, props?: Record<string, any>, options?: { closeButton: boolean }) => void;
+	};
+	const { open } = getContext<ModalContext>('simple-modal');
+
+	const showCancel = (): void => {
 		open(
 			CancelForm,
 			{

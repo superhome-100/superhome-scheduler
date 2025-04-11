@@ -1,18 +1,34 @@
-<script>
+<script lang="ts">
 	import { getContext } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { syncMyIncomingReservations, users } from '$lib/stores';
 	import { toast } from 'svelte-french-toast';
 	import { popup } from '$lib/components/Popup.svelte';
 
-	export let rsv;
+	interface Reservation {
+		id: string;
+		date: string;
+		category: string;
+		startTime: string;
+		endTime: string;
+		owTime: string;
+		buddies: string[];
+	}
+
+	export let rsv: Reservation;
 	export let hasForm = false;
 
-	const { close, hideModal } = getContext('simple-modal');
+	type ModalContext = {
+		close: () => void;
+		hideModal: () => void;
+	};
+	const { close, hideModal } = getContext<ModalContext>('simple-modal');
 
-	const cancelReservation = async ({ data }) => {
-		let buddies = JSON.parse(data.get('buddies'));
-		let cancelBuddies = [];
+	type ActionData = { error?: string };
+
+	const cancelReservation = ({ data }: { data: FormData }) => {
+		let buddies: string[] = JSON.parse(data.get('buddies') as string);
+		let cancelBuddies: string[] = [];
 		for (let i = 0; i < buddies.length; i++) {
 			if (data.get('buddy-' + i) === 'on') {
 				cancelBuddies.push(rsv.buddies[i]);
@@ -23,14 +39,14 @@
 
 		hideModal();
 
-		return async ({ result }) => {
+		return async ({ result }: { result: { type: string; data?: ActionData } }) => {
 			switch (result.type) {
 				case 'success':
 					await syncMyIncomingReservations();
 					toast.success('Reservation canceled');
 					break;
 				case 'failure':
-					popup(result.data.error);
+					popup(result.data?.error || 'Unknown error');
 					break;
 				default:
 					console.error(result);
