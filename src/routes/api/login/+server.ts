@@ -24,7 +24,6 @@ export async function POST({ cookies, request }: RequestEvent) {
 			providerId,
 			firebaseUID
 		});
-
 		// TODO: replace this with firebase session token auth setup
 		const sessionId = cookies.get('sessionid');
 		if (!sessionId && record) {
@@ -36,6 +35,7 @@ export async function POST({ cookies, request }: RequestEvent) {
 		}
 		return json({ status: 'success', record });
 	} catch (error) {
+		console.error(error);
 		return json({ status: 'error', error });
 	}
 }

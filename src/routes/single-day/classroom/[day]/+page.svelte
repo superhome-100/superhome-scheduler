@@ -7,7 +7,7 @@
 	import Chevron from '$lib/components/Chevron.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { loginState, stateLoaded, view, viewMode } from '$lib/stores';
-	import { CATEGORIES } from '$lib/constants.js';
+	import { CATEGORIES } from '$lib/constants';
 	import dayjs from 'dayjs';
 	import { ReservationCategory, type Reservation } from '$types';
 
@@ -16,7 +16,7 @@
 	import DayHourly from '$lib/components/DayHourly.svelte';
 
 	import { getCategoryDatePath } from '$lib/url';
-	import { approveAllPendingReservations } from '$lib/api.js';
+	import { approveAllPendingReservations } from '$lib/api';
 
 	export let data;
 

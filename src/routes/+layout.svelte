@@ -88,6 +88,7 @@
 			authLoaded = false;
 			return auth.onIdTokenChanged(
 				async (user) => {
+					console.info('user', user)
 					if (user) {
 						await initApp(); // TODO: remove this eventually
 						$loginState = 'in';

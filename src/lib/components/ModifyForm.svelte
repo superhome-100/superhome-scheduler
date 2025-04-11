@@ -9,7 +9,7 @@
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { syncMyIncomingReservations } from '$lib/stores';
 	import { Settings } from '$lib/client/settings';
-	import { cleanUpFormDataBuddyFields } from '$lib/utils.js';
+	import { cleanUpFormDataBuddyFields } from '$lib/utils';
 
 	export let hasForm = false;
 	export let rsv: Submission;

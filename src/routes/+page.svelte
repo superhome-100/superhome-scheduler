@@ -2,7 +2,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import MyReservations from '$lib/components/MyReservations.svelte';
-	import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs.js';
+	import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs';
 	import { minValidDateStr } from '$lib/reservationTimes';
 	import { Settings } from '$lib/client/settings';
 	import { user, stateLoaded, loginState } from '$lib/stores';

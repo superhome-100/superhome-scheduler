@@ -4,7 +4,7 @@
 	import { timeStrToMin, datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
 	import { canSubmit, user } from '$lib/stores';
 	import { Settings } from '$lib/client/settings';
-	import { adminView, resTypeModDisabled } from '$lib/utils.js';
+	import { adminView, resTypeModDisabled } from '$lib/utils';
 	import { ReservationType } from '$types';
 	import type { Reservation } from '$types';
 	import InputLabel from './tiny_components/InputLabel.svelte';
