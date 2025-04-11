@@ -5,7 +5,7 @@
 	import { canSubmit, user, users } from '$lib/stores';
 	import { Settings } from '$lib/client/settings';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes';
-	import { adminView, isMyReservation } from '$lib/utils.js';
+	import { adminView, isMyReservation } from '$lib/utils';
 	import { PanglaoDate } from '$lib/datetimeUtils';
 	import BuddyMatch from '$lib/components/BuddyMatch.svelte';
 	import PlusIcon from '$lib/components/PlusIcon.svelte';

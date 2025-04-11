@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { canSubmit, reservations, buoys } from '$lib/stores';
-	import { adminView, buoyDesc, isMyReservation, resTypeModDisabled } from '$lib/utils.js';
+	import { adminView, buoyDesc, isMyReservation, resTypeModDisabled } from '$lib/utils';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 	import type { Reservation } from '$types';
 	import { ReservationCategory, ReservationType } from '$types';

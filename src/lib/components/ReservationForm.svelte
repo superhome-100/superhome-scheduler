@@ -6,7 +6,7 @@
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { reservations, syncMyIncomingReservations } from '$lib/stores';
-	import { cleanUpFormDataBuddyFields } from '$lib/utils.js';
+	import { cleanUpFormDataBuddyFields } from '$lib/utils';
 
 	export let category = 'openwater';
 	export let dateFn;

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
-	import { Tab, Tabs, TabList, TabPanel } from '$lib/tabs.js';
+	import { Tab, Tabs, TabList, TabPanel } from '$lib/tabs';
 	import ViewForm from '$lib/components/ViewForm.svelte';
 	import ModifyForm from '$lib/components/ModifyForm.svelte';
 	import { user, users } from '$lib/stores';

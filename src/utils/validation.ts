@@ -2,7 +2,7 @@ import type { Reservation, Submission } from '$types';
 import type { BuoysRecord } from '$lib/server/xata.codegen';
 import { ReservationType, ReservationCategory, OWTime } from '$types';
 
-import { getStartEndTimes, beforeResCutoff, beforeCancelCutoff } from '$lib/reservationTimes.js';
+import { getStartEndTimes, beforeResCutoff, beforeCancelCutoff } from '$lib/reservationTimes';
 import { getUsersById } from '$lib/server/user';
 import type { SettingsManager } from '$lib/client/settings';
 import { timeStrToMin } from '$lib/datetimeUtils';
