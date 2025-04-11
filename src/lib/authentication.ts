@@ -26,6 +26,7 @@ export async function authenticateUser(userData: authenticateUserArgs) {
 			userRecordId
 		})
 	});
+	console.info('response', response);
 	const data = (await response.json()) as {
 		status: 'success' | 'error';
 		record?: UsersRecord;

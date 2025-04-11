@@ -4,7 +4,7 @@
 	import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils';
 	import { getContext } from 'svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
-	import { badgeColor, getDaySchedule } from '$lib/utils.js';
+	import { badgeColor, getDaySchedule } from '$lib/utils';
 	import { Settings } from '$lib/client/settings';
 	import LoadingBar from './LoadingBar.svelte';
 

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Submission } from '$types';
-	import { displayTag } from '$lib/utils.js';
-	import { badgeColor } from '$lib/utils.js';
+	import { displayTag, badgeColor } from '$lib/utils';
 	import { user } from '$lib/stores';
 	import _ from 'lodash';
 

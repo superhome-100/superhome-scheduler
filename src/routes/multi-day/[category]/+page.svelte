@@ -8,7 +8,7 @@
 	import { minValidDateStr } from '$lib/reservationTimes';
 	import { getYYYYMMDD, idx2month } from '$lib/datetimeUtils';
 	import { view, loginState, stateLoaded } from '$lib/stores';
-	import { CATEGORIES } from '$lib/constants.js';
+	import { CATEGORIES } from '$lib/constants';
 	import { Settings } from '$lib/client/settings';
 	import type { ReservationCategory, DateReservationSummary } from '$types';
 	import { getReservationSummary } from '$lib/api';

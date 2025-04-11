@@ -5,7 +5,7 @@
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { syncMyIncomingReservations } from '$lib/stores';
-	import { adminView } from '$lib/utils.js';
+	import { adminView } from '$lib/utils';
 	import { toast } from 'svelte-french-toast';
 
 	export let hasForm = false;

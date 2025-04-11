@@ -9,15 +9,16 @@ dayjs.extend(tz);
 
 const xata = getXataClient();
 
+const daysLimit = 60;
 export async function GET({ request }: { request: Request }) {
 	try {
 		const now = dayjs().tz('Asia/Manila');
-		const in30Days = now.clone().add(30, 'days');
+		const inXDays = now.clone().add(daysLimit, 'days');
 
 		const dateArray = [];
 		let currentDate: Dayjs = now;
 
-		while (currentDate.isBefore(in30Days)) {
+		while (currentDate.isBefore(inXDays)) {
 			dateArray.push(currentDate.format('YYYY-MM-DD'));
 			currentDate = currentDate.add(1, 'day');
 		}

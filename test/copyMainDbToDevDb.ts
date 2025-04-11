@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import dayjs from 'dayjs';
-import { XataClient } from '../src/lib/server/xata.codegen.js'; // has to stay .js even though its .ts ... weird
+import { XataClient } from '../src/lib/server/xata.codegen'; // has to stay .js even though its .ts ... weird
 
 dotenv.config({
 	path: '.env'
