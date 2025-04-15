@@ -343,7 +343,7 @@ export async function submitReservation(formData: AppFormData) {
 	return { records };
 }
 
-async function throwIfUpdateIsInvalid(sub: Reservation, orig: Reservation, ignore: string[]) {
+async function throwIfUpdateIsInvalid(sub: Reservation, orig: Reservation, ignore: string[], isAMFull: boolean) {
 	const settings = await initSettings();
 
 	if (!settings.getOpenForBusiness(sub.date)) {
@@ -367,8 +367,7 @@ async function throwIfUpdateIsInvalid(sub: Reservation, orig: Reservation, ignor
 
 	// check if course and type ow, retrieve if day is ow am is full
 	if (sub.resType === ReservationType.course && sub.category === ReservationCategory.openwater) {
-		const settingDate = await getDateSetting(sub.date);
-		if (settingDate?.ow_am_full && sub.numStudents > orig.numStudents && sub.owTime === OWTime.AM) {
+		if (isAMFull && sub.numStudents > orig.numStudents && sub.owTime === OWTime.AM) {
 			throw new ValidationError('The morning open water session is full for this date cannot increase the number of students.');
 		}
 	}
@@ -485,11 +484,18 @@ export async function modifyReservation(formData: AppFormData) {
 	let id = formData.get('id');
 	let [orig] = await convertFromXataToAppType([await client.db.Reservations.read(id)]);
 	let sub = await unpackModifyForm(formData, orig);
+	const settingDate = await getDateSetting(sub.date);
 
+	// check if additional buddy entries need to be created
+	// check also if AM open water schedule is full
+	// do allow creating of buddy if am schedule is full
 	let { create, modify, cancel } = await createBuddyEntriesForUpdate(sub, orig);
+	if (settingDate?.ow_am_full && sub.owTime === OWTime.AM && create.length > 0) {
+		throw new ValidationError('The morning open water session is full for this date cannot add a buddy.');
+	}
 
 	let existing = [...modify.map((rsv) => rsv.id!), ...cancel];
-	await throwIfUpdateIsInvalid(sub, orig, existing);
+	await throwIfUpdateIsInvalid(sub, orig, existing, settingDate?.ow_am_full ?? false);
 
 	let records: { [key: string]: Reservation[] } = {
 		created: [],
