@@ -1,6 +1,6 @@
-<script>
-	export let direction;
-	export let svgClass = '';
+<script lang="ts">
+	export let direction: 'left' | 'right';
+	export let svgClass: string = '';
 </script>
 
 {#if direction === 'left'}
