@@ -68,11 +68,14 @@ export function beforeCancelCutoff(
 	let today = dtu.datetimeToLocalDateStr(now);
 	if (dateStr > today) {
 		return true;
-	} else
-		return (
-			dateStr === today &&
-			dtu.timeStrToMin(startTime) - minuteOfDay(now) > cancelCutoff(stns, category, dateStr)
-		);
+	} else {
+		const timeUntilStart = dtu.timeStrToMin(startTime) - minuteOfDay(now);
+		if ([ReservationCategory.pool, ReservationCategory.classroom].includes(category)) {
+			return dateStr === today && timeUntilStart > 60; // 1 hour cutoff
+		} else {
+			return dateStr === today && timeUntilStart > cancelCutoff(stns, category, dateStr);
+		}
+	}
 }
 
 const minStart = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
