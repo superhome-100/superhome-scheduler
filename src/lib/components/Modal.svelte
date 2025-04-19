@@ -1,11 +1,17 @@
 <!-- v1.4.0 -->
-<script context="module">
+<script context="module" lang="ts">
+	import type { SvelteComponent, ComponentType } from 'svelte';
+
+	type ModalOptions = {
+		props?: Record<string, any>;
+		[key: string]: any;
+	};
+
 	/**
 	 * Create a Svelte component with props bound to it.
-	 * @type {(component: Component, props: Record<string, any>) => Component}
 	 */
-	export function bind(Component, props = {}) {
-		return function ModalComponent(options) {
+	export function bind(Component: ComponentType<SvelteComponent>, props: Record<string, any> = {}) {
+		return function ModalComponent(options: ModalOptions) {
 			return new Component({
 				...options,
 				props: {
@@ -17,25 +23,67 @@
 	}
 </script>
 
-<script>
+<script lang="ts">
 	import Spinner from '$lib/components/spinner.svelte';
 	import * as svelte from 'svelte';
-	import { fade } from 'svelte/transition';
+	import { fade, type TransitionConfig } from 'svelte/transition';
 	import { createEventDispatcher } from 'svelte';
+	import type { SvelteComponent, ComponentType } from 'svelte';
 
-	const dispatch = createEventDispatcher();
+	type BlurParams = {
+		duration?: number;
+		delay?: number;
+		easing?: (t: number) => number;
+	};
+
+	type ModalCallback = {
+		onOpen?: (event: CustomEvent) => void;
+		onClose?: (event: CustomEvent) => void;
+		onOpened?: (event: CustomEvent) => void;
+		onClosed?: (event: CustomEvent) => void;
+	};
+
+	type ModalState = {
+		ariaLabel: string | null;
+		ariaLabelledBy: string | null;
+		closeButton: ComponentType<SvelteComponent> | boolean;
+		closeOnEsc: boolean;
+		closeOnOuterClick: boolean;
+		styleBg: Record<string, string | number>;
+		styleWindowWrap: Record<string, string | number>;
+		styleWindow: Record<string, string | number>;
+		styleContent: Record<string, string | number>;
+		styleCloseButton: Record<string, string | number>;
+		classBg: string | null;
+		classWindowWrap: string | null;
+		classWindow: string | null;
+		classContent: string | null;
+		classCloseButton: string | null;
+		transitionBg: (node: Element, params: BlurParams) => TransitionConfig;
+		transitionBgProps: BlurParams;
+		transitionWindow: (node: Element, params: BlurParams) => TransitionConfig;
+		transitionWindowProps: BlurParams;
+		unstyled: boolean;
+	};
+
+	const dispatch = createEventDispatcher<{
+		open: void;
+		close: void;
+		closed: void;
+		opened: void;
+	}>();
 
 	const baseSetContext = svelte.setContext;
 
 	/**
 	 * A basic function that checks if a node is tabbale
 	 */
-	const baseIsTabbable = (node) =>
+	const baseIsTabbable = (node: HTMLElement): boolean =>
 		node.tabIndex >= 0 &&
 		!node.hidden &&
-		!node.disabled &&
+		!(node as HTMLInputElement).disabled &&
 		node.style.display !== 'none' &&
-		node.type !== 'hidden' &&
+		(node as HTMLInputElement).type !== 'hidden' &&
 		Boolean(node.offsetWidth || node.offsetHeight || node.getClientRects().length);
 
 	/**
@@ -271,13 +319,13 @@
 		currentTransitionWindow = state.transitionWindow;
 	};
 
-	const toVoid = () => {};
-	let onOpen = toVoid;
-	let onClose = toVoid;
-	let onOpened = toVoid;
-	let onClosed = toVoid;
+	const toVoid = (event?: CustomEvent) => {};
+	let onOpen: (event: CustomEvent) => void = toVoid;
+	let onClose: (event: CustomEvent) => void = toVoid;
+	let onOpened: (event: CustomEvent) => void = toVoid;
+	let onClosed: (event: CustomEvent) => void = toVoid;
 
-	const open = (NewComponent, newProps = {}, options = {}, callback = {}) => {
+	const open = (NewComponent: ComponentType<SvelteComponent>, newProps: Record<string, any> = {}, options: Partial<ModalState> = {}, callback: ModalCallback = {}) => {
 		Component = bind(NewComponent, newProps);
 		state = { ...defaultState, ...options };
 		updateStyleTransition();
@@ -328,7 +376,7 @@
 		};
 	};
 
-	const close = (callback = {}) => {
+	const close = (callback: ModalCallback = {}) => {
 		if (!Component) return;
 		onClose = callback.onClose || onClose;
 		onClosed = callback.onClosed || onClosed;
