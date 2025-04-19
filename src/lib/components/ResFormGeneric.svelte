@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { BuddyData, Reservation } from '$types';
-	import { ReservationType } from '$types';
+	import { ReservationType, OWTime } from '$types';
 	import { ReservationStatus, ReservationCategory } from '$types';
 	import { canSubmit, user, users } from '$lib/stores';
 	import { Settings } from '$lib/client/settings';
@@ -21,6 +21,7 @@
 	export let restrictModify = false;
 	export let error = '';
 	export let extendDisabled = false;
+	export let isAmFull = false;
 
 	export let discipline = '';
 	export let diveTime = '';
@@ -276,7 +277,7 @@
 							{/if}
 						{/each}
 					</ul>
-					{#if !viewOnly}
+					{#if !viewOnly }
 						<button
 							class="flex dark:text-white w-full max-w-[80px]"
 							type="button"
