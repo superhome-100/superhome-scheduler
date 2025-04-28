@@ -428,7 +428,7 @@ async function createBuddyEntriesForUpdate(sub: Reservation, orig: Reservation) 
 			}
 		}
 	}
-	console.log('modify', modify);
+
 	return { modify, create, cancel };
 }
 
@@ -490,8 +490,12 @@ export async function modifyReservation(formData: AppFormData) {
 	// check also if AM open water schedule is full
 	// do allow creating of buddy if am schedule is full
 	let { create, modify, cancel } = await createBuddyEntriesForUpdate(sub, orig);
-	if (settingDate?.ow_am_full && sub.owTime === OWTime.AM && create.length > 0) {
-		throw new ValidationError('The morning open water session is full for this date cannot add a buddy.');
+	if (settingDate?.ow_am_full && sub.owTime === OWTime.AM) {
+		if (create.length > 0) {
+			throw new ValidationError('The morning open water session is full for this date cannot add a buddy.');
+		} else if (modify.length > 0 && sub.date !== orig.date	) {
+			throw new ValidationError('The morning open water session is full for this date cannot change to that date.');
+		}
 	}
 
 	let existing = [...modify.map((rsv) => rsv.id!), ...cancel];
