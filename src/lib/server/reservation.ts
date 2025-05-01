@@ -493,8 +493,8 @@ export async function modifyReservation(formData: AppFormData) {
 	if (settingDate?.ow_am_full && sub.owTime === OWTime.AM) {
 		if (create.length > 0) {
 			throw new ValidationError('The morning open water session is full for this date cannot add a buddy.');
-		} else if (modify.length > 0 && sub.date !== orig.date	) {
-			throw new ValidationError('The morning open water session is full for this date cannot change to that date.');
+		} else if (modify.length > 0 && (sub.date !== orig.date || orig.owTime !== sub.owTime)) {
+			throw new ValidationError('The morning open water session is full for this date cannot change to that date or time.');
 		}
 	}
 
