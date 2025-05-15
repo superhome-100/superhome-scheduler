@@ -43,12 +43,20 @@ export function beforeResCutoff(
 	category: ReservationCategory
 ): boolean {
 	let now = dtu.PanglaoDate();
+	let today = dtu.datetimeToLocalDateStr(now);
 	let tomorrow = dtu.PanglaoDate();
 	tomorrow.setDate(now.getDate() + 1);
 	let tomStr = dtu.datetimeToLocalDateStr(tomorrow);
 
+	// For pool and classroom, allow booking if target time is in the future
 	if ([ReservationCategory.pool, ReservationCategory.classroom].includes(category)) {
-		return beforeCancelCutoff(stns, dateStr, startTime, category);
+		if (dateStr > today) {
+			return true;
+		} else if (dateStr === today) {
+			const timeUntilStart = dtu.timeStrToMin(startTime) - minuteOfDay(now);
+			return timeUntilStart > 0; // Allow if target time is in the future
+		}
+		return false;
 	} else if (dateStr > tomStr) {
 		return true;
 	} else if (dateStr == tomStr && minuteOfDay(now) <= resCutoff(stns, dateStr)) {
@@ -71,7 +79,7 @@ export function beforeCancelCutoff(
 	} else {
 		const timeUntilStart = dtu.timeStrToMin(startTime) - minuteOfDay(now);
 		if ([ReservationCategory.pool, ReservationCategory.classroom].includes(category)) {
-			return dateStr === today && timeUntilStart > 60; // 1 hour cutoff
+			return dateStr === today && timeUntilStart > 60; // Keep 1 hour cutoff for modifications
 		} else {
 			return dateStr === today && timeUntilStart > cancelCutoff(stns, category, dateStr);
 		}
