@@ -16,12 +16,12 @@ Setup [tea/cli](https://tea.xyz) first.
 
 ```bash
 cd superhome-scheduler
-pnpm install
+npm install
 ```
 
 ## dev
 ```bash
-pnpm dev
+npm run dev
 ```
 
 ## setup
@@ -29,8 +29,8 @@ pnpm dev
 This will configure your connection to the database
 
 ```sh
-pnpm add -g @xata.io/cli@latest
-pnpm
+npm install -g @xata.io/cli@latest
+npm install
 xata auth login
 xata init
 ```
