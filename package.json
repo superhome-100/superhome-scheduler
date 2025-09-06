@@ -2,6 +2,9 @@
 	"name": "superhome-scheduler",
 	"version": "0.0.1",
 	"private": true,
+	"engines": {
+		"node": ">=22 <23"
+	},
 	"scripts": {
 		"dev": "PUBLIC_STAGE=dev vite dev",
 		"build": "vite build",
@@ -24,7 +27,7 @@
 		"autoprefixer": "^10.4.14",
 		"classnames": "^2.3.2",
 		"dotenv": "^16.3.1",
-		"esbuild": "^0.17.15",
+		"esbuild": "^0.21.5",
 		"eslint": "^8.48.0",
 		"eslint-config-prettier": "^8.5.0",
 		"eslint-plugin-svelte3": "^4.0.0",
@@ -61,6 +64,6 @@
 		"timezone": "^1.0.23",
 		"utc": "^0.1.0"
 	},
-	"pkgx": "nodejs.org=18.15.0 npmjs.com^8.19.3 pnpm.io^8.9.0 xcfile.dev^0.5.0",
+	"packageManager": "npm@10.8.2",
 	"type": "module"
 }
