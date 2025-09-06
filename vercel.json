@@ -9,9 +9,5 @@
 			"path": "/api/updatePrices",
 			"schedule": "00 00-12 * * *"
 		}
-	],
-	"server": {
-		"memory": 128,
-		"maxDuration": 10
-	}
+	]
 }
