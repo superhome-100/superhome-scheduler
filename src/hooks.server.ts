@@ -1,5 +1,4 @@
 import type { Handle } from '@sveltejs/kit';
-import fetch from 'node-fetch';
 
 export const handle: Handle = async ({ event, resolve }) => {
     const { pathname, search } = new URL(event.url);
@@ -7,42 +6,28 @@ export const handle: Handle = async ({ event, resolve }) => {
         const redirectUrl = new URL(`https://freedive-superhome.firebaseapp.com${pathname}`);
         redirectUrl.search = search; // copy URL parameters
 
-        // Filter out problematic headers
-        const headers = Object.fromEntries(
-            Object.entries(event.request.headers).filter(
-                ([key]) => !['host', 'content-length', 'transfer-encoding'].includes(key.toLowerCase())
-            )
-        );
+        // Filter out problematic headers and forward method/body when appropriate
+        const filteredHeaders = new Headers(event.request.headers);
+        filteredHeaders.delete('host');
+        filteredHeaders.delete('content-length');
+        filteredHeaders.delete('transfer-encoding');
 
-        const proxyResponse = await fetch(redirectUrl.toString(), { headers });
-        const proxyHeaders = Object.fromEntries(
-            Object.entries(proxyResponse.headers).map(([key, value]) => [key, String(value)])
-        );
-        const { status } = proxyResponse;
-
-        let responseData: Blob | string;
-        const isJs = pathname.endsWith('.js');
-        if (isJs) {
-            // If it's a JS file, read the data as an ArrayBuffer and convert it to a Blob
-            const arrayBuffer = await proxyResponse.arrayBuffer();
-            responseData = new Blob([arrayBuffer], { type: proxyHeaders['content-type'] });
-        } else {
-            // Otherwise, just use the text data
-            responseData = await proxyResponse.text();
-        }
-        if (!isJs) {
-            proxyHeaders['content-type'] = 'text/html';
+        const method = event.request.method;
+        const init: RequestInit = { method, headers: filteredHeaders };
+        if (!['GET', 'HEAD'].includes(method)) {
+            // Clone body for forwarding; avoid attaching a body to GET/HEAD
+            const buf = await event.request.arrayBuffer();
+            init.body = buf;
         }
 
-        return new Response(responseData, {
-            status,
-            headers: {
-                ...proxyResponse.headers,
-                ...proxyHeaders
-            }
+        const proxyResponse = await fetch(redirectUrl.toString(), init);
+
+        // Stream the response through with original headers and status
+        return new Response(proxyResponse.body, {
+            status: proxyResponse.status,
+            headers: proxyResponse.headers
         });
     }
 
-    const response = await resolve(event);
-    return response;
+    return resolve(event);
 }

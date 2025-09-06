@@ -1,11 +1,10 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
-import mkcert from 'vite-plugin-mkcert';
 import path from 'path';
 
 export default defineConfig({
-	server: { https: true },
-	plugins: [sveltekit(), mkcert()],
+	server: { https: false, port: 5175, strictPort: true },
+	plugins: [sveltekit()],
 	resolve: {
 		alias: {
 			$utils: path.resolve('./src/utils'),
