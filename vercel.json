@@ -1,4 +1,5 @@
 {
+	"version": 2,
 	"crons": [
 		{
 			"path": "/api/backupDB",
@@ -10,8 +11,6 @@
 		}
 	],
 	"functions": {
-		"api/**/*": {
-			"runtime": "nodejs20.x"
-		}
+		"api/**/*": {}
 	}
 }
