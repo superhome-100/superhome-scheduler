@@ -10,10 +10,8 @@
 			"schedule": "00 00-12 * * *"
 		}
 	],
-	"functions": {
-		"api/**/*": {
-			"memory": 128,
-			"maxDuration": 10
-		}
+	"server": {
+		"memory": 128,
+		"maxDuration": 10
 	}
 }
