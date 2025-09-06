@@ -260,9 +260,10 @@ async function throwIfSubmissionIsInvalid(sub: Submission) {
 			sub.resType
 		)
 	) {
-		if (competitionSetupDays.includes(day)) {
-			throw new ValidationError('This training type is not available during Tuesdays and Fridays');
-		}
+		// ITS NOW AVAILABLE
+		// if (competitionSetupDays.includes(day)) {
+		// 	throw new ValidationError('This training type is not available during Tuesdays and Fridays');
+		// }
 		if (sub.buddies?.length < 2) {
 			throw new ValidationError(`Booking this training type requires a minimum of 2 buddies.`);
 		}
