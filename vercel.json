@@ -8,5 +8,8 @@
 			"path": "/api/updatePrices",
 			"schedule": "00 00-12 * * *"
 		}
-	]
+	],
+	"functions": {
+		"runtime": "nodejs22.x"
+	}
 }
