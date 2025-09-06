@@ -11,6 +11,9 @@
 		}
 	],
 	"functions": {
-		"api/**/*": {}
+		"api/**/*": {
+			"memory": 128,
+			"maxDuration": 10
+		}
 	}
 }
