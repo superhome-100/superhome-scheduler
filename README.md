@@ -43,6 +43,12 @@ to sync database schema to your local code generated config
 xata codegen
 ```
 
+## ssh
+
+```sh
+ssh root@157.245.148.156
+```
+
 ## Dependencies
 
 [`pkgx`] will automagically make the package dependencies available to your environment.
