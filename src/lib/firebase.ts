@@ -15,6 +15,7 @@ import {
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 let authDomain: string;
 const host = typeof window !== 'undefined' ? window.location.hostname : '';
+const isLocalhost = host === 'localhost' || host.startsWith('localhost:');
 switch (host) {
 	case 'app-dev.freedivesuperhome.com':
 		authDomain = 'app-dev.freedivesuperhome.com';
@@ -50,7 +51,10 @@ const loginWithGoogle = async () => {
 		/Chrome/.test(navigator.userAgent) &&
 		/Google Inc/.test(navigator.vendor) &&
 		!/Android/.test(navigator.userAgent);
-	if (isChromeDesktop) {
+	if (isLocalhost) {
+		// In local development, prefer popup to avoid redirect issues
+		await signInWithPopup(auth, googleProvider);
+	} else if (isChromeDesktop) {
 		await signInWithRedirect(auth, googleProvider);
 	} else {
 		await signInWithPopup(auth, googleProvider);
@@ -64,7 +68,10 @@ const loginWithFacebook = async () => {
 		/Chrome/.test(navigator.userAgent) &&
 		/Google Inc/.test(navigator.vendor) &&
 		!/Android/.test(navigator.userAgent);
-	if (isChromeDesktop) {
+	if (isLocalhost) {
+		// In local development, prefer popup to avoid redirect issues
+		await signInWithPopup(auth, facebookProvider);
+	} else if (isChromeDesktop) {
 		await signInWithRedirect(auth, facebookProvider);
 	} else {
 		await signInWithPopup(auth, facebookProvider);
