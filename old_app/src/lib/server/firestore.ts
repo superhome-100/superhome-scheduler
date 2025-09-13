@@ -4,7 +4,7 @@ import { getUserByEmail, getUserByFirebaseUID, getUserByFacebookId } from './use
 import dayjs from 'dayjs';
 
 const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT_KEY);
-
+console.log(serviceAccount);
 if (!admin.apps.length) {
 	admin.initializeApp({
 		credential: admin.credential.cert(serviceAccount)
