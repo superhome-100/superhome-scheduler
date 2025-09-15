@@ -44,15 +44,15 @@ alter table public.user_profiles enable row level security;
 alter table public.reservations enable row level security;
 
 -- USER PROFILES POLICIES: user can only manage their own row
-create policy if not exists "user_profiles_select_own"
+create policy "user_profiles_select_own"
   on public.user_profiles for select
   using (auth.uid() = uid);
 
-create policy if not exists "user_profiles_insert_own"
+create policy "user_profiles_insert_own"
   on public.user_profiles for insert
   with check (auth.uid() = uid);
 
-create policy if not exists "user_profiles_update_own"
+create policy "user_profiles_update_own"
   on public.user_profiles for update
   using (auth.uid() = uid)
   with check (auth.uid() = uid);
@@ -60,19 +60,19 @@ create policy if not exists "user_profiles_update_own"
 -- No delete policy (strict): users cannot delete their profile rows by default
 
 -- RESERVATIONS POLICIES: user can only manage their own reservations
-create policy if not exists "reservations_select_own"
+create policy "reservations_select_own"
   on public.reservations for select
   using (auth.uid() = uid);
 
-create policy if not exists "reservations_insert_own"
+create policy "reservations_insert_own"
   on public.reservations for insert
   with check (auth.uid() = uid);
 
-create policy if not exists "reservations_update_own"
+create policy "reservations_update_own"
   on public.reservations for update
   using (auth.uid() = uid)
   with check (auth.uid() = uid);
 
-create policy if not exists "reservations_delete_own"
+create policy "reservations_delete_own"
   on public.reservations for delete
   using (auth.uid() = uid);
