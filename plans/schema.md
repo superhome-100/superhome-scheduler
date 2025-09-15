@@ -12,8 +12,6 @@ The following tables organize the schema into clear column definitions. Types ar
 | name         | text        | Full name of the user                         |
 | status       | text        | User status: 'active' or 'disabled'          |
 | privileges   | text[]      | Array of privileges/roles associated with user (e.g., admin, user) |
-| google_id    | text        | OAuth Google ID if user authenticated via Google |
-| facebook_id  | text        | OAuth Facebook ID if user authenticated via Facebook |
 
 ### reservations
 
