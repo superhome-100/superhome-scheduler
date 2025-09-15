@@ -1,0 +1,33 @@
+# Schema
+
+## Structured schema tables
+
+The following tables organize the schema into clear column definitions. Types are proposed based on the notes; adjustments can be made during implementation.
+
+### user_profiles
+
+| Column       | Type        | Description                                  |
+|--------------|-------------|----------------------------------------------|
+| u_id         | uuid        | PK, equivalent to Auth login user ID         |
+| name         | text        | Full name of the user                         |
+| status       | text        | User status: 'active' or 'disabled'          |
+| privileges   | text[]      | Array of privileges/roles associated with user (e.g., admin, user) |
+| google_id    | text        | OAuth Google ID if user authenticated via Google |
+| facebook_id  | text        | OAuth Facebook ID if user authenticated via Facebook |
+
+### reservations
+
+| Column      | Type        | Description                                               |
+|-------------|-------------|-----------------------------------------------------------|
+| u_id        | uuid        | FK: references `user_profiles.u_id`                       |
+| res_date    | timestamptz | The date and time of the reservation                      |
+| res_type    | text        | Type of reservation: e.g., Pool, open water, classroom    |
+| res_status  | text        | Reservation status: 'confirmed' or 'rejected'             |
+
+## Notes
+
+- `u_id` in `user_profiles` should be linked to the Auth system's unique user ID for coherence.
+- `privileges` allows flexible role-based access control by storing an array of roles or permissions.
+- `res_date` uses timestamp with timezone for precise scheduling.
+- Consider adding indexes on `u_id` and `res_date` in `reservations` for efficient lookups.
+- Constraints or triggers can be added to enforce valid `res_type` and `res_status` values.
