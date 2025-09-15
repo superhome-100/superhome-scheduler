@@ -9,8 +9,6 @@ create table if not exists public.user_profiles (
   name text,
   status public.user_status not null default 'active',
   privileges text[] not null default '{}',
-  google_id text,
-  facebook_id text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -20,8 +18,6 @@ comment on column public.user_profiles.uid is 'PK, equivalent to Auth login user
 comment on column public.user_profiles.name is 'Full name of the user';
 comment on column public.user_profiles.status is 'User status: active or disabled';
 comment on column public.user_profiles.privileges is 'Array of privileges/roles associated with user (e.g., admin, user)';
-comment on column public.user_profiles.google_id is 'OAuth Google ID if user authenticated via Google';
-comment on column public.user_profiles.facebook_id is 'OAuth Facebook ID if user authenticated via Facebook';
 
 -- reservations table
 create table if not exists public.reservations (
