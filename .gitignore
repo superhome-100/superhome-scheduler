@@ -1,2 +1,15 @@
 # node_modules
 /node_modules
+
+#old migrations
+/oldsupabase
+
+#old_app
+/old_app
+
+#oldlib
+/oldlib
+
+#env
+.env
+

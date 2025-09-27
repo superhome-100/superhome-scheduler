@@ -1,0 +1,324 @@
+/* Login Container Styles */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, 
+    #000F26 0%, 
+    #001734 25%, 
+    #003257 50%, 
+    #00294C 75%, 
+    #011129 100%),
+    radial-gradient(ellipse at center, rgba(0, 41, 76, 0.3) 0%, transparent 70%);
+}
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(0, 41, 76, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 50, 87, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(0, 23, 52, 0.15) 0%, transparent 50%);
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+}
+
+/* Login Card - Glass morphism design */
+.login-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  max-width: 400px;
+  width: 100%;
+  position: relative;
+  z-index: 10;
+  margin: auto;
+  box-sizing: border-box;
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 3rem 2rem;
+  background: rgba(0, 41, 76, 0.1);
+  border: 1px solid rgba(0, 50, 87, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 15, 38, 0.4),
+    inset 0 1px 0 rgba(0, 50, 87, 0.1);
+}
+
+/* Header Section */
+.login-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.app-title {
+  color: white;
+  font-size: 2rem;
+  font-weight: 300;
+  margin: 0;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 15, 38, 0.3);
+}
+
+.app-subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 400;
+}
+
+.login-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* Wave Icon */
+.wave-icon {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #003257, #00294C);
+  border-radius: 50%;
+  position: relative;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.wave-icon::before {
+  content: '🌊';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+/* Login Buttons */
+.login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  padding: 0.875rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.login-btn:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+.google-btn {
+  background: rgba(255, 255, 255, 0.95);
+  color: #001F3D;
+  box-shadow: 0 2px 8px rgba(0, 15, 38, 0.2);
+  border: 1px solid rgba(0, 50, 87, 0.1);
+}
+
+.google-btn:hover {
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 15, 38, 0.3);
+  transform: translateY(-1px);
+}
+
+.facebook-btn {
+  background: #00294C;
+  color: white;
+  border: 1px solid #003257;
+  box-shadow: 0 2px 8px rgba(0, 41, 76, 0.4);
+}
+
+.facebook-btn:hover {
+  background: #003257;
+  box-shadow: 0 4px 12px rgba(0, 41, 76, 0.5);
+  transform: translateY(-1px);
+}
+
+.provider-icon {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.login-btn:hover .provider-icon {
+  transform: scale(1.1);
+}
+
+/* Footer Section */
+.login-footer {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+/* Error Message */
+.error-message {
+  background: rgba(254, 215, 215, 0.9);
+  color: #c53030;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  border: 1px solid rgba(254, 178, 178, 0.5);
+  backdrop-filter: blur(10px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.privacy-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  margin: 0;
+  text-align: center;
+}
+
+.privacy-link {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.privacy-link:hover {
+  color: white;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 1.5rem;
+  }
+
+  .login-card {
+    max-width: 350px;
+    padding: 2.5rem 1.5rem;
+  }
+
+  .app-title {
+    font-size: 1.75rem;
+  }
+
+  .wave-icon {
+    width: 50px;
+    height: 50px;
+  }
+
+  .wave-icon::before {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-container {
+    padding: 1rem;
+  }
+
+  .login-card {
+    max-width: 320px;
+    padding: 2rem 1.5rem;
+    gap: 1.5rem;
+  }
+
+  .app-title {
+    font-size: 1.5rem;
+  }
+
+  .app-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .login-btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+    min-height: 44px;
+  }
+
+  .wave-icon {
+    width: 45px;
+    height: 45px;
+  }
+
+  .wave-icon::before {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-container {
+    padding: 0.75rem;
+  }
+
+  .login-card {
+    padding: 1.5rem 1rem;
+    max-width: 300px;
+    gap: 1.25rem;
+  }
+
+  .app-title {
+    font-size: 1.25rem;
+  }
+
+  .login-btn {
+    padding: 0.625rem 1rem;
+    font-size: 0.85rem;
+    min-height: 42px;
+  }
+
+  .wave-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .wave-icon::before {
+    font-size: 1rem;
+  }
+}
