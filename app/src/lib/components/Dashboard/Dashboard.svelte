@@ -10,6 +10,7 @@
   import ReservationFormModal from '../ReservationFormModal/ReservationFormModal.svelte';
   import ReservationsListModal from '../ReservationsListModal/ReservationsListModal.svelte';
   import ReservationDetailsModal from '../ReservationDetailsModal/ReservationDetailsModal.svelte';
+  import SingleDayView from '../Calendar/SingleDayView.svelte';
   
   // Dashboard sub-components
   import DashboardHeader from './DashboardHeader.svelte';
@@ -21,6 +22,7 @@
   
   // Dashboard utilities
   import { getUpcomingReservations, getCompletedReservations, transformReservationsForModal } from './dashboardUtils';
+  import { transformReservationToUnified } from '../../utils/reservationTransform';
 
   let showSignOutModal = false;
   let mobileSidebarOpen = false;
@@ -29,6 +31,8 @@
   let showReservationDetails = false;
   let selectedReservation: any = null;
   let currentView = 'dashboard'; // 'dashboard', 'reservation', or 'admin'
+  let showSingleDayView = false;
+  let selectedDate = '';
   let reservations: Reservation[] = [];
   let loading = false;
   let refreshing = false;
@@ -60,8 +64,14 @@
 
     // Priority 1: URL-based routing with role enforcement
     if (urlPath.includes('/admin')) {
-      // Tentatively set admin; enforcement after admin check
-      currentView = 'admin';
+      // Check for specific admin sub-views
+      if (urlPath.includes('/admin/calendar')) {
+        currentView = 'admin-calendar';
+      } else if (urlPath.includes('/admin/users')) {
+        currentView = 'admin-users';
+      } else {
+        currentView = 'admin';
+      }
       return;
     } else if (urlPath.includes('/reservation')) {
       currentView = 'reservation';
@@ -99,11 +109,22 @@
     localStorage.setItem('currentView', newView);
     
     // Update URL without page reload
-    const newUrl = newView === 'dashboard' ? '/' : `/${newView}`;
+    let newUrl = '/';
+    if (newView === 'dashboard') {
+      newUrl = '/';
+    } else if (newView === 'admin') {
+      newUrl = '/admin';
+    } else if (newView === 'admin-calendar') {
+      newUrl = '/admin/calendar';
+    } else if (newView === 'admin-users') {
+      newUrl = '/admin/users';
+    } else {
+      newUrl = `/${newView}`;
+    }
     window.history.pushState({}, '', newUrl);
   };
 
-  // Load user's reservations from Supabase
+  // Load user's reservations from Supabase with detail tables
   const loadReservations = async () => {
     if (!$authStore.user) return;
     
@@ -111,15 +132,80 @@
       loading = true;
       error = null;
       
+      // Load reservations with all detail tables joined
       const { data, error: fetchError } = await supabase
         .from('reservations')
-        .select('*')
+        .select(`
+          *,
+          res_pool!left(start_time, end_time, lane, note),
+          res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, note),
+          res_classroom!left(start_time, end_time, room, note)
+        `)
         .eq('uid', $authStore.user.id)
         .order('res_date', { ascending: true });
       
       if (fetchError) throw fetchError;
       
-      reservations = data || [];
+      // Flatten the joined data for easier access
+      reservations = (data || []).map(reservation => {
+        const flattened = { ...reservation };
+        
+        // Flatten detail table data based on reservation type
+        if (reservation.res_type === 'pool' && reservation.res_pool) {
+          flattened.start_time = reservation.res_pool.start_time;
+          flattened.end_time = reservation.res_pool.end_time;
+          flattened.lane = reservation.res_pool.lane;
+          flattened.note = reservation.res_pool.note;
+          // Use the status from the detail table if available
+          if (reservation.res_pool.res_status) {
+            flattened.res_status = reservation.res_pool.res_status;
+          }
+        } else if (reservation.res_type === 'open_water' && reservation.res_openwater) {
+          flattened.time_period = reservation.res_openwater.time_period;
+          flattened.depth_m = reservation.res_openwater.depth_m;
+          flattened.buoy = reservation.res_openwater.buoy;
+          // auto_adjust_closest field removed
+          flattened.pulley = reservation.res_openwater.pulley;
+          flattened.deep_fim_training = reservation.res_openwater.deep_fim_training;
+          flattened.bottom_plate = reservation.res_openwater.bottom_plate;
+          flattened.large_buoy = reservation.res_openwater.large_buoy;
+          flattened.open_water_type = reservation.res_openwater.open_water_type;
+          flattened.student_count = reservation.res_openwater.student_count;
+          flattened.note = reservation.res_openwater.note;
+          // Use the status from the detail table if available
+          if (reservation.res_openwater.res_status) {
+            flattened.res_status = reservation.res_openwater.res_status;
+          }
+        } else if (reservation.res_type === 'classroom' && reservation.res_classroom) {
+          flattened.start_time = reservation.res_classroom.start_time;
+          flattened.end_time = reservation.res_classroom.end_time;
+          flattened.room = reservation.res_classroom.room;
+          flattened.note = reservation.res_classroom.note;
+          // Use the status from the detail table if available
+          if (reservation.res_classroom.res_status) {
+            flattened.res_status = reservation.res_classroom.res_status;
+          }
+        }
+        
+        // Remove the joined table objects to avoid confusion
+        delete flattened.res_pool;
+        delete flattened.res_openwater;
+        delete flattened.res_classroom;
+        
+        console.log('Flattened reservation:', {
+          res_type: flattened.res_type,
+          res_status: flattened.res_status,
+          original_status: reservation.res_status,
+          deep_fim_training: flattened.deep_fim_training,
+          pulley: flattened.pulley,
+          bottom_plate: flattened.bottom_plate,
+          large_buoy: flattened.large_buoy
+        });
+        
+        return flattened;
+      });
+      
+      console.log('Loaded reservations with details:', reservations);
     } catch (err) {
       console.error('Error loading reservations:', err);
       error = err instanceof Error ? err.message : 'Failed to load reservations';
@@ -180,12 +266,6 @@
     showReservationForm = true;
   };
 
-  const handleCalendarEventClick = (event: CustomEvent) => {
-    const reservation = event.detail;
-    // Calendar provides raw DB reservation; transform to modal shape
-    const [transformed] = transformReservationsForModal([reservation]);
-    handleReservationClick(transformed);
-  };
 
   const openUpcomingReservationsModal = () => {
     modalReservations = transformReservationsForModal(upcomingReservations);
@@ -212,29 +292,55 @@
     showReservationForm = false;
   };
 
-  const handleReservationClick = (reservation: any) => {
-    console.log('Dashboard: Received reservationClick from main dashboard:', reservation);
-    console.log('Dashboard: Has date field?', reservation && 'date' in reservation);
-    console.log('Dashboard: Reservation fields:', reservation ? Object.keys(reservation) : 'null');
+  const handleReservationClick = (event: CustomEvent) => {
+    const reservation = event.detail;
+    console.log('Dashboard: handleReservationClick - Raw reservation:', reservation);
+    console.log('Dashboard: handleReservationClick - res_status:', reservation?.res_status);
+    console.log('Dashboard: handleReservationClick - res_status type:', typeof reservation?.res_status);
     
-    // Guarantee modal shape. If date field missing, transform from raw DB row
-    if (reservation && !('date' in reservation)) {
-      console.log('Dashboard: Transforming main dashboard reservation data');
-      const [transformed] = transformReservationsForModal([reservation]);
-      console.log('Dashboard: Transformed reservation:', transformed);
-      console.log('Dashboard: Transformed fields:', transformed ? Object.keys(transformed) : 'null');
-      selectedReservation = transformed;
+    // Use unified transformation for consistent data structure
+    if (reservation) {
+      try {
+        const transformed = transformReservationToUnified(reservation);
+        console.log('Dashboard: handleReservationClick - Unified transformed reservation:', transformed);
+        selectedReservation = transformed;
+      } catch (error) {
+        console.error('Dashboard: Error transforming reservation:', error);
+        selectedReservation = null;
+      }
     } else {
-      console.log('Dashboard: Using main dashboard reservation as-is');
-      selectedReservation = reservation;
+      selectedReservation = null;
     }
     showReservationDetails = true;
-    console.log('Dashboard: Set showReservationDetails to true');
   };
 
   const closeReservationDetails = () => {
     showReservationDetails = false;
     selectedReservation = null;
+  };
+
+  const handleCalendarEventClick = (event: CustomEvent) => {
+    const reservation = event.detail;
+    // Calendar provides raw DB reservation; use unified transformation
+    try {
+      const transformed = transformReservationToUnified(reservation);
+      selectedReservation = transformed;
+      showReservationDetails = true;
+    } catch (error) {
+      console.error('Dashboard: Error transforming calendar reservation:', error);
+      selectedReservation = null;
+    }
+  };
+
+  const handleCalendarDateClick = (event: CustomEvent) => {
+    console.log('Dashboard: handleCalendarDateClick - event.detail:', event.detail);
+    selectedDate = event.detail;
+    showSingleDayView = true;
+  };
+
+  const handleBackToCalendar = () => {
+    showSingleDayView = false;
+    selectedDate = '';
   };
 
   const handleTabChange = (event: CustomEvent) => {
@@ -354,7 +460,15 @@
 
       <!-- Main Content -->
       <main class="main-content">
-        {#if currentView === 'dashboard'}
+        {#if showSingleDayView}
+          <SingleDayView
+            {selectedDate}
+            {reservations}
+            isAdmin={false}
+            on:backToCalendar={handleBackToCalendar}
+            on:reservationClick={handleReservationClick}
+          />
+        {:else if currentView === 'dashboard'}
           <DashboardHeader {userName} on:toggleMobileSidebar={toggleMobileSidebar} />
 
           <!-- Pull-to-Refresh Body -->
@@ -393,33 +507,30 @@
                 />
 
                 <!-- Calendar Section -->
-                <CalendarSection 
-                  {reservations}
-                  on:eventClick={handleCalendarEventClick}
-                />
+                <div class="calendar-section-wrapper">
+                  <CalendarSection 
+                    {reservations}
+                    on:eventClick={handleCalendarEventClick}
+                    on:dateClick={handleCalendarDateClick}
+                  />
+                </div>
               </div>
               
               <!-- Floating Action Button -->
               <FloatingActionButton on:newReservation={handleNewReservation} />
 
-              <!-- App Footer for dashboard -->
-              <footer class="app-footer">
-                © {new Date().getFullYear()} SuperHOME • Pull down to refresh
-              </footer>
             </div>
           </PullToRefresh>
         {:else if currentView === 'reservation'}
           <Reservation on:toggleMobileSidebar={toggleMobileSidebar} />
         {:else if currentView === 'admin'}
           <AdminDashboard on:toggleMobileSidebar={toggleMobileSidebar} />
+        {:else if currentView === 'admin-calendar'}
+          <AdminDashboard on:toggleMobileSidebar={toggleMobileSidebar} />
+        {:else if currentView === 'admin-users'}
+          <AdminDashboard on:toggleMobileSidebar={toggleMobileSidebar} />
         {/if}
 
-        <!-- App Footer for non-dashboard views -->
-        {#if currentView !== 'dashboard'}
-        <footer class="app-footer">
-          © {new Date().getFullYear()} SuperHOME
-        </footer>
-        {/if}
       </main>
     </div>
   {/if}
@@ -439,7 +550,7 @@
   title={modalTitle}
   showDetails={true}
   on:close={closeReservationsModal}
-  on:reservationClick={(event) => handleReservationClick(event.detail)}
+  on:reservationClick={handleReservationClick}
 />
 
 <!-- Reservation Details Modal -->
@@ -458,20 +569,29 @@
 
 <style>
   .dashboard-container {
-    min-height: 100vh;
+    height: 100vh;
     background: #f8fafc;
+    overflow: hidden; /* prevent body + inner double scroll */
   }
 
   .dashboard-layout {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
   }
 
   .main-content {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100%;
+    min-height: 0; /* allow child scroll container to size */
+    overflow: hidden; /* only inner PullToRefresh scrolls */
+  }
+
+  /* Ensure the PullToRefresh becomes the single scroll container */
+  .main-content > :global(.pull-to-refresh-container) {
+    flex: 1;
+    min-height: 0;
   }
 
   .dashboard-content {
@@ -519,13 +639,10 @@
     cursor: pointer;
   }
 
-  .app-footer {
-    text-align: center;
-    padding: 1rem;
-    color: #64748b;
-    font-size: 0.875rem;
-    border-top: 1px solid #e2e8f0;
-    background: white;
+
+  /* Calendar wrapper for mobile hiding */
+  .calendar-section-wrapper {
+    display: block;
   }
 
   /* Mobile responsive */
@@ -536,6 +653,11 @@
 
     .content-body {
       gap: 1rem;
+    }
+
+    /* Hide calendar on mobile */
+    .calendar-section-wrapper {
+      display: none;
     }
   }
 </style>

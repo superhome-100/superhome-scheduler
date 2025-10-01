@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import dayjs from 'dayjs';
   import LoadingSpinner from '../LoadingSpinner.svelte';
 
   const dispatch = createEventDispatcher();
@@ -19,15 +20,6 @@
     dispatch('toggleUserPrivilege', { uid, currentPrivileges });
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 </script>
 
 <div class="section">
@@ -51,8 +43,6 @@
           <th scope="col">Name</th>
           <th scope="col">Status</th>
           <th scope="col">Privileges</th>
-          <th scope="col">Created At</th>
-          <th scope="col">Updated At</th>
           <th scope="col" class="text-right">Actions</th>
         </tr>
       </thead>
@@ -87,8 +77,6 @@
                 {user.privileges.includes('admin') ? 'Admin' : 'User'}
               </button>
             </td>
-            <td data-label="Created At"><span class="date-text">{formatDate(user.created_at)}</span></td>
-            <td data-label="Updated At"><span class="date-text">{formatDate(user.updated_at)}</span></td>
             <td data-label="Actions" class="text-right">
               <button 
                 class="action-btn refresh"
@@ -222,6 +210,10 @@
     gap: 0.75rem;
   }
 
+  .user-info span {
+    color: #000000;
+  }
+
   .user-avatar {
     width: 32px;
     height: 32px;
@@ -292,10 +284,7 @@
     background: #e2e8f0;
   }
 
-  .date-text {
-    color: #64748b;
-    font-size: 0.875rem;
-  }
+  
 
   .action-btn {
     padding: 0.5rem;

@@ -56,20 +56,23 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow: hidden;
   }
 
   .compact-date {
     font-size: 0.875rem;
     font-weight: 600;
     color: #374151;
-    min-width: 60px;
+    min-width: 2.5rem;
+    flex-shrink: 0;
   }
 
   .compact-time {
     font-size: 0.875rem;
     color: #64748b;
-    min-width: 80px;
+    min-width: 3rem;
+    flex-shrink: 0;
   }
 
   .reservation-item:hover {
@@ -91,5 +94,22 @@
   .reservation-item.clickable:focus {
     outline: 2px solid #3b82f6;
     outline-offset: 2px;
+  }
+
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .compact-content {
+      gap: 0.375rem;
+    }
+
+    .compact-date {
+      font-size: 0.8125rem;
+      min-width: 2rem;
+    }
+
+    .compact-time {
+      font-size: 0.8125rem;
+      min-width: 2.5rem;
+    }
   }
 </style>

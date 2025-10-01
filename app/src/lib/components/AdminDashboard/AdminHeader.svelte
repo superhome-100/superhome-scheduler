@@ -36,6 +36,9 @@
 
   .header-content {
     padding: 1.5rem 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
   }
 
   .header-left {
@@ -76,13 +79,62 @@
     margin: 0;
   }
 
-  @media (max-width: 768px) {
+  /* Mobile First Responsive Design */
+  @media (max-width: 480px) {
+    .mobile-menu-toggle {
+      display: flex;
+    }
+
+    .header-content {
+      padding: 0.75rem;
+    }
+
+    .page-title {
+      font-size: 1.5rem;
+    }
+
+    .page-subtitle {
+      font-size: 0.875rem;
+    }
+  }
+
+  @media (min-width: 481px) and (max-width: 768px) {
     .mobile-menu-toggle {
       display: flex;
     }
 
     .header-content {
       padding: 1rem;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+    }
+  }
+
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .header-content {
+      padding: 1.25rem;
+    }
+  }
+
+  @media (min-width: 1025px) and (max-width: 1200px) {
+    .header-content {
+      padding: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1201px) {
+    .header-content {
+      padding: 1.5rem 2rem;
+    }
+  }
+
+  /* Large screens optimization */
+  @media (min-width: 1600px) {
+    .header-content {
+      max-width: 1600px;
+      padding: 1.5rem 2.5rem;
     }
   }
 </style>

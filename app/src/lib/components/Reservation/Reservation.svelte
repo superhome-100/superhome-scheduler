@@ -10,7 +10,9 @@
   import ReservationTypeButtons from './ReservationTypeButtons.svelte';
   import ReservationCalendar from './ReservationCalendar.svelte';
   import FloatingActionButton from './FloatingActionButton.svelte';
+  import SingleDayView from '../Calendar/SingleDayView.svelte';
   import { transformReservationForModal } from './reservationUtils';
+  import { transformReservationToUnified } from '../../utils/reservationTransform';
   import { createEventDispatcher } from 'svelte';
 
   const dispatch = createEventDispatcher();
@@ -20,6 +22,11 @@
   let showDetailsModal = false;
   let refreshing = false;
   let selectedReservation: any = null;
+  
+  // Single day view state
+  let showSingleDayView = false;
+  let selectedDate: string = '';
+  let initialSingleDayType: 'pool' | 'openwater' | 'classroom' = 'pool';
   
   // Database data
   let reservations: any[] = [];
@@ -50,12 +57,31 @@
     const reservation = event.detail;
     console.log('Raw reservation data:', reservation);
     
-    selectedReservation = transformReservationForModal(reservation);
-    console.log('Transformed reservation data:', selectedReservation);
+    try {
+      selectedReservation = transformReservationToUnified(reservation);
+      console.log('Unified transformed reservation data:', selectedReservation);
+    } catch (error) {
+      console.error('Error transforming reservation:', error);
+      selectedReservation = null;
+    }
     showDetailsModal = true;
   };
 
-  // Load user's reservations from Supabase
+  // Handle calendar date click
+  const handleCalendarDateClick = (event: CustomEvent) => {
+    const detail: any = event.detail;
+    selectedDate = typeof detail === 'string' ? detail : detail?.date;
+    initialSingleDayType = typeof detail === 'string' ? selectedType : (detail?.type || selectedType);
+    showSingleDayView = true;
+  };
+
+  // Handle back to calendar
+  const handleBackToCalendar = () => {
+    showSingleDayView = false;
+    selectedDate = '';
+  };
+
+  // Load user's reservations from Supabase with detail tables
   const loadReservations = async () => {
     if (!$authStore.user) return;
     
@@ -63,18 +89,70 @@
       loading = true;
       error = null;
       
+      // Load reservations with all detail tables joined
       const { data, error: fetchError } = await supabase
         .from('reservations')
-        .select('*')
+        .select(`
+          *,
+          res_pool!left(start_time, end_time, lane, note),
+          res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, note),
+          res_classroom!left(start_time, end_time, room, note)
+        `)
         .eq('uid', $authStore.user.id)
         .order('res_date', { ascending: true });
       
       if (fetchError) throw fetchError;
       
-      reservations = data || [];
+      // Flatten the joined data for easier access
+      reservations = (data || []).map(reservation => {
+        const flattened = { ...reservation };
+        
+        // Flatten detail table data based on reservation type
+        if (reservation.res_type === 'pool' && reservation.res_pool) {
+          flattened.start_time = reservation.res_pool.start_time;
+          flattened.end_time = reservation.res_pool.end_time;
+          flattened.lane = reservation.res_pool.lane;
+          flattened.note = reservation.res_pool.note;
+          // Use the status from the detail table if available
+          if (reservation.res_pool.res_status) {
+            flattened.res_status = reservation.res_pool.res_status;
+          }
+        } else if (reservation.res_type === 'open_water' && reservation.res_openwater) {
+          flattened.time_period = reservation.res_openwater.time_period;
+          flattened.depth_m = reservation.res_openwater.depth_m;
+          flattened.buoy = reservation.res_openwater.buoy;
+          // auto_adjust_closest field removed
+          flattened.pulley = reservation.res_openwater.pulley;
+          flattened.deep_fim_training = reservation.res_openwater.deep_fim_training;
+          flattened.bottom_plate = reservation.res_openwater.bottom_plate;
+          flattened.large_buoy = reservation.res_openwater.large_buoy;
+          flattened.open_water_type = reservation.res_openwater.open_water_type;
+          flattened.student_count = reservation.res_openwater.student_count;
+          flattened.note = reservation.res_openwater.note;
+          // Use the status from the detail table if available
+          if (reservation.res_openwater.res_status) {
+            flattened.res_status = reservation.res_openwater.res_status;
+          }
+        } else if (reservation.res_type === 'classroom' && reservation.res_classroom) {
+          flattened.start_time = reservation.res_classroom.start_time;
+          flattened.end_time = reservation.res_classroom.end_time;
+          flattened.room = reservation.res_classroom.room;
+          flattened.note = reservation.res_classroom.note;
+          // Use the status from the detail table if available
+          if (reservation.res_classroom.res_status) {
+            flattened.res_status = reservation.res_classroom.res_status;
+          }
+        }
+        
+        // Remove the joined table objects to avoid confusion
+        delete flattened.res_pool;
+        delete flattened.res_openwater;
+        delete flattened.res_classroom;
+        
+        return flattened;
+      });
       
-      // Calendar will re-initialize automatically via reactive statements
-      
+      console.log('Loaded reservations with details:', reservations);
     } catch (err) {
       console.error('Error loading reservations:', err);
       error = err instanceof Error ? err.message : 'Failed to load reservations';
@@ -150,23 +228,37 @@
               <button on:click={loadReservations}>Retry</button>
             </div>
           {:else}
-            <!-- Reservation Type Buttons -->
-            <ReservationTypeButtons 
-              bind:selectedType 
-              on:typeSelected={handleTypeSelected}
-            />
+            {#if showSingleDayView}
+              <SingleDayView
+                {selectedDate}
+                {reservations}
+                isAdmin={false}
+      initialType={initialSingleDayType}
+                on:backToCalendar={handleBackToCalendar}
+                on:reservationClick={handleReservationClick}
+              />
+            {:else}
+              <!-- Reservation Type Buttons -->
+              <ReservationTypeButtons 
+                bind:selectedType 
+                on:typeSelected={handleTypeSelected}
+              />
 
-            <!-- Calendar Section -->
-            <ReservationCalendar 
-              {selectedType} 
-              {reservations}
-              on:reservationClick={handleReservationClick}
-            />
+              <!-- Calendar Section -->
+              <ReservationCalendar 
+                {selectedType} 
+                {reservations}
+                on:reservationClick={handleReservationClick}
+                on:dateClick={handleCalendarDateClick}
+              />
+            {/if}
           {/if}
         </div>
 
         <!-- Floating Action Button: New Reservation -->
-        <FloatingActionButton on:newReservation={handleNewReservation} />
+        {#if !showSingleDayView}
+          <FloatingActionButton on:newReservation={handleNewReservation} />
+        {/if}
       </main>
     </PullToRefresh>
   </div>
@@ -189,14 +281,16 @@
 
 <style>
   .reservation-container {
-    min-height: 100vh;
+    height: 100vh;
     background: #f8fafc;
+    overflow: hidden; /* prevent double scroll; PullToRefresh scrolls */
   }
 
   .reservation-layout {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100%;
+    min-height: 0;
     background: #f8fafc;
   }
 
@@ -205,6 +299,14 @@
     display: flex;
     flex-direction: column;
     background: #f8fafc;
+    min-height: 0;
+    overflow: hidden; /* only child PullToRefresh scrolls */
+  }
+
+  /* Ensure PullToRefresh becomes the single scroll container */
+  .reservation-layout > :global(.pull-to-refresh-container) {
+    flex: 1;
+    min-height: 0;
   }
 
 

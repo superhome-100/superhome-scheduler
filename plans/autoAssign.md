@@ -14,7 +14,7 @@ The Open Water Reservation System includes an Auto-Pair feature that intelligent
 ### Pairing Strategy:
 
 #### 1. **Buddy Group Formation**
-- Groups divers who are already buddies (pre-existing relationships)
+- Groups divers who are manually SELECTED buddies 
 - Respects pre-assigned buoy preferences
 - Sorts groups by depth (deepest to shallowest)
 
@@ -40,7 +40,7 @@ The Open Water Reservation System includes an Auto-Pair feature that intelligent
 
 ```
 1. Create Buddy Groups
-   ├── Group existing buddies together
+   ├── Group manually selected buddies
    ├── Respect pre-assigned buoys
    └── Sort by depth (deepest first)
 

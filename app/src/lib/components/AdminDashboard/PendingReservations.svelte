@@ -1,7 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import LoadingSpinner from '../LoadingSpinner.svelte';
-  import { formatDate, getTypeDisplay } from './adminUtils';
+  import { getTypeDisplay } from './adminUtils';
+  import dayjs from 'dayjs';
 
   const dispatch = createEventDispatcher();
 
@@ -45,7 +46,7 @@
               <span class="reservation-type-badge" class:pool={reservation.res_type === 'pool'} class:open-water={reservation.res_type === 'open_water'} class:classroom={reservation.res_type === 'classroom'}>
                 {getTypeDisplay(reservation.res_type)}
               </span>
-              <span class="pi-date">{formatDate(reservation.res_date)}</span>
+              <span class="pi-date">{dayjs(reservation.res_date).format('MMM D, YYYY')}</span>
             </div>
           </div>
           <div class="pi-actions">
@@ -72,7 +73,7 @@
               </div>
             </div>
             <div class="reservation-date">
-              {formatDate(reservation.res_date)}
+              {dayjs(reservation.res_date).format('MMM D, YYYY')}
             </div>
           </div>
           
@@ -88,7 +89,7 @@
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
                 </svg>
-                Requested {formatDate(reservation.created_at)}
+                Requested {dayjs(reservation.created_at).format('MMM D, YYYY')}
               </span>
             </div>
           </div>

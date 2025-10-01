@@ -1,13 +1,27 @@
 <script lang="ts">
   export let reservation: any;
+  // Compute canonical status from either field
+  $: canonicalStatus = reservation?.status || reservation?.res_status || 'pending';
+  // Map only for display (match old modal wording)
+  $: displayStatus = canonicalStatus === 'confirmed' ? 'approved' : canonicalStatus;
 </script>
 
 <div class="badges">
-  <span class="type-badge" class:pool={reservation.type === 'Pool'} class:openwater={reservation.type === 'Open Water'} class:classroom={reservation.type === 'Classroom'}>
-    {reservation.type}
+  <span class="type-badge" 
+        class:pool={reservation.type === 'Pool' || reservation.res_type === 'pool'} 
+        class:openwater={reservation.type === 'Open Water' || reservation.res_type === 'open_water'} 
+        class:classroom={reservation.type === 'Classroom' || reservation.res_type === 'classroom'}>
+    {reservation.type || 
+     (reservation.res_type === 'pool' ? 'Pool' : 
+      reservation.res_type === 'open_water' ? 'Open Water' : 
+      reservation.res_type === 'classroom' ? 'Classroom' : 
+      reservation.res_type || 'Unknown')}
   </span>
-  <span class="status-badge" class:approved={reservation.status === 'approved'} class:pending={reservation.status === 'pending'} class:rejected={reservation.status === 'rejected'} class:completed={reservation.status === 'completed'} class:ongoing={reservation.status === 'ongoing'}>
-    {reservation.status}
+  <span class="status-badge" 
+        class:confirmed={canonicalStatus === 'confirmed'} 
+        class:pending={canonicalStatus === 'pending'} 
+        class:rejected={canonicalStatus === 'rejected'}>
+    {displayStatus}
   </span>
 </div>
 
@@ -51,7 +65,7 @@
     letter-spacing: 0.05em;
   }
 
-  .status-badge.approved {
+  .status-badge.confirmed {
     background: rgba(16, 185, 129, 0.1);
     color: #059669;
   }
@@ -66,13 +80,4 @@
     color: #dc2626;
   }
 
-  .status-badge.completed {
-    background: rgba(59, 130, 246, 0.1);
-    color: #1d4ed8;
-  }
-
-  .status-badge.ongoing {
-    background: rgba(168, 85, 247, 0.1);
-    color: #7c3aed;
-  }
 </style>

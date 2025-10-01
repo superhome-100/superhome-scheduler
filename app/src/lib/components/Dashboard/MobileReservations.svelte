@@ -1,5 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { formatDateForCalendar } from '../../utils/dateUtils';
+  import dayjs from 'dayjs';
   import LoadingSpinner from '../LoadingSpinner.svelte';
 
   const dispatch = createEventDispatcher();
@@ -17,6 +19,7 @@
     dispatch('tabChange', tab);
   };
 
+
   const handleViewAll = () => {
     dispatch('viewAll');
   };
@@ -29,20 +32,6 @@
     dispatch('newReservation');
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric' 
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: true 
-    });
-  };
 
   const getTypeDisplay = (type: string) => {
     const typeMap: Record<string, string> = {
@@ -54,12 +43,8 @@
   };
 
   const getStatusDisplay = (status: string) => {
-    const statusMap: Record<string, string> = {
-      pending: 'Pending',
-      confirmed: 'Confirmed',
-      rejected: 'Rejected'
-    };
-    return statusMap[status] || status;
+    // Return the exact database enum values
+    return status || 'pending';
   };
 </script>
 
@@ -111,8 +96,16 @@
                 aria-label="View reservation details"
               >
                 <div class="compact-content">
-                  <span class="compact-date">{formatDate(reservation.res_date)}</span>
-                  <span class="compact-time">{formatTime(reservation.res_date)}</span>
+                  <span class="compact-date">{formatDateForCalendar(reservation.res_date)}</span>
+                  <span class="compact-time">
+                    {#if reservation.res_type === 'open_water' && reservation.time_period}
+                      {reservation.time_period}
+                    {:else if reservation.start_time && reservation.end_time}
+                      {dayjs(`2000-01-01T${reservation.start_time}`).format('h:mm A')} - {dayjs(`2000-01-01T${reservation.end_time}`).format('h:mm A')}
+                    {:else}
+                      {dayjs(reservation.res_date).format('h:mm A')}
+                    {/if}
+                  </span>
                   <span class="type-badge compact" class:pool={reservation.res_type === 'pool'} class:openwater={reservation.res_type === 'open_water'} class:classroom={reservation.res_type === 'classroom'}>
                     {getTypeDisplay(reservation.res_type)}
                   </span>
@@ -145,8 +138,16 @@
                 aria-label="View reservation details"
               >
                 <div class="compact-content">
-                  <span class="compact-date">{formatDate(reservation.res_date)}</span>
-                  <span class="compact-time">{formatTime(reservation.res_date)}</span>
+                  <span class="compact-date">{formatDateForCalendar(reservation.res_date)}</span>
+                  <span class="compact-time">
+                    {#if reservation.res_type === 'open_water' && reservation.time_period}
+                      {reservation.time_period}
+                    {:else if reservation.start_time && reservation.end_time}
+                      {dayjs(`2000-01-01T${reservation.start_time}`).format('h:mm A')} - {dayjs(`2000-01-01T${reservation.end_time}`).format('h:mm A')}
+                    {:else}
+                      {dayjs(reservation.res_date).format('h:mm A')}
+                    {/if}
+                  </span>
                   <span class="type-badge compact" class:pool={reservation.res_type === 'pool'} class:openwater={reservation.res_type === 'open_water'} class:classroom={reservation.res_type === 'classroom'}>
                     {getTypeDisplay(reservation.res_type)}
                   </span>
@@ -288,22 +289,25 @@
   .compact-content {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+    overflow: hidden;
   }
 
   .compact-date {
     font-size: 0.875rem;
     font-weight: 600;
     color: #1e293b;
-    min-width: 3rem;
+    min-width: 2.5rem;
+    flex-shrink: 0;
   }
 
   .compact-time {
     font-size: 0.875rem;
     font-weight: 500;
     color: #64748b;
-    min-width: 4rem;
+    min-width: 3rem;
+    flex-shrink: 0;
   }
 
   .type-badge.compact {
@@ -451,5 +455,30 @@
     .mobile-reservations {
       display: block;
     }
+
+    .compact-content {
+      gap: 0.375rem;
+    }
+
+    .compact-date {
+      font-size: 0.8125rem;
+      min-width: 2rem;
+    }
+
+    .compact-time {
+      font-size: 0.8125rem;
+      min-width: 2.5rem;
+    }
+
+    .type-badge.compact {
+      padding: 0.125rem 0.375rem;
+      font-size: 0.625rem;
+    }
+
+    .status-badge.compact {
+      padding: 0.125rem 0.375rem;
+      font-size: 0.625rem;
+    }
   }
 </style>
+

@@ -115,8 +115,14 @@
             uid: $authStore.user.id,
             res_date: res_date_iso,
             time_period: submissionData.timeOfDay,
-            depth_m: parseInt(formData.depth as unknown as string, 10),
-            auto_adjust_closest: !!formData.autoPair,
+            depth_m: formData.depth ? parseInt(formData.depth as unknown as string, 10) : null,
+            open_water_type: formData.openWaterType,
+            student_count: formData.openWaterType === 'course_coaching' ? parseInt(formData.studentCount as unknown as string, 10) : null,
+            // Equipment fields for Autonomous types
+            pulley: !!formData.pulley,
+            deep_fim_training: !!formData.deepFimTraining,
+            bottom_plate: !!formData.bottomPlate,
+            large_buoy: !!formData.largeBuoy,
             note: submissionData.notes.trim() || null
           });
         childErr = error;

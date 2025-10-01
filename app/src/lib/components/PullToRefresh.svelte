@@ -111,7 +111,11 @@
 <style>
   .pull-to-refresh-container {
     position: relative;
-    height: 100vh;
+    /* Fill available height from parent rather than forcing viewport height */
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
@@ -170,6 +174,7 @@
   }
 
   .content {
-    min-height: 100%;
+    /* Allow content to size naturally inside the scroll container */
+    min-height: 0;
   }
 </style>

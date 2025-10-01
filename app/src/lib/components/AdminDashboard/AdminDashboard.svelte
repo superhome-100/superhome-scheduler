@@ -7,8 +7,10 @@
   import AdminHeader from './AdminHeader.svelte';
   import PendingReservations from './PendingReservations.svelte';
   import UserManagement from './UserManagement.svelte';
+  import AdminCalendar from './AdminCalendar.svelte';
   import ReservationDetailsModal from './ReservationDetailsModal.svelte';
-  import { formatDate, getTypeDisplay } from './adminUtils';
+  import SingleDayView from '../Calendar/SingleDayView.svelte';
+  import { getTypeDisplay } from './adminUtils';
 
   const dispatch = createEventDispatcher();
 
@@ -40,6 +42,13 @@
   let showRejectModal = false;
   let selectedReservation: any = null;
   let rejectReason = '';
+  let currentView = 'dashboard'; // 'dashboard', 'calendar', 'users'
+  let adminView = 'dashboard'; // Track which admin view to show
+  
+  // Single day view state
+  let showSingleDayView = false;
+  let selectedDate: string = '';
+  let initialSingleDayType: 'pool' | 'openwater' | 'classroom' = 'pool';
   let stats = {
     totalUsers: 0,
     activeUsers: 0,
@@ -63,6 +72,30 @@
     dispatch('toggleMobileSidebar');
   };
 
+  // Navigation handlers
+  const setView = (view: string) => {
+    currentView = view;
+  };
+
+  // Handle calendar event click
+  const handleCalendarEventClick = (reservation: any) => {
+    openReservationDetails(reservation);
+  };
+
+  // Handle calendar date click
+  const handleCalendarDateClick = (event: CustomEvent) => {
+    const detail: any = event.detail;
+    selectedDate = typeof detail === 'string' ? detail : detail?.date;
+    initialSingleDayType = typeof detail === 'string' ? initialSingleDayType : (detail?.type || initialSingleDayType);
+    showSingleDayView = true;
+  };
+
+  // Handle back to calendar
+  const handleBackToCalendar = () => {
+    showSingleDayView = false;
+    selectedDate = '';
+  };
+
   // Load admin data
   const loadAdminData = async () => {
     try {
@@ -78,8 +111,8 @@
       if (usersError) throw usersError;
 
       // Load reservations with user info
-      let reservationsData = [];
-      let pendingReservationsData = [];
+      let reservationsData: any[] = [];
+      let pendingReservationsData: any[] = [];
       try {
         const { data: resData, error: reservationsError } = await supabase
           .from('reservations')
@@ -204,6 +237,20 @@
     }
   };
 
+  // Determine admin view based on current view
+  $: {
+    if (typeof window !== 'undefined') {
+      const urlPath = window.location.pathname;
+      if (urlPath.includes('/admin/calendar')) {
+        adminView = 'calendar';
+      } else if (urlPath.includes('/admin/users')) {
+        adminView = 'users';
+      } else {
+        adminView = 'dashboard';
+      }
+    }
+  }
+
   // Load data on mount
   onMount(() => {
     loadAdminData();
@@ -228,22 +275,43 @@
           <button class="retry-btn" on:click={loadAdminData}>Retry</button>
         </div>
       {:else}
-        <PendingReservations 
-          {pendingReservations}
-          {stats}
-          {processingReservation}
-          on:refresh={handleRefresh}
-          on:reservationAction={(e: any) => handleReservationAction(e.detail.reservation, e.detail.action)}
-          on:openReservationDetails={(e: any) => openReservationDetails(e.detail)}
-        />
-
-        <UserManagement 
-          {users}
-          {stats}
-          on:refresh={handleRefresh}
-          on:toggleUserStatus={(e: any) => toggleUserStatus(e.detail.uid, e.detail.currentStatus)}
-          on:toggleUserPrivilege={(e: any) => toggleUserPrivilege(e.detail.uid, e.detail.currentPrivileges)}
-        />
+        <!-- Content based on admin view -->
+        {#if adminView === 'dashboard'}
+          <PendingReservations 
+            {pendingReservations}
+            {stats}
+            {processingReservation}
+            on:refresh={handleRefresh}
+            on:reservationAction={(e: any) => handleReservationAction(e.detail.reservation, e.detail.action)}
+            on:openReservationDetails={(e: any) => openReservationDetails(e.detail)}
+          />
+        {:else if adminView === 'calendar'}
+          {#if showSingleDayView}
+            <SingleDayView
+              {selectedDate}
+              {reservations}
+              isAdmin={true}
+              initialType={initialSingleDayType}
+              on:backToCalendar={handleBackToCalendar}
+              on:reservationClick={handleCalendarEventClick}
+            />
+          {:else}
+            <AdminCalendar 
+              {reservations}
+              {loading}
+              on:eventClick={handleCalendarEventClick}
+              on:dateClick={handleCalendarDateClick}
+            />
+          {/if}
+        {:else if adminView === 'users'}
+          <UserManagement 
+            {users}
+            {stats}
+            on:refresh={handleRefresh}
+            on:toggleUserStatus={(e: any) => toggleUserStatus(e.detail.uid, e.detail.currentStatus)}
+            on:toggleUserPrivilege={(e: any) => toggleUserPrivilege(e.detail.uid, e.detail.currentPrivileges)}
+          />
+        {/if}
       {/if}
     </div>
   </PullToRefresh>
@@ -259,15 +327,27 @@
 
 <style>
   .admin-dashboard {
-    min-height: 100vh;
+    height: 100vh;
     background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* only inner PullToRefresh scrolls */
+    width: 100%;
+  }
+
+  /* Ensure PullToRefresh becomes the single scroll container */
+  .admin-dashboard > :global(.pull-to-refresh-container) {
+    flex: 1;
+    min-height: 0;
   }
 
   .admin-content {
     padding: 2rem;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
+    width: 100%;
   }
+
 
   .loading-container {
     display: flex;
@@ -319,9 +399,55 @@
     background: #2563eb;
   }
 
-  @media (max-width: 768px) {
+  /* Mobile First Responsive Design */
+  @media (max-width: 480px) {
+    .admin-content {
+      padding: 0.75rem;
+      max-width: 100%;
+    }
+
+  }
+
+  @media (min-width: 481px) and (max-width: 768px) {
     .admin-content {
       padding: 1rem;
+      max-width: 100%;
+    }
+  }
+
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .admin-content {
+      padding: 1.5rem;
+      max-width: 100%;
+    }
+  }
+
+  @media (min-width: 1025px) and (max-width: 1200px) {
+    .admin-content {
+      padding: 2rem;
+      max-width: 1200px;
+    }
+  }
+
+  @media (min-width: 1201px) {
+    .admin-content {
+      padding: 2rem;
+      max-width: 1400px;
+    }
+  }
+
+  /* Additional responsive improvements */
+  @media (max-width: 320px) {
+    .admin-content {
+      padding: 0.5rem;
+    }
+  }
+
+  /* Large screens optimization */
+  @media (min-width: 1600px) {
+    .admin-content {
+      max-width: 1600px;
+      padding: 2.5rem;
     }
   }
 </style>

@@ -1,0 +1,727 @@
+.single-day-view {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.single-day-header {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.single-day-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.single-day-content {
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 60vh;
+}
+
+/* Make Open Water admin view full-width like the calendar-type-buttons bar */
+.single-day-content.wide {
+  max-width: none;
+}
+
+/* Calendar Type Buttons */
+.calendar-type-buttons {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.type-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.type-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.type-btn.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.type-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Pool Calendar Styles */
+.pool-calendar {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.calendar-header {
+  display: grid;
+  grid-template-columns: 80px repeat(8, 1fr);
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.time-column-header,
+.lane-header,
+.room-header {
+  padding: 1rem 0.5rem;
+  text-align: center;
+  font-weight: 600;
+  color: #475569;
+  border-right: 1px solid #e2e8f0;
+}
+
+.time-column-header:last-child,
+.lane-header:last-child,
+.room-header:last-child {
+  border-right: none;
+}
+
+.calendar-grid {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.time-row {
+  display: grid;
+  grid-template-columns: 80px repeat(8, 1fr);
+  border-bottom: 1px solid #e2e8f0;
+  min-height: 60px;
+}
+
+.time-label {
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #64748b;
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lane-cell,
+.room-cell {
+  padding: 0.25rem;
+  border-right: 1px solid #e2e8f0;
+  min-height: 60px;
+  position: relative;
+}
+
+.lane-cell:last-child,
+.room-cell:last-child {
+  border-right: none;
+}
+
+.lane-cell:hover,
+.room-cell:hover {
+  background: #f0f9ff;
+}
+
+/* Open Water Calendar Styles */
+.openwater-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* User Open Water view - make full width like Admin view */
+.openwater-calendar.user-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+/* Mobile: stack containers vertically */
+@media (max-width: 1023px) {
+  .openwater-calendar.user-view {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.boat-capacity-grid {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  padding: 1.5rem;
+}
+
+.boat-capacity-grid h3 {
+  margin: 0 0 1rem 0;
+  color: #1e293b;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.capacity-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.boat-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.boat-number {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.reservation-table {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.reservation-table h3 {
+  margin: 0;
+  padding: 1rem 1.5rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  color: #1e293b;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.reservation-table table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+/* Default column widths for desktop */
+.reservation-table th[data-column="buoy"],
+.reservation-table td.buoy-cell {
+  width: 150px;
+  min-width: 120px;
+}
+
+.reservation-table th[data-column="boat"],
+.reservation-table td.boat-cell {
+  width: 160px;
+  min-width: 140px;
+}
+
+.reservation-table th[data-column="divers"],
+.reservation-table td.divers-cell {
+  width: auto;
+  min-width: 200px;
+}
+
+.reservation-table th,
+.reservation-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.reservation-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #475569;
+  position: relative;
+}
+
+/* Resizable header styles */
+.resizable-header {
+  position: relative;
+  user-select: none;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+}
+
+.resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: transparent;
+  cursor: col-resize;
+  transition: background-color 0.2s ease;
+}
+
+.resize-handle:hover {
+  background: #3b82f6;
+}
+
+.resizable-header:hover .resize-handle {
+  background: #e2e8f0;
+}
+
+.resizable-header:hover .resize-handle:hover {
+  background: #3b82f6;
+}
+
+.reservation-table td {
+  color: #64748b;
+}
+
+.diver-name {
+  color: #000000;
+  font-weight: 500;
+}
+
+.unassigned {
+  color: #000000;
+  font-weight: 400;
+}
+
+/* Cell content alignment */
+.cell-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 40px;
+}
+
+.cell-content select {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  border-radius: 6px;
+  border: 2px solid #000000;
+  background: white;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #000000;
+  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cell-content select:focus {
+  outline: 2px solid #000000;
+  outline-offset: 2px;
+  border-color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+  color: #000000;
+  background: white;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.cell-content select:hover {
+  border-color: #000000;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  color: #000000;
+  background: white;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.cell-content select option {
+  color: #000000;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  background: white;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Ensure consistent text display in dropdown */
+.cell-content select::-webkit-input-placeholder {
+  color: #000000;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.cell-content select::-moz-placeholder {
+  color: #000000;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.cell-content select:-ms-input-placeholder {
+  color: #000000;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.cell-content select::placeholder {
+  color: #000000;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Compact reservation styles */
+.reservation-list.compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.reservation-item.compact {
+  padding: 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.reservation-item.compact:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}
+
+.compact-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.compact-date {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  min-width: 2.5rem;
+  flex-shrink: 0;
+}
+
+.compact-time {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  min-width: 2rem;
+  flex-shrink: 0;
+}
+
+.compact-assignment {
+  font-size: 0.875rem;
+  color: #1e293b;
+  font-weight: 500;
+  min-width: 6rem;
+  flex-shrink: 0;
+}
+
+.type-badge.compact {
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+  border-radius: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.type-badge.openwater {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.compact {
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.status-badge.confirmed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.rejected {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
+.empty-text {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+/* Classroom Calendar Styles */
+.classroom-calendar {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.classroom-calendar .calendar-header {
+  grid-template-columns: 80px repeat(3, 1fr);
+}
+
+.classroom-calendar .time-row {
+  grid-template-columns: 80px repeat(3, 1fr);
+}
+
+/* Reservation Items */
+.reservation-item {
+  background: #dbeafe;
+  border: 1px solid #3b82f6;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  margin: 0.125rem 0;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reservation-item:hover {
+  background: #bfdbfe;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.pool-reservation {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.classroom-reservation {
+  background: #fecaca;
+  border-color: #ef4444;
+}
+
+.reservation-title {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.125rem;
+}
+
+.reservation-time {
+  font-size: 0.625rem;
+  color: #64748b;
+}
+
+/* Desktop styles */
+@media (min-width: 768px) {
+  .single-day-content {
+    padding: 2rem;
+  }
+
+  .calendar-type-buttons {
+    padding: 1.5rem;
+  }
+
+  .calendar-grid {
+    max-height: 70vh;
+  }
+
+  .time-row {
+    min-height: 80px;
+  }
+
+  .lane-cell,
+  .room-cell {
+    min-height: 80px;
+  }
+}
+
+/* Mobile-first compact layout for Open Water tables */
+@media (max-width: 640px) {
+  .reservation-table th,
+  .reservation-table td {
+    padding: 0.5rem 0.5rem;
+  }
+
+  .buoy-cell {
+    min-width: 70px;
+    width: 120px;
+  }
+
+  .boat-cell {
+    min-width: 120px;
+    width: 140px;
+  }
+
+  .divers-cell {
+    min-width: 180px;
+    width: auto;
+  }
+
+  /* Compact selects on mobile */
+  .cell-content select {
+    max-width: 130px;
+    font-size: 0.75rem;
+    padding: 0.125rem 2rem 0.125rem 0.25rem;
+    border: 2px solid #000000;
+    color: #000000;
+    font-family: inherit;
+    font-weight: 500;
+    line-height: 1.5;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 0.75rem;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cell-content select option {
+    font-size: 0.75rem;
+    font-family: inherit;
+    font-weight: 500;
+    line-height: 1.5;
+    color: #000000;
+  }
+
+  .diver-item {
+    padding: 0.375rem;
+    font-size: 0.8125rem;
+    gap: 0.375rem;
+  }
+
+  .diver-name {
+    color: #000000;
+    font-weight: 500;
+  }
+
+  .unassigned {
+    color: #000000;
+    font-weight: 400;
+  }
+
+  /* User view mobile adjustments */
+  .openwater-calendar.user-view {
+    gap: 1rem;
+  }
+
+  .reservation-table h3 {
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .single-day-content {
+    padding: 3rem;
+  }
+
+  .openwater-calendar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  .boat-capacity-grid {
+    grid-column: 1 / -1;
+  }
+
+  /* User view desktop styling */
+  .openwater-calendar.user-view {
+    gap: 3rem;
+  }
+
+  .openwater-calendar.user-view .reservation-table {
+    min-height: 300px;
+  }
+}
+
+

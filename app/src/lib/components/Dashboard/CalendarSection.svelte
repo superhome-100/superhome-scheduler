@@ -41,6 +41,27 @@
     });
 
     calendar.render();
+    
+    // Add custom date click handler using DOM events
+    const calendarElement = calendarEl;
+    calendarElement.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      
+      // Check if the clicked element is a day cell (not an event)
+      if (target.classList.contains('fc-daygrid-day') || 
+          target.closest('.fc-daygrid-day')) {
+        
+        // Find the date from the day cell
+        const dayCell = target.closest('.fc-daygrid-day');
+        if (dayCell) {
+          const dateStr = dayCell.getAttribute('data-date');
+          if (dateStr) {
+            console.log('Date clicked:', dateStr);
+            dispatch('dateClick', dateStr);
+          }
+        }
+      }
+    });
   };
 
   const getEventColor = (type: string) => {
@@ -93,12 +114,8 @@
   };
 
   const getStatusDisplay = (status: string) => {
-    const statusMap: Record<string, string> = {
-      pending: 'Pending',
-      confirmed: 'Confirmed',
-      rejected: 'Rejected'
-    };
-    return statusMap[status] || status;
+    // Return the exact database enum values
+    return status || 'pending';
   };
 
   onMount(() => {

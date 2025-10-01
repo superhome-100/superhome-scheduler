@@ -26,6 +26,30 @@
         Admin Dashboard
       </button>
     </li>
+    <li>
+      <button 
+        class="nav-link admin-sub-nav" 
+        class:active={currentView === 'admin-calendar'} 
+        on:click={() => handleNavClick('admin-calendar')}
+      >
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+        </svg>
+        Calendar
+      </button>
+    </li>
+    <li>
+      <button 
+        class="nav-link admin-sub-nav" 
+        class:active={currentView === 'admin-users'} 
+        on:click={() => handleNavClick('admin-users')}
+      >
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H16c-.8 0-1.54.37-2.01.99L12 11l-1.99-2.01A2.5 2.5 0 0 0 8 8H5.46c-.8 0-1.54.37-2.01.99L1 15.5V22h2v-6h2.5l2.54 7.63A1.5 1.5 0 0 0 9.46 24H12c.8 0 1.54-.37 2.01-.99L16 21l1.99 2.01A2.5 2.5 0 0 0 20 24h2.5c.8 0 1.54-.37 2.01-.99L27 15.5V22h2v-6h2v6h2z"/>
+        </svg>
+        Users
+      </button>
+    </li>
   {/if}
   <li>
     <button 
@@ -100,5 +124,24 @@
     width: 20px;
     height: 20px;
     flex-shrink: 0;
+  }
+
+  /* Admin sub-navigation styling */
+  .admin-sub-nav {
+    margin-left: 1.5rem;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+    position: relative;
+  }
+
+  .admin-sub-nav::before {
+    content: '';
+    position: absolute;
+    left: -1rem;
+    top: 50%;
+    width: 0.5rem;
+    height: 1px;
+    background: #cbd5e1;
+    transform: translateY(-50%);
   }
 </style>

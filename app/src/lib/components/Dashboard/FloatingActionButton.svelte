@@ -26,8 +26,8 @@
 <style>
   .fab-container {
     position: fixed;
-    right: 1rem;
-    bottom: 2rem; /* higher from bottom on small screens */
+    right: 1.25rem;
+    bottom: 1.25rem; /* equal gap on small screens, pushed farther from corner */
     z-index: 100; /* above content but below modals */
     pointer-events: none; /* allow only the button to capture */
   }
@@ -69,7 +69,7 @@
   }
 
   @media (min-width: 768px) {
-    .fab-container { right: 1.5rem; bottom: 2.5rem; } /* slightly higher on desktop */
+    .fab-container { right: 2rem; bottom: 2rem; } /* equal gap on desktop, farther from corner */
     .fab-btn { 
       padding: 0.9rem 1.1rem; 
       width: auto; 

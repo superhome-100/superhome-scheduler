@@ -1,4 +1,5 @@
 // Dashboard utility functions
+import { transformReservationToUnified, transformReservationsToUnified, type UnifiedReservation } from '../../utils/reservationTransform';
 
 export const getUpcomingReservations = (reservations: any[]) => {
   const now = new Date();
@@ -26,74 +27,20 @@ export const getTypeDisplay = (type: string) => {
 };
 
 export const getStatusDisplay = (status: string) => {
-  const statusMap: Record<string, string> = {
-    pending: 'Pending',
-    confirmed: 'Confirmed',
-    rejected: 'Rejected'
-  };
-  return statusMap[status] || status;
+  // Return the exact database enum values, default to pending
+  return status || 'pending';
 };
 
-export const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric' 
-  });
-};
-
-export const formatTime = (dateString: string) => {
-  return new Date(dateString).toLocaleTimeString('en-US', { 
-    hour: '2-digit', 
-    minute: '2-digit', 
-    hour12: true 
-  });
-};
 
 export const getTimeOfDay = (date: Date) => {
   const hour = date.getHours();
-  if (hour < 12) return 'Morning';
-  if (hour < 17) return 'Afternoon';
-  return 'Evening';
+  if (hour < 12) return 'AM';
+  return 'PM';
 };
 
 export const transformReservationsForModal = (reservations: any[]) => {
-  return reservations.map(reservation => {
-    const resDate = new Date(reservation.res_date);
-    
-    // Calculate duration based on reservation type
-    let duration = 60; // Default 1 hour
-    if (reservation.res_type === 'open_water') {
-      duration = 240; // 4 hours for open water
-    } else if (reservation.res_type === 'classroom') {
-      duration = 120; // 2 hours for classroom
-    }
-    
-    const endTime = new Date(resDate.getTime() + duration * 60 * 1000);
-    
-    return {
-      id: `${reservation.uid}-${reservation.res_date}`,
-      type: getTypeDisplay(reservation.res_type),
-      status: reservation.res_status === 'confirmed' ? 'approved' : reservation.res_status,
-      date: reservation.res_date,
-      startTime: resDate.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      }),
-      endTime: endTime.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      }),
-      timeOfDay: getTimeOfDay(resDate),
-      notes: reservation.description || '',
-      title: reservation.title || '',
-      // raw identifiers for details modal to fetch additional info
-      uid: reservation.uid,
-      res_date: reservation.res_date,
-      res_type: reservation.res_type
-    };
-  });
+  console.log('transformReservationsForModal: Processing reservations with unified transformation');
+  return transformReservationsToUnified(reservations);
 };
 
 export const reservationToCalendarEvent = (reservation: any) => {

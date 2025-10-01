@@ -87,6 +87,27 @@
       });
       
       calendar.render();
+    
+    // Add custom date click handler using DOM events
+    const calendarElement = calendarEl;
+    calendarElement.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      
+      // Check if the clicked element is a day cell (not an event)
+      if (target.classList.contains('fc-daygrid-day') || 
+          target.closest('.fc-daygrid-day')) {
+        
+        // Find the date from the day cell
+        const dayCell = target.closest('.fc-daygrid-day');
+        if (dayCell) {
+          const dateStr = dayCell.getAttribute('data-date');
+          if (dateStr) {
+            console.log('Reservation Calendar - Date clicked:', dateStr, 'type:', selectedType);
+            dispatch('dateClick', { date: dateStr, type: selectedType });
+          }
+        }
+      }
+    });
     }
   };
 

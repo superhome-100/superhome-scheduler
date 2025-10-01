@@ -1,7 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import LoadingSpinner from '../LoadingSpinner.svelte';
-  import { formatDate, formatTime, getTypeDisplay } from './adminUtils';
+  import { getTypeDisplay } from './adminUtils';
+  import dayjs from 'dayjs';
 
   const dispatch = createEventDispatcher();
 
@@ -45,7 +46,7 @@
           <h4>Reservation</h4>
           <p><strong>User:</strong> {selectedReservation.user_profiles?.name || 'Unknown User'}</p>
           <p><strong>Type:</strong> {getTypeDisplay(selectedReservation.res_type)}</p>
-          <p><strong>Date:</strong> {formatDate(selectedReservation.res_date, 'long')}</p>
+            <p><strong>Date:</strong> {dayjs(selectedReservation.res_date).format('dddd, MMMM D, YYYY [at] h:mm A')}</p>
           {#if selectedReservation.title}
             <p><strong>Title:</strong> {selectedReservation.title}</p>
           {/if}
@@ -53,17 +54,17 @@
             <p><strong>Description:</strong> {selectedReservation.description}</p>
           {/if}
           {#if selectedReservation.start_time}
-            <p><strong>Start Time:</strong> {formatTime(selectedReservation.start_time)}</p>
+            <p><strong>Start Time:</strong> {dayjs(`2000-01-01T${selectedReservation.start_time}`).format('h:mm A')}</p>
           {/if}
           {#if selectedReservation.end_time}
-            <p><strong>End Time:</strong> {formatTime(selectedReservation.end_time)}</p>
+            <p><strong>End Time:</strong> {dayjs(`2000-01-01T${selectedReservation.end_time}`).format('h:mm A')}</p>
           {/if}
           <p><strong>Status:</strong> 
             <span class="status-badge" class:pending={selectedReservation.res_status === 'pending'}>
               {selectedReservation.res_status}
             </span>
           </p>
-          <p><strong>Requested:</strong> {formatDate(selectedReservation.created_at, 'long')}</p>
+          <p><strong>Requested:</strong> {dayjs(selectedReservation.created_at).format('dddd, MMMM D, YYYY [at] h:mm A')}</p>
         </div>
       </div>
       <div class="modal-footer">

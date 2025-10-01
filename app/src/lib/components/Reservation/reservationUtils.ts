@@ -51,7 +51,8 @@ export const transformReservationForModal = (reservation: any) => {
       hour12: false
     }),
     type: getTypeDisplay(reservation.res_type),
-    status: getStatusDisplay(reservation.res_status),
+    // Keep canonical status values from DB for logic; map to display only where rendered
+    status: reservation.res_status,
     timeOfDay: getTimeOfDay(resDate),
     notes: reservation.description || '',
     title: reservation.title || '',
