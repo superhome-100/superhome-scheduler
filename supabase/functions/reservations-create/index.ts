@@ -61,6 +61,34 @@ Deno.serve(async (req: Request) => {
       if (!isAdmin) return json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Ensure user profile exists (FK on reservations.uid references user_profiles.uid)
+    // - If owner (uid === auth user), create their profile if missing.
+    // - If admin creating for someone else, require profile to already exist (RLS forbids inserting others).
+    {
+      const { data: targetProfile, error: targetProfileErr } = await supabase
+        .from('user_profiles')
+        .select('uid')
+        .eq('uid', body.uid)
+        .maybeSingle()
+
+      if (targetProfileErr) {
+        return json({ error: `Failed to check target profile: ${targetProfileErr.message}` }, { status: 400 })
+      }
+
+      if (!targetProfile) {
+        if (body.uid === user.id) {
+          const { error: insertOwnProfileErr } = await supabase
+            .from('user_profiles')
+            .insert({ uid: body.uid })
+          if (insertOwnProfileErr) {
+            return json({ error: `Failed to create user profile: ${insertOwnProfileErr.message}` }, { status: 400 })
+          }
+        } else {
+          return json({ error: 'Target user profile not found. Ask the user to sign in once to initialize profile.' }, { status: 400 })
+        }
+      }
+    }
+
     const res_date_iso = new Date(body.res_date).toISOString()
 
     const { data: parent, error: parentError } = await supabase

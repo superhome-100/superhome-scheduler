@@ -3,12 +3,11 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { authStore, auth } from '../../stores/auth';
-  import { showSignOutModal, sidebarActions, getUserInfo, mobileDrawerOpen } from '../../stores/sidebar';
+  import { showSignOutModal, sidebarActions, getUserInfo } from '../../stores/sidebar';
   import { supabase } from '../../utils/supabase';
   import LoadingSpinner from '../LoadingSpinner.svelte';
   import PullToRefresh from '../PullToRefresh.svelte';
   import Reservation from '../Reservation/Reservation.svelte';
-  import Sidebar from '../Sidebar/Sidebar.svelte';
   import AdminDashboard from '../AdminDashboard/AdminDashboard.svelte';
   import ReservationFormModal from '../ReservationFormModal/ReservationFormModal.svelte';
   import ReservationsListModal from '../ReservationsListModal/ReservationsListModal.svelte';
@@ -27,8 +26,6 @@
   import { getUpcomingReservations, getCompletedReservations, transformReservationsForModal } from './dashboardUtils';
   import { transformReservationToUnified } from '../../utils/reservationTransform';
 
-  let showUpcomingModal = false;
-  let showCompletedModal = false;
   let showReservationDetails = false;
   let selectedReservation: any = null;
   let showSingleDayView = false;
@@ -49,14 +46,13 @@
   let activeMobileTab: 'upcoming' | 'completed' = 'upcoming';
   let showMobileViewAll = false;
   let upcomingListEl: HTMLDivElement | null = null;
-  
   let completedListEl: HTMLDivElement | null = null;
-  let reservationForm: ReservationFormModal;
   let isAdmin = false;
   let adminChecked = false;
 
-  // Derived user info for Sidebar
+  // Derived user info
   $: ({ userEmail, userName, userAvatarUrl, userInitial } = getUserInfo($authStore));
+
 
   // Get current view from URL path
   $: currentView = $page.url.pathname;
@@ -68,23 +64,6 @@
     if (!el) { showMobileViewAll = false; return; }
     // Show when scrollable (list height exceeds container height)
     showMobileViewAll = (el.scrollHeight || 0) > (el.clientHeight || 0) + 2;
-  };
-
-  // Navigate to a new view using SvelteKit
-  const navigateToView = (view: string) => {
-    if (view === 'dashboard') {
-      goto('/');
-    } else if (view === 'admin') {
-      goto('/admin');
-    } else if (view === 'admin-calendar') {
-      goto('/admin/calendar');
-    } else if (view === 'admin-users') {
-      goto('/admin/users');
-    } else if (view === 'reservation') {
-      goto('/reservation');
-    } else {
-      goto(`/${view}`);
-    }
   };
 
   // Load user's reservations from Supabase with detail tables
@@ -112,7 +91,6 @@
       // Store raw rows; downstream code uses unified transform when needed
       reservations = data || [];
       
-      console.log('Loaded reservations with details:', reservations);
     } catch (err) {
       console.error('Error loading reservations:', err);
       error = err instanceof Error ? err.message : 'Failed to load reservations';
@@ -120,24 +98,6 @@
       loading = false;
     }
   };
-  
-  
-  // Type definitions
-  type ReservationStatus = 'pending' | 'confirmed' | 'rejected';
-  type ReservationType = 'pool' | 'open_water' | 'classroom';
-  
-  interface Reservation {
-    uid: string;
-    res_date: string;
-    res_type: ReservationType;
-    res_status: ReservationStatus;
-    title?: string;
-    description?: string;
-    start_time?: string;
-    end_time?: string;
-    created_at: string;
-    updated_at: string;
-  }
 
   // Event handlers
   const handleRefresh = async () => {
@@ -151,14 +111,7 @@
     }
   };
 
-  const handleSidebarNavigate = (event: CustomEvent) => {
-    const view = event.detail.view;
-    navigateToView(view);
-  };
 
-  const handleSidebarSignOut = () => {
-    sidebarActions.openSignOutModal();
-  };
 
   const handleNewReservation = () => {
     showReservationForm = true;
@@ -186,21 +139,13 @@
     loadReservations();
   };
 
-  const closeReservationForm = () => {
-    showReservationForm = false;
-  };
-
   const handleReservationClick = (event: CustomEvent) => {
     const reservation = event.detail;
-    console.log('Dashboard: handleReservationClick - Raw reservation:', reservation);
-    console.log('Dashboard: handleReservationClick - res_status:', reservation?.res_status);
-    console.log('Dashboard: handleReservationClick - res_status type:', typeof reservation?.res_status);
     
     // Use unified transformation for consistent data structure
     if (reservation) {
       try {
         const transformed = transformReservationToUnified(reservation);
-        console.log('Dashboard: handleReservationClick - Unified transformed reservation:', transformed);
         selectedReservation = transformed;
       } catch (error) {
         console.error('Dashboard: Error transforming reservation:', error);
@@ -231,7 +176,6 @@
   };
 
   const handleCalendarDateClick = (event: CustomEvent) => {
-    console.log('Dashboard: handleCalendarDateClick - event.detail:', event.detail);
     selectedDate = event.detail;
     showSingleDayView = true;
   };
@@ -255,8 +199,6 @@
     }
     showReservationsModal = true;
   };
-
-
 
   const handleSignOutConfirm = async () => {
     sidebarActions.closeSignOutModal();
@@ -307,107 +249,94 @@
   $: completedReservations = getCompletedReservations(reservations);
 </script>
 
-<div class="dashboard-container">
-  {#if $authStore.loading}
-    <LoadingSpinner 
-      size="lg" 
-      text="Loading..." 
-      variant="overlay"
-      zIndex={50}
+{#if $authStore.loading}
+  <LoadingSpinner 
+    size="lg" 
+    text="Loading..." 
+    variant="overlay"
+    zIndex={50}
+  />
+{:else if $authStore.error}
+  <div class="flex flex-col items-center justify-center min-h-screen p-8 text-center">
+    <h2 class="text-2xl font-bold text-error mb-4">Something went wrong</h2>
+    <p class="text-base-content/70 mb-6">{$authStore.error}</p>
+    <button 
+      class="btn btn-primary"
+      on:click={() => window.location.reload()}
+    >
+      Try Again
+    </button>
+  </div>
+{:else if $authStore.user}
+  {#if showSingleDayView}
+    <SingleDayView
+      {selectedDate}
+      {reservations}
+      isAdmin={false}
+      on:backToCalendar={handleBackToCalendar}
+      on:reservationClick={handleReservationClick}
     />
-  {:else if $authStore.error}
-    <div class="error-state">
-      <h2>Something went wrong</h2>
-      <p>{$authStore.error}</p>
-      <button on:click={() => window.location.reload()}>Try Again</button>
-    </div>
-  {:else if $authStore.user}
-    <div class="drawer lg:drawer-open dashboard-layout">
-      <!-- Sidebar (fixed on desktop) -->
-      <Sidebar 
-        {isAdmin}
-        userName={userName}
-        userEmail={userEmail}
-        userAvatarUrl={userAvatarUrl}
-        userInitial={userInitial}
-        on:signOut={handleSidebarSignOut}
-      />
+  {:else if currentView === '/'}
+    <DashboardHeader 
+      {userName}
+    />
 
-      <!-- Main Content -->
-      <main class="drawer-content main-content">
-        {#if showSingleDayView}
-          <SingleDayView
-            {selectedDate}
-            {reservations}
-            isAdmin={false}
-            on:backToCalendar={handleBackToCalendar}
+    <!-- Pull-to-Refresh Body -->
+    <PullToRefresh onRefresh={handleRefresh} {refreshing}>
+      <div class="flex-1 p-6 max-w-6xl mx-auto w-full">
+        <div class="flex flex-col gap-6">
+          <!-- Desktop Reservations -->
+          <DesktopReservations 
+            {upcomingReservations}
+            {completedReservations}
+            {loading}
+            {error}
             on:reservationClick={handleReservationClick}
+            on:viewAllUpcoming={openUpcomingReservationsModal}
+            on:viewAllCompleted={openCompletedReservationsModal}
+            on:newReservation={handleNewReservation}
+            on:retry={loadReservations}
           />
-        {:else if currentView === '/'}
-          <DashboardHeader 
-            {userName}
+
+          <!-- Mobile Reservations -->
+          <MobileReservations 
+            {upcomingReservations}
+            {completedReservations}
+            {activeMobileTab}
+            {showMobileViewAll}
+            {loading}
+            {error}
+            bind:upcomingListEl
+            bind:completedListEl
+            on:tabChange={handleTabChange}
+            on:viewAll={handleViewAll}
+            on:reservationClick={handleReservationClick}
+            on:newReservation={handleNewReservation}
+            on:computeOverflow={computeMobileOverflow}
+            on:retry={loadReservations}
           />
 
-          <!-- Pull-to-Refresh Body -->
-          <PullToRefresh onRefresh={handleRefresh} {refreshing}>
-            <div class="dashboard-content">
-              <div class="content-body">
-                <!-- Desktop Reservations -->
-                <DesktopReservations 
-                  {upcomingReservations}
-                  {completedReservations}
-                  {loading}
-                  {error}
-                  on:reservationClick={handleReservationClick}
-                  on:viewAllUpcoming={openUpcomingReservationsModal}
-                  on:viewAllCompleted={openCompletedReservationsModal}
-                  on:newReservation={handleNewReservation}
-                  on:retry={loadReservations}
-                />
+          <!-- Calendar Section -->
+          <div class="block md:hidden lg:block">
+            <CalendarSection 
+              {reservations}
+              on:eventClick={handleCalendarEventClick}
+              on:dateClick={handleCalendarDateClick}
+            />
+          </div>
+        </div>
+        
+        <!-- Floating Action Button -->
+        <FloatingActionButton on:newReservation={handleNewReservation} />
 
-                <!-- Mobile Reservations -->
-                <MobileReservations 
-                  {upcomingReservations}
-                  {completedReservations}
-                  {activeMobileTab}
-                  {showMobileViewAll}
-                  {loading}
-                  {error}
-                  bind:upcomingListEl
-                  bind:completedListEl
-                  on:tabChange={handleTabChange}
-                  on:viewAll={handleViewAll}
-                  on:reservationClick={handleReservationClick}
-                  on:newReservation={handleNewReservation}
-                  on:computeOverflow={computeMobileOverflow}
-                  on:retry={loadReservations}
-                />
-
-                <!-- Calendar Section -->
-                <div class="calendar-section-wrapper">
-                  <CalendarSection 
-                    {reservations}
-                    on:eventClick={handleCalendarEventClick}
-                    on:dateClick={handleCalendarDateClick}
-                  />
-                </div>
-              </div>
-              
-              <!-- Floating Action Button -->
-              <FloatingActionButton on:newReservation={handleNewReservation} />
-
-            </div>
-          </PullToRefresh>
-        {:else if currentView === '/reservation'}
-          <Reservation />
-        {:else if currentView === '/admin' || currentView === '/admin/calendar' || currentView === '/admin/users'}
-          <AdminDashboard />
-        {/if}
-
-      </main>
-    </div>
+      </div>
+    </PullToRefresh>
+  {:else if currentView === '/reservation'}
+    <Reservation />
+  {:else if currentView === '/admin' || currentView === '/admin/calendar' || currentView === '/admin/users'}
+    <AdminDashboard />
   {/if}
-</div>
+{/if}
 
 <!-- Reservation Form Modal -->
 <ReservationFormModal 
@@ -440,106 +369,3 @@
   on:cancel={sidebarActions.closeSignOutModal}
 />
 
-
-<style>
-  .dashboard-container {
-    height: 100vh;
-    background: #f8fafc;
-    overflow: hidden; /* prevent body + inner double scroll */
-  }
-
-  .dashboard-layout {
-    display: flex;
-    height: 100vh;
-  }
-
-  .main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0; /* allow child scroll container to size */
-    overflow: hidden; /* only inner PullToRefresh scrolls */
-    margin-left: 0; /* No margin on mobile */
-  }
-
-  /* Desktop: Add left margin to account for fixed sidebar (w-80 = 20rem) */
-  @media (min-width: 1024px) {
-    .main-content {
-      margin-left: 20rem; /* 320px - matches sidebar width */
-    }
-  }
-
-  /* Ensure the PullToRefresh becomes the single scroll container */
-  .main-content > :global(.pull-to-refresh-container) {
-    flex: 1;
-    min-height: 0;
-  }
-
-  .dashboard-content {
-    flex: 1;
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  .content-body {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-  }
-
-  .error-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 2rem;
-    text-align: center;
-  }
-
-  .error-state h2 {
-    color: #dc2626;
-    margin: 0 0 1rem 0;
-    font-size: 1.5rem;
-  }
-
-  .error-state p {
-    color: #64748b;
-    margin: 0 0 2rem 0;
-  }
-
-  .error-state button {
-    background: #3b82f6;
-    color: hsl(var(--bc));
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 500;
-    cursor: pointer;
-  }
-
-
-  /* Calendar wrapper for mobile hiding */
-  .calendar-section-wrapper {
-    display: block;
-  }
-
-  /* Mobile responsive */
-  @media (max-width: 768px) {
-    .dashboard-content {
-      padding: 1rem;
-    }
-
-    .content-body {
-      gap: 1rem;
-    }
-
-    /* Hide calendar on mobile */
-    .calendar-section-wrapper {
-      display: none;
-    }
-  }
-</style>

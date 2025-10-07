@@ -1,4 +1,4 @@
-<script lang="ts">
+  <script lang="ts">
   import { sidebarActions } from '../../stores/sidebar';
 </script>
 

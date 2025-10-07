@@ -4,13 +4,76 @@
   export let userName: string = 'User';
 </script>
 
-<!-- Sticky Header -->
-<div class="dashboard-header">
-  <div class="header-content">
-    <div class="header-left">
+<style>
+  .mobile-menu-button {
+    display: block;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .mobile-menu-button:hover {
+    background-color: rgba(0, 41, 76, 0.1);
+    color: #00294C;
+  }
+  
+  .mobile-menu-button:active {
+    background-color: rgba(0, 41, 76, 0.15);
+    color: #00294C;
+  }
+  
+  .header-content {
+    padding-left: 0.5rem; /* 8px for mobile - reduced since we'll add gap */
+  }
+  
+  .header-content .flex-1 {
+    margin-left: 0.90rem; /* 12px gap between hamburger and text on mobile */
+  }
+  
+  @media (min-width: 640px) {
+    .header-content {
+      padding-left: 1.5rem; /* 24px for small tablets */
+    }
+    
+    .header-content .flex-1 {
+      margin-left: 0.75rem; /* 12px gap between hamburger and text on medium screens */
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .header-content .flex-1 {
+      margin-left: 1rem; /* 16px gap for larger medium screens */
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .mobile-menu-button {
+      display: none !important;
+    }
+    
+    .header-content {
+      padding-left: 2rem; /* 32px for desktop */
+    }
+    
+    .header-content .flex-1 {
+      margin-left: 0; /* Remove gap on desktop */
+    }
+  }
+  
+  @media (min-width: 1280px) {
+    .header-content {
+      padding-left: 3rem; /* 48px for large desktop */
+    }
+  }
+</style>
+
+<div class="bg-base-100 shadow-sm sticky top-0 z-10 mt-2 sm:mt-3 md:mt-4 pb-3 sm:pb-4 md:pb-5 lg:pb-6 xl:pb-6 2xl:pb-6">
+  <div class="px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-5 lg:px-8 lg:py-6 xl:px-10 xl:py-6 2xl:px-12 2xl:py-6 max-w-7xl mx-auto w-full">
+    <div class="flex items-center gap-4 header-content">
       <!-- Mobile Menu Toggle Button -->
       <button 
-        class="mobile-menu-toggle lg:hidden" 
+        class="mobile-menu-button transition-all duration-200 p-2 rounded-lg" 
+        style="color: #00294C;"
         on:click={sidebarActions.toggleMobileDrawer}
         aria-label="Toggle menu"
       >
@@ -19,90 +82,11 @@
         </svg>
       </button>
       
-      <div class="header-text">
-        <h1 class="page-title">Dashboard</h1>
-        <p class="page-subtitle">Welcome back, {userName}!</p>
+      <div class="flex-1">
+        <h1 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2" style="color: #00294C;">Dashboard</h1>
+        <p class="text-sm sm:text-base mb-2 sm:mb-3 md:mb-4" style="color: #00294C;">Welcome back, {userName}!</p>
       </div>
     </div>
-    
   </div>
 </div>
-<style>
-  .dashboard-header {
-    background: white;
-    border-bottom: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-
-  .header-content {
-    padding: 2rem 2rem 1rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 120px; /* set a fixed height */
-  }
-
-  .page-title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin: 0 0 0.5rem 0;
-  }
-
-  .page-subtitle {
-    font-size: 1rem;
-    color: #64748b;
-    margin: 0;
-  }
-
-  .header-left {
-    display: flex;
-    align-items: center;
-  }
-
-  .header-text {
-    flex: 1;
-  }
-
-  /* Mobile Menu Toggle Button */
-  .mobile-menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    color: #64748b;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-    margin-right: 1rem;
-  }
-
-  .mobile-menu-toggle:hover {
-    background: #e2e8f0;
-    color: #1e293b;
-  }
-
-  /* Mobile Responsive */
-  @media (max-width: 1023px) {
-    .mobile-menu-toggle {
-      display: block;
-    }
-
-    .header-content {
-      padding: 1rem;
-      height: auto;
-    }
-
-    .page-title {
-      font-size: 1.5rem;
-    }
-
-    .page-subtitle {
-      font-size: 0.875rem;
-    }
-  }
-</style>
 

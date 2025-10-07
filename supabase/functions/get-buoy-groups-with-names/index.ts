@@ -1,4 +1,5 @@
 // Supabase Edge Function: get-buoy-groups-with-names
+/// <reference path="../types.d.ts" />
 // - Admin-only endpoint to fetch buoy groups and member names for a given date and time period
 // - Deno runtime (TypeScript)
 
@@ -17,6 +18,8 @@ interface BuoyGroupWithNames {
   boat: string | null
   member_uids: string[] | null
   member_names: (string | null)[] | null
+  // Added for client compatibility (SingleDayView expects this shape)
+  res_openwater?: Array<{ uid: string }>
 }
 
 function json(body: unknown, init: ResponseInit = {}) {
@@ -35,18 +38,25 @@ Deno.serve(async (req: Request) => {
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return json({ error: 'Server not configured' }, { status: 500 })
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    // Client bound to the caller's auth for user identity
+    const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } }
     })
 
+    // Service client for admin-only data access (bypass RLS after we validate admin)
+    const svc = SUPABASE_SERVICE_ROLE_KEY
+      ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+      : null
+
     // Auth and admin check
-    const { data: userRes } = await supabase.auth.getUser()
+    const { data: userRes } = await authClient.auth.getUser()
     const user = userRes?.user
     if (!user) return json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: profile, error: profileErr } = await supabase
+    const { data: profile, error: profileErr } = await (svc ?? authClient)
       .from('user_profiles')
       .select('privileges')
       .eq('uid', user.id)
@@ -58,42 +68,23 @@ Deno.serve(async (req: Request) => {
 
     const body = (await req.json()) as Payload
     if (!body?.res_date || !body?.time_period) return json({ error: 'Invalid payload' }, { status: 400 })
+    console.log('[get-buoy-groups-with-names] payload', body)
 
-    // Fetch groups
-    const { data: groups, error: groupErr } = await supabase
-      .from('buoy_group')
-      .select('id, res_date, time_period, buoy_name, boat, buoy_group_members(uid)')
-      .eq('res_date', body.res_date)
-      .eq('time_period', body.time_period)
-      .order('id', { ascending: true })
-
-    if (groupErr) return json({ error: groupErr.message }, { status: 500 })
-
-    const memberUids = new Set<string>()
-    for (const g of groups || []) {
-      const mems = ((g as any).buoy_group_members || []) as Array<{ uid: string }>
-      mems.forEach(m => m?.uid && memberUids.add(m.uid))
+    // Use security-definer RPC to avoid RLS complexity and rely on is_admin() checks inside the function
+    // IMPORTANT: Call the RPC with the AUTH-BOUND client so auth.uid() is present in Postgres.
+    const { data: rpcRows, error: rpcErr } = await authClient
+      .rpc('get_buoy_groups_with_names', {
+        p_res_date: body.res_date,
+        p_time_period: body.time_period
+      })
+    if (rpcErr) {
+      console.error('[get-buoy-groups-with-names] RPC error', rpcErr)
+      return json({ error: rpcErr.message }, { status: 500 })
     }
 
-    const uids = Array.from(memberUids)
-    let namesByUid = new Map<string, string | null>()
-
-    if (uids.length) {
-      const { data: profiles, error: namesErr } = await supabase
-        .from('user_profiles')
-        .select('uid, name')
-        .in('uid', uids)
-
-      if (namesErr) return json({ error: namesErr.message }, { status: 500 })
-
-      for (const p of profiles || []) {
-        namesByUid.set((p as any).uid, (p as any).name ?? null)
-      }
-    }
-
-    const result: BuoyGroupWithNames[] = (groups || []).map((g: any) => {
-      const uids = (g.buoy_group_members || []).map((m: any) => m.uid)
-      const names = uids.map((u: string) => namesByUid.get(u) ?? null)
+    const result: BuoyGroupWithNames[] = (rpcRows || []).map((g: any) => {
+      const uids = (g.member_uids || []) as string[]
+      const names = (g.member_names || []) as (string | null)[]
       return {
         id: g.id,
         res_date: g.res_date,
@@ -101,13 +92,15 @@ Deno.serve(async (req: Request) => {
         buoy_name: g.buoy_name,
         boat: g.boat ?? null,
         member_uids: uids,
-        member_names: names
+        member_names: names,
+        res_openwater: uids.map((uid: string) => ({ uid }))
       }
     })
 
     return json(result, { status: 200 })
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unexpected error'
+    console.error('[get-buoy-groups-with-names] caught error', message)
     return json({ error: message }, { status: 500 })
   }
 })

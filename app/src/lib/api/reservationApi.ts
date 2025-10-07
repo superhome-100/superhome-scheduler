@@ -175,23 +175,6 @@ export class ReservationApi {
   }
 
   /**
-   * ADMIN: Auto-assign buoys for a given date and time period
-   */
-  async autoAssignBuoy(
-    res_date: string,
-    time_period: string
-  ): Promise<ServiceResponse<{ createdGroupIds: number[]; skipped?: Array<{ reason: string; uids: string[] }> }>> {
-    try {
-      return await reservationService.autoAssignBuoy(res_date, time_period);
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      };
-    }
-  }
-
-  /**
    * Get reservations by status
    */
   async getReservationsByStatus(

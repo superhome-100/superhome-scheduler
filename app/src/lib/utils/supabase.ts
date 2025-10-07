@@ -20,14 +20,3 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Test connection on initialization
-console.log('Supabase: Testing connection...');
-supabase.auth.getSession().then(({ data, error }) => {
-  if (error) {
-    console.error('Supabase connection error:', error);
-  } else {
-    console.log('Supabase connected successfully, session:', data.session ? 'present' : 'null');
-  }
-}).catch((error) => {
-  console.error('Supabase initialization error:', error);
-});

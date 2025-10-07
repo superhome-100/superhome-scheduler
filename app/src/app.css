@@ -1,9 +1,9 @@
+/* Import custom reservation styles (must come before any other statements) */
+@import './styles/reservation.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import custom reservation styles */
-@import './styles/reservation.css';
 
 * {
   margin: 0;

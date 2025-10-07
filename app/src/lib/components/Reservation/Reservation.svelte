@@ -33,6 +33,9 @@
   let loading = false;
   let error: string | null = null;
 
+  // Debug: Track selectedType changes
+  $: console.log('Reservation: selectedType changed to:', selectedType);
+
 
   const handleNewReservation = () => {
     showReservationModal = true;
@@ -50,6 +53,7 @@
     console.log('Reservation: Type selected:', event.detail.type);
     selectedType = event.detail.type;
     console.log('Reservation: selectedType updated to:', selectedType);
+    console.log('Reservation: About to pass selectedType to ReservationCalendar:', selectedType);
   };
 
   const handleReservationClick = (event: CustomEvent) => {
@@ -240,7 +244,7 @@
         {:else}
           <!-- Reservation Type Buttons -->
           <ReservationTypeButtons 
-            bind:selectedType
+            {selectedType}
             on:typeSelected={handleTypeSelected}
           />
 

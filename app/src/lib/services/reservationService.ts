@@ -120,45 +120,31 @@ class ReservationService {
     reservationData: CreateReservationData
   ): Promise<ServiceResponse<CompleteReservation>> {
     try {
+      // Basic validation (API layer also validates)
       if (!uid || !reservationData.res_type || !reservationData.res_date) {
         return { success: false, error: 'Missing required fields: uid, res_type, or res_date' };
       }
 
-      const reservationDate = new Date(reservationData.res_date);
-      if (reservationDate <= new Date()) {
-        return { success: false, error: 'Reservation date must be in the future' };
-      }
-
-      const res_date_iso = reservationDate.toISOString();
-
-      const { data, error } = await callFunction<
-        {
-          uid: string;
-          res_type: ReservationType;
-          res_date: string;
-          res_status?: ReservationStatus;
-          pool?: Record<string, unknown>;
-          classroom?: Record<string, unknown>;
-          openwater?: Record<string, unknown>;
-        },
-        any
-      >('reservations-create', {
+      const payload = {
         uid,
         res_type: reservationData.res_type,
-        res_date: res_date_iso,
+        res_date: reservationData.res_date,
         res_status: reservationData.res_status,
-        pool: reservationData.pool as any,
-        classroom: reservationData.classroom as any,
-        openwater: reservationData.openwater as any
-      });
+        pool: reservationData.pool,
+        classroom: reservationData.classroom,
+        openwater: reservationData.openwater
+      };
 
+      const { data, error } = await callFunction<typeof payload, any>('reservations-create', payload);
       if (error) {
         return { success: false, error };
       }
 
-      // Fetch complete record (with details)
-      const fetched = await this.getReservation(uid, res_date_iso);
-      return fetched;
+      // Fetch complete reservation using normalized ISO date
+      const iso = new Date(reservationData.res_date).toISOString();
+      const result = await this.getReservation(uid, iso);
+      if (!result.success) return result as ServiceResponse<CompleteReservation>;
+      return result as ServiceResponse<CompleteReservation>;
 
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
@@ -170,15 +156,69 @@ class ReservationService {
    */
   async getReservations(options: ReservationQueryOptions = {}): Promise<ServiceResponse<CompleteReservation[]>> {
     try {
-      const payload = { ...options, include_details: true } as Record<string, unknown>;
-      const { data, error } = await callFunction<Record<string, unknown>, CompleteReservation[]>(
-        'reservations-get',
-        payload
-      );
-      if (error) return { success: false, error };
-      return { success: true, data: (data || []) as CompleteReservation[] };
+      let query = this.supabase
+        .from('reservations')
+        .select(`
+          *,
+          res_pool!left(start_time, end_time, lane, note),
+          res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, group_id, note),
+          res_classroom!left(start_time, end_time, room, note)
+        `);
+
+      // Apply filters
+      if (options.uid) {
+        query = query.eq('uid', options.uid);
+      }
+      if (options.res_type) {
+        query = query.eq('res_type', options.res_type);
+      }
+      if (options.res_status) {
+        query = query.eq('res_status', options.res_status);
+      }
+      if (options.start_date) {
+        query = query.gte('res_date', options.start_date);
+      }
+      if (options.end_date) {
+        query = query.lte('res_date', options.end_date);
+      }
+
+      // Apply ordering
+      const orderBy = options.order_by || 'res_date';
+      const orderDirection = options.order_direction || 'asc';
+      query = query.order(orderBy, { ascending: orderDirection === 'asc' });
+
+      // Apply pagination
+      if (options.limit) {
+        query = query.limit(options.limit);
+      }
+      if (options.offset) {
+        query = query.range(options.offset, (options.offset + (options.limit || 10)) - 1);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        return {
+          success: false,
+          error: `Failed to fetch reservations: ${error.message}`
+        };
+      }
+
+      return {
+        success: true,
+        data: (data || []).map((reservation: any) => ({
+          ...reservation,
+          res_pool: reservation.res_pool || undefined,
+          res_classroom: reservation.res_classroom || undefined,
+          res_openwater: reservation.res_openwater || undefined
+        }))
+      };
+
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
     }
   }
 
@@ -187,14 +227,40 @@ class ReservationService {
    */
   async getReservation(uid: string, res_date: string): Promise<ServiceResponse<CompleteReservation>> {
     try {
-      const { data, error } = await callFunction<
-        { single: { uid: string; res_date: string }; include_details?: boolean },
-        any
-      >('reservations-get', { single: { uid, res_date }, include_details: true });
-      if (error) return { success: false, error };
-      return { success: true, data: data as CompleteReservation };
+      const { data, error } = await this.supabase
+        .from('reservations')
+        .select(`
+          *,
+          res_pool!left(start_time, end_time, lane, note),
+          res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, group_id, note),
+          res_classroom!left(start_time, end_time, room, note)
+        `)
+        .eq('uid', uid)
+        .eq('res_date', res_date)
+        .single();
+
+      if (error) {
+        return {
+          success: false,
+          error: `Failed to fetch reservation: ${error.message}`
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          ...data,
+          res_pool: data.res_pool || undefined,
+          res_classroom: data.res_classroom || undefined,
+          res_openwater: data.res_openwater || undefined
+        }
+      };
+
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
     }
   }
 
@@ -207,23 +273,25 @@ class ReservationService {
     updateData: UpdateReservationData
   ): Promise<ServiceResponse<CompleteReservation>> {
     try {
-      const payload: any = {
-        uid,
-        res_date,
-        parent: {
-          res_status: updateData.res_status,
-          res_date: updateData.res_date
-        },
-        pool: updateData.pool,
-        classroom: updateData.classroom,
-        openwater: updateData.openwater
-      };
+      const payload: any = { uid, res_date };
+      if (updateData.res_status || updateData.res_date) {
+        payload.parent = {
+          ...(updateData.res_status ? { res_status: updateData.res_status } : {}),
+          ...(updateData.res_date ? { res_date: updateData.res_date } : {})
+        };
+      }
+      if (updateData.pool) payload.pool = updateData.pool;
+      if (updateData.classroom) payload.classroom = updateData.classroom;
+      if (updateData.openwater) payload.openwater = updateData.openwater;
 
       const { error } = await callFunction<typeof payload, { ok: boolean }>('reservations-update', payload);
-      if (error) return { success: false, error };
+      if (error) {
+        return { success: false, error };
+      }
 
-      const updatedReservation = await this.getReservation(uid, updateData.res_date || res_date);
-      return updatedReservation;
+      // If res_date changed, fetch by the new PK value
+      const fetchDate = updateData.res_date ? new Date(updateData.res_date).toISOString() : res_date;
+      return await this.getReservation(uid, fetchDate);
 
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
@@ -241,6 +309,7 @@ class ReservationService {
       );
       if (error) return { success: false, error };
       return { success: true, data: true };
+
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }

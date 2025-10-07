@@ -7,10 +7,14 @@
   export let selectedType: 'pool' | 'openwater' | 'classroom' = 'pool';
   export let reservations: any[] = [];
 
+  // Debug: Log when selectedType prop changes
+  $: console.log('ReservationCalendar: selectedType prop changed to:', selectedType);
+
   const dispatch = createEventDispatcher();
 
   let calendar: Calendar | null = null;
   let calendarEl: HTMLElement;
+  let calendarTitle: string = 'Pool Calendar';
 
   // Get upcoming reservations (pending or confirmed, future dates)
   const getUpcomingReservations = () => {
@@ -50,9 +54,12 @@
   const initializeCalendar = () => {
     if (!calendarEl) return;
 
+    console.log(`ReservationCalendar: Initializing calendar for type: ${selectedType}`);
+
     // Destroy existing calendar if it exists
     if (calendar) {
       calendar.destroy();
+      calendar = null;
     }
 
     // Filter reservations based on selected type
@@ -62,14 +69,20 @@
       'classroom': 'classroom'
     };
 
-    const filteredReservations = getUpcomingReservations().filter(reservation => {
-      return reservation.res_type === typeMapping[selectedType];
+    const upcomingReservations = getUpcomingReservations();
+    console.log(`ReservationCalendar: Total upcoming reservations: ${upcomingReservations.length}`);
+
+    const filteredReservations = upcomingReservations.filter(reservation => {
+      const matches = reservation.res_type === typeMapping[selectedType];
+      console.log(`ReservationCalendar: Reservation ${reservation.id} type ${reservation.res_type} matches ${selectedType}: ${matches}`);
+      return matches;
     });
 
     // Create calendar events from filtered reservations
     const events = filteredReservations.map(reservationToCalendarEvent);
 
-    console.log(`Calendar: Initializing for type ${selectedType}, found ${filteredReservations.length} reservations`);
+    console.log(`ReservationCalendar: Filtered to ${filteredReservations.length} reservations for type ${selectedType}`);
+    console.log(`ReservationCalendar: Created ${events.length} calendar events`);
 
     // Initialize FullCalendar
     calendar = new Calendar(calendarEl, {
@@ -92,24 +105,29 @@
     
     // Add custom date click handler using DOM events
     const calendarElement = calendarEl;
-    calendarElement.addEventListener('click', (event) => {
-      const target = event.target as HTMLElement;
+    
+    // Remove any existing event listeners to prevent duplicates
+    calendarElement.removeEventListener('click', handleDateClick);
+    calendarElement.addEventListener('click', handleDateClick);
+  };
+
+  const handleDateClick = (event: Event) => {
+    const target = event.target as HTMLElement;
+    
+    // Check if the clicked element is a day cell (not an event)
+    if (target.classList.contains('fc-daygrid-day') || 
+        target.closest('.fc-daygrid-day')) {
       
-      // Check if the clicked element is a day cell (not an event)
-      if (target.classList.contains('fc-daygrid-day') || 
-          target.closest('.fc-daygrid-day')) {
-        
-        // Find the date from the day cell
-        const dayCell = target.closest('.fc-daygrid-day');
-        if (dayCell) {
-          const dateStr = dayCell.getAttribute('data-date');
-          if (dateStr) {
-            console.log('Reservation Calendar - Date clicked:', dateStr, 'type:', selectedType);
-            dispatch('dateClick', { date: dateStr, type: selectedType });
-          }
+      // Find the date from the day cell
+      const dayCell = target.closest('.fc-daygrid-day');
+      if (dayCell) {
+        const dateStr = dayCell.getAttribute('data-date');
+        if (dateStr) {
+          console.log('Reservation Calendar - Date clicked:', dateStr, 'type:', selectedType);
+          dispatch('dateClick', { date: dateStr, type: selectedType });
         }
       }
-    });
+    }
   };
 
   const getSectionTitle = () => {
@@ -125,8 +143,20 @@
     }
   };
 
+  // Make title reactive to selectedType changes
+  $: if (selectedType) {
+    calendarTitle = getSectionTitle();
+    console.log('ReservationCalendar: calendarTitle updated to:', calendarTitle, 'for selectedType:', selectedType);
+  }
+
   // Re-initialize calendar when reservations or selected type change
-  $: if (reservations || selectedType) {
+  $: if (reservations) {
+    console.log(`ReservationCalendar: Reacting to reservations change, selectedType: ${selectedType}`);
+    setTimeout(initializeCalendar, 0);
+  }
+  
+  $: if (selectedType) {
+    console.log(`ReservationCalendar: Reacting to selectedType change: ${selectedType}`);
     setTimeout(initializeCalendar, 0);
   }
 
@@ -137,18 +167,21 @@
       if (calendar) {
         calendar.destroy();
       }
+      if (calendarEl) {
+        calendarEl.removeEventListener('click', handleDateClick);
+      }
     };
   });
 </script>
 
 <!-- Calendar Section -->
-<div class="bg-base-100 rounded-xl border border-base-300 shadow-sm overflow-hidden">
-  <div class="flex items-center justify-between px-6 py-4 border-b border-base-300">
+<div class="bg-base-100 rounded-xl shadow-sm overflow-hidden">
+  <div class="flex items-center justify-between px-6 py-4">
     <h2 class="text-xl font-semibold text-base-content">
-      {getSectionTitle()}
+      {calendarTitle}
     </h2>
   </div>
-  <div class="p-6">
+  <div class="p-6 border border-base-300 rounded-xl">
     <div bind:this={calendarEl} class="w-full"></div>
   </div>
 </div>

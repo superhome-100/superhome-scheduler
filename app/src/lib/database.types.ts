@@ -307,7 +307,9 @@ export type Database = {
         Returns: boolean
       }
       auto_assign_buoy: {
-        Args: { p_res_date: string; p_time_period: string }
+        Args:
+          | { p_res_date: string; p_time_period: string }
+          | { p_res_date: string; p_time_period: string }
         Returns: Json
       }
       check_buoy_capacity: {
@@ -317,6 +319,10 @@ export type Database = {
       check_group_capacity: {
         Args: { p_group_id: number }
         Returns: number
+      }
+      edge_auto_assign_buoy: {
+        Args: { p_res_date: string; p_time_period: string }
+        Returns: Json
       }
       find_best_buoy_for_depth: {
         Args: { target_depth: number }

@@ -27,14 +27,13 @@ export async function ensureUserProfile(user: User | null): Promise<void> {
         },
         { onConflict: 'uid' }
       );
-  } catch (_) {
+  } catch (_err) {
     // Ignore silently; RLS/policies protect rows
   }
 }
 
 // Minimal auth init: keep user in a small store for UI convenience
-supabase.auth.onAuthStateChange((event, session) => {
-  console.log('Auth: State change event:', event, 'Session:', session ? 'present' : 'null');
+supabase.auth.onAuthStateChange((_event, session) => {
   const user = session?.user ?? null;
   authStore.set({ user, loading: false, error: null });
   // Best-effort profile ensure on state changes
@@ -46,32 +45,26 @@ supabase.auth.onAuthStateChange((event, session) => {
 // Populate initial session on first load
 (async () => {
   try {
-    console.log('Auth: Initializing session...');
     const { data, error } = await supabase.auth.getSession();
     
     if (error) {
-      console.error('Auth: Session error:', error);
+      console.error('[Auth] init getSession error:', error);
       authStore.set({ user: null, loading: false, error: error.message });
       return;
     }
     
     const user = data.session?.user ?? null;
-    console.log('Auth: Session loaded, user:', user ? 'authenticated' : 'not authenticated');
     
     // Set the auth state immediately
     authStore.set({ user, loading: false, error: null });
     
     if (user) {
-      console.log('Auth: Ensuring user profile...');
       // Don't await this to prevent blocking the UI
-      ensureUserProfile(user).catch(err => {
-        console.warn('Auth: Profile creation failed:', err);
-      });
+      ensureUserProfile(user).catch(() => {});
     }
     
-    console.log('Auth: Initialization complete');
   } catch (error) {
-    console.error('Auth: Initialization error:', error);
+    console.error('[Auth] Initialization error:', error);
     authStore.set({ user: null, loading: false, error: 'Failed to initialize authentication' });
   }
 })();
@@ -80,7 +73,6 @@ supabase.auth.onAuthStateChange((event, session) => {
 setTimeout(() => {
   authStore.update(state => {
     if (state.loading) {
-      console.warn('Auth loading timeout - forcing loading to false');
       return { ...state, loading: false, error: 'Authentication timeout' };
     }
     return state;
@@ -94,9 +86,10 @@ export const auth = {
 
   async signInWithGoogle(): Promise<{ error: AuthError | null }> {
     try {
+      const redirectTo = `${window.location.origin}/auth/callback`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${window.location.origin}/auth/callback` }
+        options: { redirectTo, queryParams: { prompt: 'select_account' }, flowType: 'pkce' }
       });
       if (error) authStore.update(s => ({ ...s, error: error.message }));
       return { error };
@@ -109,9 +102,10 @@ export const auth = {
 
   async signInWithFacebook(): Promise<{ error: AuthError | null }> {
     try {
+      const redirectTo = `${window.location.origin}/auth/callback`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',
-        options: { redirectTo: `${window.location.origin}/auth/callback` }
+        options: { redirectTo, flowType: 'pkce' }
       });
       if (error) authStore.update(s => ({ ...s, error: error.message }));
       return { error };
@@ -134,8 +128,9 @@ export const auth = {
         .eq('uid', uid)
         .single();
       if (error) return false;
-      return Array.isArray(profile?.privileges) && profile.privileges.includes('admin');
-    } catch (_) {
+      const isAdmin = Array.isArray(profile?.privileges) && profile.privileges.includes('admin');
+      return isAdmin;
+    } catch (_e) {
       return false;
     }
   },
@@ -161,4 +156,3 @@ export const auth = {
     }
   }
 };
-

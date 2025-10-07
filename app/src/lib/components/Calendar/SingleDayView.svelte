@@ -203,7 +203,40 @@
   }
 
   function showReservationDetails(res: any) {
-    alert(`Reservation Details\n\nDate: ${dayjs(res.res_date).format('YYYY-MM-DD')}\nType: ${res.res_type}\nStatus: ${res.res_status}\nTime: ${res?.time_period || ''}\nDepth: ${res?.depth_m ?? ''}`);
+    const period = (res?.time_period === 'AM' ? 'AM' : 'PM') as TimePeriod;
+    let buoy = 'Not assigned';
+    let boat = 'Not assigned';
+    let divers: string[] = [];
+
+    if (isAdmin) {
+      const group = buoyGroups.find(
+        (g) =>
+          g.time_period === period &&
+          Array.isArray(g.res_openwater) &&
+          g.res_openwater.some((r: any) => r.uid === res.uid)
+      );
+      if (group) {
+        buoy = group.buoy_name || 'Not assigned';
+        boat = group.boat || 'Not assigned';
+        divers = (group.member_names || []).filter(Boolean) as string[];
+      }
+    } else {
+      const assign = myAssignments[period];
+      buoy = assign?.buoy_name || 'Not assigned';
+      boat = assign?.boat || 'Not assigned';
+    }
+
+    const details = `Reservation Details\n\n` +
+      `Date: ${dayjs(res.res_date).format('YYYY-MM-DD')}\n` +
+      `Type: ${res.res_type}\n` +
+      `Status: ${res.res_status}\n` +
+      `Time: ${res?.time_period || ''}\n` +
+      `Depth: ${res?.depth_m ?? ''}\n` +
+      `Buoy: ${buoy}\n` +
+      `Boat: ${boat}\n` +
+      `Divers: ${divers.length ? divers.join(', ') : 'None'}`;
+
+    alert(details);
   }
 
   // Load buoy groups when date changes (admin only)
