@@ -348,11 +348,12 @@
         
         <form on:submit|preventDefault={handleCreateReservation}>
           <div class="form-control mb-4">
-            <label class="label">
+            <label class="label" for="create-res-type">
               <span class="label-text">Reservation Type</span>
             </label>
             <select 
               class="select select-bordered w-full"
+              id="create-res-type"
               bind:value={createFormData.res_type}
             >
               <option value="pool">Pool</option>
@@ -362,12 +363,13 @@
           </div>
 
           <div class="form-control mb-4">
-            <label class="label">
+            <label class="label" for="create-res-datetime">
               <span class="label-text">Date & Time</span>
             </label>
             <input 
               type="datetime-local"
               class="input input-bordered w-full"
+              id="create-res-datetime"
               bind:value={createFormData.res_date}
               required
             />
@@ -376,50 +378,54 @@
           <!-- Pool-specific fields -->
           {#if createFormData.res_type === 'pool'}
             <div class="form-control mb-4">
-              <label class="label">
+              <label class="label" for="create-pool-start">
                 <span class="label-text">Start Time</span>
               </label>
               <input 
                 type="time"
                 class="input input-bordered w-full"
-                bind:value={createFormData.pool.start_time}
+                id="create-pool-start"
+                bind:value={createFormData.pool!.start_time}
                 required
               />
             </div>
             <div class="form-control mb-4">
-              <label class="label">
+              <label class="label" for="create-pool-end">
                 <span class="label-text">End Time</span>
               </label>
               <input 
                 type="time"
                 class="input input-bordered w-full"
-                bind:value={createFormData.pool.end_time}
+                id="create-pool-end"
+                bind:value={createFormData.pool!.end_time}
                 required
               />
             </div>
             <div class="form-control mb-4">
-              <label class="label">
+              <label class="label" for="create-pool-lane">
                 <span class="label-text">Lane (optional)</span>
               </label>
               <input 
                 type="text"
                 class="input input-bordered w-full"
-                bind:value={createFormData.pool.lane}
+                id="create-pool-lane"
+                bind:value={createFormData.pool!.lane}
                 placeholder="Lane assignment"
               />
             </div>
-          {/if}
 
-          <div class="form-control mb-4">
-            <label class="label">
-              <span class="label-text">Notes (optional)</span>
-            </label>
-            <textarea 
-              class="textarea textarea-bordered w-full"
-              bind:value={createFormData.pool.note}
-              placeholder="Additional notes..."
-            ></textarea>
-          </div>
+            <div class="form-control mb-4">
+              <label class="label" for="create-pool-notes">
+                <span class="label-text">Notes (optional)</span>
+              </label>
+              <textarea 
+                class="textarea textarea-bordered w-full"
+                id="create-pool-notes"
+                bind:value={createFormData.pool!.note}
+                placeholder="Additional notes..."
+              ></textarea>
+            </div>
+          {/if}
 
           <div class="modal-action">
             <button type="button" class="btn btn-ghost" on:click={() => showCreateForm = false}>
@@ -447,11 +453,12 @@
         
         <form on:submit|preventDefault={handleUpdateReservation}>
           <div class="form-control mb-4">
-            <label class="label">
+            <label class="label" for="edit-status">
               <span class="label-text">Status</span>
             </label>
             <select 
               class="select select-bordered w-full"
+              id="edit-status"
               bind:value={editFormData.res_status}
             >
               <option value="pending">Pending</option>
@@ -461,12 +468,13 @@
           </div>
 
           <div class="form-control mb-4">
-            <label class="label">
+            <label class="label" for="edit-res-datetime">
               <span class="label-text">Date & Time</span>
             </label>
             <input 
               type="datetime-local"
               class="input input-bordered w-full"
+              id="edit-res-datetime"
               bind:value={editFormData.res_date}
               required
             />

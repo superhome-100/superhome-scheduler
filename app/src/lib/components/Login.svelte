@@ -119,7 +119,7 @@
         <div class="text-center">
           <button
             type="button"
-            class="btn btn-link text-white text-sm font-medium no-underline hover:no-underline p-0"
+            class="text-white text-sm font-medium no-underline hover:no-underline p-0 bg-transparent border-none cursor-pointer"
             style="color: white !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);"
             on:click={handlePrivacyPolicy}
             aria-label="View Privacy Policy"

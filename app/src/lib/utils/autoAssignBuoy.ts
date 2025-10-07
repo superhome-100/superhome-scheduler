@@ -28,6 +28,9 @@ type BuoyRow = {
 
 // Group divers by depth proximity. Greedy pass on sorted depths.
 // Groups 2-3 divers based on closest depth meters (preferably ≤15m difference)
+/**
+ * @deprecated Client-side grouping is deprecated. Use server-side Edge Function via autoAssignBuoyServer.
+ */
 function makeGroups(rows: OpenWaterRow[]): OpenWaterRow[][] {
   const sorted = [...rows].sort((a, b) => (a.depth_m ?? 0) - (b.depth_m ?? 0))
   const groups: OpenWaterRow[][] = []
@@ -68,6 +71,9 @@ function makeGroups(rows: OpenWaterRow[]): OpenWaterRow[][] {
   return groups
 }
 
+/**
+ * @deprecated Client-side fetch + grouping path is deprecated. Use autoAssignBuoyServer to run entirely on Edge Function.
+ */
 async function getConfirmedOpenWater(resDate: string, timePeriod: string): Promise<OpenWaterRow[]> {
   // Filter confirmed open_water for the day & time period
   const { data, error } = await supabase
@@ -101,6 +107,9 @@ async function getConfirmedOpenWater(resDate: string, timePeriod: string): Promi
   return filtered as OpenWaterRow[]
 }
 
+/**
+ * @deprecated Client-side buoy selection is deprecated. Server computes assignment.
+ */
 async function getBuoys(): Promise<BuoyRow[]> {
   const { data, error } = await supabase
     .from('buoy')
@@ -110,6 +119,9 @@ async function getBuoys(): Promise<BuoyRow[]> {
   return (data ?? []) as unknown as BuoyRow[]
 }
 
+/**
+ * @deprecated Client-side buoy picking is deprecated. Server computes assignment.
+ */
 function pickBuoy(buoys: BuoyRow[], targetDepth: number): BuoyRow | null {
   for (const b of buoys) {
     if (b.max_depth >= targetDepth) return b
@@ -117,6 +129,9 @@ function pickBuoy(buoys: BuoyRow[], targetDepth: number): BuoyRow | null {
   return buoys.length ? buoys[buoys.length - 1] : null
 }
 
+/**
+ * @deprecated Direct client-side inserts to buoy_group are deprecated. Use autoAssignBuoyServer (Edge Function).
+ */
 async function insertBuoyGroup(params: {
   resDate: string
   timePeriod: string
@@ -138,41 +153,9 @@ async function insertBuoyGroup(params: {
 }
 
 export async function autoAssignBuoy({ resDate, timePeriod }: AutoAssignParams): Promise<AutoAssignResult> {
-  // Preconditions: caller must be admin (RLS). We can optionally check is_admin() via RPC if exposed.
-  const [reservations, buoys] = await Promise.all([getConfirmedOpenWater(resDate, timePeriod), getBuoys()])
-
-  // Only consider rows that have depth
-  const eligible = reservations.filter((r) => r.depth_m !== null)
-  const groups = makeGroups(eligible)
-
-  const createdGroupIds: number[] = []
-  const skipped: { reason: string; uids: string[] }[] = []
-
-  for (const group of groups) {
-    if (group.length === 0) continue
-    const uids = group.map((g) => g.uid)
-    const maxDepth = Math.max(...group.map((g) => g.depth_m ?? 0))
-
-    const buoy = pickBuoy(buoys, maxDepth)
-    if (!buoy) {
-      skipped.push({ reason: 'no_buoy_available', uids })
-      continue
-    }
-
-    try {
-      const id = await insertBuoyGroup({
-        resDate,
-        timePeriod,
-        buoyName: buoy.buoy_name,
-        diverIds: uids
-      })
-      createdGroupIds.push(id)
-    } catch (e: any) {
-      skipped.push({ reason: e.message ?? 'insert_failed', uids })
-    }
-  }
-
-  return { createdGroupIds, skipped }
+  // Deprecated: client-side grouping is disabled. Use server-side Edge Function for atomic operations.
+  // Redirect to server implementation to enforce fully server-side grouping and insertion.
+  return await autoAssignBuoyServer({ resDate, timePeriod })
 }
 
 // Server-side transactional auto-assign using RPC and normalized members table.
@@ -203,12 +186,66 @@ export type BuoyGroupWithNames = {
 
 // Fetch groups with member names for display in Admin Single Day view
 export async function getBuoyGroupsWithNames({ resDate, timePeriod }: AutoAssignParams): Promise<BuoyGroupWithNames[]> {
-  // Call Edge Function: get-buoy-groups-with-names
-  const res = await callFunction<{ res_date: string; time_period: string }, BuoyGroupWithNames[]>(
-    'get-buoy-groups-with-names',
-    { res_date: resDate, time_period: timePeriod }
-  )
-  if (res.error) throw new Error(res.error)
-  return (res.data ?? []) as BuoyGroupWithNames[]
+  // Step 1: fetch groups for the day/period (RLS expects admin)
+  const { data: groups, error: groupsErr } = await supabase
+    .from('buoy_group')
+    .select('id, res_date, time_period, buoy_name, boat')
+    .eq('res_date', resDate)
+    .eq('time_period', timePeriod)
+    .order('buoy_name', { ascending: true })
+  if (groupsErr) throw new Error(groupsErr.message)
+
+  const groupList = (groups ?? []) as Array<{ id: number; res_date: string; time_period: string; buoy_name: string; boat: string | null }>
+  if (groupList.length === 0) return []
+
+  const groupIds = groupList.map((g) => g.id)
+
+  // Step 2: fetch members for these groups from res_openwater (group_id FK)
+  const { data: members, error: memErr } = await supabase
+    .from('res_openwater')
+    .select('group_id, uid')
+    .in('group_id', groupIds)
+  if (memErr) throw new Error(memErr.message)
+
+  const memberList = (members ?? []) as Array<{ group_id: number | null; uid: string }>
+  const uids = Array.from(new Set(memberList.map((m) => m.uid)))
+
+  // Step 3: fetch names from user_profiles
+  const namesByUid = new Map<string, string | null>()
+  if (uids.length > 0) {
+    const { data: profiles, error: profErr } = await supabase
+      .from('user_profiles')
+      .select('uid, name')
+      .in('uid', uids)
+    if (profErr) throw new Error(profErr.message)
+    for (const p of (profiles ?? []) as Array<{ uid: string; name: string | null }>) {
+      namesByUid.set(p.uid, p.name ?? null)
+    }
+  }
+
+  // Step 4: combine
+  const membersByGroup = new Map<number, string[]>()
+  for (const m of memberList) {
+    if (m.group_id == null) continue
+    const arr = membersByGroup.get(m.group_id) ?? []
+    arr.push(m.uid)
+    membersByGroup.set(m.group_id, arr)
+  }
+
+  const result: BuoyGroupWithNames[] = groupList.map((g) => {
+    const memberUids = membersByGroup.get(g.id) ?? []
+    const memberNames = memberUids.map((u) => namesByUid.get(u) ?? null)
+    return {
+      id: g.id,
+      res_date: g.res_date,
+      time_period: g.time_period,
+      buoy_name: g.buoy_name,
+      boat: g.boat ?? null,
+      member_uids: memberUids.length ? memberUids : null,
+      member_names: memberNames.length ? memberNames : null
+    }
+  })
+
+  return result
 }
 

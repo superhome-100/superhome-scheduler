@@ -5,10 +5,15 @@
   import AuthCallback from '../lib/components/AuthCallback.svelte';
   import LoadingSpinner from '../lib/components/LoadingSpinner.svelte';
   import { page } from '$app/stores';
+  import { onMount } from 'svelte';
   
   // Check if we're on the auth callback route
   $: isAuthCallback = $page.url.pathname === '/auth/callback';
   $: pathname = $page.url.pathname;
+
+  // Admin status check
+  let isAdmin = false;
+  let adminChecked = false;
 
   // Refresh functionality
   let refreshing = false;
@@ -84,6 +89,41 @@
     }
   }, 3000); // 3 second fallback
 
+  // Check admin status when user is authenticated
+  onMount(async () => {
+    if ($authStore.user && !adminChecked) {
+      try {
+        isAdmin = await auth.isAdmin();
+        adminChecked = true;
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        adminChecked = true;
+        isAdmin = false;
+      }
+    }
+  });
+
+  // Watch for auth state changes and check admin status
+  $: if ($authStore.user && !adminChecked && !$authStore.loading) {
+    (async () => {
+      try {
+        isAdmin = await auth.isAdmin();
+        adminChecked = true;
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        adminChecked = true;
+        isAdmin = false;
+      }
+    })();
+  }
+
+  // Redirect admin users to admin dashboard
+  $: if (adminChecked && isAdmin && $authStore.user) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/admin';
+    }
+  }
+
   // Admin users can navigate to /admin via sidebar - no automatic redirect
 </script>
 
@@ -104,7 +144,30 @@
       </div>
     </div>
   {:else if $authStore.user}
-    <Dashboard />
+    {#if !adminChecked}
+      <div class="min-h-screen flex items-center justify-center">
+        <div class="flex flex-col items-center gap-4">
+          <LoadingSpinner 
+            size="lg" 
+            text="Checking permissions..." 
+            variant="login"
+          />
+        </div>
+      </div>
+    {:else if isAdmin}
+      <!-- Admin users should be redirected to admin dashboard -->
+      <div class="min-h-screen flex items-center justify-center">
+        <div class="flex flex-col items-center gap-4">
+          <LoadingSpinner 
+            size="lg" 
+            text="Redirecting to admin dashboard..." 
+            variant="login"
+          />
+        </div>
+      </div>
+    {:else}
+      <Dashboard />
+    {/if}
   {:else}
     <Login 
       {refreshing}

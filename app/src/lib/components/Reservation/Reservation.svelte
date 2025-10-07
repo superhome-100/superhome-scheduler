@@ -97,9 +97,9 @@
         .from('reservations')
         .select(`
           *,
-          res_pool!left(start_time, end_time, lane, note),
-          res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, note),
-          res_classroom!left(start_time, end_time, room, note)
+          res_pool!left(start_time, end_time, lane, note, res_status),
+          res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, note, res_status),
+          res_classroom!left(start_time, end_time, room, note, res_status)
         `)
         .eq('uid', $authStore.user.id)
         .order('res_date', { ascending: true });
@@ -107,8 +107,8 @@
       if (fetchError) throw fetchError;
       
       // Flatten the joined data for easier access
-      reservations = (data || []).map(reservation => {
-        const flattened = { ...reservation };
+      reservations = (data || []).map((reservation) => {
+        const flattened: any = { ...reservation };
         
         // Flatten detail table data based on reservation type
         if (reservation.res_type === 'pool' && reservation.res_pool) {

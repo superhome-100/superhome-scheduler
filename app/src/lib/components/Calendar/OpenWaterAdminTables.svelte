@@ -12,8 +12,9 @@
   let startWidth = 0;
 
   // Initialize boat capacity arrays
-  let amBoatCapacity = [];
-  let pmBoatCapacity = [];
+  type BoatStat = { name: string; totalDivers: number; isAssigned: boolean };
+  let amBoatCapacity: BoatStat[] = [];
+  let pmBoatCapacity: BoatStat[] = [];
   
   // Calculate boat capacity and assignments for each time period
   $: if (buoyGroups && availableBoats) {
@@ -21,8 +22,8 @@
     pmBoatCapacity = calculateBoatCapacity('PM');
   }
   
-  function calculateBoatCapacity(timePeriod: 'AM' | 'PM') {
-    const boatStats = [];
+  function calculateBoatCapacity(timePeriod: 'AM' | 'PM'): BoatStat[] {
+    const boatStats: BoatStat[] = [];
     
     // Create numbered boats (1-4)
     for (let i = 1; i <= 4; i++) {
@@ -56,9 +57,9 @@
           }
           
           if (boatIndex !== -1 && boatIndex < boatStats.length) {
-            const boatStat = boatStats[boatIndex];
+            const boatStat = boatStats[boatIndex]!;
             // Count actual divers assigned to this boat
-            const diverCount = group.member_names?.filter(name => name && name.trim() !== '').length || 0;
+            const diverCount = group.member_names?.filter((name: string | null) => name && name.trim() !== '').length || 0;
             boatStat.totalDivers += diverCount;
             boatStat.isAssigned = true;
           }
@@ -385,12 +386,6 @@
 
     .resizable-header.w-auto {
       min-width: 14rem;
-    }
-
-    /* Optimize dropdown text size for mobile */
-    .resizable-header select {
-      font-size: 0.75rem;
-      padding: 0.25rem 0.5rem;
     }
 
     /* Ensure divers group boxes have more space on mobile */

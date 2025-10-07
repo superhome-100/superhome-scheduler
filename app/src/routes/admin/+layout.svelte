@@ -68,7 +68,7 @@
     if (signingOut) return;
     signingOut = true;
     await auth.signOut();
-    window.location.replace('/');
+    // Redirect is now handled by auth.signOut()
   }
 </script>
 

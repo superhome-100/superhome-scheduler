@@ -1,8 +1,15 @@
-// Supabase Edge Function: load-available-buoys
-// - Authenticated; returns buoy_name and max_depth
+// Supabase Edge Function: user-update-status
+// - Admin-only update of user_profiles.status
 // - Deno runtime (TypeScript)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
+
+type Status = 'active' | 'disabled' | string
+
+interface Payload {
+  uid: string
+  status: Status
+}
 
 function json(body: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(body), {
@@ -30,14 +37,27 @@ Deno.serve(async (req: Request) => {
     const user = userRes?.user
     if (!user) return json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data, error } = await supabase
-      .from('buoy')
-      .select('buoy_name, max_depth')
-      .order('max_depth', { ascending: true })
+    // Admin check
+    const { data: profile, error: profileErr } = await supabase
+      .from('user_profiles')
+      .select('privileges')
+      .eq('uid', user.id)
+      .single()
+    if (profileErr) return json({ error: profileErr.message }, { status: 403 })
+    const isAdmin = Array.isArray(profile?.privileges) && profile!.privileges.includes('admin')
+    if (!isAdmin) return json({ error: 'Forbidden' }, { status: 403 })
+
+    const body = (await req.json()) as Payload
+    if (!body?.uid || !body?.status) return json({ error: 'Invalid payload' }, { status: 400 })
+
+    const { error } = await supabase
+      .from('user_profiles')
+      .update({ status: body.status, updated_at: new Date().toISOString() })
+      .eq('uid', body.uid)
 
     if (error) return json({ error: error.message }, { status: 500 })
 
-    return json(data || [], { status: 200 })
+    return json({ ok: true }, { status: 200 })
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unexpected error'
     return json({ error: message }, { status: 500 })

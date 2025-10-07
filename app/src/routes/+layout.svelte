@@ -48,7 +48,7 @@
     if (signingOut) return;
     signingOut = true;
     await auth.signOut();
-    window.location.replace('/');
+    // Redirect is now handled by auth.signOut()
   }
 
   // Check if current route needs sidebar

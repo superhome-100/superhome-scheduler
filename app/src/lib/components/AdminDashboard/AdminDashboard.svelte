@@ -9,6 +9,7 @@
   import ReservationDetailsModal from './ReservationDetailsModal.svelte';
   import SingleDayView from '../Calendar/SingleDayView.svelte';
   import { reservationApi } from '../../api/reservationApi';
+  import { userAdminService } from '../../services/userAdminService';
 
   let users: any[] = [];
   let reservations: any[] = [];
@@ -189,16 +190,14 @@
     try {
       const newStatus = action === 'approve' ? 'confirmed' : 'rejected';
       
-      const { error } = await supabase
-        .from('reservations')
-        .update({ 
-          res_status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('uid', reservation.uid)
-        .eq('res_date', reservation.res_date);
-
-      if (error) throw error;
+      const result = await reservationApi.updateReservationStatus(
+        reservation.uid,
+        reservation.res_date,
+        newStatus
+      );
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update reservation status');
+      }
 
       // Refresh data
       await loadAdminData();
@@ -216,50 +215,28 @@
     }
   };
 
-  // Toggle user status
+  // Toggle user status via Edge Function
   const toggleUserStatus = async (uid: string, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
-      
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('uid', uid);
-
-      if (error) throw error;
-
-      // Refresh data
+      const res = await userAdminService.updateStatus(uid, newStatus);
+      if (!res.success) throw new Error(res.error || 'Failed to update user status');
       await loadAdminData();
-
     } catch (err) {
       console.error('Error toggling user status:', err);
       error = err instanceof Error ? err.message : 'Failed to update user status';
     }
   };
 
-  // Toggle user privilege
+  // Toggle user privilege via Edge Function
   const toggleUserPrivilege = async (uid: string, currentPrivileges: string[]) => {
     try {
       const newPrivileges = currentPrivileges.includes('admin') 
         ? currentPrivileges.filter(p => p !== 'admin')
         : [...currentPrivileges, 'admin'];
-      
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({ 
-          privileges: newPrivileges,
-          updated_at: new Date().toISOString()
-        })
-        .eq('uid', uid);
-
-      if (error) throw error;
-
-      // Refresh data
+      const res = await userAdminService.updatePrivileges(uid, newPrivileges);
+      if (!res.success) throw new Error(res.error || 'Failed to update user privilege');
       await loadAdminData();
-
     } catch (err) {
       console.error('Error toggling user privilege:', err);
       error = err instanceof Error ? err.message : 'Failed to update user privilege';

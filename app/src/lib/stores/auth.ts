@@ -89,7 +89,7 @@ export const auth = {
       const redirectTo = `${window.location.origin}/auth/callback`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo, queryParams: { prompt: 'select_account' }, flowType: 'pkce' }
+        options: { redirectTo, queryParams: { prompt: 'select_account' } }
       });
       if (error) authStore.update(s => ({ ...s, error: error.message }));
       return { error };
@@ -105,7 +105,7 @@ export const auth = {
       const redirectTo = `${window.location.origin}/auth/callback`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',
-        options: { redirectTo, flowType: 'pkce' }
+        options: { redirectTo }
       });
       if (error) authStore.update(s => ({ ...s, error: error.message }));
       return { error };
@@ -147,8 +147,20 @@ export const auth = {
   async signOut(): Promise<{ error: AuthError | null }> {
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) authStore.update(s => ({ ...s, error: error.message }));
-      return { error };
+      if (error) {
+        authStore.update(s => ({ ...s, error: error.message }));
+        return { error };
+      }
+      
+      // Clear the auth store immediately after successful sign out
+      authStore.set({ user: null, loading: false, error: null });
+      
+      // Redirect to login page
+      if (typeof window !== 'undefined') {
+        window.location.replace('/');
+      }
+      
+      return { error: null };
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Sign out failed';
       authStore.update(s => ({ ...s, error: message }));
