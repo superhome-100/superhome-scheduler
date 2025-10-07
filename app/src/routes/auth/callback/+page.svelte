@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { supabase } from '../../../lib/utils/supabase';
-  import { auth } from '../../../lib/stores/auth';
+  // Note: we intentionally avoid any slow role checks here to keep callback fast
 
   let loading = true;
 
@@ -10,7 +10,8 @@
       // If we already have a session, go straight to the dashboard
       const current = await supabase.auth.getSession();
       if (current.data.session) {
-        await auth.redirectToRoleDashboard();
+        // Fast redirect; role-based redirection occurs after landing
+        window.location.replace('/');
         return;
       }
 
@@ -23,12 +24,29 @@
       }
 
       // Exchange the authorization code in the URL for a session (PKCE flow)
-      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href);
-      if (exchangeError || !data.session) {
+      const withTimeout = <T>(p: Promise<T>, ms = 10000) =>
+        Promise.race([
+          p,
+          new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+        ]);
+
+      let data: { session: unknown } | null = null;
+      try {
+        const res = await withTimeout(
+          supabase.auth.exchangeCodeForSession(window.location.href),
+          10000
+        ) as { data: { session: unknown } };
+        data = res?.data ?? null;
+      } catch (_timeoutOrErr) {
+        data = null;
+      }
+
+      if (!data || !data.session) {
         window.location.replace('/');
         return;
       }
-      await auth.redirectToRoleDashboard();
+      // Fast redirect; any role checks can run after landing
+      window.location.replace('/');
     } catch (e) {
       // Silent fallback
       window.location.replace('/');
@@ -38,10 +56,10 @@
   });
 </script>
 
-<main class="superhome-login-background" data-theme="superhome">
+<main class="superhome-login-background">
   <div class="auth-message" aria-live="polite">Authenticating...</div>
 </main>
 
 <style>
-  .auth-message { color: #fff; text-align: center; padding: 2rem; }
+  .auth-message { color: hsl(var(--bc)); text-align: center; padding: 2rem; }
 </style>

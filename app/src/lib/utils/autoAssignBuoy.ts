@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
-import type { Database, Tables } from '../../../types/supabase'
+import { callFunction } from './functions'
+import type { Database, Tables } from '../database.types'
 
 // Auto-assign buoy groups for a specific date (YYYY-MM-DD) and time period (e.g., 'AM'|'PM')
 // Notes:
@@ -177,19 +178,17 @@ export async function autoAssignBuoy({ resDate, timePeriod }: AutoAssignParams):
 // Server-side transactional auto-assign using RPC and normalized members table.
 // Preferred method: avoids client-side race conditions and respects RLS.
 export async function autoAssignBuoyServer({ resDate, timePeriod }: AutoAssignParams): Promise<AutoAssignResult> {
-  // Call RPC: public.auto_assign_buoy(date, varchar)
-  const { data, error } = await supabase.rpc('auto_assign_buoy', {
-    p_res_date: resDate,
-    p_time_period: timePeriod
-  })
+  // Call Edge Function: auto-assign-buoy
+  const res = await callFunction<{ res_date: string; time_period: string }, { createdGroupIds?: number[]; skipped?: { reason: string; uids: string[] }[] }>(
+    'auto-assign-buoy',
+    { res_date: resDate, time_period: timePeriod }
+  )
 
-  if (error) throw error
-
-  // data returns json: { createdGroupIds: int[], skipped: {reason,uids[]}[] }
-  const payload = data as unknown as { createdGroupIds?: number[]; skipped?: { reason: string; uids: string[] }[] } | null
-  const createdGroupIds: number[] = Array.isArray(payload?.createdGroupIds) ? payload!.createdGroupIds! : []
-  const skipped: { reason: string; uids: string[] }[] = Array.isArray(payload?.skipped) ? payload!.skipped! : []
-  return { createdGroupIds, skipped }
+  if (res.error) throw new Error(res.error)
+  return {
+    createdGroupIds: Array.isArray(res.data?.createdGroupIds) ? res.data!.createdGroupIds! : [],
+    skipped: Array.isArray(res.data?.skipped) ? res.data!.skipped! : []
+  }
 }
 
 export type BuoyGroupWithNames = {
@@ -204,11 +203,12 @@ export type BuoyGroupWithNames = {
 
 // Fetch groups with member names for display in Admin Single Day view
 export async function getBuoyGroupsWithNames({ resDate, timePeriod }: AutoAssignParams): Promise<BuoyGroupWithNames[]> {
-  const { data, error } = await supabase.rpc('get_buoy_groups_with_names', {
-    p_res_date: resDate,
-    p_time_period: timePeriod
-  })
-  if (error) throw error
-  return (data ?? []) as BuoyGroupWithNames[]
+  // Call Edge Function: get-buoy-groups-with-names
+  const res = await callFunction<{ res_date: string; time_period: string }, BuoyGroupWithNames[]>(
+    'get-buoy-groups-with-names',
+    { res_date: resDate, time_period: timePeriod }
+  )
+  if (res.error) throw new Error(res.error)
+  return (res.data ?? []) as BuoyGroupWithNames[]
 }
 

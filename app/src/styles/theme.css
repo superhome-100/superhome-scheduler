@@ -10,83 +10,61 @@
 
 /* Color Palette - CSS Custom Properties */
 :root {
-  /* Monotone Color Scheme */
-  --text-primary: #000000;      /* Pure black for text */
-  --text-secondary: #333333;    /* Dark gray for secondary text */
-  --text-tertiary: #666666;     /* Medium gray for tertiary text */
-  
   /* Animation Variables */
   --animate-spin: spin 1s linear infinite;
   
-  /* Dark Mode Variables */
-  --dark-text-primary: #ffffff;
-  --dark-text-secondary: #e0e0e0;
-  --dark-text-tertiary: #b0b0b0;
-  --dark-background: #121212;
-  --dark-background-secondary: #1e1e1e;
-  --dark-background-tertiary: #2a2a2a;
-  --dark-border-light: #333333;
-  --dark-border-medium: #444444;
-  --dark-border: #555555;
-  --dark-primary: #4A90E2;
-  --dark-primary-light: #6BA3E8;
-  --dark-primary-dark: #3A7BC8;
-  --dark-secondary: #001F3D;
-  --dark-secondary-light: #00294C;
-  --dark-secondary-dark: #001734;
-  --dark-accent: #4A90E2;
-  --dark-success: #28a745;
-  --dark-warning: #ffae42;
-  --dark-error: #d32f2f;
+  /* Use DaisyUI Nord theme colors as base */
+  --text-primary: hsl(var(--bc));      /* Base content color from Nord */
+  --text-secondary: hsl(var(--bc) / 0.7);    /* Secondary text with opacity */
+  --text-tertiary: hsl(var(--bc) / 0.5);     /* Tertiary text with opacity */
   
-  /* Background colors */
-  --background: #ffffff;        /* Pure white background */
-  --background-secondary: #f8f9fa; /* Light gray background */
-  --background-tertiary: #e9ecef;  /* Slightly darker gray */
+  /* Background colors using Nord theme */
+  --background: hsl(var(--b1));        /* Base-100 from Nord */
+  --background-secondary: hsl(var(--b2)); /* Base-200 from Nord */
+  --background-tertiary: hsl(var(--b3));  /* Base-300 from Nord */
   
-  /* Border colors */
-  --border-light: #e0e0e0;      /* Light gray borders */
-  --border-medium: #cccccc;     /* Medium gray borders */
-  --border-dark: #999999;       /* Dark gray borders */
+  /* Border colors using Nord theme */
+  --border-light: hsl(var(--b3));      /* Light borders */
+  --border-medium: hsl(var(--bc) / 0.2);     /* Medium borders */
+  --border-dark: hsl(var(--bc) / 0.3);       /* Dark borders */
   
-  /* Status colors */
-  --success: #28a745;           /* Green for success states */
-  --warning: #dc3545;           /* Red for warnings */
-  --error: #dc3545;             /* Red for errors, logout, warnings */
-  --info: #17a2b8;              /* Blue for info */
+  /* Status colors using Nord theme */
+  --success: hsl(var(--su));           /* Success color from Nord */
+  --warning: hsl(var(--wa));           /* Warning color from Nord */
+  --error: hsl(var(--er));             /* Error color from Nord */
+  --info: hsl(var(--in));              /* Info color from Nord */
   
-  /* Interactive colors */
-  --primary: #007bff;           /* Blue for primary actions */
-  --primary-hover: #0056b3;     /* Darker blue for hover */
-  --secondary: #6c757d;         /* Gray for secondary actions */
+  /* Interactive colors using Nord theme */
+  --primary: hsl(var(--p));            /* Primary color from Nord */
+  --primary-hover: hsl(var(--p) / 0.8);     /* Primary hover */
+  --secondary: hsl(var(--s));          /* Secondary color from Nord */
   
-  /* Reservation status colors */
-  --status-pending: #ffc107;    /* Yellow for pending */
-  --status-approved: #28a745;   /* Green for approved */
-  --status-rejected: #dc3545;   /* Red for rejected */
-  --status-completed: #17a2b8;  /* Blue for completed */
+  /* Reservation status colors using Nord theme */
+  --status-pending: hsl(var(--wa));    /* Warning for pending */
+  --status-approved: hsl(var(--su));   /* Success for approved */
+  --status-rejected: hsl(var(--er));   /* Error for rejected */
+  --status-completed: hsl(var(--in));  /* Info for completed */
   
-  /* Derived colors for transparency */
-  --primary-10: rgba(0, 41, 76, 0.1);
-  --primary-20: rgba(0, 41, 76, 0.2);
-  --primary-30: rgba(0, 41, 76, 0.3);
-  --primary-40: rgba(0, 41, 76, 0.4);
+  /* Derived colors for transparency using Nord primary */
+  --primary-10: hsl(var(--p) / 0.1);
+  --primary-20: hsl(var(--p) / 0.2);
+  --primary-30: hsl(var(--p) / 0.3);
+  --primary-40: hsl(var(--p) / 0.4);
   
-  --secondary-10: rgba(0, 15, 38, 0.1);
-  --secondary-15: rgba(0, 15, 38, 0.15);
-  --secondary-20: rgba(0, 15, 38, 0.2);
-  --secondary-30: rgba(0, 15, 38, 0.3);
+  --secondary-10: hsl(var(--s) / 0.1);
+  --secondary-15: hsl(var(--s) / 0.15);
+  --secondary-20: hsl(var(--s) / 0.2);
+  --secondary-30: hsl(var(--s) / 0.3);
   
-  --primary-light-20: rgba(0, 50, 87, 0.2);
-  --primary-light-30: rgba(0, 50, 87, 0.3);
+  --primary-light-20: hsl(var(--p) / 0.2);
+  --primary-light-30: hsl(var(--p) / 0.3);
   
   /* Additional text colors for better hierarchy */
-  --text-tertiary: rgba(255, 255, 255, 0.8);
-  --text-quaternary: rgba(255, 255, 255, 0.7);
+  --text-quaternary: hsl(var(--bc) / 0.4);
   
-  /* Shadow colors */
-  --shadow-dark: rgba(0, 15, 38, 0.3);
-  --shadow-darker: rgba(0, 15, 38, 0.4);
+  /* Shadow colors using Nord theme */
+  --shadow-dark: hsl(var(--b1) / 0.3);
+  --shadow-darker: hsl(var(--b1) / 0.4);
 }
 
 /* Reusable Component Classes */
@@ -209,7 +187,7 @@
 
 .btn-primary {
   background: var(--primary);
-  color: white;
+  color: hsl(var(--pc));
   border-color: var(--primary);
 }
 
@@ -220,7 +198,7 @@
 
 .btn-secondary {
   background: var(--secondary);
-  color: white;
+  color: hsl(var(--sc));
   border-color: var(--secondary);
 }
 
@@ -241,7 +219,7 @@
 
 .btn-danger {
   background: var(--error);
-  color: white;
+  color: hsl(var(--erc));
   border-color: var(--error);
 }
 
@@ -568,12 +546,12 @@
 }
 
 .superhome-login-loading .loading-spinner {
-  color: white;
-  border-top-color: white;
+  color: hsl(var(--bc));
+  border-top-color: hsl(var(--bc));
 }
 
 .superhome-login-loading .loading-text {
-  color: white;
+  color: hsl(var(--bc));
   font-size: 1rem;
   font-weight: 300;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -596,27 +574,10 @@
   }
 }
 
-/* Dark Mode Overrides */
-.dark-mode {
-  --text-primary: var(--dark-text-primary);
-  --text-secondary: var(--dark-text-secondary);
-  --text-tertiary: var(--dark-text-tertiary);
-  --background: var(--dark-background);
-  --background-secondary: var(--dark-background-secondary);
-  --background-tertiary: var(--dark-background-tertiary);
-  --border-light: var(--dark-border-light);
-  --border-medium: var(--dark-border-medium);
-  --border: var(--dark-border);
-  --primary: var(--dark-primary);
-  --primary-light: var(--dark-primary-light);
-  --primary-dark: var(--dark-primary-dark);
-  --secondary: var(--dark-secondary);
-  --secondary-light: var(--dark-secondary-light);
-  --secondary-dark: var(--dark-secondary-dark);
-  --accent: var(--dark-accent);
-  --success: var(--dark-success);
-  --warning: var(--dark-warning);
-  --error: var(--dark-error);
+/* Dark Mode Overrides - Nord theme handles dark mode automatically */
+[data-theme="nord"] {
+  /* Nord theme is already optimized for dark mode */
+  /* All colors will automatically use the Nord dark theme values */
 }
 
 @keyframes superhome-spin-simple {
@@ -626,7 +587,7 @@
 
 /* Typography */
 .superhome-title {
-  color: white;
+  color: hsl(var(--bc));
   font-size: 2rem;
   font-weight: 300;
   margin: 0;

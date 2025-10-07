@@ -1,10 +1,2 @@
-import { mount } from 'svelte'
-import './app.css'
-import './styles/theme.css'
-import App from './App.svelte'
-
-const app = mount(App, {
-  target: document.getElementById('app')!,
-})
-
-export default app
+// SvelteKit entry point - this file is not used in SvelteKit
+// The actual entry point is handled by SvelteKit's routing system

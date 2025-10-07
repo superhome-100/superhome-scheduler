@@ -196,7 +196,7 @@
   :global(.fc-button-primary:not(:disabled):active) {
     background: #3b82f6;
     border-color: #3b82f6;
-    color: white;
+    color: hsl(var(--bc));
   }
 
   :global(.fc-daygrid-day-number) {

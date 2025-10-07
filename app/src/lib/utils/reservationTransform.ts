@@ -149,9 +149,17 @@ export const transformReservationToUnified = (reservation: any): UnifiedReservat
   } else if (reservation.startTime && reservation.endTime) {
     startTime = formatTimeFor24Hour(reservation.startTime);
     endTime = formatTimeFor24Hour(reservation.endTime);
-  } else if (res_type === 'open_water' && reservation.time_period) {
-    // For open water, use time_period if available
-    startTime = reservation.time_period;
+  } else if (reservation.res_pool?.start_time && reservation.res_pool?.end_time) {
+    // Nested pool times
+    startTime = formatTimeFor24Hour(reservation.res_pool.start_time);
+    endTime = formatTimeFor24Hour(reservation.res_pool.end_time);
+  } else if (reservation.res_classroom?.start_time && reservation.res_classroom?.end_time) {
+    // Nested classroom times
+    startTime = formatTimeFor24Hour(reservation.res_classroom.start_time);
+    endTime = formatTimeFor24Hour(reservation.res_classroom.end_time);
+  } else if (res_type === 'open_water' && (reservation.time_period || reservation.res_openwater?.time_period)) {
+    // For open water, use time_period if available (either flattened or nested)
+    startTime = reservation.time_period || reservation.res_openwater?.time_period || '';
     endTime = ''; // Open water doesn't have end time
   } else {
     // Generate default times
@@ -176,24 +184,24 @@ export const transformReservationToUnified = (reservation: any): UnifiedReservat
     startTime,
     endTime,
     timeOfDay: getTimeOfDay(resDate),
-    time_period: reservation.time_period || null,
+    time_period: reservation.time_period || reservation.res_openwater?.time_period || null,
     
     // Optional fields
-    notes: reservation.note || reservation.notes || '',
+    notes: reservation.note || reservation.res_pool?.note || reservation.res_openwater?.note || reservation.res_classroom?.note || reservation.notes || '',
     title: reservation.title || '',
     
     // Detail table fields
-    lane: reservation.lane || null,
-    room: reservation.room || null,
-    depth_m: reservation.depth_m || null,
-    buoy: reservation.buoy || null,
+    lane: reservation.lane ?? reservation.res_pool?.lane ?? null,
+    room: reservation.room ?? reservation.res_classroom?.room ?? null,
+    depth_m: reservation.depth_m ?? reservation.res_openwater?.depth_m ?? null,
+    buoy: reservation.buoy ?? reservation.res_openwater?.buoy ?? null,
     // auto_adjust_closest field removed
-    pulley: reservation.pulley ?? null,
-    deep_fim_training: reservation.deep_fim_training ?? null,
-    bottom_plate: reservation.bottom_plate ?? null,
-    large_buoy: reservation.large_buoy ?? null,
-    open_water_type: reservation.open_water_type || null,
-    student_count: reservation.student_count || null,
+    pulley: (reservation.pulley ?? reservation.res_openwater?.pulley) ?? null,
+    deep_fim_training: (reservation.deep_fim_training ?? reservation.res_openwater?.deep_fim_training) ?? null,
+    bottom_plate: (reservation.bottom_plate ?? reservation.res_openwater?.bottom_plate) ?? null,
+    large_buoy: (reservation.large_buoy ?? reservation.res_openwater?.large_buoy) ?? null,
+    open_water_type: reservation.open_water_type ?? reservation.res_openwater?.open_water_type ?? null,
+    student_count: reservation.student_count ?? reservation.res_openwater?.student_count ?? null,
     
     // Raw reservation for additional data fetching
     raw_reservation: reservation

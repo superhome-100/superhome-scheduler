@@ -1,4 +1,5 @@
 import { supabase } from "../utils/supabase";
+import { callFunction } from "../utils/functions";
 
 export type TimePeriod = "AM" | "PM";
 
@@ -38,66 +39,54 @@ export async function updateBuoyAssignment(
   groupId: number,
   buoyName: string
 ): Promise<void> {
-  const { error } = await supabase
-    .from("buoy_group")
-    .update({ buoy_name: buoyName })
-    .eq("id", groupId);
-  if (error) throw error;
+  const res = await callFunction<{ group_id: number; buoy_name: string }, { ok: boolean }>(
+    "update-buoy-assignment",
+    { group_id: groupId, buoy_name: buoyName }
+  );
+  if (res.error) throw new Error(res.error);
 }
 
 export async function updateBoatAssignment(
   groupId: number,
   boatName: string
 ): Promise<void> {
-  const { error } = await supabase
-    .from("buoy_group")
-    .update({ boat: boatName })
-    .eq("id", groupId);
-  if (error) throw error;
+  const res = await callFunction<{ group_id: number; boat: string }, { ok: boolean }>(
+    "update-boat-assignment",
+    { group_id: groupId, boat: boatName }
+  );
+  if (res.error) throw new Error(res.error);
 }
 
 export async function loadAvailableBuoys(): Promise<Buoy[]> {
-  const { data, error } = await supabase
-    .from("buoy")
-    .select("buoy_name, max_depth")
-    .order("max_depth", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as Buoy[];
+  const res = await callFunction<Record<string, never>, Buoy[]>(
+    "load-available-buoys",
+    {}
+  );
+  if (res.error) throw new Error(res.error);
+  return (res.data ?? []) as Buoy[];
 }
 
 export async function getMyAssignmentsViaRpc(
   selectedDate: string
 ): Promise<Record<TimePeriod, MyAssignment | null>> {
   const [am, pm] = await Promise.all([
-    supabase.rpc("get_my_buoy_assignment", {
-      p_res_date: selectedDate,
-      p_time_period: "AM",
-    }),
-    supabase.rpc("get_my_buoy_assignment", {
-      p_res_date: selectedDate,
-      p_time_period: "PM",
-    }),
+    callFunction<{ res_date: string; time_period: "AM" }, { buoy_name: string | null; boat: string | null }>(
+      "get-my-buoy-assignment",
+      { res_date: selectedDate, time_period: "AM" }
+    ),
+    callFunction<{ res_date: string; time_period: "PM" }, { buoy_name: string | null; boat: string | null }>(
+      "get-my-buoy-assignment",
+      { res_date: selectedDate, time_period: "PM" }
+    )
   ]);
 
   if (am.error || pm.error) {
-    throw am.error || pm.error;
+    throw new Error(am.error || pm.error || "Edge function error");
   }
 
   return {
-    AM:
-      am.data && (am.data as any[])[0]
-        ? {
-            buoy_name: (am.data as any[])[0].buoy_name ?? null,
-            boat: (am.data as any[])[0].boat ?? null,
-          }
-        : null,
-    PM:
-      pm.data && (pm.data as any[])[0]
-        ? {
-            buoy_name: (pm.data as any[])[0].buoy_name ?? null,
-            boat: (pm.data as any[])[0].boat ?? null,
-          }
-        : null,
+    AM: am.data ? { buoy_name: am.data.buoy_name, boat: am.data.boat } : null,
+    PM: pm.data ? { buoy_name: pm.data.buoy_name, boat: pm.data.boat } : null,
   };
 }
 
@@ -105,29 +94,23 @@ export async function getMyAssignmentsDirect(
   selectedDate: string,
   userId: string
 ): Promise<Record<TimePeriod, MyAssignment | null>> {
-  const { data, error } = await supabase
-    .from("buoy_group")
-    .select(
-      `time_period, buoy_name, boat, res_openwater!inner(uid)`
+  const [am, pm] = await Promise.all([
+    callFunction<{ res_date: string; time_period: "AM"; uid: string }, { buoy_name: string | null; boat: string | null }>(
+      "get-my-buoy-assignment",
+      { res_date: selectedDate, time_period: "AM", uid: userId }
+    ),
+    callFunction<{ res_date: string; time_period: "PM"; uid: string }, { buoy_name: string | null; boat: string | null }>(
+      "get-my-buoy-assignment",
+      { res_date: selectedDate, time_period: "PM", uid: userId }
     )
-    .eq("res_date", selectedDate)
-    .eq("res_openwater.uid", userId);
+  ]);
 
-  if (error) throw error;
-
-  const groups = (data ?? []) as Array<{
-    time_period: TimePeriod;
-    buoy_name: string | null;
-    boat: string | null;
-  }>;
-
-  const am = groups.find((g) => g.time_period === "AM") || null;
-  const pm = groups.find((g) => g.time_period === "PM") || null;
+  if (am.error || pm.error) {
+    throw new Error(am.error || pm.error || "Edge function error");
+  }
 
   return {
-    AM: am ? { buoy_name: am.buoy_name, boat: am.boat } : null,
-    PM: pm ? { buoy_name: pm.buoy_name, boat: pm.boat } : null,
+    AM: am.data ? { buoy_name: am.data.buoy_name, boat: am.data.boat } : null,
+    PM: pm.data ? { buoy_name: pm.data.buoy_name, boat: pm.data.boat } : null,
   };
 }
-
-

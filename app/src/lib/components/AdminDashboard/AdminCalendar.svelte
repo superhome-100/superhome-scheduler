@@ -11,6 +11,15 @@
 
   let selectedType: 'pool' | 'openwater' | 'classroom' = 'pool';
 
+  // Initialize from URL parameter on mount
+  onMount(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const typeParam = urlParams.get('type');
+    if (typeParam && ['pool', 'openwater', 'classroom'].includes(typeParam)) {
+      selectedType = typeParam as 'pool' | 'openwater' | 'classroom';
+    }
+  });
+
   let calendarEl: HTMLDivElement;
   let calendar: Calendar | null = null;
 
@@ -202,77 +211,44 @@
   });
 </script>
 
-<div class="admin-calendar-section">
+<div class="bg-white rounded-xl shadow-sm p-6 mb-8">
   <!-- Calendar Type Buttons -->
   <AdminCalendarTypeButtons 
     bind:selectedType 
     on:typeSelected={handleTypeSelected}
   />
 
-  <div class="section-header">
-    <h2 class="section-title">{sectionTitle}</h2>
+  <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+    <h2 class="text-xl font-semibold m-0" style="color: #00294C;">{sectionTitle}</h2>
   </div>
   
-  <div class="calendar-container">
+  <div class="relative rounded-lg overflow-hidden border border-slate-200 min-h-[400px] md:min-h-[600px]">
     {#if loading}
-      <div class="loading-overlay">
-        <div class="loading-spinner"></div>
-        <p>Loading calendar...</p>
+      <div class="absolute inset-0 bg-white/90 flex flex-col items-center justify-center z-10">
+        <div class="w-8 h-8 border-3 border-slate-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+        <p class="text-slate-600">Loading calendar...</p>
       </div>
     {/if}
     <div id="admin-calendar" bind:this={calendarEl}></div>
   </div>
   
-  <div class="legend">
-    <div class="legend-item">
-      <div class="legend-color pending"></div>
+  <div class="flex flex-wrap gap-6 mt-4 pt-4 border-t border-slate-200 justify-center md:justify-start">
+    <div class="flex items-center gap-2 text-sm text-slate-500">
+      <div class="w-3 h-3 rounded-sm bg-amber-200"></div>
       <span>Pending</span>
     </div>
-    <div class="legend-item">
-      <div class="legend-color confirmed"></div>
+    <div class="flex items-center gap-2 text-sm text-slate-500">
+      <div class="w-3 h-3 rounded-sm bg-green-200"></div>
       <span>Confirmed</span>
     </div>
-    <div class="legend-item">
-      <div class="legend-color rejected"></div>
+    <div class="flex items-center gap-2 text-sm text-slate-500">
+      <div class="w-3 h-3 rounded-sm bg-red-200"></div>
       <span>Rejected</span>
     </div>
   </div>
 </div>
 
 <style>
-  .admin-calendar-section {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-  }
-
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .section-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0;
-  }
-
-
-  .calendar-container {
-    position: relative;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid #e2e8f0;
-    min-height: 600px;
-  }
-
   /* Fixed size date boxes */
   :global(.fc-daygrid-day) {
     min-height: 120px !important;
@@ -286,7 +262,7 @@
   /* Style the "more" link as a badge */
   :global(.fc-daygrid-more-link) {
     background: #3b82f6 !important;
-    color: white !important;
+    color: hsl(var(--bc)) !important;
     border-radius: 12px !important;
     padding: 2px 8px !important;
     font-size: 0.75rem !important;
@@ -308,71 +284,6 @@
   :global(.fc-daygrid-day-events) {
     max-height: calc(100% - 20px) !important;
     overflow: hidden !important;
-  }
-
-  .loading-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.9);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-  }
-
-  .loading-spinner {
-    width: 32px;
-    height: 32px;
-    border: 3px solid #e2e8f0;
-    border-top: 3px solid #3b82f6;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
-  .legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #e2e8f0;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    color: #64748b;
-  }
-
-  .legend-color {
-    width: 12px;
-    height: 12px;
-    border-radius: 2px;
-  }
-
-
-  .legend-color.pending {
-    background: #fde68a;
-  }
-
-  .legend-color.confirmed {
-    background: #bbf7d0;
-  }
-
-  .legend-color.rejected {
-    background: #fecaca;
   }
 
   /* FullCalendar customizations */
@@ -407,7 +318,7 @@
   :global(.fc-button-primary:not(:disabled):active) {
     background: #3b82f6;
     border-color: #3b82f6;
-    color: white;
+    color: hsl(var(--bc));
   }
 
   :global(.fc-daygrid-day-number) {
@@ -458,20 +369,6 @@
 
   /* Mobile responsive */
   @media (max-width: 768px) {
-    .section-header {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-
-    .legend {
-      justify-content: center;
-    }
-
-    .calendar-container {
-      min-height: 400px;
-    }
-
     /* Mobile: smaller date boxes */
     :global(.fc-daygrid-day) {
       min-height: 80px !important;

@@ -1,6 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
   import { authStore, auth } from '../../stores/auth';
+  import { showSignOutModal, sidebarActions, getUserInfo, mobileDrawerOpen } from '../../stores/sidebar';
   import { supabase } from '../../utils/supabase';
   import LoadingSpinner from '../LoadingSpinner.svelte';
   import PullToRefresh from '../PullToRefresh.svelte';
@@ -24,16 +27,15 @@
   import { getUpcomingReservations, getCompletedReservations, transformReservationsForModal } from './dashboardUtils';
   import { transformReservationToUnified } from '../../utils/reservationTransform';
 
-  let showSignOutModal = false;
-  let mobileSidebarOpen = false;
   let showUpcomingModal = false;
   let showCompletedModal = false;
   let showReservationDetails = false;
   let selectedReservation: any = null;
-  let currentView = 'dashboard'; // 'dashboard', 'reservation', or 'admin'
   let showSingleDayView = false;
   let selectedDate = '';
-  let reservations: Reservation[] = [];
+  // Use raw reservation rows from Supabase (with joined detail tables)
+  // We avoid flattening here; components use unified transform when needed
+  let reservations: any[] = [];
   let loading = false;
   let refreshing = false;
   let error: string | null = null;
@@ -47,52 +49,17 @@
   let activeMobileTab: 'upcoming' | 'completed' = 'upcoming';
   let showMobileViewAll = false;
   let upcomingListEl: HTMLDivElement | null = null;
+  
   let completedListEl: HTMLDivElement | null = null;
   let reservationForm: ReservationFormModal;
   let isAdmin = false;
   let adminChecked = false;
 
   // Derived user info for Sidebar
-  $: userEmail = $authStore.user?.email || 'user@example.com';
-  $: userName = ($authStore.user?.user_metadata?.full_name || $authStore.user?.user_metadata?.name || userEmail.split('@')[0] || 'User');
-  $: userAvatarUrl = ($authStore.user?.user_metadata?.avatar_url || $authStore.user?.user_metadata?.picture) ?? null;
-  $: userInitial = (userName?.charAt(0) || userEmail?.charAt(0) || 'U').toUpperCase();
+  $: ({ userEmail, userName, userAvatarUrl, userInitial } = getUserInfo($authStore));
 
-  // Initialize current view from URL or localStorage
-  const initializeCurrentView = () => {
-    const urlPath = window.location.pathname;
-
-    // Priority 1: URL-based routing with role enforcement
-    if (urlPath.includes('/admin')) {
-      // Check for specific admin sub-views
-      if (urlPath.includes('/admin/calendar')) {
-        currentView = 'admin-calendar';
-      } else if (urlPath.includes('/admin/users')) {
-        currentView = 'admin-users';
-      } else {
-        currentView = 'admin';
-      }
-      return;
-    } else if (urlPath.includes('/reservation')) {
-      currentView = 'reservation';
-    } else if (urlPath === '/') {
-      // Default: root shows regular dashboard for everyone (admins can manually go to /admin)
-      currentView = 'dashboard';
-      if (window.location.pathname !== '/') {
-        window.history.replaceState({}, '', '/');
-      }
-    } else {
-      // Fallback to dashboard for any other routes
-      currentView = 'dashboard';
-    }
-
-    // Persist chosen view and normalize URL
-    localStorage.setItem('currentView', currentView);
-    const expectedUrl = currentView === 'dashboard' ? '/' : `/${currentView}`;
-    if (window.location.pathname !== expectedUrl) {
-      window.history.replaceState({}, '', expectedUrl);
-    }
-  };
+  // Get current view from URL path
+  $: currentView = $page.url.pathname;
 
   // Recompute if mobile list overflows viewport to show "View All"
   const computeMobileOverflow = () => {
@@ -103,25 +70,21 @@
     showMobileViewAll = (el.scrollHeight || 0) > (el.clientHeight || 0) + 2;
   };
 
-  // Save current view to localStorage and update URL
-  const updateCurrentView = (newView: string) => {
-    currentView = newView;
-    localStorage.setItem('currentView', newView);
-    
-    // Update URL without page reload
-    let newUrl = '/';
-    if (newView === 'dashboard') {
-      newUrl = '/';
-    } else if (newView === 'admin') {
-      newUrl = '/admin';
-    } else if (newView === 'admin-calendar') {
-      newUrl = '/admin/calendar';
-    } else if (newView === 'admin-users') {
-      newUrl = '/admin/users';
+  // Navigate to a new view using SvelteKit
+  const navigateToView = (view: string) => {
+    if (view === 'dashboard') {
+      goto('/');
+    } else if (view === 'admin') {
+      goto('/admin');
+    } else if (view === 'admin-calendar') {
+      goto('/admin/calendar');
+    } else if (view === 'admin-users') {
+      goto('/admin/users');
+    } else if (view === 'reservation') {
+      goto('/reservation');
     } else {
-      newUrl = `/${newView}`;
+      goto(`/${view}`);
     }
-    window.history.pushState({}, '', newUrl);
   };
 
   // Load user's reservations from Supabase with detail tables
@@ -146,64 +109,8 @@
       
       if (fetchError) throw fetchError;
       
-      // Flatten the joined data for easier access
-      reservations = (data || []).map(reservation => {
-        const flattened = { ...reservation };
-        
-        // Flatten detail table data based on reservation type
-        if (reservation.res_type === 'pool' && reservation.res_pool) {
-          flattened.start_time = reservation.res_pool.start_time;
-          flattened.end_time = reservation.res_pool.end_time;
-          flattened.lane = reservation.res_pool.lane;
-          flattened.note = reservation.res_pool.note;
-          // Use the status from the detail table if available
-          if (reservation.res_pool.res_status) {
-            flattened.res_status = reservation.res_pool.res_status;
-          }
-        } else if (reservation.res_type === 'open_water' && reservation.res_openwater) {
-          flattened.time_period = reservation.res_openwater.time_period;
-          flattened.depth_m = reservation.res_openwater.depth_m;
-          flattened.buoy = reservation.res_openwater.buoy;
-          // auto_adjust_closest field removed
-          flattened.pulley = reservation.res_openwater.pulley;
-          flattened.deep_fim_training = reservation.res_openwater.deep_fim_training;
-          flattened.bottom_plate = reservation.res_openwater.bottom_plate;
-          flattened.large_buoy = reservation.res_openwater.large_buoy;
-          flattened.open_water_type = reservation.res_openwater.open_water_type;
-          flattened.student_count = reservation.res_openwater.student_count;
-          flattened.note = reservation.res_openwater.note;
-          // Use the status from the detail table if available
-          if (reservation.res_openwater.res_status) {
-            flattened.res_status = reservation.res_openwater.res_status;
-          }
-        } else if (reservation.res_type === 'classroom' && reservation.res_classroom) {
-          flattened.start_time = reservation.res_classroom.start_time;
-          flattened.end_time = reservation.res_classroom.end_time;
-          flattened.room = reservation.res_classroom.room;
-          flattened.note = reservation.res_classroom.note;
-          // Use the status from the detail table if available
-          if (reservation.res_classroom.res_status) {
-            flattened.res_status = reservation.res_classroom.res_status;
-          }
-        }
-        
-        // Remove the joined table objects to avoid confusion
-        delete flattened.res_pool;
-        delete flattened.res_openwater;
-        delete flattened.res_classroom;
-        
-        console.log('Flattened reservation:', {
-          res_type: flattened.res_type,
-          res_status: flattened.res_status,
-          original_status: reservation.res_status,
-          deep_fim_training: flattened.deep_fim_training,
-          pulley: flattened.pulley,
-          bottom_plate: flattened.bottom_plate,
-          large_buoy: flattened.large_buoy
-        });
-        
-        return flattened;
-      });
+      // Store raw rows; downstream code uses unified transform when needed
+      reservations = data || [];
       
       console.log('Loaded reservations with details:', reservations);
     } catch (err) {
@@ -244,22 +151,13 @@
     }
   };
 
-  const toggleMobileSidebar = () => {
-    mobileSidebarOpen = !mobileSidebarOpen;
-  };
-
   const handleSidebarNavigate = (event: CustomEvent) => {
     const view = event.detail.view;
-    updateCurrentView(view);
-    mobileSidebarOpen = false;
-  };
-
-  const handleSidebarClose = () => {
-    mobileSidebarOpen = false;
+    navigateToView(view);
   };
 
   const handleSidebarSignOut = () => {
-    showSignOutModal = true;
+    sidebarActions.openSignOutModal();
   };
 
   const handleNewReservation = () => {
@@ -361,21 +259,14 @@
 
 
   const handleSignOutConfirm = async () => {
-    showSignOutModal = false;
+    sidebarActions.closeSignOutModal();
     await auth.signOut();
-  };
-
-  const closeSignOutModal = () => {
-    showSignOutModal = false;
   };
 
   onMount(() => {
     const initializeDashboard = async () => {
       // Ensure light mode only
       document.documentElement.classList.remove('dark-mode');
-      
-      // Initialize current view from URL or localStorage
-      initializeCurrentView();
 
       // Determine admin role
       try {
@@ -394,27 +285,15 @@
       setTimeout(computeMobileOverflow, 0);
     };
 
-    // Handle browser back/forward navigation
-    const handlePopState = () => {
-      initializeCurrentView();
-    };
-
-    window.addEventListener('popstate', handlePopState);
-
     // Initialize dashboard asynchronously
     initializeDashboard();
-
-    // Cleanup function
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
   });
 
   // Enforce access after admin check
   $: if (adminChecked) {
-    const urlPath = window.location.pathname;
-    if (urlPath.includes('/admin') && !isAdmin && currentView !== 'dashboard') {
-      updateCurrentView('dashboard');
+    const urlPath = $page.url.pathname;
+    if (urlPath.includes('/admin') && !isAdmin) {
+      goto('/');
     }
   }
 
@@ -443,23 +322,19 @@
       <button on:click={() => window.location.reload()}>Try Again</button>
     </div>
   {:else if $authStore.user}
-    <div class="dashboard-layout">
-      <!-- Sidebar -->
+    <div class="drawer lg:drawer-open dashboard-layout">
+      <!-- Sidebar (fixed on desktop) -->
       <Sidebar 
-        {currentView}
-        {mobileSidebarOpen}
         {isAdmin}
         userName={userName}
         userEmail={userEmail}
         userAvatarUrl={userAvatarUrl}
         userInitial={userInitial}
-        on:navigate={handleSidebarNavigate}
-        on:closeMobileSidebar={handleSidebarClose}
         on:signOut={handleSidebarSignOut}
       />
 
       <!-- Main Content -->
-      <main class="main-content">
+      <main class="drawer-content main-content">
         {#if showSingleDayView}
           <SingleDayView
             {selectedDate}
@@ -468,8 +343,10 @@
             on:backToCalendar={handleBackToCalendar}
             on:reservationClick={handleReservationClick}
           />
-        {:else if currentView === 'dashboard'}
-          <DashboardHeader {userName} on:toggleMobileSidebar={toggleMobileSidebar} />
+        {:else if currentView === '/'}
+          <DashboardHeader 
+            {userName}
+          />
 
           <!-- Pull-to-Refresh Body -->
           <PullToRefresh onRefresh={handleRefresh} {refreshing}>
@@ -521,14 +398,10 @@
 
             </div>
           </PullToRefresh>
-        {:else if currentView === 'reservation'}
-          <Reservation on:toggleMobileSidebar={toggleMobileSidebar} />
-        {:else if currentView === 'admin'}
-          <AdminDashboard on:toggleMobileSidebar={toggleMobileSidebar} />
-        {:else if currentView === 'admin-calendar'}
-          <AdminDashboard on:toggleMobileSidebar={toggleMobileSidebar} />
-        {:else if currentView === 'admin-users'}
-          <AdminDashboard on:toggleMobileSidebar={toggleMobileSidebar} />
+        {:else if currentView === '/reservation'}
+          <Reservation />
+        {:else if currentView === '/admin' || currentView === '/admin/calendar' || currentView === '/admin/users'}
+          <AdminDashboard />
         {/if}
 
       </main>
@@ -562,10 +435,11 @@
 
 <!-- Sign Out Modal -->
 <SignOutModal 
-  showModal={showSignOutModal}
+  showModal={$showSignOutModal}
   on:confirm={handleSignOutConfirm}
-  on:cancel={closeSignOutModal}
+  on:cancel={sidebarActions.closeSignOutModal}
 />
+
 
 <style>
   .dashboard-container {
@@ -586,6 +460,14 @@
     height: 100%;
     min-height: 0; /* allow child scroll container to size */
     overflow: hidden; /* only inner PullToRefresh scrolls */
+    margin-left: 0; /* No margin on mobile */
+  }
+
+  /* Desktop: Add left margin to account for fixed sidebar (w-80 = 20rem) */
+  @media (min-width: 1024px) {
+    .main-content {
+      margin-left: 20rem; /* 320px - matches sidebar width */
+    }
   }
 
   /* Ensure the PullToRefresh becomes the single scroll container */
@@ -631,7 +513,7 @@
 
   .error-state button {
     background: #3b82f6;
-    color: white;
+    color: hsl(var(--bc));
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 8px;

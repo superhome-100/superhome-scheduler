@@ -1,7 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { authStore } from '../../stores/auth';
-  import { supabase } from '../../utils/supabase';
+  import { reservationStore } from '../../stores/reservationStore';
+  import type { CreateReservationData } from '../../api/reservationApi';
   import FormModalHeader from './FormModalHeader.svelte';
   import FormBasicFields from './FormBasicFields.svelte';
   import FormOpenWaterFields from './FormOpenWaterFields.svelte';
@@ -65,83 +66,62 @@
       }
 
       // Map form type to database enum
-      const resTypeMap: Record<string, string> = {
+      const resTypeMap: Record<string, 'pool' | 'open_water' | 'classroom'> = {
         'pool': 'pool',
         'openwater': 'open_water',
         'classroom': 'classroom'
       };
 
-      // Insert parent reservation (minimal columns)
-      const res_type = resTypeMap[submissionData.type] || 'pool';
-      const res_date_iso = reservationDateTime.toISOString();
-      const { error: parentErr } = await supabase
-        .from('reservations')
-        .insert({
-          uid: $authStore.user.id,
-          res_date: res_date_iso,
-          res_type,
-          res_status: 'pending'
-        });
-      if (parentErr) throw parentErr;
+      // Prepare reservation data for CRUD API
+      const reservationData: CreateReservationData = {
+        res_type: resTypeMap[submissionData.type] || 'pool',
+        res_date: reservationDateTime.toISOString(),
+        res_status: 'pending'
+      };
 
-      // Insert into detail table based on type
-      let childErr: any = null;
+      // Add type-specific details
       if (submissionData.type === 'pool') {
-        const { error } = await supabase
-          .from('res_pool')
-          .upsert({
-            uid: $authStore.user.id,
-            res_date: res_date_iso,
-            start_time: submissionData.startTime,
-            end_time: submissionData.endTime,
-            note: submissionData.notes.trim() || null
-          });
-        childErr = error;
+        reservationData.pool = {
+          start_time: submissionData.startTime,
+          end_time: submissionData.endTime,
+          note: submissionData.notes.trim() || undefined
+        };
       } else if (submissionData.type === 'classroom') {
-        const { error } = await supabase
-          .from('res_classroom')
-          .upsert({
-            uid: $authStore.user.id,
-            res_date: res_date_iso,
-            start_time: submissionData.startTime,
-            end_time: submissionData.endTime,
-            note: submissionData.notes.trim() || null
-          });
-        childErr = error;
+        reservationData.classroom = {
+          start_time: submissionData.startTime,
+          end_time: submissionData.endTime,
+          note: submissionData.notes.trim() || undefined
+        };
       } else if (submissionData.type === 'openwater') {
-        const { error } = await supabase
-          .from('res_openwater')
-          .upsert({
-            uid: $authStore.user.id,
-            res_date: res_date_iso,
-            time_period: submissionData.timeOfDay,
-            depth_m: formData.depth ? parseInt(formData.depth as unknown as string, 10) : null,
-            open_water_type: formData.openWaterType,
-            student_count: formData.openWaterType === 'course_coaching' ? parseInt(formData.studentCount as unknown as string, 10) : null,
-            // Equipment fields for Autonomous types
-            pulley: !!formData.pulley,
-            deep_fim_training: !!formData.deepFimTraining,
-            bottom_plate: !!formData.bottomPlate,
-            large_buoy: !!formData.largeBuoy,
-            note: submissionData.notes.trim() || null
-          });
-        childErr = error;
+        reservationData.openwater = {
+          time_period: submissionData.timeOfDay,
+          depth_m: formData.depth ? parseInt(formData.depth as unknown as string, 10) : undefined,
+          open_water_type: formData.openWaterType || undefined,
+          student_count: formData.openWaterType === 'course_coaching' ? 
+            parseInt(formData.studentCount as unknown as string, 10) : undefined,
+          // Equipment fields for Autonomous types
+          pulley: !!formData.pulley,
+          deep_fim_training: !!formData.deepFimTraining,
+          bottom_plate: !!formData.bottomPlate,
+          large_buoy: !!formData.largeBuoy,
+          note: submissionData.notes.trim() || undefined
+        };
       }
 
-      if (childErr) {
-        // Best-effort rollback parent insert
-        await supabase
-          .from('reservations')
-          .delete()
-          .eq('uid', $authStore.user.id)
-          .eq('res_date', res_date_iso);
-        throw childErr;
+      // Use CRUD system to create reservation
+      const result = await reservationStore.createReservation($authStore.user.id, reservationData);
+      
+      if (result.success) {
+        // Dispatch success event with the created reservation data
+        dispatch('submit', {
+          ...submissionData,
+          reservation: result.data
+        });
+        resetForm();
+        closeModal();
+      } else {
+        submitError = result.error || 'Failed to create reservation';
       }
-
-      // Dispatch success event
-      dispatch('submit', submissionData);
-      resetForm();
-      closeModal();
       
     } catch (err) {
       console.error('Error creating reservation:', err);

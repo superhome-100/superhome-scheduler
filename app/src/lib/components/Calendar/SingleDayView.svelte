@@ -2,7 +2,7 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import dayjs from 'dayjs';
   import { getBuoyGroupsWithNames } from '../../utils/autoAssignBuoy';
-  
+
   import SingleDayHeader from './SingleDayHeader.svelte';
   import CalendarTypeSwitcher from './CalendarTypeSwitcher.svelte';
   import PoolCalendar from './PoolCalendar.svelte';
@@ -47,11 +47,18 @@
   let selectedCalendarType: 'pool' | 'openwater' | 'classroom' = 'pool';
   let initializedCalendarType = false;
   
-  // Initialize from parent-provided intent (admin entry point) only once
-  $: if (!initializedCalendarType && initialType) {
-    selectedCalendarType = initialType;
-    initializedCalendarType = true;
-  }
+  // Initialize from URL parameter or parent-provided intent
+  onMount(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const typeParam = urlParams.get('type');
+    if (typeParam && ['pool', 'openwater', 'classroom'].includes(typeParam)) {
+      selectedCalendarType = typeParam as 'pool' | 'openwater' | 'classroom';
+      initializedCalendarType = true;
+    } else if (initialType) {
+      selectedCalendarType = initialType;
+      initializedCalendarType = true;
+    }
+  });
 
   const handleBackToCalendar = () => {
     dispatch('backToCalendar');
@@ -99,6 +106,12 @@
   // Calendar type switching
   const switchCalendarType = (type: 'pool' | 'openwater' | 'classroom') => {
     selectedCalendarType = type;
+    
+    // Update URL parameter
+    const url = new URL(window.location.href);
+    url.searchParams.set('type', type);
+    window.history.replaceState({}, '', url.toString());
+    
     if (type === 'openwater' && isAdmin) {
       loadBuoyGroups();
       loadAvailableBuoys();
@@ -171,22 +184,13 @@
 
   async function loadMyAssignments() {
     if (!selectedDate || isAdmin || !currentUserUid || !userLoaded) return;
-    
     try {
       loadingMyAssignments = true;
-      // First try the RPC function
-      const { getMyAssignmentsViaRpc, getMyAssignmentsDirect } = await import('../../services/openWaterService');
-      try {
-        myAssignments = await getMyAssignmentsViaRpc(selectedDate);
-      } catch (_e) {
-        console.warn('RPC not available; using direct query fallback');
-        myAssignments = await getMyAssignmentsDirect(selectedDate, currentUserUid);
-      }
+      const { getMyAssignmentsViaRpc } = await import('../../services/openWaterService');
+      myAssignments = await getMyAssignmentsViaRpc(selectedDate);
     } catch (e) {
-      console.warn('Error loading my assignments:', e);
-      // Fallback: Query buoy groups directly for the current user
-      const { getMyAssignmentsDirect } = await import('../../services/openWaterService');
-      myAssignments = await getMyAssignmentsDirect(selectedDate, currentUserUid!);
+      console.warn('Error loading my assignments via edge function:', e);
+      myAssignments = { AM: null, PM: null };
     } finally {
       loadingMyAssignments = false;
     }
@@ -194,22 +198,13 @@
 
   // Fallback method to get user assignments by querying buoy groups directly
   async function loadMyAssignmentsDirect() {
-    if (!selectedDate || isAdmin || !currentUserUid || !userLoaded) return;
-    
-    try {
-      const { getMyAssignmentsDirect } = await import('../../services/openWaterService');
-      myAssignments = await getMyAssignmentsDirect(selectedDate, currentUserUid);
-    } catch (e) {
-      console.warn('Error in direct assignment loading:', e);
-      myAssignments = { AM: null, PM: null };
-    }
+    // Deprecated: Direct table access removed in favor of Edge Functions
+    myAssignments = { AM: null, PM: null };
   }
 
   function showReservationDetails(res: any) {
     alert(`Reservation Details\n\nDate: ${dayjs(res.res_date).format('YYYY-MM-DD')}\nType: ${res.res_type}\nStatus: ${res.res_status}\nTime: ${res?.time_period || ''}\nDepth: ${res?.depth_m ?? ''}`);
   }
-
-  // (Type/status display helpers removed)
 
   // Load buoy groups when date changes (admin only)
   $: if (isAdmin && selectedDate && selectedCalendarType === 'openwater') {
@@ -222,8 +217,6 @@
     // For non-admin users, only load assignments (not buoy groups)
     loadMyAssignments();
   }
-
-  // (Auto assign removed per request)
 
   // Update boat assignment for a buoy group
   const updateBoatAssignment = async (groupId: number, boatName: string) => {
@@ -238,16 +231,12 @@
       alert('Error updating boat assignment: ' + (error as Error).message);
     }
   };
-
-  // (Removed edit mode handlers)
-
   // Generate time slots for 24 hours
   const timeSlots = Array.from({ length: 24 }, (_, i) => {
     const hour = i.toString().padStart(2, '0');
     return `${hour}:00`;
   });
 
-  // Resizing moved into OpenWaterAdminTables component
   // Pull to refresh handler
   async function refreshCurrentView() {
     if (selectedCalendarType === 'openwater') {
@@ -278,7 +267,7 @@
   />
 
   <!-- Calendar Content -->
-  <div class="px-4 md:px-8 lg:px-12 min-h-[60vh] max-w-screen-xl mx-auto" class:max-w-none={selectedCalendarType === 'openwater'}>
+  <div class="px-6 sm:px-4 md:px-8 lg:px-12 min-h-[60vh] max-w-screen-xl mx-auto" class:max-w-none={selectedCalendarType === 'openwater'}>
     {#if selectedCalendarType === 'pool'}
       <PoolCalendar {timeSlots} reservations={filteredReservations} />
     {:else if selectedCalendarType === 'openwater'}

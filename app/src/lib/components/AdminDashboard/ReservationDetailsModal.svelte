@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import LoadingSpinner from '../LoadingSpinner.svelte';
-  import { getTypeDisplay } from './adminUtils';
+  import { getTypeDisplay } from '../../utils/reservationTransform';
   import dayjs from 'dayjs';
 
   const dispatch = createEventDispatcher();
@@ -24,7 +24,7 @@
 
 {#if showModal && selectedReservation}
   <div 
-    class="modal-overlay" 
+    class="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4" 
     role="dialog"
     aria-modal="true"
     aria-labelledby="details-modal-title"
@@ -32,243 +32,181 @@
     on:click|self={closeModal}
     on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && closeModal()}
   >
-    <div class="modal-content" role="document" tabindex="-1">
-      <div class="modal-header">
-        <h3 id="details-modal-title">Reservation Details</h3>
-        <button class="modal-close" on:click={closeModal} aria-label="Close modal">
+  <div class="modal-box max-w-lg w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl mx-auto rounded-2xl" style="padding: 1.5rem 1.5rem 1.5rem 1.5rem;">
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center py-4 px-6 border-b border-base-300 rounded-t-2xl -mx-8 -mt-8 mb-4">
+        <h3 id="details-modal-title" class="text-lg sm:text-xl font-semibold text-[#00294C] pr-2">Reservation Details</h3>
+        <button class="btn btn-ghost btn-sm btn-circle flex-shrink-0" on:click={closeModal} aria-label="Close modal">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
           </svg>
         </button>
       </div>
-      <div class="modal-body">
-        <div class="reservation-summary">
-          <h4>Reservation</h4>
-          <p><strong>User:</strong> {selectedReservation.user_profiles?.name || 'Unknown User'}</p>
-          <p><strong>Type:</strong> {getTypeDisplay(selectedReservation.res_type)}</p>
-            <p><strong>Date:</strong> {dayjs(selectedReservation.res_date).format('dddd, MMMM D, YYYY [at] h:mm A')}</p>
-          {#if selectedReservation.title}
-            <p><strong>Title:</strong> {selectedReservation.title}</p>
-          {/if}
-          {#if selectedReservation.description}
-            <p><strong>Description:</strong> {selectedReservation.description}</p>
-          {/if}
-          {#if selectedReservation.start_time}
-            <p><strong>Start Time:</strong> {dayjs(`2000-01-01T${selectedReservation.start_time}`).format('h:mm A')}</p>
-          {/if}
-          {#if selectedReservation.end_time}
-            <p><strong>End Time:</strong> {dayjs(`2000-01-01T${selectedReservation.end_time}`).format('h:mm A')}</p>
-          {/if}
-          <p><strong>Status:</strong> 
-            <span class="status-badge" class:pending={selectedReservation.res_status === 'pending'}>
-              {selectedReservation.res_status}
-            </span>
-          </p>
-          <p><strong>Requested:</strong> {dayjs(selectedReservation.created_at).format('dddd, MMMM D, YYYY [at] h:mm A')}</p>
+      
+      <!-- Modal Body -->
+      <div class="px-6 py-4 overflow-y-auto flex-1">
+        <div class="space-y-2">
+          <h4 class="text-base font-semibold text-[#00294C] mb-2">Reservation</h4>
+          
+          <div class="space-y-3">
+            <div class="flex items-start gap-3 min-w-0">
+              <span class="font-semibold text-[#00294C] text-xs flex-shrink-0 w-16">User:</span> 
+              <span class="text-xs text-[#00294C] truncate flex-1">{selectedReservation.user_profiles?.name || 'Unknown User'}</span>
+            </div>
+            
+            <div class="flex items-start gap-3 min-w-0">
+              <span class="font-semibold text-[#00294C] text-xs flex-shrink-0 w-16">Type:</span> 
+              <span class="text-xs text-[#00294C] truncate flex-1">{getTypeDisplay(selectedReservation.res_type)}</span>
+            </div>
+            
+            <div class="flex items-start gap-3 min-w-0">
+              <span class="font-semibold text-[#00294C] text-xs flex-shrink-0 w-16">Date:</span> 
+              <span class="text-xs text-[#00294C] truncate flex-1">{dayjs(selectedReservation.res_date).format('dddd, MMMM D, YYYY [at] h:mm A')}</span>
+            </div>
+            
+            {#if selectedReservation.title}
+              <div class="flex items-start gap-3 min-w-0">
+                <span class="font-semibold text-[#00294C] text-xs flex-shrink-0 w-16">Title:</span> 
+                <span class="text-xs text-[#00294C] truncate flex-1">{selectedReservation.title}</span>
+              </div>
+            {/if}
+            
+            {#if selectedReservation.description}
+              <div class="flex items-start gap-3 min-w-0">
+                <span class="font-semibold text-[#00294C] text-xs flex-shrink-0 w-16">Description:</span> 
+                <span class="text-xs text-[#00294C] truncate flex-1">{selectedReservation.description}</span>
+              </div>
+            {/if}
+            
+            {#if selectedReservation.start_time}
+              <div class="flex items-start gap-3 min-w-0">
+                <span class="font-semibold text-[#00294C] text-xs flex-shrink-0 w-16">Start Time:</span> 
+                <span class="text-xs text-[#00294C] truncate flex-1">{dayjs(`2000-01-01T${selectedReservation.start_time}`).format('h:mm A')}</span>
+              </div>
+            {/if}
+            
+            {#if selectedReservation.end_time}
+              <div class="flex items-start gap-3 min-w-0">
+                <span class="font-semibold text-[#00294C] text-xs flex-shrink-0 w-16">End Time:</span> 
+                <span class="text-xs text-[#00294C] truncate flex-1">{dayjs(`2000-01-01T${selectedReservation.end_time}`).format('h:mm A')}</span>
+              </div>
+            {/if}
+            
+            <div class="flex items-start gap-3 min-w-0">
+              <span class="font-semibold text-[#00294C] text-xs flex-shrink-0 w-16">Status:</span> 
+              <span class="badge badge-warning badge-xs" class:badge-warning={selectedReservation.res_status === 'pending'}>
+                {selectedReservation.res_status}
+              </span>
+            </div>
+            
+            <div class="flex items-start gap-3 min-w-0">
+              <span class="font-semibold text-[#00294C] text-xs flex-shrink-0 w-16">Requested:</span> 
+              <span class="text-xs text-[#00294C] truncate flex-1">{dayjs(selectedReservation.created_at).format('dddd, MMMM D, YYYY [at] h:mm A')}</span>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button 
-          class="action-btn reject"
-          on:click={() => handleReservationAction('reject')}
-          disabled={processingReservation === `${selectedReservation.uid}-${selectedReservation.res_date}`}
-        >
-          {#if processingReservation === `${selectedReservation.uid}-${selectedReservation.res_date}`}
-            <LoadingSpinner size="sm" />
-          {:else}
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-            </svg>
-            Reject
-          {/if}
-        </button>
-        <button 
-          class="action-btn approve"
-          on:click={() => handleReservationAction('approve')}
-          disabled={processingReservation === `${selectedReservation.uid}-${selectedReservation.res_date}`}
-        >
-          {#if processingReservation === `${selectedReservation.uid}-${selectedReservation.res_date}`}
-            <LoadingSpinner size="sm" />
-          {:else}
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-            </svg>
-            Approve
-          {/if}
-        </button>
+      
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 border-t border-base-300 bg-base-200 rounded-b-2xl -mx-8 -mb-8 mt-4">
+        <div class="grid grid-cols-2 gap-2">
+          <button 
+            class="btn btn-xs gap-1 w-full"
+            style="background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important;"
+            on:click={() => handleReservationAction('reject')}
+            disabled={processingReservation === `${selectedReservation.uid}-${selectedReservation.res_date}`}
+            title="Reject reservation"
+          >
+            {#if processingReservation === `${selectedReservation.uid}-${selectedReservation.res_date}`}
+              <LoadingSpinner size="sm" />
+            {:else}
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+              Reject
+            {/if}
+          </button>
+          
+          <button 
+            class="btn btn-xs gap-1 w-full"
+            style="background-color: #28a745 !important; border-color: #28a745 !important; color: white !important;"
+            on:click={() => handleReservationAction('approve')}
+            disabled={processingReservation === `${selectedReservation.uid}-${selectedReservation.res_date}`}
+            title="Approve reservation"
+          >
+            {#if processingReservation === `${selectedReservation.uid}-${selectedReservation.res_date}`}
+              <LoadingSpinner size="sm" />
+            {:else}
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              </svg>
+              Approve
+            {/if}
+          </button>
+        </div>
       </div>
     </div>
   </div>
 {/if}
 
 <style>
-  .modal-overlay {
+  /* Custom styles for elements that can't be handled by Tailwind/DaisyUI */
+  .modal-box {
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 2px solid #00294C;
+    background-color: #f8f9fa;
+    max-width: 512px;
+    width: 90%;
+    min-height: 400px;
+  }
+  
+  /* Ensure proper z-index for modal overlay */
+  .fixed.inset-0 {
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+  }
+  
+  /* Mobile responsive adjustments */
+  @media (max-width: 640px) {
+    .fixed.inset-0 {
+      padding: 0.5rem;
+    }
+    
+    .modal-box {
+      max-height: 95vh;
+      background-color: #f8f9fa;
+      border: 2px solid #00294C;
+      width: 95%;
+      max-width: 480px;
+      margin: 0 auto;
+      transform: none;
+      border-radius: 20px;
+      min-height: 350px;
+    }
+  }
+  
+  /* Desktop enhancements */
+  @media (min-width: 641px) {
+    .modal-box {
+      border-radius: 20px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      border: 2px solid #00294C;
+      max-width: 512px;
+      width: 90%;
+      min-height: 400px;
+    }
+  }
+  
+  /* Ensure perfect centering with transform */
+  .fixed.inset-0 {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 1rem;
-  }
-
-  .modal-content {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    max-width: 500px;
-    width: 100%;
-    max-height: 90vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem;
-    border-bottom: 1px solid #e2e8f0;
-  }
-
-  .modal-header h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0;
-  }
-
-  .modal-close {
-    background: none;
-    border: none;
-    color: #64748b;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-  }
-
-  .modal-close:hover {
-    background: #f1f5f9;
-    color: #1e293b;
-  }
-
-  .modal-body {
-    padding: 1.5rem;
-    overflow-y: auto;
-    flex: 1;
-  }
-
-  .reservation-summary h4 {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0 0 1rem 0;
-  }
-
-  .reservation-summary p {
-    margin: 0 0 0.75rem 0;
-    color: #374151;
-    line-height: 1.5;
-  }
-
-  .reservation-summary p:last-child {
-    margin-bottom: 0;
-  }
-
-  .status-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    text-transform: capitalize;
-    margin-left: 0.5rem;
-  }
-
-  .status-badge.pending {
-    background: rgba(245, 158, 11, 0.1);
-    color: #d97706;
-    border: 1px solid rgba(245, 158, 11, 0.2);
-  }
-
-  .modal-footer {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    padding: 1.5rem;
-    border-top: 1px solid #e2e8f0;
-    background: #f8fafc;
-  }
-
-  .action-btn {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.875rem;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s ease;
-  }
-
-  .action-btn.approve {
-    background: #10b981;
-    color: white;
-    border: 1px solid #10b981;
-  }
-
-  .action-btn.approve:hover:not(:disabled) {
-    background: #059669;
-    border-color: #059669;
-  }
-
-  .action-btn.reject {
-    background: #ef4444;
-    color: white;
-    border: 1px solid #ef4444;
-  }
-
-  .action-btn.reject:hover:not(:disabled) {
-    background: #dc2626;
-    border-color: #dc2626;
-  }
-
-  .action-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  /* Mobile responsive */
-  @media (max-width: 768px) {
-    .modal-overlay {
-      padding: 0.5rem;
-    }
-
-    .modal-content {
-      max-height: 95vh;
-    }
-
-    .modal-header,
-    .modal-body,
-    .modal-footer {
-      padding: 1rem;
-    }
-
-    .modal-footer {
-      flex-direction: column;
-    }
-
-    .action-btn {
-      width: 100%;
-      justify-content: center;
-    }
   }
 </style>

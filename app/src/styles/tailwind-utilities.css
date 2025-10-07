@@ -1,0 +1,206 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom component classes using Tailwind utilities */
+@layer components {
+  /* Glass morphism effects */
+  .glass-container {
+    @apply bg-primary/10 border border-primary/20 rounded-3xl backdrop-blur-xl relative z-10 shadow-glass;
+  }
+  
+  .glass-container::before {
+    @apply absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-3xl;
+  }
+
+  /* Button variants */
+  .btn-superhome-primary {
+    @apply bg-primary text-primary-content border border-primary px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:bg-primary/80 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/50;
+  }
+  
+  .btn-superhome-secondary {
+    @apply bg-primary/20 text-primary border border-primary/30 px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:bg-primary/30 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/50;
+  }
+
+  /* Status badges */
+  .status-badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide;
+  }
+  
+  .status-pending {
+    @apply bg-warning/10 text-warning border border-warning/20;
+  }
+  
+  .status-approved {
+    @apply bg-success/10 text-success border border-success/20;
+  }
+  
+  .status-rejected {
+    @apply bg-error/10 text-error border border-error/20;
+  }
+
+  /* Form elements */
+  .form-control-superhome {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white transition-colors duration-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20;
+  }
+  
+  .form-label-superhome {
+    @apply block text-sm font-medium text-gray-900 mb-2;
+  }
+
+  /* Loading states */
+  .loading-spinner {
+    @apply border-2 border-transparent border-t-primary rounded-full animate-spin;
+  }
+
+  /* Sidebar background fix */
+  .sidebar-white {
+    background-color: #ffffff !important;
+  }
+
+  /* Force white background for sidebar elements */
+  aside.sidebar-white,
+  .sidebar-white {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+  }
+
+  /* Override any global sidebar styles */
+  .w-72.sidebar-white,
+  .w-70.sidebar-white {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+  }
+
+  /* Ensure sidebar is visible on desktop */
+  aside.w-72,
+  aside.w-64 {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* Hide sidebar on mobile */
+  @media (max-width: 768px) {
+    aside.w-72,
+    aside.w-64 {
+      display: none !important;
+    }
+    
+    /* Force white background for mobile sidebar */
+    aside.w-70 {
+      background-color: #ffffff !important;
+      background: #ffffff !important;
+    }
+    
+    .mobile-sidebar-white {
+      background-color: #ffffff !important;
+      background: #ffffff !important;
+    }
+  }
+
+  /* Sidebar-specific utilities */
+  .sidebar-padding-x {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+  
+  .sidebar-padding-y {
+    padding-top: 16px !important;
+    padding-bottom: 16px !important;
+  }
+  
+  .sidebar-padding-top {
+    padding-top: 20px !important;
+  }
+  
+  .sidebar-padding-bottom {
+    padding-bottom: 20px !important;
+  }
+  
+  .sidebar-gap {
+    gap: 12px !important;
+  }
+  
+  .sidebar-border-radius {
+    border-radius: 8px !important;
+  }
+  
+  .sidebar-text-black {
+    color: #000000 !important;
+    font-weight: 600 !important;
+  }
+
+  /* Additional text utilities for sidebar */
+  .sidebar-logo-text {
+    color: #000000 !important;
+    font-size: 1.125rem !important;
+    font-weight: 600 !important;
+  }
+
+  /* Force black text for sidebar logo specifically */
+  .menu .sidebar-logo-text,
+  .menu li .sidebar-logo-text,
+  .sidebar-logo-text {
+    color: #000000 !important;
+  }
+
+  .sidebar-title-text {
+    @apply text-xl font-bold text-black;
+  }
+
+  .sidebar-subtitle-text {
+    @apply text-sm font-medium text-gray-700;
+  }
+  
+  .sidebar-bg-white {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+  }
+  
+  .sidebar-margin-top-auto {
+    margin-top: auto !important;
+  }
+
+  /* Company name font styling */
+  .font-company-black {
+    font-weight: 900 !important;
+    color: #000000 !important;
+    letter-spacing: -0.025em !important;
+  }
+
+  /* Sidebar footer styling */
+  .sidebar-footer {
+    @apply flex-shrink-0 p-4 border-t border-gray-200 bg-white;
+  }
+
+  .sidebar-footer-content {
+    @apply w-full;
+  }
+
+  /* Sidebar layout utilities */
+  .sidebar-layout {
+    @apply flex flex-col h-screen;
+  }
+
+  .sidebar-header-section {
+    @apply flex-shrink-0 p-4 border-b border-gray-200;
+  }
+
+  .sidebar-content-section {
+    @apply flex-1 overflow-y-auto p-4;
+  }
+
+  /* Close button styling */
+  .sidebar-close-button {
+    @apply bg-transparent border-none p-2 cursor-pointer text-black transition-all duration-200;
+  }
+
+  .sidebar-close-button:hover {
+    @apply bg-transparent text-black opacity-70;
+  }
+
+  .sidebar-close-button:focus {
+    @apply outline-none bg-transparent;
+  }
+}

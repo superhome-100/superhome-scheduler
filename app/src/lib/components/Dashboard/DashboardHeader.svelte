@@ -1,32 +1,32 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-
+  import { sidebarActions } from '../../stores/sidebar';
+  
   export let userName: string = 'User';
-
-  const dispatch = createEventDispatcher();
-
-  const toggleMobileSidebar = () => {
-    dispatch('toggleMobileSidebar');
-  };
 </script>
 
 <!-- Sticky Header -->
 <div class="dashboard-header">
   <div class="header-content">
     <div class="header-left">
-      <button class="mobile-menu-toggle" on:click={toggleMobileSidebar} aria-label="Toggle menu">
+      <!-- Mobile Menu Toggle Button -->
+      <button 
+        class="mobile-menu-toggle lg:hidden" 
+        on:click={sidebarActions.toggleMobileDrawer}
+        aria-label="Toggle menu"
+      >
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
           <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
         </svg>
       </button>
+      
       <div class="header-text">
         <h1 class="page-title">Dashboard</h1>
         <p class="page-subtitle">Welcome back, {userName}!</p>
       </div>
     </div>
+    
   </div>
 </div>
-
 <style>
   .dashboard-header {
     background: white;
@@ -67,7 +67,7 @@
     flex: 1;
   }
 
-  /* Mobile Toggle Button */
+  /* Mobile Menu Toggle Button */
   .mobile-menu-toggle {
     display: none;
     background: none;
@@ -86,7 +86,7 @@
   }
 
   /* Mobile Responsive */
-  @media (max-width: 768px) {
+  @media (max-width: 1023px) {
     .mobile-menu-toggle {
       display: block;
     }
@@ -105,3 +105,4 @@
     }
   }
 </style>
+

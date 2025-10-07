@@ -33,9 +33,6 @@
   let loading = false;
   let error: string | null = null;
 
-  const toggleMobileSidebar = () => {
-    dispatch('toggleMobileSidebar');
-  };
 
   const handleNewReservation = () => {
     showReservationModal = true;
@@ -50,7 +47,9 @@
   };
 
   const handleTypeSelected = (event: CustomEvent) => {
+    console.log('Reservation: Type selected:', event.detail.type);
     selectedType = event.detail.type;
+    console.log('Reservation: selectedType updated to:', selectedType);
   };
 
   const handleReservationClick = (event: CustomEvent) => {
@@ -193,7 +192,7 @@
   });
 </script>
 
-<div class="reservation-container">
+<div class="min-h-screen bg-base-200">
   {#if $authStore.loading}
   <LoadingSpinner 
     size="lg" 
@@ -202,66 +201,65 @@
     zIndex={50}
   />
 {:else if $authStore.error}
-  <div class="error-state">
-    <h2>Something went wrong</h2>
-    <p>{$authStore.error}</p>
-    <button on:click={() => window.location.reload()}>Try Again</button>
+  <div class="flex flex-col items-center justify-center min-h-screen text-center">
+    <h2 class="text-2xl font-bold text-error mb-4">Something went wrong</h2>
+    <p class="text-base-content/70 mb-6">{$authStore.error}</p>
+    <button class="btn btn-primary" on:click={() => window.location.reload()}>Try Again</button>
   </div>
 {:else if $authStore.user}
-  <div class="reservation-layout">
-    <!-- Sticky Header -->
-    <ReservationHeader on:toggleMobileSidebar={toggleMobileSidebar} />
+  <!-- Sticky Header -->
+  <ReservationHeader />
 
-    <!-- Pull-to-Refresh Body -->
-    <PullToRefresh onRefresh={handleRefresh} {refreshing}>
-      <main class="main-content">
-
-        <div class="content-body">
-          {#if loading}
-            <div class="loading-state">
-              <LoadingSpinner size="md" />
-              <p>Loading reservations...</p>
-            </div>
-          {:else if error}
-            <div class="error-state">
-              <p>Error: {error}</p>
-              <button on:click={loadReservations}>Retry</button>
-            </div>
-          {:else}
-            {#if showSingleDayView}
-              <SingleDayView
-                {selectedDate}
-                {reservations}
-                isAdmin={false}
-      initialType={initialSingleDayType}
-                on:backToCalendar={handleBackToCalendar}
-                on:reservationClick={handleReservationClick}
-              />
-            {:else}
-              <!-- Reservation Type Buttons -->
-              <ReservationTypeButtons 
-                bind:selectedType 
-                on:typeSelected={handleTypeSelected}
-              />
-
-              <!-- Calendar Section -->
-              <ReservationCalendar 
-                {selectedType} 
-                {reservations}
-                on:reservationClick={handleReservationClick}
-                on:dateClick={handleCalendarDateClick}
-              />
-            {/if}
-          {/if}
+  <!-- Pull-to-Refresh Body -->
+  <PullToRefresh onRefresh={handleRefresh} {refreshing}>
+    <div class="flex-1 p-6 max-w-6xl mx-auto w-full">
+      {#if loading}
+        <div class="flex flex-col items-center justify-center min-h-96 text-center">
+          <LoadingSpinner size="md" />
+          <p class="mt-4 text-base-content/70">Loading reservations...</p>
         </div>
+      {:else if error}
+        <div class="alert alert-error">
+          <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <div>
+            <h3 class="font-bold">Error loading reservations</h3>
+            <div class="text-xs">{error}</div>
+          </div>
+          <button class="btn btn-sm btn-outline" on:click={loadReservations}>Retry</button>
+        </div>
+      {:else}
+        {#if showSingleDayView}
+          <SingleDayView
+            {selectedDate}
+            {reservations}
+            isAdmin={false}
+            initialType={initialSingleDayType}
+            on:backToCalendar={handleBackToCalendar}
+            on:reservationClick={handleReservationClick}
+          />
+        {:else}
+          <!-- Reservation Type Buttons -->
+          <ReservationTypeButtons 
+            bind:selectedType
+            on:typeSelected={handleTypeSelected}
+          />
 
-        <!-- Floating Action Button: New Reservation -->
-        {#if !showSingleDayView}
-          <FloatingActionButton on:newReservation={handleNewReservation} />
+          <!-- Calendar Section -->
+          <ReservationCalendar 
+            {selectedType} 
+            {reservations}
+            on:reservationClick={handleReservationClick}
+            on:dateClick={handleCalendarDateClick}
+          />
         {/if}
-      </main>
-    </PullToRefresh>
-  </div>
+      {/if}
+    </div>
+
+    <!-- Floating Action Button: New Reservation -->
+    {#if !showSingleDayView}
+      <FloatingActionButton on:newReservation={handleNewReservation} />
+    {/if}
+  </PullToRefresh>
   {/if}
 </div>
 
@@ -279,73 +277,3 @@
   on:close={handleDetailsModalClose}
 />
 
-<style>
-  .reservation-container {
-    height: 100vh;
-    background: #f8fafc;
-    overflow: hidden; /* prevent double scroll; PullToRefresh scrolls */
-  }
-
-  .reservation-layout {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-    background: #f8fafc;
-  }
-
-  .main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: #f8fafc;
-    min-height: 0;
-    overflow: hidden; /* only child PullToRefresh scrolls */
-  }
-
-  /* Ensure PullToRefresh becomes the single scroll container */
-  .reservation-layout > :global(.pull-to-refresh-container) {
-    flex: 1;
-    min-height: 0;
-  }
-
-
-  .content-body {
-    flex: 1;
-    padding: 2rem;
-  }
-
-
-  .error-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 60vh;
-    text-align: center;
-    color: #e53e3e;
-  }
-
-  .loading-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 60vh;
-    text-align: center;
-    color: #64748b;
-    gap: 1rem;
-  }
-
-  .loading-state p {
-    margin: 0;
-    font-size: 0.875rem;
-  }
-
-  /* Mobile Responsive */
-  @media (max-width: 768px) {
-    .content-body {
-      padding: 1rem;
-    }
-  }
-</style>

@@ -1,0 +1,137 @@
+/* Reservation Components Custom Styles */
+/* This file contains custom styles that are not available in Tailwind CSS or DaisyUI */
+
+/* FullCalendar Custom Styles for Reservation Calendar */
+:global(.fc) {
+  font-family: inherit;
+}
+
+:global(.fc-toolbar-title) {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: hsl(var(--bc));
+}
+
+:global(.fc-button) {
+  background: hsl(var(--b2));
+  border: 1px solid hsl(var(--b3));
+  color: hsl(var(--bc));
+  border-radius: 0.5rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease;
+}
+
+:global(.fc-button:hover) {
+  background: hsl(var(--b3));
+  color: hsl(var(--bc));
+}
+
+:global(.fc-button:focus) {
+  box-shadow: 0 0 0 3px hsl(var(--p) / 0.1);
+}
+
+:global(.fc-button-primary:not(:disabled):active) {
+  background: hsl(var(--p));
+  border-color: hsl(var(--p));
+  color: hsl(var(--pc));
+}
+
+:global(.fc-daygrid-day-number) {
+  color: hsl(var(--bc));
+  font-weight: 500;
+}
+
+:global(.fc-day-today) {
+  background: hsl(var(--b2));
+}
+
+:global(.fc-daygrid-day-number:hover) {
+  color: hsl(var(--p));
+}
+
+:global(.fc-col-header-cell) {
+  background: hsl(var(--b1));
+  border-bottom: 2px solid hsl(var(--b3));
+  padding: 0.75rem 0;
+}
+
+:global(.fc-col-header-cell-cushion) {
+  color: hsl(var(--bc) / 0.7);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Mobile Responsive for FullCalendar */
+@media (max-width: 768px) {
+  :global(.fc-toolbar) {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  :global(.fc-toolbar-chunk) {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+/* PullToRefresh Container */
+main > :global(.pull-to-refresh-container) {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Button Transitions */
+.btn {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Force white text on active buttons */
+.active-button {
+  color: white !important;
+}
+
+.active-button span {
+  color: white !important;
+}
+
+/* Ensure proper spacing between buttons */
+.flex.gap-6 > * + * {
+  margin-left: 0.5rem !important;
+}
+
+/* Button container with increased vertical padding */
+.button-container {
+  padding: 1rem 0;
+}
+
+/* Individual button vertical padding */
+.button-container .btn {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+/* Mobile Responsive - Keep buttons compact on mobile */
+@media (max-width: 768px) {
+  .btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Reduce gap on mobile */
+  .flex.gap-6 {
+    gap: 0.5rem !important;
+  }
+  
+  /* Adjust vertical padding for mobile */
+  .button-container {
+    padding: 0.5rem 0;
+  }
+  
+  .button-container .btn {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+}

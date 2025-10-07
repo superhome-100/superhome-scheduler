@@ -87,7 +87,7 @@
 
 .type-btn.active {
   background: #3b82f6;
-  color: white;
+  color: hsl(var(--bc));
   border-color: #3b82f6;
 }
 

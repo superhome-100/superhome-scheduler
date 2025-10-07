@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { supabase } from '../utils/supabase';
-  import { auth } from '../stores/auth';
+  // Keep callback fast: avoid role checks here
 
   let loading = true;
 
@@ -10,7 +10,7 @@
       // If we already have a session, go straight to the dashboard
       const current = await supabase.auth.getSession();
       if (current.data.session) {
-        await auth.redirectToRoleDashboard();
+        window.location.replace('/');
         return;
       }
 
@@ -23,12 +23,28 @@
       }
 
       // Exchange the authorization code in the URL for a session (PKCE flow)
-      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href);
-      if (exchangeError || !data.session) {
+      const withTimeout = <T>(p: Promise<T>, ms = 10000) =>
+        Promise.race([
+          p,
+          new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+        ]);
+
+      let data: { session: unknown } | null = null;
+      try {
+        const res = await withTimeout(
+          supabase.auth.exchangeCodeForSession(window.location.href),
+          10000
+        ) as { data: { session: unknown } };
+        data = res?.data ?? null;
+      } catch (_timeoutOrErr) {
+        data = null;
+      }
+
+      if (!data || !data.session) {
         window.location.replace('/');
         return;
       }
-      await auth.redirectToRoleDashboard();
+      window.location.replace('/');
     } catch (e) {
       // Silent fallback
       window.location.replace('/');
@@ -44,5 +60,5 @@
 </main>
 
 <style>
-  .auth-message { color: #fff; text-align: center; padding: 2rem; }
+  .auth-message { color: hsl(var(--bc)); text-align: center; padding: 2rem; }
 </style>

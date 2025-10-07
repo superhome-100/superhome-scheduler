@@ -1,18 +1,14 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from 'svelte';
-  import { authStore } from '../../stores/auth';
+  import { onMount } from 'svelte';
   import { supabase } from '../../utils/supabase';
   import LoadingSpinner from '../LoadingSpinner.svelte';
   import PullToRefresh from '../PullToRefresh.svelte';
-  import AdminHeader from './AdminHeader.svelte';
   import PendingReservations from './PendingReservations.svelte';
   import UserManagement from './UserManagement.svelte';
   import AdminCalendar from './AdminCalendar.svelte';
   import ReservationDetailsModal from './ReservationDetailsModal.svelte';
   import SingleDayView from '../Calendar/SingleDayView.svelte';
-  import { getTypeDisplay } from './adminUtils';
-
-  const dispatch = createEventDispatcher();
+  import { reservationApi } from '../../api/reservationApi';
 
   let users: any[] = [];
   let reservations: any[] = [];
@@ -33,16 +29,41 @@
     }
   };
 
+  // Bulk update pending reservations via Edge Function, then trigger pull-to-refresh
+  // This wires the bulk operation to the same refresh flow as PullToRefresh
+  async function bulkUpdatePendingReservations(status: 'pending' | 'confirmed' | 'rejected') {
+    try {
+      // Show the same visual state used by PullToRefresh
+      refreshing = true;
+
+      const reservations = (pendingReservations || []).map((r) => ({ uid: r.uid, res_date: r.res_date }));
+      if (reservations.length === 0) {
+        // Nothing to update; still run refresh to be consistent
+        await handleRefresh();
+        return;
+      }
+
+      const result = await reservationApi.bulkUpdateStatus(reservations, status);
+      if (!result.success) {
+        console.error('Bulk update failed:', result.error);
+      }
+
+      // After Edge Function completes, reuse the pull-to-refresh callback
+      await handleRefresh();
+    } catch (e) {
+      console.error('Bulk update error:', e);
+    } finally {
+      refreshing = false;
+    }
+  }
+
   // Expose refresh method for parent component
   export async function refresh() {
     await loadAdminData();
   }
 
   let processingReservation: string | null = null;
-  let showRejectModal = false;
   let selectedReservation: any = null;
-  let rejectReason = '';
-  let currentView = 'dashboard'; // 'dashboard', 'calendar', 'users'
   let adminView = 'dashboard'; // Track which admin view to show
   
   // Single day view state
@@ -67,15 +88,7 @@
     selectedReservation = null;
   };
 
-  // Mobile sidebar toggle
-  const toggleMobileSidebar = () => {
-    dispatch('toggleMobileSidebar');
-  };
 
-  // Navigation handlers
-  const setView = (view: string) => {
-    currentView = view;
-  };
 
   // Handle calendar event click
   const handleCalendarEventClick = (reservation: any) => {
@@ -87,6 +100,12 @@
     const detail: any = event.detail;
     selectedDate = typeof detail === 'string' ? detail : detail?.date;
     initialSingleDayType = typeof detail === 'string' ? initialSingleDayType : (detail?.type || initialSingleDayType);
+    
+    // Update URL with type parameter
+    const url = new URL(window.location.href);
+    url.searchParams.set('type', initialSingleDayType);
+    window.history.replaceState({}, '', url.toString());
+    
     showSingleDayView = true;
   };
 
@@ -99,6 +118,7 @@
   // Load admin data
   const loadAdminData = async () => {
     try {
+      console.log('AdminDashboard: Starting to load admin data...');
       loading = true;
       error = null;
 
@@ -108,7 +128,12 @@
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (usersError) throw usersError;
+      if (usersError) {
+        console.error('AdminDashboard: Users error:', usersError);
+        throw usersError;
+      }
+
+      console.log('AdminDashboard: Successfully loaded users:', usersData?.length || 0);
 
       // Load reservations with user info
       let reservationsData: any[] = [];
@@ -127,9 +152,10 @@
         if (!reservationsError) {
           reservationsData = resData || [];
           pendingReservationsData = reservationsData.filter(r => r.res_status === 'pending');
+          console.log('AdminDashboard: Successfully loaded reservations:', reservationsData.length);
         }
       } catch (resErr) {
-        console.log('Reservations table not found, skipping...');
+        console.log('AdminDashboard: Reservations table not found, skipping...');
       }
 
       users = usersData || [];
@@ -144,11 +170,14 @@
         pendingReservations: pendingReservations.length
       };
 
+      console.log('AdminDashboard: Stats calculated:', stats);
+
     } catch (err) {
-      console.error('Error loading admin data:', err);
+      console.error('AdminDashboard: Error loading admin data:', err);
       error = err instanceof Error ? err.message : 'Failed to load admin data';
     } finally {
       loading = false;
+      console.log('AdminDashboard: Loading completed');
     }
   };
 
@@ -252,27 +281,39 @@
   }
 
   // Load data on mount
+  // Timeout handling for loading state
+  let loadingTimeout: NodeJS.Timeout;
+  $: if (loading) {
+    clearTimeout(loadingTimeout);
+    loadingTimeout = setTimeout(() => {
+      console.warn('AdminDashboard: Loading timeout - forcing loading to false');
+      loading = false;
+      error = 'Loading timeout - please try refreshing';
+    }, 10000); // 10 second timeout
+  } else {
+    clearTimeout(loadingTimeout);
+  }
+
   onMount(() => {
+    console.log('AdminDashboard: Component mounted, loading admin data...');
     loadAdminData();
   });
 
 </script>
 
-<div class="admin-dashboard">
-  <AdminHeader on:toggleMobileSidebar={toggleMobileSidebar} />
-  
+<div class="min-h-screen flex flex-col" style="background-color: #f8f9fa;">
   <PullToRefresh onRefresh={handleRefresh} {refreshing}>
-    <div class="admin-content">
+    <div class="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 2xl:p-12 max-w-7xl mx-auto w-full">
       {#if loading}
-        <div class="loading-container">
+        <div class="flex flex-col items-center justify-center py-16 px-8 text-center">
           <LoadingSpinner />
-          <p>Loading admin data...</p>
+          <p class="mt-4 text-base-content/70 text-base">Loading admin data...</p>
         </div>
       {:else if error}
-        <div class="error-container">
-          <h2>Error Loading Data</h2>
-          <p>{error}</p>
-          <button class="retry-btn" on:click={loadAdminData}>Retry</button>
+        <div class="bg-base-100 rounded-xl p-8 text-center shadow-sm border border-error/20">
+          <h2 class="text-error text-xl mb-4 font-semibold">Error Loading Data</h2>
+          <p class="text-base-content/70 mb-6">{error}</p>
+          <button class="btn btn-primary" on:click={loadAdminData}>Retry</button>
         </div>
       {:else}
         <!-- Content based on admin view -->
@@ -324,130 +365,3 @@
     on:reservationAction={(e: any) => handleReservationAction(e.detail.reservation, e.detail.action)}
   />
 </div>
-
-<style>
-  .admin-dashboard {
-    height: 100vh;
-    background: #f8fafc;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; /* only inner PullToRefresh scrolls */
-    width: 100%;
-  }
-
-  /* Ensure PullToRefresh becomes the single scroll container */
-  .admin-dashboard > :global(.pull-to-refresh-container) {
-    flex: 1;
-    min-height: 0;
-  }
-
-  .admin-content {
-    padding: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
-    width: 100%;
-  }
-
-
-  .loading-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4rem 2rem;
-    text-align: center;
-  }
-
-  .loading-container p {
-    margin-top: 1rem;
-    color: #64748b;
-    font-size: 1rem;
-  }
-
-  .error-container {
-    background: white;
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border: 1px solid #fecaca;
-  }
-
-  .error-container h2 {
-    color: #dc2626;
-    margin: 0 0 1rem 0;
-    font-size: 1.25rem;
-  }
-
-  .error-container p {
-    color: #64748b;
-    margin: 0 0 1.5rem 0;
-  }
-
-  .retry-btn {
-    background: #3b82f6;
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background 0.2s ease;
-  }
-
-  .retry-btn:hover {
-    background: #2563eb;
-  }
-
-  /* Mobile First Responsive Design */
-  @media (max-width: 480px) {
-    .admin-content {
-      padding: 0.75rem;
-      max-width: 100%;
-    }
-
-  }
-
-  @media (min-width: 481px) and (max-width: 768px) {
-    .admin-content {
-      padding: 1rem;
-      max-width: 100%;
-    }
-  }
-
-  @media (min-width: 769px) and (max-width: 1024px) {
-    .admin-content {
-      padding: 1.5rem;
-      max-width: 100%;
-    }
-  }
-
-  @media (min-width: 1025px) and (max-width: 1200px) {
-    .admin-content {
-      padding: 2rem;
-      max-width: 1200px;
-    }
-  }
-
-  @media (min-width: 1201px) {
-    .admin-content {
-      padding: 2rem;
-      max-width: 1400px;
-    }
-  }
-
-  /* Additional responsive improvements */
-  @media (max-width: 320px) {
-    .admin-content {
-      padding: 0.5rem;
-    }
-  }
-
-  /* Large screens optimization */
-  @media (min-width: 1600px) {
-    .admin-content {
-      max-width: 1600px;
-      padding: 2.5rem;
-    }
-  }
-</style>

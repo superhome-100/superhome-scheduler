@@ -4,28 +4,45 @@
   export let reservations: any[];
 </script>
 
-<div class="pool-calendar">
-  <div class="calendar-header">
-    <div class="time-column-header">Time</div>
+<div class="bg-white rounded-lg border border-base-300 overflow-hidden shadow-sm">
+  <!-- Calendar Header -->
+  <div class="grid grid-cols-[80px_repeat(8,1fr)] bg-base-200 border-b-2 border-base-300">
+    <div class="p-4 px-2 text-center font-semibold text-base-content border-r border-base-300">
+      Time
+    </div>
     {#each Array.from({ length: 8 }, (_, i) => i + 1) as lane}
-      <div class="lane-header">Lane {lane}</div>
+      <div class="p-4 px-2 text-center font-semibold text-base-content border-r border-base-300 last:border-r-0">
+        Lane {lane}
+      </div>
     {/each}
   </div>
-  <div class="calendar-grid">
+
+  <!-- Calendar Grid -->
+  <div class="max-h-[60vh] overflow-y-auto">
     {#each timeSlots as timeSlot}
-      <div class="time-row">
-        <div class="time-label">{timeSlot}</div>
+      <div class="grid grid-cols-[80px_repeat(8,1fr)] border-b border-base-300 min-h-[60px]">
+        <div class="p-2 text-center text-sm text-base-content/70 bg-base-200 border-r border-base-300 flex items-center justify-center">
+          {timeSlot}
+        </div>
         {#each Array.from({ length: 8 }, (_, i) => i + 1) as lane}
-          <div class="lane-cell" data-lane={lane} data-time={timeSlot}>
+          <div 
+            class="p-1 border-r border-base-300 last:border-r-0 min-h-[60px] relative hover:bg-info/10 transition-colors duration-200" 
+            data-lane={lane} 
+            data-time={timeSlot}
+          >
             {#each reservations as reservation}
               {#if reservation.res_pool &&
                   dayjs(reservation.res_pool.start_time).format('HH:mm') === timeSlot &&
                   reservation.res_pool.lane === lane.toString()}
-                <div class="reservation-item pool-reservation">
-                  <div class="reservation-title">{reservation.user_profiles?.name || 'Unknown'}</div>
-                  <div class="reservation-time">
-                    {dayjs(reservation.res_pool.start_time).format('HH:mm')} -
-                    {dayjs(reservation.res_pool.end_time).format('HH:mm')}
+                <div class="badge badge-primary badge-lg w-full justify-start p-2 h-auto min-h-[2.5rem] text-xs">
+                  <div class="flex flex-col items-start w-full">
+                    <div class="font-medium truncate w-full">
+                      {reservation.user_profiles?.name || 'Unknown'}
+                    </div>
+                    <div class="text-xs opacity-80">
+                      {dayjs(reservation.res_pool.start_time).format('HH:mm')} -
+                      {dayjs(reservation.res_pool.end_time).format('HH:mm')}
+                    </div>
                   </div>
                 </div>
               {/if}
@@ -36,77 +53,3 @@
     {/each}
   </div>
 </div>
-
-
-<style>
-  .pool-calendar {
-    background: white;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    overflow: hidden;
-  }
-
-  .calendar-header {
-    display: grid;
-    grid-template-columns: 80px repeat(8, 1fr);
-    background: #f8fafc;
-    border-bottom: 2px solid #e2e8f0;
-  }
-
-  .time-column-header,
-  .lane-header {
-    padding: 1rem 0.5rem;
-    text-align: center;
-    font-weight: 600;
-    color: #475569;
-    border-right: 1px solid #e2e8f0;
-  }
-
-  .lane-header:last-child {
-    border-right: none;
-  }
-
-  .calendar-grid {
-    max-height: 60vh;
-    overflow-y: auto;
-  }
-
-  .time-row {
-    display: grid;
-    grid-template-columns: 80px repeat(8, 1fr);
-    border-bottom: 1px solid #e2e8f0;
-    min-height: 60px;
-  }
-
-  .time-label {
-    padding: 0.5rem;
-    text-align: center;
-    font-size: 0.875rem;
-    color: #64748b;
-    background: #f8fafc;
-    border-right: 1px solid #e2e8f0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .lane-cell {
-    padding: 0.25rem;
-    border-right: 1px solid #e2e8f0;
-    min-height: 60px;
-    position: relative;
-  }
-
-  .lane-cell:last-child {
-    border-right: none;
-  }
-
-  .lane-cell:hover {
-    background: #f0f9ff;
-  }
-
-  .pool-reservation {
-    background: #dbeafe;
-    border-color: #3b82f6;
-  }
-</style>

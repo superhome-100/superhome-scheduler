@@ -25,81 +25,41 @@
   }
 </script>
 
-<div class="single-day-header">
-  <button class="back-button btn btn-ghost btn-xs" on:click={handleBack}>
+<div class="bg-white border-b border-slate-200 p-4 flex items-center gap-4 sticky top-0 z-10">
+  <button class="btn btn-ghost btn-sm flex items-center gap-2 px-2 py-1 bg-slate-100 border border-slate-200 rounded-lg text-slate-600 text-sm font-medium hover:bg-slate-200 hover:text-slate-700 transition-all duration-200" on:click={handleBack}>
     <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
       <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
     </svg>
     Back
   </button>
-  <div class="date-controls">
-    <h1 class="single-day-title">{formatSelectedDate(selectedDate)}</h1>
-    <button class="nav-button btn btn-outline btn-sm" on:click={handlePrevDay} aria-label="Previous Day">Prev</button>
-    <button class="nav-button btn btn-outline btn-sm" on:click={handleNextDay} aria-label="Next Day">Next</button>
+  <div class="flex items-center gap-3 ml-auto sm:flex-1 sm:min-w-0">
+    <h1 class="date-title text-xl font-semibold text-slate-800 m-0 sm:whitespace-nowrap sm:overflow-hidden sm:text-ellipsis sm:flex-1">{formatSelectedDate(selectedDate)}</h1>
+    <div class="nav-buttons">
+      <button class="btn btn-outline btn-sm" on:click={handlePrevDay} aria-label="Previous Day">Prev</button>
+      <button class="btn btn-outline btn-sm" on:click={handleNextDay} aria-label="Next Day">Next</button>
+    </div>
   </div>
-  
 </div>
 
 <style>
-  .single-day-header {
-    background: white;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 1rem;
+  .date-title {
+    font-size: 1rem; /* Smaller than the default text-xl (1.25rem) */
+  }
+  
+  .nav-buttons {
+    margin-left: 1rem; /* Add margin gap between date and buttons */
     display: flex;
-    align-items: center;
-    gap: 1rem;
-    position: sticky;
-    top: 0;
-    z-index: 10;
+    gap: 0.5rem; /* Gap between Prev and Next buttons */
   }
-
-  .back-button {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    color: #475569;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .back-button:hover {
-    background: #e2e8f0;
-    color: #334155;
-  }
-
-  .single-day-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0;
-  }
-
-  .date-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-left: auto;
-  }
-
-  /* Mobile: keep date on a single line with ellipsis */
+  
+  /* Even smaller on mobile for better space utilization */
   @media (max-width: 640px) {
-    .date-controls {
-      flex: 1;
-      min-width: 0;
+    .date-title {
+      font-size: 0.875rem; /* text-sm equivalent */
     }
-    .single-day-title {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      flex: 1;
+    
+    .nav-buttons {
+      margin-left: 0.75rem; /* Slightly smaller gap on mobile */
     }
   }
 </style>
-
-

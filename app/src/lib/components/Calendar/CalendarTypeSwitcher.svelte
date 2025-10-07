@@ -1,92 +1,130 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
+  import { goto } from '$app/navigation';
 
   type CalendarType = 'pool' | 'openwater' | 'classroom';
   export let value: CalendarType = 'pool';
 
   const dispatch = createEventDispatcher<{ change: CalendarType }>();
 
+  // Initialize from URL parameter on mount
+  onMount(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const typeParam = urlParams.get('type');
+    if (typeParam && ['pool', 'openwater', 'classroom'].includes(typeParam)) {
+      value = typeParam as CalendarType;
+    }
+  });
+
   function setType(type: CalendarType) {
     if (value !== type) {
       value = type;
+      
+      // Update URL parameter
+      const url = new URL(window.location.href);
+      url.searchParams.set('type', type);
+      goto(url.toString(), { replaceState: true, noScroll: true });
+      
       dispatch('change', value);
     }
   }
 </script>
 
-<div class="calendar-type-buttons">
+<!-- Calendar Type Buttons -->
+<div class="flex justify-center mb-8 flex-wrap gap-6 button-container px-6 sm:px-4">
   <button 
-    class="type-btn btn btn-sm"
-    class:active={value === 'pool'}
+    class="btn btn-sm relative transition-all duration-200"
+    class:shadow-lg={value === 'pool'}
+    class:text-white={value === 'pool'}
+    class:bg-[#00294C]={value === 'pool'}
+    class:border-[#00294C]={value === 'pool'}
+    class:btn-outline={value !== 'pool'}
+    class:active-button={value === 'pool'}
     on:click={() => setType('pool')}
+    title="Pool Reservations"
   >
-    <svg class="type-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-    </svg>
-    Pool
+    <span class="font-medium">Pool</span>
   </button>
   <button 
-    class="type-btn btn btn-sm"
-    class:active={value === 'openwater'}
+    class="btn btn-sm relative transition-all duration-200"
+    class:shadow-lg={value === 'openwater'}
+    class:text-white={value === 'openwater'}
+    class:bg-[#00294C]={value === 'openwater'}
+    class:border-[#00294C]={value === 'openwater'}
+    class:btn-outline={value !== 'openwater'}
+    class:active-button={value === 'openwater'}
     on:click={() => setType('openwater')}
+    title="Open Water Reservations"
   >
-    <svg class="type-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-    </svg>
-    Open Water
+    <span class="font-medium">Open Water</span>
   </button>
   <button 
-    class="type-btn btn btn-sm"
-    class:active={value === 'classroom'}
+    class="btn btn-sm relative transition-all duration-200"
+    class:shadow-lg={value === 'classroom'}
+    class:text-white={value === 'classroom'}
+    class:bg-[#00294C]={value === 'classroom'}
+    class:border-[#00294C]={value === 'classroom'}
+    class:btn-outline={value !== 'classroom'}
+    class:active-button={value === 'classroom'}
     on:click={() => setType('classroom')}
+    title="Classroom Reservations"
   >
-    <svg class="type-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-      <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-    </svg>
-    Classroom
+    <span class="font-medium">Classroom</span>
   </button>
 </div>
 
 <style>
-  .calendar-type-buttons {
-    display: flex;
-    gap: 0.5rem;
-    padding: 1rem;
-    background: white;
-    border-bottom: 1px solid #e2e8f0;
-    justify-content: center;
-    flex-wrap: wrap;
+  /* Smooth transitions for better UX */
+  .btn {
+    transition: all 0.2s ease-in-out;
   }
-
-  .type-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    border: 1px solid #e2e8f0;
-    background: #f8fafc;
-    color: #64748b;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
+  
+  /* Force white text on active buttons */
+  .active-button {
+    color: white !important;
   }
-
-  .type-btn:hover {
-    background: #e2e8f0;
-    color: #1e293b;
+  
+  .active-button span {
+    color: white !important;
   }
-
-  .type-btn.active {
-    background: #3b82f6;
-    color: white;
-    border-color: #3b82f6;
+  
+  /* Ensure proper spacing between buttons */
+  .flex.gap-6 > * + * {
+    margin-left: 0.5rem !important;
   }
-
-  .type-icon {
-    width: 20px;
-    height: 20px;
+  
+  /* Button container with increased vertical padding */
+  .button-container {
+    padding: 1rem 0;
+  }
+  
+  /* Individual button vertical padding */
+  .button-container .btn {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  /* Mobile Responsive - Keep buttons compact on mobile */
+  @media (max-width: 768px) {
+    .btn {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+    }
+    
+    /* Reduce gap on mobile */
+    .flex.gap-6 {
+      gap: 0.5rem !important;
+    }
+    
+    /* Adjust vertical padding for mobile */
+    .button-container {
+      padding: 0.5rem 0;
+    }
+    
+    .button-container .btn {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
   }
 </style>
 

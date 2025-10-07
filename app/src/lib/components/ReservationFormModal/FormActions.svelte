@@ -66,7 +66,7 @@
 
   .btn-primary {
     background: #3b82f6;
-    color: white;
+    color: hsl(var(--bc));
   }
 
   .btn-primary:hover {

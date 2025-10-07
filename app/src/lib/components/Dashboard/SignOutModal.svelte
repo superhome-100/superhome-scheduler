@@ -185,7 +185,7 @@
     flex: 1;
     padding: 0.75rem 1.5rem;
     background: #ef4444;
-    color: white;
+    color: hsl(var(--bc));
     border: 1px solid #ef4444;
     border-radius: 8px;
     font-weight: 500;

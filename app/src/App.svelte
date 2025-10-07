@@ -1,10 +1,11 @@
 <script lang="ts">
   import './styles/login.css';
-  import { authStore, auth } from './lib/stores/auth';
+  import { authStore, auth, ensureUserProfile } from './lib/stores/auth';
   import Login from './lib/components/Login.svelte';
   import Dashboard from './lib/components/Dashboard/Dashboard.svelte';
   import AuthCallback from './lib/components/AuthCallback.svelte';
-  // Note: LoadingSpinner not used in minimal auth flow
+  import LoadingSpinner from './lib/components/LoadingSpinner.svelte';
+  
 
   // Check if we're on the auth callback route
   const isAuthCallback = window.location.pathname === '/auth/callback';
@@ -16,8 +17,18 @@
   const handleRefresh = async () => {
     refreshing = true;
     try {
-      // Minimal behavior: reload the page to reflect latest session
-      window.location.reload();
+      // Refresh auth state without page reload
+      const { data } = await auth.getSession();
+      const user = data.session?.user ?? null;
+      authStore.set({ user, loading: false, error: null });
+      
+      // If user exists, ensure profile is created
+      if (user) {
+        await ensureUserProfile(user);
+      }
+    } catch (error) {
+      console.error('Refresh error:', error);
+      authStore.set({ user: null, loading: false, error: 'Refresh failed' });
     } finally {
       refreshing = false;
     }
@@ -48,26 +59,26 @@
     pathname = window.location.pathname;
   }
 
-  // Redirect admin users to /admin after login (async check)
-  async function maybeRedirectAdmin() {
-    if (isAuthCallback) return;
-    if (!$authStore.user) return;
-    if (pathname === '/admin') return;
-    const isAdmin = await auth.isAdmin();
-    if (isAdmin) window.location.replace('/admin');
-  }
-
-  $: $authStore.user && maybeRedirectAdmin();
+  // Note: Admin users can manually navigate to /admin via the sidebar
+  // No automatic redirect to prevent page reloads
 </script>
 
-{#if isAuthCallback}
-  <AuthCallback />
-{:else if $authStore.user}
-  <Dashboard />
-{:else}
-  <Login 
-    {refreshing}
-    on:refresh={handleRefresh}
-    on:privacyPolicy={handlePrivacyPolicy}
-  />
-{/if}
+<div data-theme="superhome">
+  {#if isAuthCallback}
+    <AuthCallback />
+  {:else if $authStore.loading}
+    <LoadingSpinner 
+      size="lg" 
+      text="Loading..." 
+      variant="login"
+    />
+  {:else if $authStore.user}
+    <Dashboard />
+  {:else}
+    <Login 
+      {refreshing}
+      on:refresh={handleRefresh}
+      on:privacyPolicy={handlePrivacyPolicy}
+    />
+  {/if}
+</div>

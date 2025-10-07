@@ -393,7 +393,7 @@
 
   .create-first-btn {
     background: #3b82f6;
-    color: white;
+    color: hsl(var(--bc));
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 8px;
@@ -442,7 +442,7 @@
 
   .error-state button {
     background: #3b82f6;
-    color: white;
+    color: hsl(var(--bc));
     border: none;
     padding: 0.5rem 1rem;
     border-radius: 6px;

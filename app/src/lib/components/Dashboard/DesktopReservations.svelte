@@ -199,7 +199,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    padding: 1.5rem 2rem 1rem 2rem;
     border-bottom: 1px solid #e2e8f0;
   }
 
@@ -208,6 +208,7 @@
     font-weight: 600;
     color: #1e293b;
     margin: 0;
+    padding-left: 0.5rem;
   }
 
   .refresh-btn {
@@ -231,7 +232,7 @@
   }
 
   .reservation-content {
-    padding: 1.5rem;
+    padding: 2rem;
     min-height: 200px;
   }
 
@@ -260,7 +261,7 @@
 
   .create-first-btn {
     background: #3b82f6;
-    color: white;
+    color: hsl(var(--bc));
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 8px;
@@ -293,13 +294,13 @@
 
   /* Compact reservation styles */
   .reservation-list.compact {
-    gap: 0.5rem;
+    gap: 0.75rem;
     max-height: 240px; /* Approximately 3 items * 80px height */
     overflow-y: auto;
   }
 
   .reservation-item.compact {
-    padding: 0.75rem;
+    padding: 1rem;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 8px;

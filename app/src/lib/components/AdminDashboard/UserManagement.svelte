@@ -22,13 +22,16 @@
 
 </script>
 
-<div class="section">
-  <div class="section-header">
-    <h2>
+<div class="card bg-base-100 shadow-sm border border-base-300 rounded-xl p-6 mb-8">
+  <div class="flex justify-between items-center mb-8 px-2">
+    <h2 class="text-2xl font-semibold text-[#00294C] flex items-center gap-6">
       User Management
-      <span class="total-users-pill"><span class="dot"></span>{stats.totalUsers} Total Users</span>
+      <div class="badge badge-outline gap-2 px-4 py-2 text-sm">
+        <div class="w-2 h-2 bg-success rounded-full"></div>
+        {stats.totalUsers} Total Users
+      </div>
     </h2>
-    <button class="refresh-btn" on:click={handleRefresh}>
+    <button class="btn btn-ghost btn-sm gap-2 text-base-content/70 hover:text-base-content px-4 py-2" on:click={handleRefresh}>
       <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
         <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
       </svg>
@@ -36,58 +39,49 @@
     </button>
   </div>
   
-  <div class="users-table">
-    <table>
+  <div class="table-container">
+    <table class="table w-full">
       <thead>
         <tr>
-          <th scope="col">Name</th>
-          <th scope="col">Status</th>
-          <th scope="col">Privileges</th>
-          <th scope="col" class="text-right">Actions</th>
+          <th class="text-[#00294C] font-semibold border-b-2 border-base-300 text-left">Name</th>
+          <th class="text-[#00294C] font-semibold border-b-2 border-base-300 text-center">Status</th>
+          <th class="text-[#00294C] font-semibold border-b-2 border-base-300 text-center">Privileges</th>
+          <th class="text-[#00294C] font-semibold text-center border-b-2 border-base-300">Actions</th>
         </tr>
       </thead>
       <tbody>
         {#each users as user}
-          <tr>
-            <td data-label="Name">
-              <div class="user-info">
-                <div class="user-avatar">{user.name?.charAt(0) || 'U'}</div>
-                <span>{user.name || 'Unknown'}</span>
+          <tr class="hover:bg-base-200/50 border-b border-base-200 last:border-b-0">
+            <td class="text-left">
+              <div class="flex items-center gap-2 sm:gap-4">
+                <div class="avatar placeholder">
+                  <div class="bg-primary text-primary-content rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-xs sm:text-sm font-semibold">
+                    {user.name?.charAt(0) || 'U'}
+                  </div>
+                </div>
+                <span class="text-[#00294C] font-medium text-xs sm:text-sm truncate">{user.name || 'Unknown'}</span>
               </div>
             </td>
-            <td data-label="Status">
+            <td class="text-center">
               <button 
-                class="status-toggle"
-                class:active={user.status === 'active'}
-                class:disabled={user.status === 'disabled'}
+                class="btn btn-xs sm:btn-sm min-w-[60px] sm:min-w-[80px] {user.status === 'active' ? 'btn-success' : user.status === 'inactive' ? 'btn-error' : 'btn-outline'}"
                 on:click={() => toggleUserStatus(user.uid, user.status)}
                 title="Click to toggle status"
               >
                 {user.status}
               </button>
             </td>
-            <td data-label="Privileges">
+            <td class="text-center">
               <button 
-                class="privilege-toggle"
-                class:admin={user.privileges.includes('admin')}
-                class:user={!user.privileges.includes('admin')}
+                class="btn btn-xs sm:btn-sm min-w-[60px] sm:min-w-[80px] {user.privileges.includes('admin') ? 'btn-primary' : 'btn-secondary'}"
                 on:click={() => toggleUserPrivilege(user.uid, user.privileges)}
                 title="Click to toggle privilege"
               >
                 {user.privileges.includes('admin') ? 'Admin' : 'User'}
               </button>
             </td>
-            <td data-label="Actions" class="text-right">
-              <button 
-                class="action-btn refresh"
-                on:click={() => handleRefresh()}
-                title="Refresh data"
-                aria-label="Refresh user data"
-              >
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                  <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-                </svg>
-              </button>
+            <td class="text-center">
+              <!-- Actions column - no individual user actions needed -->
             </td>
           </tr>
         {/each}
@@ -97,230 +91,231 @@
 </div>
 
 <style>
-  .section {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
+  /* Table container with proper scrolling */
+  .table-container {
+    border: 1px solid hsl(var(--b3));
+    border-radius: 0.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem;
-  }
-
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-  }
-
-  .section-header h2 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .total-users-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0.75rem;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    border-radius: 9999px;
-    font-size: 0.875rem;
-    color: #64748b;
-    font-weight: 500;
-  }
-
-  .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #10b981;
-  }
-
-  .refresh-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    color: #64748b;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.875rem;
-  }
-
-  .refresh-btn:hover {
-    background: #e2e8f0;
-  }
-
-  .users-table {
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    overflow: hidden;
-    background: white;
+    background: hsl(var(--b1));
     overflow-x: auto;
+    overflow-y: visible;
+    max-height: 70vh;
   }
 
-  table {
-    width: 100%;
+  /* Enhanced table styling for better visibility */
+  .table {
     border-collapse: separate;
     border-spacing: 0;
-    font-size: 0.875rem;
+    table-layout: fixed;
+    width: 100%;
   }
-
-  thead {
-    background: #f8fafc;
+  
+  /* Column width distribution - Name longer, others equal and compact */
+  .table th:nth-child(1),
+  .table td:nth-child(1) {
+    width: 50%;
   }
-
-  th {
-    text-align: left;
-    background: #f8fafc;
-    color: #374151;
+  
+  .table th:nth-child(2),
+  .table td:nth-child(2) {
+    width: 16.67%;
+  }
+  
+  .table th:nth-child(3),
+  .table td:nth-child(3) {
+    width: 16.67%;
+  }
+  
+  .table th:nth-child(4),
+  .table td:nth-child(4) {
+    width: 16.67%;
+  }
+  
+  .table thead th {
+    background: hsl(var(--b2));
+    border-bottom: 2px solid hsl(var(--b3));
+    color: #00294C !important;
+    font-size: 0.75rem;
+    letter-spacing: 0.025em;
+    padding: 0.75rem 0.75rem !important;
     font-weight: 600;
-    font-size: 0.875rem;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #e5e7eb;
-    white-space: nowrap;
+    text-transform: uppercase;
   }
-
-  th.text-right {
-    text-align: right;
+  
+  .table tbody tr {
+    transition: all 0.2s ease;
+    background: transparent;
   }
-
-  td {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #e5e7eb;
-    vertical-align: middle;
-    white-space: nowrap;
+  
+  .table tbody tr:hover {
+    background-color: hsl(var(--b2) / 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
-
-  tr:last-child td {
+  
+  .table tbody tr:last-child td {
     border-bottom: none;
   }
-
-  .user-info {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .user-info span {
-    color: #000000;
-  }
-
-  .user-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: #3b82f6;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 600;
-    font-size: 0.875rem;
-  }
-
-  .status-toggle {
-    padding: 0.25rem 0.75rem;
-    border-radius: 6px;
-    border: 1px solid #e2e8f0;
-    background: #f8fafc;
-    color: #64748b;
-    cursor: pointer;
-    font-size: 0.75rem;
-    font-weight: 500;
-    text-transform: capitalize;
-    transition: all 0.2s ease;
-  }
-
-  .status-toggle.active {
-    background: #10b981;
-    color: white;
-    border-color: #10b981;
-  }
-
-  .status-toggle.disabled {
-    background: #ef4444;
-    color: white;
-    border-color: #ef4444;
-  }
-
-  .status-toggle:hover:not(.active):not(.disabled) {
-    background: #e2e8f0;
-  }
-
-  .privilege-toggle {
-    padding: 0.25rem 0.75rem;
-    border-radius: 6px;
-    border: 1px solid #e2e8f0;
-    background: #f8fafc;
-    color: #64748b;
-    cursor: pointer;
-    font-size: 0.75rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-  }
-
-  .privilege-toggle.admin {
-    background: #f59e0b;
-    color: white;
-    border-color: #f59e0b;
-  }
-
-  .privilege-toggle.user {
-    background: #6b7280;
-    color: white;
-    border-color: #6b7280;
-  }
-
-  .privilege-toggle:hover:not(.admin):not(.user) {
-    background: #e2e8f0;
-  }
-
   
-
-  .action-btn {
-    padding: 0.5rem;
-    border: 1px solid #e2e8f0;
-    background: #f8fafc;
-    color: #64748b;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
+  .table tbody td {
+    vertical-align: middle;
+    font-size: 0.75rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid hsl(var(--b2));
+  }
+  
+  /* Custom scrollbar for table container */
+  .table-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .table-container::-webkit-scrollbar-track {
+    background: hsl(var(--b2));
+    border-radius: 4px;
+  }
+  
+  .table-container::-webkit-scrollbar-thumb {
+    background: hsl(var(--b3));
+    border-radius: 4px;
+  }
+  
+  .table-container::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--bc) / 0.3);
   }
 
-  .action-btn:hover {
-    background: #e2e8f0;
-    border-color: #cbd5e1;
+  /* Desktop spacing improvements */
+  @media (min-width: 769px) {
+    .card {
+      padding: 2rem;
+    }
+    
+    .flex.justify-between.items-center {
+      margin-bottom: 2rem;
+      padding: 0 0.5rem;
+    }
+    
+    .flex.items-center.gap-6 {
+      gap: 2rem;
+    }
+    
+    .badge {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+    }
+    
+    .table .btn {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+    }
   }
 
-  /* Mobile responsive */
+  /* Mobile responsive adjustments */
   @media (max-width: 768px) {
-    .users-table { 
-      overflow-x: auto; 
+    .table-container {
+      max-height: 60vh;
     }
     
-    .users-table table { 
-      min-width: 720px; 
+    .table {
+      min-width: 600px;
     }
     
-    .section-header {
+    .flex.justify-between.items-center {
       flex-direction: column;
       align-items: flex-start;
       gap: 1rem;
     }
 
-    .section-header h2 {
+    .flex.items-center.gap-6 {
       flex-direction: column;
       align-items: flex-start;
       gap: 0.5rem;
     }
+    
+    /* More compact mobile table */
+    .table thead th {
+      font-size: 0.625rem;
+      padding: 0.5rem 0.5rem !important;
+    }
+    
+    .table tbody td {
+      font-size: 0.625rem;
+      padding: 0.5rem;
+    }
+    
+    /* Compact card padding on mobile */
+    .card {
+      padding: 1rem;
+    }
+    
+    /* Smaller buttons on mobile */
+    .table .btn-xs {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.625rem;
+      min-height: 1.5rem;
+    }
+  }
+  
+  /* Extra small mobile adjustments */
+  @media (max-width: 480px) {
+    .table-container {
+      max-height: 50vh;
+    }
+    
+    .table {
+      min-width: 500px;
+    }
+    
+    .table thead th {
+      font-size: 0.5rem;
+      padding: 0.375rem 0.375rem !important;
+    }
+    
+    .table tbody td {
+      font-size: 0.5rem;
+      padding: 0.375rem;
+    }
+    
+    .table .btn-xs {
+      padding: 0.125rem 0.375rem;
+      font-size: 0.5rem;
+      min-height: 1.25rem;
+    }
+    
+    .avatar .w-8 {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+  }
+
+  /* Ensure button colors work properly with explicit colors */
+  .table .btn-success {
+    background-color: #10b981 !important;
+    border-color: #10b981 !important;
+    color: white !important;
+  }
+  
+  .table .btn-error {
+    background-color: #ef4444 !important;
+    border-color: #ef4444 !important;
+    color: white !important;
+  }
+  
+  .table .btn-primary {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    color: white !important;
+  }
+  
+  .table .btn-secondary {
+    background-color: #6b7280 !important;
+    border-color: #6b7280 !important;
+    color: white !important;
+  }
+  
+  .table .btn-outline {
+    background-color: transparent !important;
+    border-color: #6b7280 !important;
+    color: #6b7280 !important;
   }
 </style>
