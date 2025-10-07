@@ -7,6 +7,26 @@ export const getTypeDisplay = (type: string) => {
   return typeMap[type] || type;
 };
 
+export const getOpenWaterTypeDisplay = (openWaterType: string | null | undefined) => {
+  if (!openWaterType) return 'Open Water';
+  
+  // Format common open water types
+  const typeMap: Record<string, string> = {
+    'confined_water': 'Confined Water',
+    'open_water': 'Open Water',
+    'deep_water': 'Deep Water',
+    'night_dive': 'Night Dive',
+    'wreck_dive': 'Wreck Dive',
+    'drift_dive': 'Drift Dive',
+    'altitude_dive': 'Altitude Dive',
+    'ice_dive': 'Ice Dive',
+    'cave_dive': 'Cave Dive',
+    'technical_dive': 'Technical Dive'
+  };
+  
+  return typeMap[openWaterType.toLowerCase()] || openWaterType;
+};
+
 export const getStatusDisplay = (status: string) => {
   const statusMap: Record<string, string> = {
     pending: 'pending',

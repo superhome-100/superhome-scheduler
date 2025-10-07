@@ -72,23 +72,28 @@
     background: #ffffff !important;
   }
 
-  /* Ensure sidebar is visible on desktop */
-  aside.w-72,
-  aside.w-64 {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+  /* Ensure sidebar is visible on desktop (1024px and up) */
+  @media (min-width: 1024px) {
+    aside.w-72,
+    aside.w-64,
+    .desktop-sidebar {
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
   }
 
-  /* Hide sidebar on mobile */
-  @media (max-width: 768px) {
+  /* Hide sidebar on mobile (below 1024px) */
+  @media (max-width: 1023px) {
     aside.w-72,
-    aside.w-64 {
+    aside.w-64,
+    .desktop-sidebar {
       display: none !important;
     }
     
     /* Force white background for mobile sidebar */
-    aside.w-70 {
+    aside.w-70,
+    .mobile-drawer {
       background-color: #ffffff !important;
       background: #ffffff !important;
     }
@@ -202,5 +207,24 @@
 
   .sidebar-close-button:focus {
     @apply outline-none bg-transparent;
+  }
+
+  /* Main content area adjustments */
+  .main-content {
+    @apply flex-1 w-full;
+  }
+
+  /* Ensure proper layout on desktop with sidebar */
+  @media (min-width: 1024px) {
+    .drawer-content {
+      margin-left: 20rem; /* Match sidebar width (w-80 = 20rem) */
+    }
+  }
+
+  /* Mobile layout without sidebar margin */
+  @media (max-width: 1023px) {
+    .drawer-content {
+      margin-left: 0;
+    }
   }
 }

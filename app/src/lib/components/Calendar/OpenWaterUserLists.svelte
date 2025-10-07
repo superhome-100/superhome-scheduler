@@ -1,5 +1,6 @@
 <script lang="ts">
   import { formatDateForCalendar } from '../../utils/dateUtils';
+  import { getOpenWaterTypeDisplay } from '../Reservation/reservationUtils';
 
   export let filteredReservations: any[];
   export let findAssignment: (uid: string, period: 'AM' | 'PM') => { buoy: string; boat: string };
@@ -30,7 +31,7 @@
               {findAssignment(res.uid, 'AM').buoy} {findAssignment(res.uid, 'AM').boat}
             </span>
             <span class="type-badge compact openwater">
-              Open Water
+              {getOpenWaterTypeDisplay(res?.open_water_type)}
             </span>
             <span class="status-badge compact" class:confirmed={res.res_status === 'confirmed'} class:pending={res.res_status === 'pending'} class:rejected={res.res_status === 'rejected'}>
               {res.res_status || 'pending'}
@@ -68,7 +69,7 @@
               {findAssignment(res.uid, 'PM').buoy} {findAssignment(res.uid, 'PM').boat}
             </span>
             <span class="type-badge compact openwater">
-              Open Water
+              {getOpenWaterTypeDisplay(res?.open_water_type)}
             </span>
             <span class="status-badge compact" class:confirmed={res.res_status === 'confirmed'} class:pending={res.res_status === 'pending'} class:rejected={res.res_status === 'rejected'}>
               {res.res_status || 'pending'}
@@ -87,24 +88,60 @@
 
 
 <style>
+  .reservation-table {
+    padding: 1rem;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .reservation-table h3 {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1e293b;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .reservation-list.compact {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
     max-height: 300px;
     overflow-y: auto;
+    width: 100%;
+    align-items: center;
   }
 
   .reservation-columns {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
+    display: contents;
+  }
+
+  .reservation-table {
+    padding: 1rem;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    min-height: 200px;
+  }
+
+  @media (min-width: 768px) {
+    .reservation-table {
+      max-width: 450px;
+    }
   }
 
   @media (min-width: 1024px) {
-    .reservation-columns {
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
+    .reservation-table {
+      max-width: 500px;
     }
   }
 
@@ -115,6 +152,8 @@
     border-radius: 8px;
     transition: all 0.2s ease;
     cursor: pointer;
+    width: 100%;
+    max-width: 400px;
   }
 
   .reservation-item.compact:hover {

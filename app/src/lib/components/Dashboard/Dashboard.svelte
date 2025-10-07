@@ -12,13 +12,10 @@
   import ReservationFormModal from '../ReservationFormModal/ReservationFormModal.svelte';
   import ReservationsListModal from '../ReservationsListModal/ReservationsListModal.svelte';
   import ReservationDetailsModal from '../ReservationDetailsModal/ReservationDetailsModal.svelte';
-  import SingleDayView from '../Calendar/SingleDayView.svelte';
-  
   // Dashboard sub-components
   import DashboardHeader from './DashboardHeader.svelte';
   import DesktopReservations from './DesktopReservations.svelte';
   import MobileReservations from './MobileReservations.svelte';
-  import CalendarSection from './CalendarSection.svelte';
   import FloatingActionButton from './FloatingActionButton.svelte';
   import SignOutModal from './SignOutModal.svelte';
   
@@ -28,8 +25,6 @@
 
   let showReservationDetails = false;
   let selectedReservation: any = null;
-  let showSingleDayView = false;
-  let selectedDate = '';
   // Use raw reservation rows from Supabase (with joined detail tables)
   // We avoid flattening here; components use unified transform when needed
   let reservations: any[] = [];
@@ -162,28 +157,6 @@
     selectedReservation = null;
   };
 
-  const handleCalendarEventClick = (event: CustomEvent) => {
-    const reservation = event.detail;
-    // Calendar provides raw DB reservation; use unified transformation
-    try {
-      const transformed = transformReservationToUnified(reservation);
-      selectedReservation = transformed;
-      showReservationDetails = true;
-    } catch (error) {
-      console.error('Dashboard: Error transforming calendar reservation:', error);
-      selectedReservation = null;
-    }
-  };
-
-  const handleCalendarDateClick = (event: CustomEvent) => {
-    selectedDate = event.detail;
-    showSingleDayView = true;
-  };
-
-  const handleBackToCalendar = () => {
-    showSingleDayView = false;
-    selectedDate = '';
-  };
 
   const handleTabChange = (event: CustomEvent) => {
     activeMobileTab = event.detail;
@@ -249,94 +222,89 @@
   $: completedReservations = getCompletedReservations(reservations);
 </script>
 
-{#if $authStore.loading}
-  <LoadingSpinner 
-    size="lg" 
-    text="Loading..." 
-    variant="overlay"
-    zIndex={50}
-  />
-{:else if $authStore.error}
-  <div class="flex flex-col items-center justify-center min-h-screen p-8 text-center">
-    <h2 class="text-2xl font-bold text-error mb-4">Something went wrong</h2>
-    <p class="text-base-content/70 mb-6">{$authStore.error}</p>
-    <button 
-      class="btn btn-primary"
-      on:click={() => window.location.reload()}
-    >
-      Try Again
-    </button>
-  </div>
-{:else if $authStore.user}
-  {#if showSingleDayView}
-    <SingleDayView
-      {selectedDate}
-      {reservations}
-      isAdmin={false}
-      on:backToCalendar={handleBackToCalendar}
-      on:reservationClick={handleReservationClick}
+<div class="min-h-screen bg-base-200 dashboard-container">
+  {#if $authStore.loading}
+    <LoadingSpinner 
+      size="lg" 
+      text="Loading..." 
+      variant="overlay"
+      zIndex={50}
     />
-  {:else if currentView === '/'}
-    <DashboardHeader 
-      {userName}
-    />
+  {:else if $authStore.error}
+    <div class="flex flex-col items-center justify-center min-h-screen text-center">
+      <h2 class="text-2xl font-bold text-error mb-4">Something went wrong</h2>
+      <p class="text-base-content/70 mb-6">{$authStore.error}</p>
+      <button class="btn btn-primary" on:click={() => window.location.reload()}>Try Again</button>
+    </div>
+  {:else if $authStore.user}
+    {#if currentView === '/'}
+      <!-- Sticky Header -->
+      <DashboardHeader 
+        {userName}
+      />
 
-    <!-- Pull-to-Refresh Body -->
-    <PullToRefresh onRefresh={handleRefresh} {refreshing}>
-      <div class="flex-1 p-6 max-w-6xl mx-auto w-full">
-        <div class="flex flex-col gap-6">
-          <!-- Desktop Reservations -->
-          <DesktopReservations 
-            {upcomingReservations}
-            {completedReservations}
-            {loading}
-            {error}
-            on:reservationClick={handleReservationClick}
-            on:viewAllUpcoming={openUpcomingReservationsModal}
-            on:viewAllCompleted={openCompletedReservationsModal}
-            on:newReservation={handleNewReservation}
-            on:retry={loadReservations}
-          />
-
-          <!-- Mobile Reservations -->
-          <MobileReservations 
-            {upcomingReservations}
-            {completedReservations}
-            {activeMobileTab}
-            {showMobileViewAll}
-            {loading}
-            {error}
-            bind:upcomingListEl
-            bind:completedListEl
-            on:tabChange={handleTabChange}
-            on:viewAll={handleViewAll}
-            on:reservationClick={handleReservationClick}
-            on:newReservation={handleNewReservation}
-            on:computeOverflow={computeMobileOverflow}
-            on:retry={loadReservations}
-          />
-
-          <!-- Calendar Section -->
-          <div class="block md:hidden lg:block">
-            <CalendarSection 
-              {reservations}
-              on:eventClick={handleCalendarEventClick}
-              on:dateClick={handleCalendarDateClick}
+      <!-- Pull-to-Refresh Body -->
+      <PullToRefresh onRefresh={handleRefresh} {refreshing}>
+        <div class="flex-1 p-6 max-w-6xl mx-auto w-full">
+          <div class="flex flex-col gap-6">
+            <!-- Desktop Reservations -->
+            <DesktopReservations 
+              {upcomingReservations}
+              {completedReservations}
+              {loading}
+              {error}
+              on:reservationClick={handleReservationClick}
+              on:viewAllUpcoming={openUpcomingReservationsModal}
+              on:viewAllCompleted={openCompletedReservationsModal}
+              on:newReservation={handleNewReservation}
+              on:retry={loadReservations}
             />
-          </div>
-        </div>
-        
-        <!-- Floating Action Button -->
-        <FloatingActionButton on:newReservation={handleNewReservation} />
 
-      </div>
-    </PullToRefresh>
-  {:else if currentView === '/reservation'}
-    <Reservation />
-  {:else if currentView === '/admin' || currentView === '/admin/calendar' || currentView === '/admin/users'}
-    <AdminDashboard />
+            <!-- Mobile Reservations -->
+            <MobileReservations 
+              {upcomingReservations}
+              {completedReservations}
+              {activeMobileTab}
+              {showMobileViewAll}
+              {loading}
+              {error}
+              bind:upcomingListEl
+              bind:completedListEl
+              on:tabChange={handleTabChange}
+              on:viewAll={handleViewAll}
+              on:reservationClick={handleReservationClick}
+              on:newReservation={handleNewReservation}
+              on:computeOverflow={computeMobileOverflow}
+              on:retry={loadReservations}
+            />
+
+          </div>
+          
+          <!-- Floating Action Button -->
+          <FloatingActionButton on:newReservation={handleNewReservation} />
+        </div>
+      </PullToRefresh>
+    {:else if currentView === '/reservation'}
+      <Reservation />
+    {:else if currentView === '/admin' || currentView === '/admin/calendar' || currentView === '/admin/users'}
+      <AdminDashboard />
+    {/if}
   {/if}
-{/if}
+</div>
+
+<style>
+  .dashboard-container {
+    /* Mobile: No margin needed as sidebar is a drawer */
+    margin-left: 0;
+  }
+
+  /* Desktop: Add margin to account for sidebar width (20rem = 320px) */
+  @media (min-width: 1024px) {
+    .dashboard-container {
+      margin-left: 20rem; /* 320px - matches sidebar width */
+    }
+  }
+</style>
 
 <!-- Reservation Form Modal -->
 <ReservationFormModal 
