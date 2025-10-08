@@ -5,4 +5,4 @@ workers_dev = true
 compatibility_flags = ["nodejs_compat"]
 
 [build]
-command = "ROLLUP_SKIP_NODEJS_NATIVE=1 npm --prefix app run build"
+command = "ROLLUP_SKIP_NODEJS_NATIVE=1 ROLLUP_SKIP_NATIVE=1 ROLLUP_DISABLE_NATIVE=1 ROLLUP_FORCE_JS=1 npm --prefix app run build"
