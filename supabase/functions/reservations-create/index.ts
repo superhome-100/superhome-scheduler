@@ -27,27 +27,28 @@ function json(body: unknown, init: ResponseInit = {}) {
   })
 }
 
+
 Deno.serve(async (req: Request) => {
   try {
-    if (req.method !== 'POST') return json({ error: 'Method Not Allowed' }, { status: 405 })
+    if (req.method !== 'POST') return json({ error: 'Method Not Allowed' }, { status: 405 });
 
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) return json({ error: 'Unauthorized' }, { status: 401 })
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return json({ error: 'Unauthorized' }, { status: 401 });
 
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
-    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return json({ error: 'Server not configured' }, { status: 500 })
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return json({ error: 'Server not configured' }, { status: 500 });
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } }
-    })
+    });
 
-    const { data: userRes } = await supabase.auth.getUser()
-    const user = userRes?.user
-    if (!user) return json({ error: 'Unauthorized' }, { status: 401 })
+    const { data: userRes } = await supabase.auth.getUser();
+    const user = userRes?.user;
+    if (!user) return json({ error: 'Unauthorized' }, { status: 401 });
 
-    const body = (await req.json()) as Payload
-    if (!body?.uid || !body?.res_type || !body?.res_date) return json({ error: 'Invalid payload' }, { status: 400 })
+    const body = (await req.json()) as Payload;
+    if (!body?.uid || !body?.res_type || !body?.res_date) return json({ error: 'Invalid payload' }, { status: 400 });
 
     // Owner or admin
     if (body.uid !== user.id) {

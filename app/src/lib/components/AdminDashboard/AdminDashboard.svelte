@@ -317,7 +317,6 @@
             <AdminCalendar 
               {reservations}
               {loading}
-              on:eventClick={handleCalendarEventClick}
               on:dateClick={handleCalendarDateClick}
             />
           {/if}

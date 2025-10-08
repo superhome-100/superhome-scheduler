@@ -62,9 +62,6 @@
       height: 'auto',
       dayMaxEvents: 3, // Show max 3 events, then show "more" link
       events: events,
-      eventClick: (info) => {
-        dispatch('eventClick', info.event.extendedProps.reservation);
-      },
       moreLinkClick: (info) => {
         // When "more" link is clicked, dispatch dateClick to show Single Day View
         const dateStr = info.date.toISOString().split('T')[0];
