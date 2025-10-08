@@ -1,0 +1,23 @@
+/* 
+ * Login.css - Legacy styles converted to TailwindCSS
+ * This file is now deprecated as all styles have been converted to TailwindCSS classes
+ * in the Login.svelte component. Keeping this file for reference only.
+ * 
+ * All functionality has been preserved:
+ * - Glass morphism design with backdrop blur
+ * - Gradient backgrounds and animations
+ * - Responsive design across all breakpoints
+ * - Button hover effects and transitions
+ * - Wave icon with pulse animation
+ * - Error message styling
+ * - Privacy policy link styling
+ */
+
+/* 
+ * Note: All styles from this file have been successfully converted to TailwindCSS
+ * and are now inline in the Login.svelte component. This ensures:
+ * - Better maintainability
+ * - Consistent design system
+ * - Reduced CSS bundle size
+ * - Better performance
+ */

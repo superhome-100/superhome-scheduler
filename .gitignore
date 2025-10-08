@@ -1,2 +1,9 @@
 # node_modules
 /node_modules
+
+#oldlib
+/oldlib
+
+#env
+.env
+
