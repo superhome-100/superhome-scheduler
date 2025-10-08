@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "cross-env ROLLUP_SKIP_NODEJS_NATIVE=1 vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json",
     "types": "npx supabase gen types typescript --local > ./src/lib/database.types.ts",
@@ -26,6 +26,7 @@
     "@tailwindcss/typography": "^0.5.15",
     "@tsconfig/svelte": "^5.0.4",
     "autoprefixer": "^10.4.20",
+    "cross-env": "^7.0.3",
     "daisyui": "^4.12.14",
     "postcss": "^8.4.49",
     "svelte": "^5.38.1",
