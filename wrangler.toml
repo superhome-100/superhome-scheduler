@@ -1,4 +1,4 @@
-name = "superhome-dev"
+name = "superhome"
 main = "app/.svelte-kit/cloudflare/_worker.js"
 compatibility_date = "2025-09-15"
 workers_dev = true
