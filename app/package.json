@@ -21,6 +21,7 @@
     "dayjs": "^1.11.13"
   },
   "devDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.52.4",
     "@sveltejs/adapter-cloudflare": "^4.7.2",
     "@sveltejs/kit": "^2.6.4",
     "@sveltejs/vite-plugin-svelte": "^6.1.1",
