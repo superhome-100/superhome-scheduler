@@ -1,8 +1,9 @@
 /*
   ensure-rollup-native.cjs
   - Runs on postinstall.
-  - If on Linux x64 and Rollup native binary is missing, installs the appropriate optional package.
-  - No-op on other platforms (fixes EBADPLATFORM on macOS/Windows).
+  - If Rollup native binary is missing, installs the appropriate optional package
+    for the current platform/arch (Linux x64/arm64, macOS x64/arm64).
+  - Skips unsupported platforms.
 */
 
 const { spawnSync } = require('node:child_process');
@@ -13,8 +14,24 @@ function log(msg) {
   console.log(`[ensure-rollup-native] ${msg}`);
 }
 
-function isLinuxX64() {
-  return process.platform === 'linux' && process.arch === 'x64';
+function getPlatformPackage() {
+  const platform = process.platform; // 'linux' | 'darwin' | 'win32' | ...
+  const arch = process.arch; // 'x64' | 'arm64' | ...
+
+  if (platform === 'linux') {
+    if (arch === 'x64') {
+      const musl = detectMusl();
+      return musl ? '@rollup/rollup-linux-x64-musl' : '@rollup/rollup-linux-x64-gnu';
+    }
+    if (arch === 'arm64') return '@rollup/rollup-linux-arm64-gnu';
+  }
+
+  if (platform === 'darwin') {
+    if (arch === 'arm64') return '@rollup/rollup-darwin-arm64';
+    if (arch === 'x64') return '@rollup/rollup-darwin-x64';
+  }
+
+  return null;
 }
 
 function detectMusl() {
@@ -44,8 +61,9 @@ function rollupNativePresent() {
 }
 
 (function main() {
-  if (!isLinuxX64()) {
-    log('Non-linux-x64 platform detected. Skipping.');
+  const pkg = getPlatformPackage();
+  if (!pkg) {
+    log(`Unsupported or unknown platform (${process.platform} ${process.arch}). Skipping.`);
     return;
   }
 
@@ -54,12 +72,9 @@ function rollupNativePresent() {
     return;
   }
 
-  const isMusl = detectMusl();
-  const pkg = isMusl ? '@rollup/rollup-linux-x64-musl' : '@rollup/rollup-linux-x64-gnu';
   const version = '4.52.4';
   const cwd = path.join(__dirname, '..');
-
-  log(`Installing ${pkg}@${version} (musl=${isMusl})...`);
+  log(`Installing ${pkg}@${version}...`);
   const res = spawnSync('npm', ['i', `${pkg}@${version}`, '--no-save'], {
     cwd,
     stdio: 'inherit',
