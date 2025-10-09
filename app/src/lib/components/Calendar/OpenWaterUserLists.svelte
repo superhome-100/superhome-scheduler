@@ -4,40 +4,40 @@
 
   export let filteredReservations: any[];
   export let findAssignment: (uid: string, period: 'AM' | 'PM') => { buoy: string; boat: string };
-  export let loadingMyAssignments: boolean;
   export let onShowReservationDetails: (res: any) => void;
 </script>
 
 <div class="reservation-columns">
 <div class="reservation-table">
   <h3>AM Reservations</h3>
-  {#if loadingMyAssignments}
-    <div class="loading">Loading assignments...</div>
-  {:else if filteredReservations.filter((r) => r.res_type === 'open_water' && r?.time_period === 'AM').length > 0}
+  {#if filteredReservations.filter((r) => r.res_type === 'open_water' && r?.time_period === 'AM').length > 0}
     <div class="reservation-list compact">
       {#each filteredReservations.filter((r) => r.res_type === 'open_water' && r?.time_period === 'AM') as res (res.uid)}
         <div
           class="reservation-item compact"
+          class:status-confirmed={res.res_status === 'confirmed'}
+          class:status-pending={res.res_status === 'pending'}
+          class:status-rejected={res.res_status === 'rejected'}
           on:click={() => onShowReservationDetails(res)}
           on:keydown={(e) => e.key === 'Enter' && onShowReservationDetails(res)}
           role="button"
           tabindex="0"
           aria-label="View reservation details"
         >
-          <div class="compact-content">
-            <span class="compact-date">{formatDateForCalendar(res.res_date)}</span>
-            <span class="compact-time">{res?.time_period || 'AM'}</span>
-            <span class="compact-assignment">
-              {findAssignment(res.uid, 'AM').buoy} {findAssignment(res.uid, 'AM').boat}
-            </span>
-            <span class="type-badge compact openwater">
-              {getOpenWaterTypeDisplay(res?.open_water_type)}
-            </span>
-            <span class="status-badge compact" class:confirmed={res.res_status === 'confirmed'} class:pending={res.res_status === 'pending'} class:rejected={res.res_status === 'rejected'}>
-              {res.res_status || 'pending'}
-            </span>
+            <div class="compact-content">
+              <span class="compact-date">{formatDateForCalendar(res.res_date)}</span>
+              <span class="compact-time">{res?.time_period || 'AM'}</span>
+              <span class="compact-assignment">
+                {findAssignment(res.uid, 'AM').buoy} {findAssignment(res.uid, 'AM').boat}
+              </span>
+              <span class="type-badge compact openwater">
+                {getOpenWaterTypeDisplay(res?.open_water_type)}
+              </span>
+              <span class="status-badge compact" class:confirmed={res.res_status === 'confirmed'} class:pending={res.res_status === 'pending'} class:rejected={res.res_status === 'rejected'}>
+                {res.res_status || 'pending'}
+              </span>
+            </div>
           </div>
-        </div>
       {/each}
     </div>
   {:else}
@@ -49,13 +49,14 @@
 
  <div class="reservation-table">
   <h3>PM Reservations</h3>
-  {#if loadingMyAssignments}
-    <div class="loading">Loading assignments...</div>
-  {:else if filteredReservations.filter((r) => r.res_type === 'open_water' && r?.time_period === 'PM').length > 0}
+  {#if filteredReservations.filter((r) => r.res_type === 'open_water' && r?.time_period === 'PM').length > 0}
     <div class="reservation-list compact">
       {#each filteredReservations.filter((r) => r.res_type === 'open_water' && r?.time_period === 'PM') as res (res.uid)}
         <div
           class="reservation-item compact"
+          class:status-confirmed={res.res_status === 'confirmed'}
+          class:status-pending={res.res_status === 'pending'}
+          class:status-rejected={res.res_status === 'rejected'}
           on:click={() => onShowReservationDetails(res)}
           on:keydown={(e) => e.key === 'Enter' && onShowReservationDetails(res)}
           role="button"
@@ -161,6 +162,22 @@
     box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
   }
 
+  /* Status-based styling for reservation items */
+  .reservation-item.status-confirmed {
+    border-left: 4px solid #10b981;
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%);
+  }
+
+  .reservation-item.status-pending {
+    border-left: 4px solid #f59e0b;
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);
+  }
+
+  .reservation-item.status-rejected {
+    border-left: 4px solid #ef4444;
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.05) 0%, transparent 100%);
+  }
+
   .compact-content {
     display: flex;
     align-items: center;
@@ -215,18 +232,21 @@
   }
 
   .status-badge.confirmed {
-    background: #d1fae5;
-    color: #065f46;
+    background: #10b981;
+    color: #ffffff;
+    font-weight: 700;
   }
 
   .status-badge.pending {
-    background: #fef3c7;
-    color: #92400e;
+    background: #f59e0b;
+    color: #ffffff;
+    font-weight: 700;
   }
 
   .status-badge.rejected {
-    background: #fecaca;
-    color: #991b1b;
+    background: #ef4444;
+    color: #ffffff;
+    font-weight: 700;
   }
 
   .empty-state {

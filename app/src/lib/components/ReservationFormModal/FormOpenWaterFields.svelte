@@ -63,18 +63,18 @@
 {#if formData.openWaterType === 'course_coaching'}
   <div class="form-group">
     <label for="studentCount" class="form-label">No. of Students *</label>
-    <input
+    <select
       id="studentCount"
-      type="number"
-      min="1"
-      max="3"
-      inputmode="numeric"
-      pattern="[0-9]*"
       class="form-control"
       class:error={errors.studentCount}
       bind:value={formData.studentCount}
       required
-    />
+    >
+      <option value="">Select number of students</option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+    </select>
     {#if errors.studentCount}
       <span class="error-message">{errors.studentCount}</span>
     {/if}

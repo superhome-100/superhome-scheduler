@@ -11,12 +11,10 @@
   import ClassroomCalendar from './ClassroomCalendar.svelte';
   import { pullToRefresh } from '../../actions/pullToRefresh';
   import {
-    getCurrentUserId,
     loadAvailableBuoys as svcLoadAvailableBuoys,
     updateBoatAssignment as svcUpdateBoat,
     updateBuoyAssignment as svcUpdateBuoy,
     type Buoy,
-    type MyAssignment,
     type TimePeriod
   } from '../../services/openWaterService';
 
@@ -47,31 +45,36 @@
   let selectedCalendarType: 'pool' | 'openwater' | 'classroom' = 'pool';
   let initializedCalendarType = false;
   
-  // Initialize from URL parameter or parent-provided intent
+  // Initialize from parent-provided intent first, then URL parameter
   onMount(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const typeParam = urlParams.get('type');
-    if (typeParam && ['pool', 'openwater', 'classroom'].includes(typeParam)) {
-      selectedCalendarType = typeParam as 'pool' | 'openwater' | 'classroom';
-      initializedCalendarType = true;
-    } else if (initialType) {
+    console.log('SingleDayView: onMount - initialType:', initialType);
+    if (initialType) {
+      // Prioritize the initialType from parent component
       selectedCalendarType = initialType;
       initializedCalendarType = true;
+      console.log('SingleDayView: Set selectedCalendarType to initialType:', selectedCalendarType);
+    } else {
+      // Fallback to URL parameter if no initialType provided
+      const urlParams = new URLSearchParams(window.location.search);
+      const typeParam = urlParams.get('type');
+      if (typeParam && ['pool', 'openwater', 'classroom'].includes(typeParam)) {
+        selectedCalendarType = typeParam as 'pool' | 'openwater' | 'classroom';
+        initializedCalendarType = true;
+        console.log('SingleDayView: Set selectedCalendarType from URL:', selectedCalendarType);
+      }
     }
   });
+
+  // React to changes in initialType prop
+  $: if (initialType && initializedCalendarType) {
+    selectedCalendarType = initialType;
+  }
 
   const handleBackToCalendar = () => {
     dispatch('backToCalendar');
   };
 
-  // Current user (for user account single day view)
-  let currentUserUid: string | null = null;
-  let userLoaded = false;
-  
-  onMount(async () => {
-    currentUserUid = await getCurrentUserId();
-    userLoaded = true;
-  });
+  // Current user (for user account single day view) - no longer needed for data loading
 
   // (Display helpers removed; use findAssignment for user rows)
 
@@ -158,97 +161,32 @@
 
   // Helpers for user-facing reservations table
   function findAssignment(uid: string, period: TimePeriod) {
-    // For non-admin users, try to use myAssignments first
-    if (!isAdmin && myAssignments[period]) {
-      return { 
-        buoy: myAssignments[period]?.buoy_name || 'Not assigned', 
-        boat: myAssignments[period]?.boat || 'Not assigned' 
-      };
-    }
-    
-    // For non-admin users without myAssignments, show "Not assigned"
-    if (!isAdmin) {
+    // Use assignment data directly from the reservation object
+    // This ensures consistency with the main data source
+    const reservation = filteredReservations.find(r => r.uid === uid);
+    if (!reservation) {
       return { buoy: 'Not assigned', boat: 'Not assigned' };
     }
     
-    // For admin users, fallback to buoyGroups data
-    const group = buoyGroups.find((g) => g.time_period === period && Array.isArray(g.res_openwater) && g.res_openwater.some((r: any) => r.uid === uid));
-    if (!group) return { buoy: 'Not assigned', boat: 'Not assigned' };
-    return { buoy: group.buoy_name || 'Not assigned', boat: group.boat || 'Not assigned' };
+    // Use assignment data from the reservation itself
+    return { 
+      buoy: reservation.buoy || 'Not assigned', 
+      boat: reservation.boat || 'Not assigned' 
+    };
   }
 
-  // For non-admin users: fetch my assignment via user-safe RPC
-  type MyAssign = MyAssignment | null;
-  let myAssignments: Record<TimePeriod, MyAssign> = { AM: null, PM: null };
-  let loadingMyAssignments = false;
-
-  async function loadMyAssignments() {
-    if (!selectedDate || isAdmin || !currentUserUid || !userLoaded) return;
-    try {
-      loadingMyAssignments = true;
-      const { getMyAssignmentsViaRpc } = await import('../../services/openWaterService');
-      myAssignments = await getMyAssignmentsViaRpc(selectedDate);
-    } catch (e) {
-      console.warn('Error loading my assignments via edge function:', e);
-      myAssignments = { AM: null, PM: null };
-    } finally {
-      loadingMyAssignments = false;
-    }
-  }
-
-  // Fallback method to get user assignments by querying buoy groups directly
-  async function loadMyAssignmentsDirect() {
-    // Deprecated: Direct table access removed in favor of Edge Functions
-    myAssignments = { AM: null, PM: null };
-  }
+  // Assignment data is now included in the main reservations data
+  // No need for separate loading functions
 
   function showReservationDetails(res: any) {
-    const period = (res?.time_period === 'AM' ? 'AM' : 'PM') as TimePeriod;
-    let buoy = 'Not assigned';
-    let boat = 'Not assigned';
-    let divers: string[] = [];
-
-    if (isAdmin) {
-      const group = buoyGroups.find(
-        (g) =>
-          g.time_period === period &&
-          Array.isArray(g.res_openwater) &&
-          g.res_openwater.some((r: any) => r.uid === res.uid)
-      );
-      if (group) {
-        buoy = group.buoy_name || 'Not assigned';
-        boat = group.boat || 'Not assigned';
-        divers = (group.member_names || []).filter(Boolean) as string[];
-      }
-    } else {
-      const assign = myAssignments[period];
-      buoy = assign?.buoy_name || 'Not assigned';
-      boat = assign?.boat || 'Not assigned';
-    }
-
-    const details = `Reservation Details\n\n` +
-      `Date: ${dayjs(res.res_date).format('YYYY-MM-DD')}\n` +
-      `Type: ${res.res_type}\n` +
-      `Status: ${res.res_status}\n` +
-      `Time: ${res?.time_period || ''}\n` +
-      `Depth: ${res?.depth_m ?? ''}\n` +
-      `Buoy: ${buoy}\n` +
-      `Boat: ${boat}\n` +
-      `Divers: ${divers.length ? divers.join(', ') : 'None'}`;
-
-    alert(details);
+    // Dispatch reservationClick event to parent component to show modal
+    dispatch('reservationClick', res);
   }
 
-  // Load buoy groups when date changes (admin only)
+  // Load buoy groups when date changes (admin only) - only for admin table functionality
   $: if (isAdmin && selectedDate && selectedCalendarType === 'openwater') {
     loadBuoyGroups();
     loadAvailableBuoys();
-  }
-
-  // Load my assignment (non-admin) when date/view changes
-  $: if (!isAdmin && selectedDate && selectedCalendarType === 'openwater' && userLoaded) {
-    // For non-admin users, only load assignments (not buoy groups)
-    loadMyAssignments();
   }
 
   // Update boat assignment for a buoy group
@@ -275,9 +213,9 @@
     if (selectedCalendarType === 'openwater') {
       if (isAdmin) {
         await Promise.all([loadBuoyGroups(), loadAvailableBuoys()]);
-      } else {
-        await loadMyAssignments();
       }
+      // For non-admin users, data is refreshed through the parent component
+      // No separate data loading needed
     }
   }
 
@@ -319,7 +257,6 @@
             {:else}
           <OpenWaterUserLists
             {filteredReservations}
-            {loadingMyAssignments}
             findAssignment={findAssignment}
             onShowReservationDetails={showReservationDetails}
           />

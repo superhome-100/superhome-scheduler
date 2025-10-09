@@ -16,43 +16,59 @@
 <!-- Reservation Type Buttons -->
 <div class="flex justify-center mb-8 flex-wrap gap-6 button-container px-6 sm:px-4">
   <button 
-    class="btn btn-sm relative transition-all duration-200"
-    class:shadow-lg={selectedType === 'pool'}
-    class:text-white={selectedType === 'pool'}
-    class:bg-[#00294C]={selectedType === 'pool'}
-    class:border-[#00294C]={selectedType === 'pool'}
-    class:btn-outline={selectedType !== 'pool'}
-    class:active-button={selectedType === 'pool'}
+    class="btn btn-sm btn-outline"
+    class:btn-active={selectedType === 'pool'}
     on:click={() => selectType('pool')}
     title="Pool Reservations"
   >
-    <span class="font-medium" style="color: {selectedType === 'pool' ? 'white' : 'inherit'};">Pool</span>
+    Pool
   </button>
   <button 
-    class="btn btn-sm relative transition-all duration-200"
-    class:shadow-lg={selectedType === 'openwater'}
-    class:text-white={selectedType === 'openwater'}
-    class:bg-[#00294C]={selectedType === 'openwater'}
-    class:border-[#00294C]={selectedType === 'openwater'}
-    class:btn-outline={selectedType !== 'openwater'}
-    class:active-button={selectedType === 'openwater'}
+    class="btn btn-sm btn-outline"
+    class:btn-active={selectedType === 'openwater'}
     on:click={() => selectType('openwater')}
     title="Open Water Reservations"
   >
-    <span class="font-medium" style="color: {selectedType === 'openwater' ? 'white' : 'inherit'};">Open Water</span>
+    Open Water
   </button>
   <button 
-    class="btn btn-sm relative transition-all duration-200"
-    class:shadow-lg={selectedType === 'classroom'}
-    class:text-white={selectedType === 'classroom'}
-    class:bg-[#00294C]={selectedType === 'classroom'}
-    class:border-[#00294C]={selectedType === 'classroom'}
-    class:btn-outline={selectedType !== 'classroom'}
-    class:active-button={selectedType === 'classroom'}
+    class="btn btn-sm btn-outline"
+    class:btn-active={selectedType === 'classroom'}
     on:click={() => selectType('classroom')}
     title="Classroom Reservations"
   >
-    <span class="font-medium" style="color: {selectedType === 'classroom' ? 'white' : 'inherit'};">Classroom</span>
+    Classroom
   </button>
 </div>
 
+<style>
+  /* Smooth transitions for better UX */
+  .btn {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  /* Custom active button styling with distinct color */
+  .btn-active {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    color: white !important;
+  }
+  
+  .btn-active:hover {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+  }
+  
+  /* Mobile Responsive - Keep buttons compact on mobile */
+  @media (max-width: 768px) {
+    .btn {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+    }
+    
+    /* Reduce gap on mobile */
+    .flex.gap-6 {
+      gap: 0.5rem !important;
+    }
+  }
+</style>

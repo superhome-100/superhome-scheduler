@@ -1,16 +1,10 @@
 <script lang="ts">
-  import Sidebar from '../../lib/components/Sidebar/Sidebar.svelte';
   import AdminHeader from '../../lib/components/AdminDashboard/AdminHeader.svelte';
   import { authStore, auth } from '../../lib/stores/auth';
   import { onMount } from 'svelte';
-  import { getUserInfo } from '../../lib/stores/sidebar';
 
   let isAdmin = false;
   let checked = false;
-  let signingOut = false;
-
-  // Use reactive authStore for user info
-  $: ({ userEmail, userName, userAvatarUrl, userInitial } = getUserInfo($authStore));
 
   onMount(async () => {
     console.log('Admin Layout: Initializing...');
@@ -63,29 +57,15 @@
     checked,
     isAdmin
   });
-
-  async function handleSignOut() {
-    if (signingOut) return;
-    signingOut = true;
-    await auth.signOut();
-    // Redirect is now handled by auth.signOut()
-  }
 </script>
 
 {#if checked}
   {#if isAdmin}
-    <div class="dashboard-container">
-      <div class="drawer lg:drawer-open dashboard-layout">
-        <!-- Sidebar for desktop and mobile drawer -->
-        <Sidebar isAdmin={true} {userName} {userEmail} {userAvatarUrl} {userInitial} on:signOut={handleSignOut} />
-
-        <!-- Main content area -->
-        <main class="drawer-content main-content">
-          <AdminHeader />
-          <div class="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-            <slot />
-          </div>
-        </main>
+    <!-- Admin content - Sidebar is handled by parent layout -->
+    <AdminHeader />
+    <div class="p-4 sm:p-6 lg:p-8">
+      <div class="max-w-7xl w-full mx-auto">
+        <slot />
       </div>
     </div>
   {:else}
@@ -101,33 +81,3 @@
     <span class="loading loading-spinner loading-lg" aria-label="Loading admin..."></span>
   </div>
 {/if}
-
-<style>
-  .dashboard-container {
-    height: 100vh;
-    background: #f8fafc;
-    overflow: hidden; /* prevent body + inner double scroll */
-  }
-
-  .dashboard-layout {
-    display: flex;
-    height: 100vh;
-  }
-
-  .main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0; /* allow child scroll container to size */
-    overflow: hidden; /* only inner content scrolls */
-    margin-left: 0; /* No margin on mobile */
-  }
-
-  /* Desktop: Add left margin to account for fixed sidebar (w-80 = 20rem) */
-  @media (min-width: 1024px) {
-    .main-content {
-      margin-left: 20rem; /* 320px - matches sidebar width */
-    }
-  }
-</style>

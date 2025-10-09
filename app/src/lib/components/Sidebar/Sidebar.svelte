@@ -26,8 +26,8 @@
 </script>
 
 <!-- Desktop Sidebar - Always visible on desktop -->
-<div class="drawer-side desktop-sidebar w-80">
-  <div class="sidebar-container" data-theme="nord">
+<aside class="w-80 bg-gray-100 text-gray-900 hidden lg:block fixed top-0 left-0 h-screen z-50 overflow-hidden">
+  <div class="sidebar-container">
     <!-- Sidebar Header -->
     <div class="sidebar-header">
       <div class="text-xl font-semibold">
@@ -55,12 +55,12 @@
       />
     </div>
   </div>
-</div>
+</aside>
 
 <!-- Mobile Drawer - Only visible when open on mobile -->
 {#if $mobileDrawerOpen}
-  <div class="drawer-side mobile-drawer w-80">
-    <div class="sidebar-container" data-theme="nord">
+  <aside class="mobile-sidebar w-80 bg-gray-100 text-gray-900 lg:hidden fixed top-0 left-0 h-full z-50">
+    <div class="sidebar-container">
       <!-- Sidebar Header with Close Button -->
       <div class="sidebar-header">
         <div class="text-xl font-semibold">
@@ -88,7 +88,7 @@
         />
       </div>
     </div>
-  </div>
+  </aside>
 {/if}
 
 <!-- Mobile Overlay - Only visible when mobile drawer is open -->
@@ -115,14 +115,14 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
-    background-color: #e9ecef; /* bg-base-300 equivalent */
     width: 100%;
+    overflow: hidden;
   }
 
   .sidebar-header {
     flex-shrink: 0;
     padding: 1rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   }
 
   .sidebar-content {
@@ -134,42 +134,29 @@
   .sidebar-footer {
     flex-shrink: 0;
     padding: 1rem;
-    border-top: 1px solid #e5e7eb;
-    background-color: #e9ecef; /* bg-base-300 equivalent */
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
     margin-top: auto;
   }
 
-  /* Desktop Sidebar - Always visible on desktop */
-  .desktop-sidebar {
-    display: none; /* Hidden on mobile by default */
+  /* Mobile Sidebar Specific Styles */
+  .mobile-sidebar {
+    background-color: #f8f9fa !important; /* Force gray-100 background */
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    opacity: 1 !important; /* Ensure it's not transparent */
   }
 
-  @media (min-width: 1024px) {
-    .desktop-sidebar {
-      display: flex;
-      flex-direction: column;
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 40;
-      width: 20rem; /* Match w-80 */
-    }
+  /* Ensure mobile sidebar content has proper background */
+  .mobile-sidebar .sidebar-container {
+    background-color: #f8f9fa !important;
+    opacity: 1 !important;
   }
 
-  /* Mobile Drawer - Hidden by default, shown when mobileDrawerOpen is true */
-  .mobile-drawer {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 50;
-  }
-
-  /* Hide mobile drawer on desktop (1024px and up) */
-  @media (min-width: 1024px) {
-    .mobile-drawer {
-      display: none !important;
-    }
+  /* Ensure all mobile sidebar elements have proper background */
+  .mobile-sidebar .sidebar-header,
+  .mobile-sidebar .sidebar-content,
+  .mobile-sidebar .sidebar-footer {
+    background-color: transparent !important;
   }
 
   /* Mobile Overlay */

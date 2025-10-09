@@ -115,7 +115,6 @@
                 {displayStatus}
               </span>
             </div>
-            <div class="reservation-date">{dayjs(displayDate).format('dddd, MMMM D, YYYY')}</div>
           </div>
 
           <!-- Main details -->
@@ -125,21 +124,6 @@
               <span class="detail-value">{dayjs(displayDate).format('dddd, MMMM D, YYYY')}</span>
             </div>
 
-            <div class="detail-item">
-              <span class="detail-label">Time</span>
-              <span class="detail-value">
-                {#if displayStartTime && displayEndTime}
-                  {dayjs(`2000-01-01T${displayStartTime}`).format('h:mm A')} - {dayjs(`2000-01-01T${displayEndTime}`).format('h:mm A')}
-                {:else if displayTimePeriod}
-                  {displayTimePeriod}
-                {:else}
-                  {dayjs(displayDate).format('h:mm A')}
-                {/if}
-                {#if reservation.timeOfDay}
-                  <span class="time-period">({reservation.timeOfDay})</span>
-                {/if}
-              </span>
-            </div>
 
             <div class="detail-item">
               <span class="detail-label">Type</span>
@@ -219,33 +203,41 @@
                   <span class="detail-value">{reservation.buoy}</span>
                 </div>
               {/if}
-              <!-- Auto adjust closest functionality removed -->
-              {#if reservation.pulley !== null}
-                <div class="detail-item">
-                  <span class="detail-label">Pulley</span>
-                  <span class="detail-value">{reservation.pulley ? 'Yes' : 'No'}</span>
-                </div>
-              {/if}
-              {#if reservation.deep_fim_training !== null}
-                <div class="detail-item">
-                  <span class="detail-label">Deep FIM Training</span>
-                  <span class="detail-value">{reservation.deep_fim_training ? 'Yes' : 'No'}</span>
-                </div>
-              {/if}
-              {#if reservation.bottom_plate !== null}
-                <div class="detail-item">
-                  <span class="detail-label">Bottom Plate</span>
-                  <span class="detail-value">{reservation.bottom_plate ? 'Yes' : 'No'}</span>
-                </div>
-              {/if}
-              {#if reservation.large_buoy !== null}
-                <div class="detail-item">
-                  <span class="detail-label">Large Buoy</span>
-                  <span class="detail-value">{reservation.large_buoy ? 'Yes' : 'No'}</span>
-                </div>
-              {/if}
             {/if}
           </div>
+
+          <!-- Equipment Grid (2x2) -->
+          {#if (reservation.pulley !== null || reservation.deep_fim_training !== null || reservation.bottom_plate !== null || reservation.large_buoy !== null)}
+            <div class="equipment-section">
+              <h3 class="equipment-title">Equipment</h3>
+              <div class="equipment-grid">
+                {#if reservation.pulley !== null}
+                  <div class="detail-item">
+                    <span class="detail-label">Pulley</span>
+                    <span class="detail-value">{reservation.pulley ? 'Yes' : 'No'}</span>
+                  </div>
+                {/if}
+                {#if reservation.deep_fim_training !== null}
+                  <div class="detail-item">
+                    <span class="detail-label">Deep FIM Training</span>
+                    <span class="detail-value">{reservation.deep_fim_training ? 'Yes' : 'No'}</span>
+                  </div>
+                {/if}
+                {#if reservation.bottom_plate !== null}
+                  <div class="detail-item">
+                    <span class="detail-label">Bottom Plate</span>
+                    <span class="detail-value">{reservation.bottom_plate ? 'Yes' : 'No'}</span>
+                  </div>
+                {/if}
+                {#if reservation.large_buoy !== null}
+                  <div class="detail-item">
+                    <span class="detail-label">Large Buoy</span>
+                    <span class="detail-value">{reservation.large_buoy ? 'Yes' : 'No'}</span>
+                  </div>
+                {/if}
+              </div>
+            </div>
+          {/if}
 
           {#if displayNotes}
             <div class="notes-section">
@@ -281,7 +273,7 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    padding: 1rem;
+    padding: 2rem;
   }
 
   .modal-content {
@@ -300,8 +292,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 0.75rem 1.5rem 0 1.5rem;
+    border-bottom: none;
   }
 
   .modal-title {
@@ -309,6 +301,7 @@
     font-weight: 600;
     color: #1e293b;
     margin: 0;
+    line-height: 1;
   }
 
   .modal-close {
@@ -327,14 +320,14 @@
   }
 
   .modal-body {
-    padding: 1.5rem;
+    padding: 0 1.5rem 1.5rem 1.5rem;
     flex: 1;
   }
 
   .reservation-details {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 0;
   }
 
   .reservation-header {
@@ -342,6 +335,7 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: 1rem;
+    margin-bottom: 1rem;
   }
 
   .badges {
@@ -413,12 +407,6 @@
     color: #7c3aed;
   }
 
-  .reservation-date {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #64748b;
-    text-align: right;
-  }
 
   .details-grid {
     display: grid;
@@ -446,11 +434,24 @@
     font-weight: 500;
   }
 
-  .time-period {
-    font-size: 0.75rem;
-    color: #64748b;
-    font-style: italic;
-    margin-left: 0.25rem;
+
+  .equipment-section {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 1rem;
+    margin-top: 1rem;
+  }
+
+  .equipment-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 0.75rem 0;
+  }
+
+  .equipment-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 
   .notes-section {
@@ -508,41 +509,95 @@
 
     .modal-content {
       max-height: 95vh;
+      margin: 0;
+    }
+
+    .modal-header {
+      padding: 0.5rem 0.75rem;
+    }
+
+    .modal-title {
+      font-size: 0.875rem;
+    }
+
+    .modal-body {
+      padding: 0.5rem 0.75rem;
+    }
+
+    .reservation-details {
+      gap: 0.75rem;
     }
 
     .reservation-header {
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.375rem;
+      margin-bottom: 0.5rem;
     }
 
-    .reservation-date {
-      text-align: left;
+    .badges {
+      gap: 0.375rem;
+    }
+
+    .type-badge, .status-badge {
+      font-size: 0.625rem;
+      padding: 0.1875rem 0.375rem;
     }
 
     .details-grid {
       grid-template-columns: 1fr 1fr;
-      gap: 0.5rem;
+      gap: 0.25rem;
     }
 
     .detail-item {
-      padding: 0.5rem;
-      font-size: 0.75rem;
-    }
-
-    .detail-label {
+      padding: 0.25rem;
       font-size: 0.6875rem;
     }
 
+    .detail-label {
+      font-size: 0.625rem;
+    }
+
     .detail-value {
+      font-size: 0.6875rem;
+    }
+
+    .equipment-section {
+      margin-top: 0;
+      padding-top: 0.5rem;
+    }
+
+    .equipment-title {
       font-size: 0.75rem;
+      margin-bottom: 0.375rem;
+    }
+
+    .equipment-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.25rem;
+    }
+
+    .notes-section {
+      margin-top: 0;
+      padding-top: 0.5rem;
+    }
+
+    .notes-title {
+      font-size: 0.75rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .notes-content {
+      font-size: 0.6875rem;
     }
 
     .modal-actions {
-      padding: 1rem;
+      padding: 0.5rem 0.75rem;
     }
 
     .btn {
       width: 100%;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.75rem;
     }
   }
 </style>
