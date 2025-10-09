@@ -1,8 +1,20 @@
-  <script lang="ts">
+<script lang="ts">
   import { sidebarActions } from '../../stores/sidebar';
 </script>
 
 <style>
+  .reservation-header {
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
   .mobile-menu-button {
     display: block;
     background: transparent;
@@ -18,6 +30,19 @@
   .mobile-menu-button:active {
     background-color: rgba(0, 41, 76, 0.15);
     color: #00294C;
+  }
+  
+  .reservation-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+  }
+
+  .reservation-subtitle {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin: 0;
   }
   
   .header-content {
@@ -65,8 +90,8 @@
   }
 </style>
 
-<!-- Sticky Header -->
-<div class="bg-base-100 shadow-sm sticky top-0 z-10 mt-2 sm:mt-3 md:mt-4">
+<!-- Sticky Header with Calendar-style outline -->
+<div class="reservation-header">
   <div class="px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-5 lg:px-8 lg:py-6 xl:px-10 xl:py-6 2xl:px-12 2xl:py-6 max-w-7xl mx-auto w-full">
     <div class="flex items-center gap-4 header-content">
       <!-- Mobile Menu Toggle Button -->
@@ -82,8 +107,8 @@
       </button>
       
       <div class="flex-1">
-        <h1 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2" style="color: #00294C;">Reservations</h1>
-        <p class="text-sm sm:text-base mb-2 sm:mb-3 md:mb-4" style="color: #00294C;">Manage your reservations</p>
+        <h1 class="reservation-title">Reservations</h1>
+        <p class="reservation-subtitle">Manage your reservations</p>
       </div>
     </div>
   </div>

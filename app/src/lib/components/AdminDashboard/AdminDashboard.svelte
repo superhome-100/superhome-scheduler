@@ -314,11 +314,16 @@
               on:reservationClick={handleCalendarEventClick}
             />
           {:else}
-            <AdminCalendar 
-              {reservations}
-              {loading}
-              on:dateClick={handleCalendarDateClick}
-            />
+            <!-- Calendar Content Card -->
+            <div class="card bg-base-100 shadow-lg border border-base-300">
+              <div class="card-body p-6">
+                <AdminCalendar 
+                  {reservations}
+                  {loading}
+                  on:dateClick={handleCalendarDateClick}
+                />
+              </div>
+            </div>
           {/if}
         {:else if adminView === 'users'}
           <UserManagement 

@@ -245,7 +245,7 @@
 
       <!-- Pull-to-Refresh Body -->
       <PullToRefresh onRefresh={handleRefresh} {refreshing}>
-        <div class="flex-1 p-6 max-w-6xl mx-auto w-full">
+        <div class="flex-1 p-6 max-w-7xl mx-auto w-full">
           <div class="flex flex-col gap-6">
             <!-- Desktop Reservations -->
             <DesktopReservations 
@@ -285,7 +285,7 @@
         </div>
       </PullToRefresh>
     {:else if currentView === '/reservation'}
-      <Reservation />
+      <Reservation key={currentView} />
     {:else if currentView === '/admin' || currentView === '/admin/calendar' || currentView === '/admin/users'}
       <AdminDashboard />
     {/if}
@@ -294,15 +294,8 @@
 
 <style>
   .dashboard-container {
-    /* Mobile: No margin needed as sidebar is a drawer */
+    /* Sidebar positioning is handled by the main layout's drawer structure */
     margin-left: 0;
-  }
-
-  /* Desktop: Add margin to account for sidebar width (20rem = 320px) */
-  @media (min-width: 1024px) {
-    .dashboard-container {
-      margin-left: 20rem; /* 320px - matches sidebar width */
-    }
   }
 </style>
 

@@ -31,43 +31,28 @@
 <!-- Admin Calendar Type Buttons -->
 <div class="flex justify-center mb-8 flex-wrap gap-6">
   <button 
-    class="btn btn-sm relative transition-all duration-200"
-    class:shadow-lg={selectedType === 'pool'}
-    class:text-white={selectedType === 'pool'}
-    class:bg-[#00294C]={selectedType === 'pool'}
-    class:border-[#00294C]={selectedType === 'pool'}
-    class:btn-outline={selectedType !== 'pool'}
-    class:active-button={selectedType === 'pool'}
+    class="btn btn-sm btn-outline"
+    class:btn-active={selectedType === 'pool'}
     on:click={() => selectType('pool')}
     title="Pool Reservations"
   >
-    <span class="font-medium">Pool</span>
+    Pool
   </button>
   <button 
-    class="btn btn-sm relative transition-all duration-200"
-    class:shadow-lg={selectedType === 'openwater'}
-    class:text-white={selectedType === 'openwater'}
-    class:bg-[#00294C]={selectedType === 'openwater'}
-    class:border-[#00294C]={selectedType === 'openwater'}
-    class:btn-outline={selectedType !== 'openwater'}
-    class:active-button={selectedType === 'openwater'}
+    class="btn btn-sm btn-outline"
+    class:btn-active={selectedType === 'openwater'}
     on:click={() => selectType('openwater')}
     title="Open Water Reservations"
   >
-    <span class="font-medium">Open Water</span>
+    Open Water
   </button>
   <button 
-    class="btn btn-sm relative transition-all duration-200"
-    class:shadow-lg={selectedType === 'classroom'}
-    class:text-white={selectedType === 'classroom'}
-    class:bg-[#00294C]={selectedType === 'classroom'}
-    class:border-[#00294C]={selectedType === 'classroom'}
-    class:btn-outline={selectedType !== 'classroom'}
-    class:active-button={selectedType === 'classroom'}
+    class="btn btn-sm btn-outline"
+    class:btn-active={selectedType === 'classroom'}
     on:click={() => selectType('classroom')}
     title="Classroom Reservations"
   >
-    <span class="font-medium">Classroom</span>
+    Classroom
   </button>
 </div>
 
@@ -77,18 +62,16 @@
     transition: all 0.2s ease-in-out;
   }
   
-  /* Force white text on active buttons */
-  .active-button {
+  /* Custom active button styling with distinct color */
+  .btn-active {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
     color: white !important;
   }
   
-  .active-button span {
-    color: white !important;
-  }
-  
-  /* Ensure proper spacing between buttons */
-  .flex.gap-6 > * + * {
-    margin-left: 0.5rem !important;
+  .btn-active:hover {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
   }
   
   /* Mobile Responsive - Keep buttons compact on mobile */

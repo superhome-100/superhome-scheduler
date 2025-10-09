@@ -75,6 +75,7 @@
     const detail: any = event.detail;
     selectedDate = typeof detail === 'string' ? detail : detail?.date;
     initialSingleDayType = typeof detail === 'string' ? selectedType : (detail?.type || selectedType);
+    console.log('Reservation: Date clicked - selectedType:', selectedType, 'initialSingleDayType:', initialSingleDayType, 'detail:', detail);
     showSingleDayView = true;
   };
 
@@ -97,9 +98,22 @@
         .from('reservations')
         .select(`
           *,
-          res_pool!left(start_time, end_time, lane, note, res_status),
-          res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, note, res_status),
-          res_classroom!left(start_time, end_time, room, note, res_status)
+          res_pool!left(start_time, end_time, lane, note),
+          res_openwater!left(
+            time_period, 
+            depth_m, 
+            buoy, 
+            pulley, 
+            deep_fim_training, 
+            bottom_plate, 
+            large_buoy, 
+            open_water_type, 
+            student_count, 
+            note,
+            group_id,
+            buoy_group!left(buoy_name, boat)
+          ),
+          res_classroom!left(start_time, end_time, room, note)
         `)
         .eq('uid', $authStore.user.id)
         .order('res_date', { ascending: true });
@@ -116,10 +130,7 @@
           flattened.end_time = reservation.res_pool.end_time;
           flattened.lane = reservation.res_pool.lane;
           flattened.note = reservation.res_pool.note;
-          // Use the status from the detail table if available
-          if (reservation.res_pool.res_status) {
-            flattened.res_status = reservation.res_pool.res_status;
-          }
+          // Note: Use main reservation status, not detail table status
         } else if (reservation.res_type === 'open_water' && reservation.res_openwater) {
           flattened.time_period = reservation.res_openwater.time_period;
           flattened.depth_m = reservation.res_openwater.depth_m;
@@ -132,25 +143,25 @@
           flattened.open_water_type = reservation.res_openwater.open_water_type;
           flattened.student_count = reservation.res_openwater.student_count;
           flattened.note = reservation.res_openwater.note;
-          // Use the status from the detail table if available
-          if (reservation.res_openwater.res_status) {
-            flattened.res_status = reservation.res_openwater.res_status;
+          // Note: Use main reservation status, not detail table status
+          // Include assignment data from buoy_group
+          if (reservation.res_openwater.buoy_group) {
+            flattened.buoy = reservation.res_openwater.buoy_group.buoy_name || flattened.buoy;
+            flattened.boat = reservation.res_openwater.buoy_group.boat;
           }
         } else if (reservation.res_type === 'classroom' && reservation.res_classroom) {
           flattened.start_time = reservation.res_classroom.start_time;
           flattened.end_time = reservation.res_classroom.end_time;
           flattened.room = reservation.res_classroom.room;
           flattened.note = reservation.res_classroom.note;
-          // Use the status from the detail table if available
-          if (reservation.res_classroom.res_status) {
-            flattened.res_status = reservation.res_classroom.res_status;
-          }
+          // Note: Use main reservation status, not detail table status
         }
         
         // Remove the joined table objects to avoid confusion
         delete flattened.res_pool;
         delete flattened.res_openwater;
         delete flattened.res_classroom;
+        // Note: buoy_group data is already flattened into buoy and boat fields
         
         return flattened;
       });
@@ -194,6 +205,19 @@
     // Load reservations
     loadReservations();
   });
+
+  // Reactive statement to ensure data is loaded when component becomes visible
+  // This handles the case when navigating from Dashboard to Reservation page
+  $: if ($authStore.user && !loading && reservations.length === 0) {
+    loadReservations();
+  }
+
+  // Additional reactive statement to handle navigation from Dashboard
+  $: if ($authStore.user && !loading) {
+    if (reservations.length === 0) {
+      loadReservations();
+    }
+  }
 </script>
 
 <div class="min-h-screen bg-base-200">
@@ -216,7 +240,7 @@
 
   <!-- Pull-to-Refresh Body -->
   <PullToRefresh onRefresh={handleRefresh} {refreshing}>
-    <div class="flex-1 p-6 max-w-6xl mx-auto w-full">
+    <div class="flex-1 px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-5 lg:px-8 lg:py-6 xl:px-10 xl:py-6 2xl:px-12 2xl:py-6 max-w-7xl mx-auto w-full">
       {#if loading}
         <div class="flex flex-col items-center justify-center min-h-96 text-center">
           <LoadingSpinner size="md" />
@@ -242,19 +266,25 @@
             on:reservationClick={handleReservationClick}
           />
         {:else}
-          <!-- Reservation Type Buttons -->
-          <ReservationTypeButtons 
-            {selectedType}
-            on:typeSelected={handleTypeSelected}
-          />
+          <!-- Calendar Content Card -->
+          <div class="card bg-base-100 shadow-lg border border-base-300">
+            <div class="card-body p-6">
+              <!-- Reservation Type Buttons -->
+              <ReservationTypeButtons 
+                {selectedType}
+                on:typeSelected={handleTypeSelected}
+              />
 
-          <!-- Calendar Section -->
-          <ReservationCalendar 
-            {selectedType} 
-            {reservations}
-            on:reservationClick={handleReservationClick}
-            on:dateClick={handleCalendarDateClick}
-          />
+              <!-- Calendar Section -->
+              <ReservationCalendar 
+                {selectedType}
+                {reservations}
+                {loading}
+                on:reservationClick={handleReservationClick}
+                on:dateClick={handleCalendarDateClick}
+              />
+            </div>
+          </div>
         {/if}
       {/if}
     </div>

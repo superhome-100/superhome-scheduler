@@ -1,25 +1,49 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* Custom component classes using Tailwind utilities */
 @layer components {
   /* Glass morphism effects */
   .glass-container {
-    @apply bg-primary/10 border border-primary/20 rounded-3xl backdrop-blur-xl relative z-10 shadow-glass;
+    @apply rounded-3xl backdrop-blur-xl relative z-10;
+    background-color: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   }
   
   .glass-container::before {
-    @apply absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-3xl;
+    @apply absolute inset-0 rounded-3xl;
+    background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), transparent);
   }
 
   /* Button variants */
   .btn-superhome-primary {
-    @apply bg-primary text-primary-content border border-primary px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:bg-primary/80 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/50;
+    @apply px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:-translate-y-0.5 focus:outline-none;
+    background-color: #3b82f6;
+    border: 1px solid #3b82f6;
+    color: #ffffff;
+  }
+  
+  .btn-superhome-primary:hover {
+    background-color: #2563eb;
+  }
+  
+  .btn-superhome-primary:focus {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
   }
   
   .btn-superhome-secondary {
-    @apply bg-primary/20 text-primary border border-primary/30 px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:bg-primary/30 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/50;
+    @apply px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:-translate-y-0.5 focus:outline-none;
+    background-color: rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #3b82f6;
+  }
+  
+  .btn-superhome-secondary:hover {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+  
+  .btn-superhome-secondary:focus {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
   }
 
   /* Status badges */
@@ -28,20 +52,34 @@
   }
   
   .status-pending {
-    @apply bg-warning/10 text-warning border border-warning/20;
+    @apply border;
+    background-color: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
   }
   
   .status-approved {
-    @apply bg-success/10 text-success border border-success/20;
+    @apply border;
+    background-color: rgba(34, 197, 94, 0.1);
+    border-color: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
   }
   
   .status-rejected {
-    @apply bg-error/10 text-error border border-error/20;
+    @apply border;
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
   }
 
   /* Form elements */
   .form-control-superhome {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white transition-colors duration-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20;
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white transition-colors duration-200 focus:outline-none;
+  }
+  
+  .form-control-superhome:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
   }
   
   .form-label-superhome {
@@ -50,7 +88,8 @@
 
   /* Loading states */
   .loading-spinner {
-    @apply border-2 border-transparent border-t-primary rounded-full animate-spin;
+    @apply border-2 border-transparent rounded-full animate-spin;
+    border-top-color: #3b82f6;
   }
 
   /* Sidebar background fix */
@@ -72,37 +111,7 @@
     background: #ffffff !important;
   }
 
-  /* Ensure sidebar is visible on desktop (1024px and up) */
-  @media (min-width: 1024px) {
-    aside.w-72,
-    aside.w-64,
-    .desktop-sidebar {
-      display: flex !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-  }
-
-  /* Hide sidebar on mobile (below 1024px) */
-  @media (max-width: 1023px) {
-    aside.w-72,
-    aside.w-64,
-    .desktop-sidebar {
-      display: none !important;
-    }
-    
-    /* Force white background for mobile sidebar */
-    aside.w-70,
-    .mobile-drawer {
-      background-color: #ffffff !important;
-      background: #ffffff !important;
-    }
-    
-    .mobile-sidebar-white {
-      background-color: #ffffff !important;
-      background: #ffffff !important;
-    }
-  }
+  /* DaisyUI drawer overrides - let DaisyUI handle the responsive behavior */
 
   /* Sidebar-specific utilities */
   .sidebar-padding-x {
@@ -214,17 +223,53 @@
     @apply flex-1 w-full;
   }
 
-  /* Ensure proper layout on desktop with sidebar */
+  /* Fixed sidebar utilities */
+  .sidebar-fixed {
+    @apply fixed top-0 left-0 h-screen z-50 overflow-hidden;
+    width: 320px; /* Ensure consistent width */
+  }
+
+  /* Prevent horizontal overflow */
+  .layout-container {
+    @apply min-h-screen flex overflow-hidden;
+  }
+
+  .content-container {
+    @apply flex-1 flex flex-col min-w-0 overflow-hidden;
+  }
+
+  .main-scrollable {
+    @apply flex-1 overflow-y-auto;
+  }
+
+  /* Main content wrapper with sidebar offset - Force override */
+  .main-content-wrapper {
+    @apply min-h-screen bg-gray-100;
+    margin-left: 0 !important;
+    width: 100% !important;
+    position: relative !important;
+    z-index: 10 !important;
+    left: 0 !important;
+  }
+
   @media (min-width: 1024px) {
-    .drawer-content {
-      margin-left: 20rem; /* Match sidebar width (w-80 = 20rem) */
+    .main-content-wrapper {
+      margin-left: 320px !important; /* 80 * 4 = 320px (w-80) */
+      width: calc(100% - 320px) !important;
+      left: 0 !important;
     }
   }
 
-  /* Mobile layout without sidebar margin */
-  @media (max-width: 1023px) {
-    .drawer-content {
-      margin-left: 0;
+  /* Additional override for layout container */
+  div.main-content-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  @media (min-width: 1024px) {
+    div.main-content-wrapper {
+      margin-left: 320px !important;
+      width: calc(100% - 320px) !important;
     }
   }
 }

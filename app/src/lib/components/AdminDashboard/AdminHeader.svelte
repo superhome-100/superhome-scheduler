@@ -3,6 +3,18 @@
 </script>
 
 <style>
+  .admin-header {
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
   .mobile-menu-button {
     display: block;
     background: transparent;
@@ -65,7 +77,8 @@
   }
 </style>
 
-<div class="bg-base-100 shadow-sm sticky top-0 z-10 mt-2 sm:mt-3 md:mt-4 pb-3 sm:pb-4 md:pb-5 lg:pb-6 xl:pb-6 2xl:pb-6">
+<!-- Sticky Header with Calendar-style outline -->
+<div class="admin-header">
   <div class="px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-5 lg:px-8 lg:py-6 xl:px-10 xl:py-6 2xl:px-12 2xl:py-6 max-w-7xl mx-auto w-full">
     <div class="flex items-center gap-4 header-content">
       <!-- Mobile Menu Toggle Button -->
@@ -80,10 +93,10 @@
         </svg>
       </button>
       
-        <div class="flex-1">
-          <h1 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2" style="color: #00294C;">Admin Dashboard</h1>
-          <p class="text-sm sm:text-base mb-2 sm:mb-3 md:mb-4" style="color: #00294C;">Manage users and reservations</p>
-        </div>
+      <div class="flex-1">
+        <h1 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2" style="color: #00294C;">Admin Dashboard</h1>
+        <p class="text-sm sm:text-base" style="color: #00294C;">Manage users and reservations</p>
+      </div>
     </div>
   </div>
 </div>

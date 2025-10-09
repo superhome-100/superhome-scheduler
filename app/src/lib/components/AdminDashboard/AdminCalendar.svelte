@@ -208,40 +208,38 @@
   });
 </script>
 
-<div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-  <!-- Calendar Type Buttons -->
-  <AdminCalendarTypeButtons 
-    bind:selectedType 
-    on:typeSelected={handleTypeSelected}
-  />
+<!-- Calendar Type Buttons -->
+<AdminCalendarTypeButtons 
+  bind:selectedType 
+  on:typeSelected={handleTypeSelected}
+/>
 
-  <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
-    <h2 class="text-xl font-semibold m-0" style="color: #00294C;">{sectionTitle}</h2>
+<div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+  <h2 class="text-xl font-semibold m-0" style="color: #00294C;">{sectionTitle}</h2>
+</div>
+
+<div class="relative rounded-lg overflow-hidden border border-slate-200 min-h-[400px] md:min-h-[600px]">
+  {#if loading}
+    <div class="absolute inset-0 bg-white/90 flex flex-col items-center justify-center z-10">
+      <div class="w-8 h-8 border-3 border-slate-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+      <p class="text-slate-600">Loading calendar...</p>
+    </div>
+  {/if}
+  <div id="admin-calendar" bind:this={calendarEl}></div>
+</div>
+
+<div class="flex flex-wrap gap-6 mt-4 pt-4 border-t border-slate-200 justify-center md:justify-start">
+  <div class="flex items-center gap-2 text-sm text-slate-500">
+    <div class="w-3 h-3 rounded-sm bg-amber-200"></div>
+    <span>Pending</span>
   </div>
-  
-  <div class="relative rounded-lg overflow-hidden border border-slate-200 min-h-[400px] md:min-h-[600px]">
-    {#if loading}
-      <div class="absolute inset-0 bg-white/90 flex flex-col items-center justify-center z-10">
-        <div class="w-8 h-8 border-3 border-slate-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-        <p class="text-slate-600">Loading calendar...</p>
-      </div>
-    {/if}
-    <div id="admin-calendar" bind:this={calendarEl}></div>
+  <div class="flex items-center gap-2 text-sm text-slate-500">
+    <div class="w-3 h-3 rounded-sm bg-green-200"></div>
+    <span>Confirmed</span>
   </div>
-  
-  <div class="flex flex-wrap gap-6 mt-4 pt-4 border-t border-slate-200 justify-center md:justify-start">
-    <div class="flex items-center gap-2 text-sm text-slate-500">
-      <div class="w-3 h-3 rounded-sm bg-amber-200"></div>
-      <span>Pending</span>
-    </div>
-    <div class="flex items-center gap-2 text-sm text-slate-500">
-      <div class="w-3 h-3 rounded-sm bg-green-200"></div>
-      <span>Confirmed</span>
-    </div>
-    <div class="flex items-center gap-2 text-sm text-slate-500">
-      <div class="w-3 h-3 rounded-sm bg-red-200"></div>
-      <span>Rejected</span>
-    </div>
+  <div class="flex items-center gap-2 text-sm text-slate-500">
+    <div class="w-3 h-3 rounded-sm bg-red-200"></div>
+    <span>Rejected</span>
   </div>
 </div>
 

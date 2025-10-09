@@ -5,6 +5,18 @@
 </script>
 
 <style>
+  .dashboard-header {
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
   .mobile-menu-button {
     display: block;
     background: transparent;
@@ -67,8 +79,8 @@
   }
 </style>
 
-<!-- Sticky Header -->
-<div class="bg-base-100 shadow-sm sticky top-0 z-10 mt-2 sm:mt-3 md:mt-4">
+<!-- Sticky Header with Calendar-style outline -->
+<div class="dashboard-header">
   <div class="px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-5 lg:px-8 lg:py-6 xl:px-10 xl:py-6 2xl:px-12 2xl:py-6 max-w-7xl mx-auto w-full">
     <div class="flex items-center gap-4 header-content">
       <!-- Mobile Menu Toggle Button -->
