@@ -7,6 +7,7 @@
   import { onMount } from 'svelte';
   import { getUserInfo, sidebarActions } from '../lib/stores/sidebar';
   import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
 
   let isAdmin = false;
   let checked = false;
@@ -15,25 +16,27 @@
   // Use reactive authStore for user info
   $: ({ userEmail, userName, userAvatarUrl, userInitial } = getUserInfo($authStore));
 
-  onMount(async () => {
-    // Wait for auth to be determined
-    if ($authStore.loading) return;
-
-    // If unauthenticated, simply mark as checked and allow public routes to render
+  // React to auth changes instead of one-time onMount to avoid getting stuck
+  $: if (!$authStore.loading) {
     if (!$authStore.user) {
       checked = true;
-      return;
+      // Redirect unauthenticated users away from protected routes
+      if (!isPublicRoute && typeof window !== 'undefined') {
+        goto('/login', { replaceState: true });
+      }
+    } else {
+      // Authenticated: check admin status (non-blocking)
+      auth
+        .isAdmin()
+        .then((val) => {
+          isAdmin = val;
+          checked = true;
+        })
+        .catch((_e) => {
+          checked = true;
+        });
     }
-
-    // Authenticated: check admin status
-    try {
-      isAdmin = await auth.isAdmin();
-      checked = true;
-    } catch (error) {
-      console.error('Error checking admin status:', error);
-      checked = true;
-    }
-  });
+  }
 
   // Define public routes where unauthenticated users should see the slot (e.g., login page)
   $: currentPath = $page.url.pathname;
@@ -82,7 +85,7 @@
       <div class="min-h-screen flex items-center justify-center">
         <div class="alert alert-warning max-w-md">
           <span>Please log in to access the application.</span>
-          <a class="link link-primary" href="/">Go to login</a>
+          <a class="link link-primary" href="/login">Go to login</a>
         </div>
       </div>
     {/if}
