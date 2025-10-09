@@ -37,7 +37,7 @@ supabase start
 cd app
 
 # Install dependencies
-npm install
+npm install --include=optional
 ```
 
 ### 3. Environment Variables
