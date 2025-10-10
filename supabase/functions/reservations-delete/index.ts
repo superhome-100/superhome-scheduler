@@ -2,18 +2,22 @@
 // - Owner or admin can delete reservation (cascades to detail tables)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
+import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
 
 interface Payload { uid: string; res_date: string }
 
 function json(body: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(body), {
-    headers: { 'content-type': 'application/json', ...(init.headers || {}) },
+    headers: { 'content-type': 'application/json', ...corsHeaders, ...(init.headers || {}) },
     ...init
   })
 }
 
 Deno.serve(async (req: Request) => {
   try {
+    const pre = handlePreflight(req)
+    if (pre) return pre
+
     if (req.method !== 'POST') return json({ error: 'Method Not Allowed' }, { status: 405 })
 
     const authHeader = req.headers.get('Authorization')
