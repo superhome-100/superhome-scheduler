@@ -56,6 +56,7 @@ export type Database = {
           created_at: string
           id: number
           note: string | null
+          open_water_type: string | null
           res_date: string
           time_period: string
           updated_at: string
@@ -66,6 +67,7 @@ export type Database = {
           created_at?: string
           id?: number
           note?: string | null
+          open_water_type?: string | null
           res_date: string
           time_period: string
           updated_at?: string
@@ -76,6 +78,7 @@ export type Database = {
           created_at?: string
           id?: number
           note?: string | null
+          open_water_type?: string | null
           res_date?: string
           time_period?: string
           updated_at?: string
@@ -130,6 +133,9 @@ export type Database = {
       }
       res_openwater: {
         Row: {
+          activity_type:
+            | Database["public"]["Enums"]["openwater_activity_type"]
+            | null
           auto_adjust_closest: boolean
           bottom_plate: boolean
           buoy: string | null
@@ -147,6 +153,9 @@ export type Database = {
           uid: string
         }
         Insert: {
+          activity_type?:
+            | Database["public"]["Enums"]["openwater_activity_type"]
+            | null
           auto_adjust_closest?: boolean
           bottom_plate?: boolean
           buoy?: string | null
@@ -164,6 +173,9 @@ export type Database = {
           uid: string
         }
         Update: {
+          activity_type?:
+            | Database["public"]["Enums"]["openwater_activity_type"]
+            | null
           auto_adjust_closest?: boolean
           bottom_plate?: boolean
           buoy?: string | null
@@ -302,18 +314,40 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _compute_openwater_activity_type: {
+        Args: {
+          p_activity: Database["public"]["Enums"]["openwater_activity_type"]
+          p_depth: number
+        }
+        Returns: Database["public"]["Enums"]["openwater_activity_type"]
+      }
       _owns_reservation: {
         Args: { _res_date: string; _uid: string }
         Returns: boolean
       }
       _process_buoy_group: {
-        Args: {
-          p_group_depths: number[]
-          p_group_uids: string[]
-          p_res_date: string
-          p_time_period: string
-        }
+        Args:
+          | {
+              p_group_depths: number[]
+              p_group_uids: string[]
+              p_open_water_type: string
+              p_res_date: string
+              p_time_period: string
+            }
+          | {
+              p_group_depths: number[]
+              p_group_uids: string[]
+              p_res_date: string
+              p_time_period: string
+            }
         Returns: Record<string, unknown>
+      }
+      _validate_openwater_depth: {
+        Args: {
+          p_activity: Database["public"]["Enums"]["openwater_activity_type"]
+          p_depth: number
+        }
+        Returns: boolean
       }
       auto_assign_buoy: {
         Args:
@@ -345,6 +379,7 @@ export type Database = {
           id: number
           member_names: string[]
           member_uids: string[]
+          open_water_type: string
           res_date: string
           time_period: string
         }[]
@@ -378,6 +413,11 @@ export type Database = {
       }
     }
     Enums: {
+      openwater_activity_type:
+        | "course_coaching"
+        | "autonomous_buoy_0_89"
+        | "autonomous_platform_0_99"
+        | "autonomous_platform_cbs_90_130"
       reservation_status: "pending" | "confirmed" | "rejected"
       reservation_type: "pool" | "open_water" | "classroom"
       user_status: "active" | "disabled"
@@ -511,6 +551,12 @@ export const Constants = {
   },
   public: {
     Enums: {
+      openwater_activity_type: [
+        "course_coaching",
+        "autonomous_buoy_0_89",
+        "autonomous_platform_0_99",
+        "autonomous_platform_cbs_90_130",
+      ],
       reservation_status: ["pending", "confirmed", "rejected"],
       reservation_type: ["pool", "open_water", "classroom"],
       user_status: ["active", "disabled"],

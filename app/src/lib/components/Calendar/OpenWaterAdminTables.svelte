@@ -1,10 +1,13 @@
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte';
   export let availableBoats: string[];
   export let availableBuoys: { buoy_name: string; max_depth: number }[];
   export let buoyGroups: any[];
   export let loading: boolean;
   export let onUpdateBuoy: (groupId: number, buoyName: string) => void;
   export let onUpdateBoat: (groupId: number, boatName: string) => void;
+
+  const dispatch = createEventDispatcher();
 
   let isResizing = false;
   let currentColumn: string | null = null;
@@ -200,7 +203,14 @@
                   </td>
                   <td class="p-2 pl-3">
                     {#if buoyGroup.member_names?.length}
-                      <div class="bg-base-100 border border-gray-300 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 divers-group-box">
+                      <div
+                        class="bg-base-100 border border-gray-300 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 divers-group-box cursor-pointer"
+                        role="button"
+                        tabindex="0"
+                        aria-label="View group reservation details"
+                        on:click={() => dispatch('groupClick', { groupId: buoyGroup.id, resDate: buoyGroup.res_date, timePeriod: buoyGroup.time_period })}
+                        on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && dispatch('groupClick', { groupId: buoyGroup.id, resDate: buoyGroup.res_date, timePeriod: buoyGroup.time_period })}
+                      >
                         <div class="space-y-1 flex flex-col items-center">
                           {#each buoyGroup.member_names as n}
                             <div class="flex items-center gap-2 text-sm justify-center">
@@ -317,7 +327,14 @@
                   </td>
                   <td class="p-2 pl-3">
                     {#if buoyGroup.member_names?.length}
-                      <div class="bg-base-100 border border-gray-300 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 divers-group-box">
+                      <div
+                        class="bg-base-100 border border-gray-300 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 divers-group-box cursor-pointer"
+                        role="button"
+                        tabindex="0"
+                        aria-label="View group reservation details"
+                        on:click={() => dispatch('groupClick', { groupId: buoyGroup.id, resDate: buoyGroup.res_date, timePeriod: buoyGroup.time_period })}
+                        on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && dispatch('groupClick', { groupId: buoyGroup.id, resDate: buoyGroup.res_date, timePeriod: buoyGroup.time_period })}
+                      >
                         <div class="space-y-1 flex flex-col items-center">
                           {#each buoyGroup.member_names as n}
                             <div class="flex items-center gap-2 text-sm justify-center">

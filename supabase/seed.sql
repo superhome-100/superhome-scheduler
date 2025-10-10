@@ -58,7 +58,7 @@ on conflict (uid) do nothing;
 with date_range as (
   select (now() at time zone 'utc')::date + 1 as d1
 )
--- Reservations parent rows (pending open_water) - 20 total (1 day)
+-- Reservations parent rows (PENDING open_water) - 20 total (1 day)
 insert into public.reservations (uid, res_date, res_type, res_status, created_at, updated_at)
 select uid, res_date, 'open_water', 'pending', now(), now()
 from (
@@ -86,7 +86,7 @@ from (
 on conflict do nothing;
 
 -- Open water detail rows (1 day total, 20 reservations)
--- AM slot only: 15 with close depths ~30-34m, 5 with close depths ~60-64m
+-- AM slot only: 4 activity types x 5 divers each with appropriate depths
 with date_range as (
   select (now() at time zone 'utc')::date + 1 as d1
 )
@@ -95,25 +95,29 @@ insert into public.res_openwater (
   pulley, bottom_plate, large_buoy, note, open_water_type
 )
 values
-  -- AM (20 reservations) - first 15 close depths ~30-34m, last 5 close depths ~60-64m
-  ('11111111-1111-1111-1111-111111111111', (select d1 from date_range), 'pending', 'AM', 30, null, true, false, false, false, 'Intermediate', 'Autonomous on Buoy (0-89m)'),
-  ('22222222-2222-2222-2222-222222222222', (select d1 from date_range), 'pending', 'AM', 31, null, true, false, false, false, 'Intermediate', 'Autonomous on Buoy (0-89m)'),
-  ('33333333-3333-3333-3333-333333333333', (select d1 from date_range), 'pending', 'AM', 32, null, true, false, false, false, 'Intermediate', 'Autonomous on Buoy (0-89m)'),
-  ('44444444-4444-4444-4444-444444444444', (select d1 from date_range), 'pending', 'AM', 33, null, true, false, false, false, 'Intermediate', 'Autonomous on Buoy (0-89m)'),
-  ('55555555-5555-5555-5555-555555555555', (select d1 from date_range), 'pending', 'AM', 34, null, true, false, false, false, 'Intermediate', 'Autonomous on Buoy (0-89m)'),
-  ('66666666-6666-6666-6666-666666666666', (select d1 from date_range), 'pending', 'AM', 30, null, true, false, false, false, 'Intermediate', 'Autonomous on Buoy (0-89m)'),
-  ('77777777-7777-7777-7777-777777777777', (select d1 from date_range), 'pending', 'AM', 31, null, true, false, false, false, 'Intermediate', 'Autonomous on Buoy (0-89m)'),
-  ('88888888-8888-8888-8888-888888888888', (select d1 from date_range), 'pending', 'AM', 32, null, true, false, false, false, 'Intermediate', 'Autonomous on Buoy (0-89m)'),
-  ('99999999-9999-9999-9999-999999999999', (select d1 from date_range), 'pending', 'AM', 33, null, true, false, false, false, 'Intermediate', 'Autonomous on Buoy (0-89m)'),
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', (select d1 from date_range), 'pending', 'AM', 34, null, true, false, false, false, 'Intermediate', 'Autonomous on Buoy (0-89m)'),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', (select d1 from date_range), 'pending', 'AM', 30, null, true, false, false, false, 'Intermediate', 'Autonomous on Buoy (0-89m)'),
-  ('cccccccc-cccc-cccc-cccc-cccccccccccc', (select d1 from date_range), 'pending', 'AM', 31, null, true, false, false, false, 'Intermediate', 'Autonomous on Buoy (0-89m)'),
-  ('dddddddd-dddd-dddd-dddd-dddddddddddd', (select d1 from date_range), 'pending', 'AM', 32, null, true, false, false, false, 'Intermediate', 'Autonomous on Buoy (0-89m)'),
-  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', (select d1 from date_range), 'pending', 'AM', 33, null, true, false, false, false, 'Intermediate', 'Autonomous on Buoy (0-89m)'),
-  ('ffffffff-ffff-ffff-ffff-ffffffffffff', (select d1 from date_range), 'pending', 'AM', 34, null, true, false, false, false, 'Intermediate', 'Autonomous on Buoy (0-89m)'),
-  ('00000000-0000-0000-0000-000000000001', (select d1 from date_range), 'pending', 'AM', 60, null, true, false, false, false, 'Advanced', 'Autonomous on Buoy (0-89m)'),
-  ('00000000-0000-0000-0000-000000000002', (select d1 from date_range), 'pending', 'AM', 61, null, true, false, false, false, 'Advanced', 'Autonomous on Buoy (0-89m)'),
-  ('00000000-0000-0000-0000-000000000003', (select d1 from date_range), 'pending', 'AM', 62, null, true, false, false, false, 'Advanced', 'Autonomous on Buoy (0-89m)'),
-  ('00000000-0000-0000-0000-000000000004', (select d1 from date_range), 'pending', 'AM', 63, null, true, false, false, false, 'Advanced', 'Autonomous on Buoy (0-89m)'),
-  ('00000000-0000-0000-0000-000000000005', (select d1 from date_range), 'pending', 'AM', 64, null, true, false, false, false, 'Advanced', 'Autonomous on Buoy (0-89m)')
+  -- AM (20 reservations) - 4 categories x 5 divers each
+  -- 1) Course/Coaching (depth-agnostic; use varied depths)
+  ('11111111-1111-1111-1111-111111111111', (select d1 from date_range), 'pending', 'AM', 20, null, true, false, false, false, null, 'Course/Coaching'),
+  ('22222222-2222-2222-2222-222222222222', (select d1 from date_range), 'pending', 'AM', 25, null, true, false, false, false, null, 'Course/Coaching'),
+  ('33333333-3333-3333-3333-333333333333', (select d1 from date_range), 'pending', 'AM', 28, null, true, false, false, false, null, 'Course/Coaching'),
+  ('44444444-4444-4444-4444-444444444444', (select d1 from date_range), 'pending', 'AM', 35, null, true, false, false, false, null, 'Course/Coaching'),
+  ('55555555-5555-5555-5555-555555555555', (select d1 from date_range), 'pending', 'AM', 40, null, true, false, false, false, null, 'Course/Coaching'),
+  -- 2) Autonomous on Buoy (0-89m)
+  ('66666666-6666-6666-6666-666666666666', (select d1 from date_range), 'pending', 'AM', 30, null, true, false, false, false, null, 'Autonomous on Buoy (0-89m)'),
+  ('77777777-7777-7777-7777-777777777777', (select d1 from date_range), 'pending', 'AM', 31, null, true, false, false, false, null, 'Autonomous on Buoy (0-89m)'),
+  ('88888888-8888-8888-8888-888888888888', (select d1 from date_range), 'pending', 'AM', 32, null, true, false, false, false, null, 'Autonomous on Buoy (0-89m)'),
+  ('99999999-9999-9999-9999-999999999999', (select d1 from date_range), 'pending', 'AM', 33, null, true, false, false, false, null, 'Autonomous on Buoy (0-89m)'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', (select d1 from date_range), 'pending', 'AM', 34, null, true, false, false, false, null, 'Autonomous on Buoy (0-89m)'),
+  -- 3) Autonomous on Platform (0-99m)
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', (select d1 from date_range), 'pending', 'AM', 80, null, true, false, false, false, null, 'Autonomous on Platform (0-99m)'),
+  ('cccccccc-cccc-cccc-cccc-cccccccccccc', (select d1 from date_range), 'pending', 'AM', 81, null, true, false, false, false, null, 'Autonomous on Platform (0-99m)'),
+  ('dddddddd-dddd-dddd-dddd-dddddddddddd', (select d1 from date_range), 'pending', 'AM', 82, null, true, false, false, false, null, 'Autonomous on Platform (0-99m)'),
+  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', (select d1 from date_range), 'pending', 'AM', 83, null, true, false, false, false, null, 'Autonomous on Platform (0-99m)'),
+  ('ffffffff-ffff-ffff-ffff-ffffffffffff', (select d1 from date_range), 'pending', 'AM', 84, null, true, false, false, false, null, 'Autonomous on Platform (0-99m)'),
+  -- 4) Autonomous on Platform +CBS (90-130m)
+  ('00000000-0000-0000-0000-000000000001', (select d1 from date_range), 'pending', 'AM', 90, null, true, false, false, false, null, 'Autonomous on Platform +CBS (90-130m)'),
+  ('00000000-0000-0000-0000-000000000002', (select d1 from date_range), 'pending', 'AM', 91, null, true, false, false, false, null, 'Autonomous on Platform +CBS (90-130m)'),
+  ('00000000-0000-0000-0000-000000000003', (select d1 from date_range), 'pending', 'AM', 92, null, true, false, false, false, null, 'Autonomous on Platform +CBS (90-130m)'),
+  ('00000000-0000-0000-0000-000000000004', (select d1 from date_range), 'pending', 'AM', 93, null, true, false, false, false, null, 'Autonomous on Platform +CBS (90-130m)'),
+  ('00000000-0000-0000-0000-000000000005', (select d1 from date_range), 'pending', 'AM', 94, null, true, false, false, false, null, 'Autonomous on Platform +CBS (90-130m)')
 on conflict (uid, res_date) do nothing;
