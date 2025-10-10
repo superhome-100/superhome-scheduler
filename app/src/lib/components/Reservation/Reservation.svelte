@@ -34,7 +34,7 @@
   let error: string | null = null;
 
   // Debug: Track selectedType changes
-  $: console.log('Reservation: selectedType changed to:', selectedType);
+  // $: console.log('Reservation: selectedType changed to:', selectedType);
 
 
   const handleNewReservation = () => {
@@ -87,7 +87,12 @@
 
   // Load user's reservations from Supabase with detail tables
   const loadReservations = async () => {
-    if (!$authStore.user) return;
+    if (!$authStore.user) {
+      console.log('loadReservations: No user, skipping');
+      return;
+    }
+    
+    console.log('loadReservations: Starting to load reservations for user:', $authStore.user.id);
     
     try {
       loading = true;
@@ -110,15 +115,19 @@
             open_water_type, 
             student_count, 
             note,
-            group_id,
-            buoy_group!left(buoy_name, boat)
+            group_id
           ),
           res_classroom!left(start_time, end_time, room, note)
         `)
         .eq('uid', $authStore.user.id)
         .order('res_date', { ascending: true });
       
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('loadReservations: Supabase error:', fetchError);
+        throw fetchError;
+      }
+      
+      console.log('loadReservations: Raw data from Supabase:', data);
       
       // Flatten the joined data for easier access
       reservations = (data || []).map((reservation) => {
@@ -144,11 +153,7 @@
           flattened.student_count = reservation.res_openwater.student_count;
           flattened.note = reservation.res_openwater.note;
           // Note: Use main reservation status, not detail table status
-          // Include assignment data from buoy_group
-          if (reservation.res_openwater.buoy_group) {
-            flattened.buoy = reservation.res_openwater.buoy_group.buoy_name || flattened.buoy;
-            flattened.boat = reservation.res_openwater.buoy_group.boat;
-          }
+          // Note: buoy_group data will be loaded separately if needed
         } else if (reservation.res_type === 'classroom' && reservation.res_classroom) {
           flattened.start_time = reservation.res_classroom.start_time;
           flattened.end_time = reservation.res_classroom.end_time;
@@ -161,16 +166,17 @@
         delete flattened.res_pool;
         delete flattened.res_openwater;
         delete flattened.res_classroom;
-        // Note: buoy_group data is already flattened into buoy and boat fields
         
         return flattened;
       });
       
       console.log('Loaded reservations with details:', reservations);
+      console.log('Number of reservations loaded:', reservations.length);
     } catch (err) {
       console.error('Error loading reservations:', err);
       error = err instanceof Error ? err.message : 'Failed to load reservations';
     } finally {
+      console.log('loadReservations: Setting loading to false');
       loading = false;
     }
   };
@@ -199,25 +205,13 @@
 
 
   onMount(() => {
+    console.log('Reservation: onMount called');
     // Ensure light mode only
     document.documentElement.classList.remove('dark-mode');
     
     // Load reservations
     loadReservations();
   });
-
-  // Reactive statement to ensure data is loaded when component becomes visible
-  // This handles the case when navigating from Dashboard to Reservation page
-  $: if ($authStore.user && !loading && reservations.length === 0) {
-    loadReservations();
-  }
-
-  // Additional reactive statement to handle navigation from Dashboard
-  $: if ($authStore.user && !loading) {
-    if (reservations.length === 0) {
-      loadReservations();
-    }
-  }
 </script>
 
 <div class="min-h-screen bg-base-200">

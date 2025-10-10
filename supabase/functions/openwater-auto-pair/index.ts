@@ -68,15 +68,15 @@ Deno.serve(async (req: Request) => {
     // Fetch openwater details for caller
     const { data: myOW, error: owErr } = await supabase
       .from('res_openwater')
-      .select('uid, res_date, depth_m, auto_adjust_closest, paired_uid')
+      .select('uid, res_date, depth_m, auto_adjust_closest, group_id')
       .eq('uid', body.uid)
       .eq('res_date', body.res_date)
       .single();
 
     if (owErr) return json({ error: owErr.message }, { status: 404 });
 
-    // Already paired
-    if (myOW.paired_uid) return json({ result: 'already_paired', paired_uid: myOW.paired_uid }, { status: 200 });
+    // Already assigned to a group
+    if (myOW.group_id) return json({ result: 'already_grouped', group_id: myOW.group_id }, { status: 200 });
     if (myOW.depth_m == null) return json({ result: 'noop_no_depth' }, { status: 200 });
 
     const resDate = new Date(body.res_date);
@@ -85,69 +85,9 @@ Deno.serve(async (req: Request) => {
     const dayEnd = new Date(dayStart);
     dayEnd.setUTCDate(dayStart.getUTCDate() + 1);
 
-    // 1) Try exact depth matches
-    const { data: exactCandidates, error: exactErr } = await supabase
-      .from('res_openwater')
-      .select('uid, depth_m, paired_uid, res_date, reservations!inner(res_status, res_type, created_at)')
-      .neq('uid', body.uid)
-      .is('paired_uid', null)
-      .eq('depth_m', myOW.depth_m)
-      .gte('res_date', dayStart.toISOString())
-      .lt('res_date', dayEnd.toISOString())
-      .order('reservations(created_at)', { ascending: true });
-
-    if (exactErr) return json({ error: exactErr.message }, { status: 500 });
-
-    let candidate = exactCandidates?.[0];
-
-    // 2) Try nearest depth if allowed
-    if (!candidate && myOW.auto_adjust_closest) {
-      const { data: nearCandidates, error: nearErr } = await supabase
-        .from('res_openwater')
-        .select('uid, depth_m, paired_uid, res_date, reservations!inner(res_status, res_type, created_at)')
-        .neq('uid', body.uid)
-        .is('paired_uid', null)
-        .gte('res_date', dayStart.toISOString())
-        .lt('res_date', dayEnd.toISOString());
-
-      if (nearErr) return json({ error: nearErr.message }, { status: 500 });
-
-      const filtered = (nearCandidates || [])
-        .filter((c: any) => c.reservations?.res_status === 'confirmed' && c.reservations?.res_type === 'open_water' && c.depth_m != null)
-        .sort((a: any, b: any) => {
-          const da = Math.abs(a.depth_m - myOW.depth_m);
-          const db = Math.abs(b.depth_m - myOW.depth_m);
-          if (da !== db) return da - db;
-          const ta = new Date(a.reservations.created_at).getTime();
-          const tb = new Date(b.reservations.created_at).getTime();
-          return ta - tb;
-        });
-
-      candidate = filtered[0];
-    }
-
-    if (!candidate) return json({ result: 'no_candidate_found' }, { status: 200 });
-
-    // Pair both sides
-    const nowIso = new Date().toISOString();
-
-    const { error: upd1 } = await supabase
-      .from('res_openwater')
-      .update({ paired_uid: candidate.uid, paired_at: nowIso })
-      .eq('uid', body.uid)
-      .eq('res_date', body.res_date);
-
-    if (upd1) return json({ error: upd1.message }, { status: 500 });
-
-    const { error: upd2 } = await supabase
-      .from('res_openwater')
-      .update({ paired_uid: body.uid, paired_at: nowIso })
-      .eq('uid', candidate.uid)
-      .eq('res_date', body.res_date);
-
-    if (upd2) return json({ error: upd2.message }, { status: 500 });
-
-    return json({ result: 'paired', pairedWith: candidate.uid }, { status: 200 });
+    // This function is now deprecated since we use group-based assignments
+    // The auto-assign-buoy function handles grouping automatically
+    return json({ result: 'deprecated_use_auto_assign_buoy' }, { status: 200 });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unexpected error';
     return json({ error: message }, { status: 500 });

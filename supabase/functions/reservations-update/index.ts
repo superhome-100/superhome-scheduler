@@ -90,16 +90,29 @@ Deno.serve(async (req: Request) => {
       if (error) return json({ error: error.message }, { status: 400 })
     }
 
-    // If confirming open_water, trigger pairing
+    // If confirming open_water, trigger auto-assign buoy
     if (body.parent?.res_status === 'confirmed' && cur.res_type === 'open_water') {
       try {
-        const r = await fetch(`${SUPABASE_URL}/functions/v1/openwater-auto-pair`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: authHeader },
-          body: JSON.stringify({ uid: body.uid, res_date: body.res_date })
-        })
-        // Non-blocking; ignore failure
-        await r.text()
+        // Get the time period from the openwater details
+        const { data: openwaterData } = await supabase
+          .from('res_openwater')
+          .select('time_period')
+          .eq('uid', body.uid)
+          .eq('res_date', body.res_date)
+          .single();
+        
+        if (openwaterData?.time_period) {
+          const r = await fetch(`${SUPABASE_URL}/functions/v1/auto-assign-buoy`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+            body: JSON.stringify({ 
+              res_date: new Date(body.res_date).toISOString().split('T')[0], 
+              time_period: openwaterData.time_period 
+            })
+          })
+          // Non-blocking; ignore failure
+          await r.text()
+        }
       } catch (_) {}
     }
 
