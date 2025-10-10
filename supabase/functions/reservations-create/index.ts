@@ -3,6 +3,7 @@
 // - Creates parent reservation and type-specific detail; rolls back on failure
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
+import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
 
 type ReservationType = 'pool' | 'open_water' | 'classroom'
 
@@ -22,14 +23,20 @@ interface Payload {
 
 function json(body: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(body), {
-    headers: { 'content-type': 'application/json', ...(init.headers || {}) },
+    headers: { 'content-type': 'application/json', ...corsHeaders, ...(init.headers || {}) },
     ...init
   })
 }
 
+// CORS is now shared via `supabase/functions/_shared/cors.ts`
+
 
 Deno.serve(async (req: Request) => {
   try {
+    // Preflight per guide (shared helper)
+    const pre = handlePreflight(req)
+    if (pre) return pre
+
     if (req.method !== 'POST') return json({ error: 'Method Not Allowed' }, { status: 405 });
 
     const authHeader = req.headers.get('Authorization');
