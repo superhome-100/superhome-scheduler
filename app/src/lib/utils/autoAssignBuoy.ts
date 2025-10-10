@@ -186,65 +186,24 @@ export type BuoyGroupWithNames = {
 
 // Fetch groups with member names for display in Admin Single Day view
 export async function getBuoyGroupsWithNames({ resDate, timePeriod }: AutoAssignParams): Promise<BuoyGroupWithNames[]> {
-  // Step 1: fetch groups for the day/period (RLS expects admin)
-  const { data: groups, error: groupsErr } = await supabase
-    .from('buoy_group')
-    .select('id, res_date, time_period, buoy_name, boat')
-    .eq('res_date', resDate)
-    .eq('time_period', timePeriod)
-    .order('buoy_name', { ascending: true })
-  if (groupsErr) throw new Error(groupsErr.message)
-
-  const groupList = (groups ?? []) as Array<{ id: number; res_date: string; time_period: string; buoy_name: string; boat: string | null }>
-  if (groupList.length === 0) return []
-
-  const groupIds = groupList.map((g) => g.id)
-
-  // Step 2: fetch members for these groups from res_openwater (group_id FK)
-  const { data: members, error: memErr } = await supabase
-    .from('res_openwater')
-    .select('group_id, uid')
-    .in('group_id', groupIds)
-  if (memErr) throw new Error(memErr.message)
-
-  const memberList = (members ?? []) as Array<{ group_id: number | null; uid: string }>
-  const uids = Array.from(new Set(memberList.map((m) => m.uid)))
-
-  // Step 3: fetch names from user_profiles
-  const namesByUid = new Map<string, string | null>()
-  if (uids.length > 0) {
-    const { data: profiles, error: profErr } = await supabase
-      .from('user_profiles')
-      .select('uid, name')
-      .in('uid', uids)
-    if (profErr) throw new Error(profErr.message)
-    for (const p of (profiles ?? []) as Array<{ uid: string; name: string | null }>) {
-      namesByUid.set(p.uid, p.name ?? null)
-    }
-  }
-
-  // Step 4: combine
-  const membersByGroup = new Map<number, string[]>()
-  for (const m of memberList) {
-    if (m.group_id == null) continue
-    const arr = membersByGroup.get(m.group_id) ?? []
-    arr.push(m.uid)
-    membersByGroup.set(m.group_id, arr)
-  }
-
-  const result: BuoyGroupWithNames[] = groupList.map((g) => {
-    const memberUids = membersByGroup.get(g.id) ?? []
-    const memberNames = memberUids.map((u) => namesByUid.get(u) ?? null)
-    return {
-      id: g.id,
-      res_date: g.res_date,
-      time_period: g.time_period,
-      buoy_name: g.buoy_name,
-      boat: g.boat ?? null,
-      member_uids: memberUids.length ? memberUids : null,
-      member_names: memberNames.length ? memberNames : null
-    }
+  // Use the database function that properly handles the res_openwater.group_id relationship
+  const { data, error } = await supabase.rpc('get_buoy_groups_with_names', {
+    p_res_date: resDate,
+    p_time_period: timePeriod
   })
+
+  if (error) throw new Error(error.message)
+
+  // Transform the database result to match our expected format
+  const result: BuoyGroupWithNames[] = (data ?? []).map((row: any) => ({
+    id: row.id,
+    res_date: row.res_date,
+    time_period: row.time_period,
+    buoy_name: row.buoy_name,
+    boat: row.boat,
+    member_uids: row.member_uids || null,
+    member_names: row.member_names || null
+  }))
 
   return result
 }
