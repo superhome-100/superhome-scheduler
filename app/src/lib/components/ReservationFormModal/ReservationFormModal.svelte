@@ -10,6 +10,7 @@
   import FormNotes from './FormNotes.svelte';
   import FormActions from './FormActions.svelte';
   import FormErrorAlert from './FormErrorAlert.svelte';
+  import EquipmentOptions from './EquipmentOptions.svelte';
   import { validateForm, getDefaultFormData, getSubmissionData } from './formUtils';
 
   const dispatch = createEventDispatcher();
@@ -18,6 +19,11 @@
 
   // Form data
   let formData = getDefaultFormData();
+
+  // Set default pulley value for Course/Coaching
+  $: if (formData.openWaterType === 'course_coaching' && formData.pulley === false) {
+    formData.pulley = 'true';
+  }
 
   // Form validation and loading state
   let errors: Record<string, string> = {};
@@ -99,8 +105,9 @@
           open_water_type: formData.openWaterType || undefined,
           student_count: formData.openWaterType === 'course_coaching' ? 
             parseInt(formData.studentCount as unknown as string, 10) : undefined,
-          // Equipment fields for Autonomous types
-          pulley: !!formData.pulley,
+          // Equipment fields for Open Water types (Autonomous and Course/Coaching)
+          pulley: formData.openWaterType === 'course_coaching' ? 
+            (formData.pulley === 'true' || formData.pulley === true) : !!formData.pulley,
           deep_fim_training: !!formData.deepFimTraining,
           bottom_plate: !!formData.bottomPlate,
           large_buoy: !!formData.largeBuoy,
@@ -190,6 +197,9 @@
             <FormTimeFields bind:formData {errors} />
           {/if}
         </div>
+
+        <!-- Equipment Options -->
+        <EquipmentOptions bind:formData />
 
         <!-- Notes -->
         <FormNotes bind:formData />
