@@ -32,6 +32,7 @@ export type BuoyGroupWithNames = {
   time_period: string
   buoy_name: string
   boat: string | null
+  boat_count?: number | null
   open_water_type?: string | null
   member_uids: string[] | null
   member_names: (string | null)[] | null
@@ -92,6 +93,7 @@ export async function getBuoyGroupsWithNames({ resDate, timePeriod }: { resDate:
     time_period: string;
     buoy_name: string;
     boat: string | null;
+    boat_count?: number | null;
     open_water_type?: string | null;
     member_uids?: string[] | null;
     member_names?: (string | null)[] | null;
@@ -103,6 +105,7 @@ export async function getBuoyGroupsWithNames({ resDate, timePeriod }: { resDate:
     time_period: r.time_period,
     buoy_name: r.buoy_name,
     boat: r.boat,
+    boat_count: r.boat_count ?? null,
     open_water_type: r.open_water_type ?? null,
     member_uids: r.member_uids ?? null,
     member_names: r.member_names ?? null,

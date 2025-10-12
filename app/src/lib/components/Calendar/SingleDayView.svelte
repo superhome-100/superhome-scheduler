@@ -36,6 +36,8 @@
     boat: string | null;
     res_openwater?: Array<{ uid: string }>;
     member_names?: (string | null)[] | null;
+    boat_count?: number | null;
+    open_water_type?: string | null;
   };
 
   // Handle click on divers group box (admin view)
@@ -156,7 +158,9 @@
         buoy_name: g.buoy_name ?? null,
         boat: g.boat ?? null,
         res_openwater: g.res_openwater,
-        member_names: g.member_names ?? []
+        member_names: g.member_names ?? [],
+        boat_count: typeof g.boat_count === 'number' ? g.boat_count : null,
+        open_water_type: g.open_water_type ?? null,
       }));
     } catch (error) {
       console.error('Error loading buoy groups:', error);

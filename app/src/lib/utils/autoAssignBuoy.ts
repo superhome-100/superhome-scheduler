@@ -180,6 +180,8 @@ export type BuoyGroupWithNames = {
   time_period: string
   buoy_name: string
   boat: string | null
+  boat_count?: number | null
+  open_water_type?: string | null
   member_uids: string[] | null
   member_names: (string | null)[] | null
 }
@@ -201,6 +203,8 @@ export async function getBuoyGroupsWithNames({ resDate, timePeriod }: AutoAssign
     time_period: row.time_period,
     buoy_name: row.buoy_name,
     boat: row.boat,
+    boat_count: row.boat_count ?? null,
+    open_water_type: row.open_water_type ?? null,
     member_uids: row.member_uids || null,
     member_names: row.member_names || null
   }))

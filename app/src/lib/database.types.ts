@@ -52,6 +52,7 @@ export type Database = {
       buoy_group: {
         Row: {
           boat: string | null
+          boat_count: number | null
           buoy_name: string
           created_at: string
           id: number
@@ -63,6 +64,7 @@ export type Database = {
         }
         Insert: {
           boat?: string | null
+          boat_count?: number | null
           buoy_name: string
           created_at?: string
           id?: number
@@ -74,6 +76,7 @@ export type Database = {
         }
         Update: {
           boat?: string | null
+          boat_count?: number | null
           buoy_name?: string
           created_at?: string
           id?: number
@@ -367,6 +370,10 @@ export type Database = {
         Args: { p_group_id: number }
         Returns: number
       }
+      compute_boat_count: {
+        Args: { p_group_id: number }
+        Returns: number
+      }
       find_best_buoy_for_depth: {
         Args: { target_depth: number }
         Returns: string
@@ -375,6 +382,7 @@ export type Database = {
         Args: { p_res_date: string; p_time_period: string }
         Returns: {
           boat: string
+          boat_count: number
           buoy_name: string
           id: number
           member_names: string[]
@@ -406,6 +414,10 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      refresh_boat_count: {
+        Args: { p_group_id: number }
+        Returns: undefined
       }
       validate_depth_assignment: {
         Args: { buoy_max_depth: number; diver_depth: number }

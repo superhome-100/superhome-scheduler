@@ -3,6 +3,7 @@
 // - Deno runtime (TypeScript)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
+import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
 
 interface Payload {
   group_id: number
@@ -11,13 +12,17 @@ interface Payload {
 
 function json(body: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(body), {
-    headers: { 'content-type': 'application/json', ...(init.headers || {}) },
+    headers: { 'content-type': 'application/json', ...corsHeaders, ...(init.headers || {}) },
     ...init
   })
 }
 
 Deno.serve(async (req: Request) => {
   try {
+    // Handle CORS preflight
+    const pre = handlePreflight(req)
+    if (pre) return pre
+
     if (req.method !== 'POST') return json({ error: 'Method Not Allowed' }, { status: 405 })
 
     const authHeader = req.headers.get('Authorization')
