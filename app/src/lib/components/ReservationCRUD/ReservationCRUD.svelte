@@ -4,12 +4,16 @@
   import { reservationStore, upcomingReservations, pastReservations, reservationStats } from '../../stores/reservationStore';
   import { reservationApi } from '../../api/reservationApi';
   import type { CreateReservationData, CompleteReservation } from '../../api/reservationApi';
+  import { now } from '../../utils/dateUtils';
 
   // Component state
   let showCreateForm = false;
   let selectedReservation: CompleteReservation | null = null;
   let showEditForm = false;
   let activeTab: 'upcoming' | 'past' | 'all' = 'upcoming';
+
+  // Get current datetime for min attribute
+  const currentDateTime = now().format('YYYY-MM-DDTHH:mm');
 
   // Form data
   let createFormData: CreateReservationData = {
@@ -371,6 +375,7 @@
               class="input input-bordered w-full"
               id="create-res-datetime"
               bind:value={createFormData.res_date}
+              min={currentDateTime}
               required
             />
           </div>
@@ -476,6 +481,7 @@
               class="input input-bordered w-full"
               id="edit-res-datetime"
               bind:value={editFormData.res_date}
+              min={currentDateTime}
               required
             />
           </div>

@@ -1,12 +1,42 @@
+import { now, isToday, isPast } from '../../utils/dateUtils';
+
 export const validateForm = (formData: any) => {
   const errors: Record<string, string> = {};
   
-  if (!formData.date) errors.date = 'Date is required';
+  if (!formData.date) {
+    errors.date = 'Date is required';
+  } else {
+    // Check if date is in the past
+    if (isPast(formData.date)) {
+      errors.date = 'Reservation date must be today or in the future';
+    }
+  }
   
   // Time validation only for Pool and Classroom
   if (formData.type !== 'openwater') {
-    if (!formData.startTime) errors.startTime = 'Start time is required';
-    if (!formData.endTime) errors.endTime = 'End time is required';
+    if (!formData.startTime) {
+      errors.startTime = 'Start time is required';
+    }
+    if (!formData.endTime) {
+      errors.endTime = 'End time is required';
+    }
+    
+    // Additional validation for time when date is today
+    if (formData.date && formData.startTime && formData.endTime && isToday(formData.date)) {
+      const currentTime = now();
+      const startTime = now(`${formData.date}T${formData.startTime}`);
+      const endTime = now(`${formData.date}T${formData.endTime}`);
+      
+      if (startTime.isBefore(currentTime)) {
+        errors.startTime = 'Start time must be in the future';
+      }
+      if (endTime.isBefore(currentTime)) {
+        errors.endTime = 'End time must be in the future';
+      }
+      if (startTime.isAfter(endTime)) {
+        errors.endTime = 'End time must be after start time';
+      }
+    }
   }
   
   // Open Water validations
@@ -16,6 +46,19 @@ export const validateForm = (formData: any) => {
     }
     if (!formData.openWaterType) {
       errors.openWaterType = 'Open Water type is required';
+    }
+    
+    // Validate Open Water time periods for today
+    if (formData.date && formData.timeOfDay && isToday(formData.date)) {
+      const currentTime = now();
+      const currentHour = currentTime.hour();
+      
+      // Check if selected time period is still available today
+      if (formData.timeOfDay === 'AM' && currentHour >= 12) {
+        errors.timeOfDay = 'AM time slot is no longer available for today';
+      } else if (formData.timeOfDay === 'PM' && currentHour >= 17) {
+        errors.timeOfDay = 'PM time slot is no longer available for today';
+      }
     }
     
     // Depth validation based on type

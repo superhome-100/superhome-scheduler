@@ -1,11 +1,15 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { reservationTypes } from './formConstants';
+  import { now, isPast } from '../../utils/dateUtils';
 
   export let formData: any;
   export let errors: Record<string, string> = {};
 
   const dispatch = createEventDispatcher();
+
+  // Get current date in YYYY-MM-DD format for min attribute
+  const currentDate = now().format('YYYY-MM-DD');
 
   const handleTypeChange = () => {
     if (formData.type === 'openwater') {
@@ -14,6 +18,21 @@
       formData.endTime = '';
     }
     dispatch('typeChange');
+  };
+
+  const handleDateChange = () => {
+    // Clear any existing date error when user changes date
+    if (errors.date && errors.date.includes('must be today or in the future')) {
+      delete errors.date;
+    }
+    
+    // Validate date in real-time
+    if (formData.date && isPast(formData.date)) {
+      errors.date = 'Reservation date must be today or in the future';
+    }
+    
+    // Trigger validation update
+    dispatch('validationChange', { errors });
   };
 </script>
 
@@ -26,6 +45,8 @@
     class="form-control"
     class:error={errors.date}
     bind:value={formData.date}
+    on:change={handleDateChange}
+    min={currentDate}
     required
   />
   {#if errors.date}

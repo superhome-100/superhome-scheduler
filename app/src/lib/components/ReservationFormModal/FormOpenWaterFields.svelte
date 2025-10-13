@@ -1,7 +1,12 @@
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte';
+  import { now, isToday } from '../../utils/dateUtils';
+  import { timeOfDayOptions, openWaterTypes } from './formConstants';
+
   export let formData: any;
   export let errors: Record<string, string> = {};
-  import { timeOfDayOptions, openWaterTypes } from './formConstants';
+
+  const dispatch = createEventDispatcher();
   
   // Get depth constraints based on Open Water type
   $: depthConstraints = (() => {
@@ -18,6 +23,29 @@
         return { min: 1, max: 200 };
     }
   })();
+
+  const handleTimeOfDayChange = () => {
+    // Clear any existing time of day errors when user changes selection
+    if (errors.timeOfDay && errors.timeOfDay.includes('no longer available')) {
+      delete errors.timeOfDay;
+    }
+    
+    // Validate time period for today
+    if (formData.date && formData.timeOfDay && isToday(formData.date)) {
+      const currentTime = now();
+      const currentHour = currentTime.hour();
+      
+      // Check if selected time period is still available today
+      if (formData.timeOfDay === 'AM' && currentHour >= 12) {
+        errors.timeOfDay = 'AM time slot is no longer available for today';
+      } else if (formData.timeOfDay === 'PM' && currentHour >= 17) {
+        errors.timeOfDay = 'PM time slot is no longer available for today';
+      }
+    }
+    
+    // Trigger validation update
+    dispatch('validationChange', { errors });
+  };
 </script>
 
 <!-- Time of Day (Only for Open Water) -->
@@ -28,6 +56,7 @@
     class="form-control"
     class:error={errors.timeOfDay}
     bind:value={formData.timeOfDay}
+    on:change={handleTimeOfDayChange}
     required
   >
     {#each timeOfDayOptions as time}
