@@ -213,24 +213,46 @@
                         on:click={() => dispatch('groupClick', { groupId: buoyGroup.id, resDate: buoyGroup.res_date, timePeriod: buoyGroup.time_period })}
                         on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && dispatch('groupClick', { groupId: buoyGroup.id, resDate: buoyGroup.res_date, timePeriod: buoyGroup.time_period })}
                       >
+                        <!-- Debug Logging for Divers Group Box (AM) -->
+                        {console.log('🔍 DEBUG - Divers Group Box (AM):', {
+                          groupId: buoyGroup.id,
+                          displayNames: buoyGroup.member_names,
+                          openWaterType: buoyGroup.open_water_type,
+                          boatCount: buoyGroup.boat_count,
+                          studentCount: buoyGroup.open_water_type === 'course_coaching' ? Math.max((buoyGroup.boat_count ?? 1) - 1, 0) : 'N/A',
+                          memberCount: buoyGroup.member_names?.length || 0,
+                          timePeriod: buoyGroup.time_period
+                        })}
                         <!-- Open Water Type Display Logic -->
                         <div class="space-y-1 flex flex-col items-center">
-                          {#if buoyGroup.open_water_type === 'Course/Coaching'}
+                          <!-- Debug: Log the open_water_type value -->
+                          {console.log('🔍 DEBUG - open_water_type check (AM):', {
+                            openWaterType: buoyGroup.open_water_type,
+                            type: typeof buoyGroup.open_water_type,
+                            length: buoyGroup.open_water_type?.length,
+                            isCourseCoaching: buoyGroup.open_water_type === 'course_coaching',
+                            isAutonomousBuoy: buoyGroup.open_water_type?.trim() === 'autonomous_buoy',
+                            isAutonomousPlatform: buoyGroup.open_water_type?.trim() === 'autonomous_platform',
+                            isAutonomousPlatformCbs: buoyGroup.open_water_type?.trim() === 'autonomous_platform_cbs',
+                            conditionMatch: (buoyGroup.open_water_type?.trim() === 'autonomous_buoy' || 
+                                          buoyGroup.open_water_type?.trim() === 'autonomous_platform' || 
+                                          buoyGroup.open_water_type?.trim() === 'autonomous_platform_cbs')
+                          })}
+                          {#if buoyGroup.open_water_type === 'course_coaching'}
                             <!-- Course/Coaching: Show Instructor Name + Number of students -->
                             <div class="flex items-center gap-2 text-sm justify-center">
                               <div class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
                               <span class="font-medium text-gray-800">
                                 {(buoyGroup.member_names?.find((x) => x && x.trim() !== '') || 'Unknown')} + {
-                                  Math.max(
-                                    ((buoyGroup.boat_count ?? (buoyGroup.member_names?.filter((x) => x && x.trim() !== '').length ?? 1)) - 1),
-                                    0
-                                  )
+                                  // For Course/Coaching, boat_count = 1 (instructor) + student_count
+                                  // So student_count = boat_count - 1
+                                  Math.max((buoyGroup.boat_count ?? 1) - 1, 0)
                                 }
                               </span>
                             </div>
-                          {:else if buoyGroup.open_water_type === 'Autonomous on Buoy (0-89m)' || 
-                                   buoyGroup.open_water_type === 'Autonomous on Platform (0-99m)' || 
-                                   buoyGroup.open_water_type === 'Autonomous on Platform +CBS (90-130m)'}
+                          {:else if (buoyGroup.open_water_type?.trim() === 'autonomous_buoy' || 
+                                   buoyGroup.open_water_type?.trim() === 'autonomous_platform' || 
+                                   buoyGroup.open_water_type?.trim() === 'autonomous_platform_cbs')}
                             <!-- Autonomous types: Show group member names stacked (max 3 per group) -->
                             {#each buoyGroup.member_names.slice(0, 3) as n}
                               <div class="flex items-center gap-2 text-sm justify-center">
@@ -246,10 +268,6 @@
                             {/if}
                           {:else}
                             <!-- Fallback: Show all member names (legacy behavior) -->
-                            <div class="flex items-center gap-2 text-sm justify-center mb-1">
-                              <div class="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
-                              <span class="font-medium text-red-600 text-xs">DEBUG: boat_count={buoyGroup.boat_count || 'NULL'}</span>
-                            </div>
                             {#each buoyGroup.member_names as n}
                               <div class="flex items-center gap-2 text-sm justify-center">
                                 <div class="w-2 h-2 bg-gray-500 rounded-full flex-shrink-0"></div>
@@ -374,24 +392,46 @@
                         on:click={() => dispatch('groupClick', { groupId: buoyGroup.id, resDate: buoyGroup.res_date, timePeriod: buoyGroup.time_period })}
                         on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && dispatch('groupClick', { groupId: buoyGroup.id, resDate: buoyGroup.res_date, timePeriod: buoyGroup.time_period })}
                       >
+                        <!-- Debug Logging for Divers Group Box (PM) -->
+                        {console.log('🔍 DEBUG - Divers Group Box (PM):', {
+                          groupId: buoyGroup.id,
+                          displayNames: buoyGroup.member_names,
+                          openWaterType: buoyGroup.open_water_type,
+                          boatCount: buoyGroup.boat_count,
+                          studentCount: buoyGroup.open_water_type === 'course_coaching' ? Math.max((buoyGroup.boat_count ?? 1) - 1, 0) : 'N/A',
+                          memberCount: buoyGroup.member_names?.length || 0,
+                          timePeriod: buoyGroup.time_period
+                        })}
                         <!-- Open Water Type Display Logic -->
                         <div class="space-y-1 flex flex-col items-center">
-                          {#if buoyGroup.open_water_type === 'Course/Coaching'}
+                          <!-- Debug: Log the open_water_type value -->
+                          {console.log('🔍 DEBUG - open_water_type check (PM):', {
+                            openWaterType: buoyGroup.open_water_type,
+                            type: typeof buoyGroup.open_water_type,
+                            length: buoyGroup.open_water_type?.length,
+                            isCourseCoaching: buoyGroup.open_water_type === 'course_coaching',
+                            isAutonomousBuoy: buoyGroup.open_water_type?.trim() === 'autonomous_buoy',
+                            isAutonomousPlatform: buoyGroup.open_water_type?.trim() === 'autonomous_platform',
+                            isAutonomousPlatformCbs: buoyGroup.open_water_type?.trim() === 'autonomous_platform_cbs',
+                            conditionMatch: (buoyGroup.open_water_type?.trim() === 'autonomous_buoy' || 
+                                          buoyGroup.open_water_type?.trim() === 'autonomous_platform' || 
+                                          buoyGroup.open_water_type?.trim() === 'autonomous_platform_cbs')
+                          })}
+                          {#if buoyGroup.open_water_type === 'course_coaching'}
                             <!-- Course/Coaching: Show Instructor Name + Number of students -->
                             <div class="flex items-center gap-2 text-sm justify-center">
                               <div class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
                               <span class="font-medium text-gray-800">
                                 {(buoyGroup.member_names?.find((x) => x && x.trim() !== '') || 'Unknown')} + {
-                                  Math.max(
-                                    ((buoyGroup.boat_count ?? (buoyGroup.member_names?.filter((x) => x && x.trim() !== '').length ?? 1)) - 1),
-                                    0
-                                  )
+                                  // For Course/Coaching, boat_count = 1 (instructor) + student_count
+                                  // So student_count = boat_count - 1
+                                  Math.max((buoyGroup.boat_count ?? 1) - 1, 0)
                                 }
                               </span>
                             </div>
-                          {:else if buoyGroup.open_water_type === 'Autonomous on Buoy (0-89m)' || 
-                                   buoyGroup.open_water_type === 'Autonomous on Platform (0-99m)' || 
-                                   buoyGroup.open_water_type === 'Autonomous on Platform +CBS (90-130m)'}
+                          {:else if (buoyGroup.open_water_type?.trim() === 'autonomous_buoy' || 
+                                   buoyGroup.open_water_type?.trim() === 'autonomous_platform' || 
+                                   buoyGroup.open_water_type?.trim() === 'autonomous_platform_cbs')}
                             <!-- Autonomous types: Show group member names stacked (max 3 per group) -->
                             {#each buoyGroup.member_names.slice(0, 3) as n}
                               <div class="flex items-center gap-2 text-sm justify-center">
@@ -407,10 +447,6 @@
                             {/if}
                           {:else}
                             <!-- Fallback: Show all member names (legacy behavior) -->
-                            <div class="flex items-center gap-2 text-sm justify-center mb-1">
-                              <div class="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
-                              <span class="font-medium text-red-600 text-xs">DEBUG: boat_count={buoyGroup.boat_count || 'NULL'}</span>
-                            </div>
                             {#each buoyGroup.member_names as n}
                               <div class="flex items-center gap-2 text-sm justify-center">
                                 <div class="w-2 h-2 bg-gray-500 rounded-full flex-shrink-0"></div>
