@@ -15,20 +15,37 @@ export async function ensureUserProfile(user: User | null): Promise<void> {
   try {
     if (!user) return;
     const uid = user.id;
-    // Upsert minimal profile
-    await supabase
+    
+    // First check if profile already exists
+    const { data: existingProfile } = await supabase
       .from('user_profiles')
-      .upsert(
-        {
+      .select('uid')
+      .eq('uid', uid)
+      .single();
+    
+    if (existingProfile) {
+      // Profile exists, just update the name if needed
+      await supabase
+        .from('user_profiles')
+        .update({
+          name: user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'User',
+          updated_at: new Date().toISOString()
+        })
+        .eq('uid', uid);
+    } else {
+      // Profile doesn't exist, create it
+      await supabase
+        .from('user_profiles')
+        .insert({
           uid,
           name: user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'User',
           // status and privileges use defaults from DB
           updated_at: new Date().toISOString()
-        },
-        { onConflict: 'uid' }
-      );
-  } catch (_err) {
-    // Ignore silently; RLS/policies protect rows
+        });
+    }
+  } catch (err) {
+    console.error('Error ensuring user profile:', err);
+    // Don't throw - this is best effort
   }
 }
 
@@ -122,15 +139,27 @@ export const auth = {
       const { data: session } = await supabase.auth.getSession();
       const uid = session.session?.user?.id;
       if (!uid) return false;
+      
       const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('privileges')
         .eq('uid', uid)
-        .single();
-      if (error) return false;
-      const isAdmin = Array.isArray(profile?.privileges) && profile.privileges.includes('admin');
+        .maybeSingle();
+        
+      if (error) {
+        console.error('Error checking admin status:', error);
+        return false;
+      }
+      
+      if (!profile) {
+        console.warn('No user profile found for uid:', uid);
+        return false;
+      }
+      
+      const isAdmin = Array.isArray(profile.privileges) && profile.privileges.includes('admin');
       return isAdmin;
-    } catch (_e) {
+    } catch (e) {
+      console.error('Exception in isAdmin check:', e);
       return false;
     }
   },

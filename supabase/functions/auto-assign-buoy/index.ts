@@ -1,9 +1,11 @@
+/// <reference path="../types.d.ts" />
 // Supabase Edge Function: auto-assign-buoy
 // - Admin-only function
 // - Groups confirmed/pending open-water reservations by depth proximity (<=15m) and creates buoy groups
 // - Finds the best buoy by max_depth >= group max depth
 // - Deno runtime (TypeScript)
 
+// @ts-ignore - ESM import for Deno runtime
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
 
