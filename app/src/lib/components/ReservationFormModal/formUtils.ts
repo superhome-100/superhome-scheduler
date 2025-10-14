@@ -1,4 +1,5 @@
 import { now, isToday, isPast } from '../../utils/dateUtils';
+import { isBeforeCutoff, getCutoffDescription, formatCutoffTime, getCutoffTime } from '../../utils/cutoffRules';
 
 export const validateForm = (formData: any) => {
   const errors: Record<string, string> = {};
@@ -6,9 +7,45 @@ export const validateForm = (formData: any) => {
   if (!formData.date) {
     errors.date = 'Date is required';
   } else {
-    // Check if date is in the past
-    if (isPast(formData.date)) {
+    // Check if date is in the past (using dayjs for proper timezone handling)
+    const dateObj = now(formData.date);
+    const today = now();
+    
+    if (dateObj.isBefore(today, 'day')) {
       errors.date = 'Reservation date must be today or in the future';
+    } else {
+      // Check cut-off time validation
+      const resTypeMap: Record<string, 'pool' | 'open_water' | 'classroom'> = {
+        'pool': 'pool',
+        'openwater': 'open_water',
+        'classroom': 'classroom'
+      };
+      
+      const resType = resTypeMap[formData.type] || 'pool';
+      
+      // For open water, use timeOfDay to determine the appropriate time
+      let reservationDateTime: Date;
+      if (formData.type === 'openwater' && formData.timeOfDay) {
+        // Use appropriate time based on timeOfDay
+        const time = formData.timeOfDay === 'AM' ? '08:00' : '13:00';
+        reservationDateTime = new Date(`${formData.date}T${time}`);
+      } else {
+        // For pool and classroom, use startTime or default
+        reservationDateTime = new Date(`${formData.date}T${formData.startTime || '12:00'}`);
+      }
+      
+      if (!isBeforeCutoff(reservationDateTime.toISOString(), resType)) {
+        const cutoffDescription = getCutoffDescription(resType);
+        
+        // Only show cutoff time for Open Water reservations
+        if (resType === 'open_water') {
+          const cutoffTime = getCutoffTime(resType, reservationDateTime.toISOString());
+          errors.date = `${cutoffDescription}. Cut-off time was ${formatCutoffTime(cutoffTime)}`;
+        } else {
+          // For Pool and Classroom, just show the description
+          errors.date = cutoffDescription;
+        }
+      }
     }
   }
   

@@ -11,7 +11,9 @@
   import FormActions from './FormActions.svelte';
   import FormErrorAlert from './FormErrorAlert.svelte';
   import EquipmentOptions from './EquipmentOptions.svelte';
+  import CutoffWarning from '../CutoffWarning.svelte';
   import { validateForm, getDefaultFormData, getSubmissionData } from './formUtils';
+  import { isBeforeCutoff } from '../../utils/cutoffRules';
 
   const dispatch = createEventDispatcher();
 
@@ -24,6 +26,41 @@
   $: if (formData.openWaterType === 'course_coaching' && formData.pulley === false) {
     formData.pulley = 'true';
   }
+
+  // Trigger validation when form data changes
+  $: if (formData.date && formData.type) {
+    const { errors: validationErrors } = validateForm(formData);
+    errors = validationErrors;
+  }
+
+  // Reactive values for CutoffWarning to ensure updates
+  $: currentReservationDate = formData.date;
+  $: currentResType = formData.type === 'openwater' ? 'open_water' : formData.type;
+
+  // Check if cutoff time has passed
+  $: isCutoffPassed = (() => {
+    if (!formData.date || !formData.type) return false;
+    
+    const resTypeMap: Record<string, 'pool' | 'open_water' | 'classroom'> = {
+      'pool': 'pool',
+      'openwater': 'open_water',
+      'classroom': 'classroom'
+    };
+    
+    const resType = resTypeMap[formData.type] || 'pool';
+    
+    // For open water, use timeOfDay to determine the appropriate time
+    let reservationDateTime: Date;
+    if (formData.type === 'openwater' && formData.timeOfDay) {
+      const time = formData.timeOfDay === 'AM' ? '08:00' : '13:00';
+      reservationDateTime = new Date(`${formData.date}T${time}`);
+    } else {
+      // For pool and classroom, use startTime or default
+      reservationDateTime = new Date(`${formData.date}T${formData.startTime || '12:00'}`);
+    }
+    
+    return !isBeforeCutoff(reservationDateTime.toISOString(), resType);
+  })();
 
   // Form validation and loading state
   let errors: Record<string, string> = {};
@@ -156,7 +193,14 @@
 
   // Handle validation changes from child components
   const handleValidationChange = (event: CustomEvent) => {
-    errors = { ...errors, ...event.detail.errors };
+    // If no specific errors are provided, trigger full form validation
+    if (event.detail.errors && Object.keys(event.detail.errors).length === 0) {
+      const { errors: validationErrors } = validateForm(formData);
+      errors = validationErrors;
+    } else {
+      // Merge specific errors from child components
+      errors = { ...errors, ...event.detail.errors };
+    }
   };
 
   const handleKeydown = (event: KeyboardEvent) => {
@@ -183,6 +227,15 @@
 
       <form on:submit={handleSubmit} class="modal-body">
         <FormErrorAlert {submitError} />
+        
+        <!-- Cut-off Warning -->
+        {#if currentReservationDate && currentResType}
+          <CutoffWarning 
+            reservationDate={currentReservationDate}
+            resType={currentResType}
+            startTime={formData.startTime}
+          />
+        {/if}
         
         <div class="form-grid">
           <!-- Basic Fields: Date and Type -->
@@ -219,7 +272,7 @@
         <FormNotes bind:formData />
 
         <!-- Actions -->
-        <FormActions {loading} on:close={closeModal} />
+        <FormActions {loading} isCutoffPassed={isCutoffPassed} on:close={closeModal} />
       </form>
     </div>
   </div>

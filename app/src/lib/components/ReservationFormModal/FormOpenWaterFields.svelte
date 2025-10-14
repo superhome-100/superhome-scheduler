@@ -26,25 +26,12 @@
 
   const handleTimeOfDayChange = () => {
     // Clear any existing time of day errors when user changes selection
-    if (errors.timeOfDay && errors.timeOfDay.includes('no longer available')) {
+    if (errors.timeOfDay) {
       delete errors.timeOfDay;
     }
     
-    // Validate time period for today
-    if (formData.date && formData.timeOfDay && isToday(formData.date)) {
-      const currentTime = now();
-      const currentHour = currentTime.hour();
-      
-      // Check if selected time period is still available today
-      if (formData.timeOfDay === 'AM' && currentHour >= 12) {
-        errors.timeOfDay = 'AM time slot is no longer available for today';
-      } else if (formData.timeOfDay === 'PM' && currentHour >= 17) {
-        errors.timeOfDay = 'PM time slot is no longer available for today';
-      }
-    }
-    
-    // Trigger validation update
-    dispatch('validationChange', { errors });
+    // Trigger full form validation to include cutoff rules
+    dispatch('validationChange', { errors: {} });
   };
 </script>
 

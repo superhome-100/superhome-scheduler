@@ -5,6 +5,8 @@ import type {
   ClassroomReservationDetails, 
   OpenWaterReservationDetails 
 } from '../services/reservationService';
+import { getCutoffTime, isBeforeCutoff, formatCutoffTime, getCutoffDescription } from './cutoffRules';
+import { availabilityService } from '../services/availabilityService';
 
 // Validation error interface
 export interface ValidationError {
@@ -345,4 +347,150 @@ export function sanitizeReservationData(data: any): any {
  */
 export function formatValidationErrors(errors: ValidationError[]): string {
   return errors.map(error => `${error.field}: ${error.message}`).join(', ');
+}
+
+/**
+ * Enhanced validation with cut-off time and availability checking
+ */
+export async function validateCreateReservationWithCutoff(
+  data: CreateReservationData
+): Promise<ValidationResult> {
+  // First run basic validation
+  const baseValidation = validateCreateReservation(data);
+  const errors: ValidationError[] = [...baseValidation.errors];
+
+  // If basic validation failed, return early
+  if (!baseValidation.isValid) {
+    return baseValidation;
+  }
+
+  // Add cut-off and availability validation
+  if (data.res_date && data.res_type) {
+    const cutoffErrors = await validateCutoffAndAvailability(data);
+    errors.push(...cutoffErrors);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+/**
+ * Enhanced validation for updates with cut-off time and availability checking
+ */
+export async function validateUpdateReservationWithCutoff(
+  data: UpdateReservationData
+): Promise<ValidationResult> {
+  // First run basic validation
+  const baseValidation = validateUpdateReservation(data);
+  const errors: ValidationError[] = [...baseValidation.errors];
+
+  // If basic validation failed, return early
+  if (!baseValidation.isValid) {
+    return baseValidation;
+  }
+
+  // Add cut-off and availability validation if date provided
+  if (data.res_date) {
+    // For updates, we need to get the res_type from the existing reservation
+    // This is a limitation - we'd need to fetch the existing reservation
+    // For now, we'll skip cut-off validation for updates without res_type
+    console.warn('Cut-off validation for updates requires res_type to be provided');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+/**
+ * Validate cut-off time and availability
+ */
+async function validateCutoffAndAvailability(
+  data: CreateReservationData
+): Promise<ValidationError[]> {
+  const errors: ValidationError[] = [];
+
+  if (!data.res_date || !data.res_type) {
+    return errors;
+  }
+
+  // Check cut-off time
+  const cutoffTime = getCutoffTime(data.res_type, data.res_date);
+  const now = new Date();
+
+  if (now > cutoffTime) {
+    const cutoffDescription = getCutoffDescription(data.res_type);
+    errors.push({
+      field: 'res_date',
+      message: `${cutoffDescription}. Cut-off time was ${formatCutoffTime(cutoffTime)}`
+    });
+  }
+
+  // Check availability
+  try {
+    const availability = await availabilityService.checkAvailability(
+      data.res_date,
+      data.res_type,
+      undefined // category not available in CreateReservationData
+    );
+
+    if (!availability.isAvailable) {
+      const reason = availability.reason ? ` (${availability.reason})` : '';
+      errors.push({
+        field: 'res_date',
+        message: `This date is not available for reservations${reason}`
+      });
+    }
+  } catch (error) {
+    console.error('Error checking availability:', error);
+    errors.push({
+      field: 'res_date',
+      message: 'Unable to verify availability. Please try again.'
+    });
+  }
+
+  return errors;
+}
+
+/**
+ * Validate cut-off time only (for quick checks)
+ */
+export function validateCutoffTime(
+  reservationDate: string,
+  res_type: string
+): ValidationResult {
+  const errors: ValidationError[] = [];
+
+  if (!reservationDate || !res_type) {
+    return { isValid: true, errors: [] };
+  }
+
+  const cutoffTime = getCutoffTime(res_type as any, reservationDate);
+  const now = new Date();
+
+  if (now > cutoffTime) {
+    const cutoffDescription = getCutoffDescription(res_type as any);
+    errors.push({
+      field: 'res_date',
+      message: `${cutoffDescription}. Cut-off time was ${formatCutoffTime(cutoffTime)}`
+    });
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+/**
+ * Check if reservation is within cut-off time
+ */
+export function isReservationWithinCutoff(
+  reservationDate: string,
+  res_type: string
+): boolean {
+  return isBeforeCutoff(reservationDate, res_type as any);
 }

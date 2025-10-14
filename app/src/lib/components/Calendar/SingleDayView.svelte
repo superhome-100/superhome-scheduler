@@ -5,10 +5,10 @@
 
   import SingleDayHeader from './SingleDayHeader.svelte';
   import CalendarTypeSwitcher from './CalendarTypeSwitcher.svelte';
-  import PoolCalendar from './PoolCalendar.svelte';
-  import OpenWaterAdminTables from './OpenWaterAdminTables.svelte';
-  import OpenWaterUserLists from './OpenWaterUserLists.svelte';
-  import ClassroomCalendar from './ClassroomCalendar.svelte';
+  import PoolCalendar from './admin/PoolCalendar/PoolCalendar.svelte';
+  import OpenWaterAdminTables from './admin/OpenWaterCalendar/OpenWaterAdminTables.svelte';
+  import OpenWaterUserLists from './admin/OpenWaterCalendar/OpenWaterUserLists.svelte';
+  import ClassroomCalendar from './admin/ClassroomCalendar/ClassroomCalendar.svelte';
   import { pullToRefresh } from '../../actions/pullToRefresh';
   import {
     loadAvailableBuoys as svcLoadAvailableBuoys,
@@ -18,7 +18,7 @@
     type TimePeriod
   } from '../../services/openWaterService';
   import { getGroupReservationDetails, type GroupReservationDetails } from '../../services/openWaterService';
-  import GroupReservationDetailsModal from './GroupReservationDetailsModal.svelte';
+  import GroupReservationDetailsModal from './admin/OpenWaterCalendar/GroupReservationDetailsModal.svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -40,7 +40,11 @@
     open_water_type?: string | null;
   };
 
-  // Handle click on divers group box (admin view)
+  // ============================================ -->
+  // 🔧 ADMIN-SPECIFIC: Group Management & Data -->
+  // ============================================ -->
+  
+  // Handle click on divers group box (admin view only)
   async function handleGroupClick(e: CustomEvent<{ groupId: number; resDate: string; timePeriod: TimePeriod }>) {
     try {
       const details = await getGroupReservationDetails(e.detail.groupId);
@@ -51,12 +55,14 @@
       showGroupModal = false;
     }
   }
+  
+  // Admin-specific data for buoy/boat management
   let buoyGroups: BuoyGroupLite[] = [];
   let loadingBuoyGroups = false;
-  // Boat editing is always inline via dropdown now (no edit mode)
   let availableBoats: string[] = ['Boat 1', 'Boat 2', 'Boat 3', 'Boat 4'];
   let availableBuoys: Buoy[] = [];
-  // Modal state for group reservation details
+  
+  // Admin-specific modal state for group reservation details
   let showGroupModal = false;
   let groupDetails: GroupReservationDetails | null = null;
 
@@ -98,7 +104,11 @@
   // (Display helpers removed; use findAssignment for user rows)
 
 
-  // Update buoy assignment for a buoy group
+  // ============================================ -->
+  // 🔧 ADMIN-SPECIFIC: Buoy/Boat Assignment Functions -->
+  // ============================================ -->
+  
+  // Update buoy assignment for a buoy group (admin only)
   const updateBuoyAssignment = async (groupId: number, buoyName: string) => {
     try {
       await svcUpdateBuoy(groupId, buoyName);
@@ -140,7 +150,11 @@
     }
   };
 
-  // Load buoy groups for the selected date (with member names)
+  // ============================================ -->
+  // 🔧 ADMIN-SPECIFIC: Data Loading Functions -->
+  // ============================================ -->
+  
+  // Load buoy groups for the selected date (admin only)
   const loadBuoyGroups = async () => {
     if (!selectedDate) return;
     
@@ -170,7 +184,7 @@
     }
   };
 
-  // Load available buoys for dropdowns (admin manual edit)
+  // Load available buoys for dropdowns (admin only)
   const loadAvailableBuoys = async () => {
     try {
       availableBuoys = await svcLoadAvailableBuoys();
@@ -180,6 +194,10 @@
     }
   };
 
+  // ============================================ -->
+  // 👤 USER-SPECIFIC: Helper Functions -->
+  // ============================================ -->
+  
   // Helpers for user-facing reservations table
   function findAssignment(uid: string, period: TimePeriod) {
     // Use assignment data directly from the reservation object
@@ -204,13 +222,17 @@
     dispatch('reservationClick', res);
   }
 
+  // ============================================ -->
+  // 🔧 ADMIN-SPECIFIC: Reactive Data Loading -->
+  // ============================================ -->
+  
   // Load buoy groups when date changes (admin only) - only for admin table functionality
   $: if (isAdmin && selectedDate && selectedCalendarType === 'openwater') {
     loadBuoyGroups();
     loadAvailableBuoys();
   }
 
-  // Update boat assignment for a buoy group
+  // Update boat assignment for a buoy group (admin only)
   const updateBoatAssignment = async (groupId: number, boatName: string) => {
     try {
       await svcUpdateBoat(groupId, boatName);
@@ -223,9 +245,9 @@
       alert('Error updating boat assignment: ' + (error as Error).message);
     }
   };
-  // Generate time slots for 24 hours
-  const timeSlots = Array.from({ length: 24 }, (_, i) => {
-    const hour = i.toString().padStart(2, '0');
+  // Generate time slots for 8:00 to 20:00 (13 hours)
+  const timeSlots = Array.from({ length: 13 }, (_, i) => {
+    const hour = (i + 8).toString().padStart(2, '0');
     return `${hour}:00`;
   });
 
@@ -261,12 +283,17 @@
   <!-- Calendar Content -->
   <div class="px-6 sm:px-4 md:px-8 lg:px-12 min-h-[60vh] max-w-screen-xl mx-auto" class:max-w-none={selectedCalendarType === 'openwater'}>
     {#if selectedCalendarType === 'pool'}
+      <!-- POOL CALENDAR: Shared between Admin and User -->
       <PoolCalendar {timeSlots} reservations={filteredReservations} />
     {:else if selectedCalendarType === 'openwater'}
-      <!-- Open Water Calendar: Buoy/Boat tables and capacity grid -->
+      <!-- OPEN WATER CALENDAR: Different views for Admin vs User -->
       <div class="flex flex-col gap-8 lg:gap-8" class:grid={!isAdmin} class:grid-cols-2={!isAdmin}>
         
         {#if isAdmin}
+          <!-- ============================================ -->
+          <!-- 🔧 ADMIN VIEW: Open Water Admin Tables -->
+          <!-- ============================================ -->
+          <!-- Features: Editable buoy/boat assignments, admin controls, group management -->
           <OpenWaterAdminTables
             {availableBoats}
             availableBuoys={adminAvailableBuoys}
@@ -277,6 +304,10 @@
             on:groupClick={handleGroupClick}
           />
           {:else}
+          <!-- ============================================ -->
+          <!-- 👤 USER VIEW: Open Water User Lists -->
+          <!-- ============================================ -->
+          <!-- Features: Read-only lists, user-friendly display, click to view details -->
           <OpenWaterUserLists
             {filteredReservations}
             findAssignment={findAssignment}
@@ -285,6 +316,7 @@
         {/if}
       </div>
     {:else if selectedCalendarType === 'classroom'}
+      <!-- CLASSROOM CALENDAR: Shared between Admin and User -->
       <ClassroomCalendar timeSlots={timeSlots} reservations={filteredReservations} />
                     {/if}
   </div>

@@ -6,7 +6,7 @@
   import PendingReservations from './PendingReservations.svelte';
   import UserManagement from './UserManagement.svelte';
   import AdminCalendar from './AdminCalendar.svelte';
-  import ReservationDetailsModal from './ReservationDetailsModal.svelte';
+  import ReservationDetailsModal from '../ReservationDetailsModal/ReservationDetailsModal.svelte';
   import SingleDayView from '../Calendar/SingleDayView.svelte';
   import { reservationApi } from '../../api/reservationApi';
   import { userAdminService } from '../../services/userAdminService';

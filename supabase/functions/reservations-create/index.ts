@@ -5,6 +5,113 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
 
+// Cut-off rules (same as cutoffRules.ts)
+const CUTOFF_RULES = {
+  open_water: {
+    cutoffTime: '18:00', // 6 PM
+    description: 'Open water reservations must be made before 6 PM for next day'
+  },
+  pool: {
+    cutoffMinutes: 30,
+    description: 'Pool reservations must be made at least 30 minutes in advance'
+  },
+  classroom: {
+    cutoffMinutes: 30,
+    description: 'Classroom reservations must be made at least 30 minutes in advance'
+  }
+} as const
+
+function getCutoffTime(res_type: ReservationType, reservationDate: string): Date {
+  const resDate = new Date(reservationDate)
+  
+  if (res_type === 'open_water') {
+    // 6 PM on the day before the reservation
+    const cutoffDate = new Date(resDate)
+    cutoffDate.setDate(cutoffDate.getDate() - 1)
+    cutoffDate.setUTCHours(18, 0, 0, 0)
+    return cutoffDate
+  } else {
+    // 30 minutes before reservation time
+    const cutoffTime = new Date(resDate)
+    cutoffTime.setMinutes(cutoffTime.getMinutes() - 30)
+    return cutoffTime
+  }
+}
+
+function isBeforeCutoff(reservationDate: string, res_type: ReservationType): boolean {
+  const resDate = new Date(reservationDate)
+  const now = new Date()
+  
+  // For open water, check if it's same day (not allowed)
+  if (res_type === 'open_water') {
+    const today = new Date(now)
+    today.setUTCHours(0, 0, 0, 0)
+    const reservationDay = new Date(resDate)
+    reservationDay.setUTCHours(0, 0, 0, 0)
+    
+    // If trying to book same day, it's invalid
+    if (reservationDay.getTime() === today.getTime()) {
+      return false
+    }
+  }
+  
+  const cutoffTime = getCutoffTime(res_type, reservationDate)
+  return now < cutoffTime
+}
+
+function formatCutoffTime(cutoffTime: Date): string {
+  return cutoffTime.toLocaleString('en-US', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  })
+}
+
+function getCutoffDescription(res_type: ReservationType): string {
+  return CUTOFF_RULES[res_type].description
+}
+
+async function checkAvailability(supabase: any, date: string, res_type: ReservationType, category?: string): Promise<{ isAvailable: boolean; reason?: string }> {
+  try {
+    let query = supabase
+      .from('availabilities')
+      .select('available, reason')
+      .eq('date', date.split('T')[0]) // Extract date part
+      .eq('res_type', res_type)
+    
+    // Handle category properly - if undefined, query for null category
+    if (category === undefined) {
+      query = query.is('category', null)
+    } else {
+      query = query.eq('category', category)
+    }
+    
+    const { data, error } = await query.single()
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+      console.error('Error checking availability:', error)
+      return { isAvailable: false }
+    }
+
+    // If no row found, it's available by default
+    if (!data) {
+      return { isAvailable: true }
+    }
+
+    return {
+      isAvailable: data.available,
+      reason: data.reason || undefined
+    }
+  } catch (error) {
+    console.error('Error checking availability:', error)
+    return { isAvailable: false }
+  }
+}
+
 type ReservationType = 'pool' | 'open_water' | 'classroom'
 
 type PoolDetails = { start_time: string | null; end_time: string | null; lane?: string | null; note?: string | null }
@@ -56,6 +163,24 @@ Deno.serve(async (req: Request) => {
 
     const body = (await req.json()) as Payload;
     if (!body?.uid || !body?.res_type || !body?.res_date) return json({ error: 'Invalid payload' }, { status: 400 });
+
+    // Validate cut-off time
+    if (!isBeforeCutoff(body.res_date, body.res_type)) {
+      const cutoffTime = getCutoffTime(body.res_type, body.res_date);
+      const cutoffDescription = getCutoffDescription(body.res_type);
+      return json({ 
+        error: `${cutoffDescription}. Cut-off time was ${formatCutoffTime(cutoffTime)}` 
+      }, { status: 400 });
+    }
+
+    // Check availability
+    const availability = await checkAvailability(supabase, body.res_date, body.res_type);
+    if (!availability.isAvailable) {
+      const reason = availability.reason ? ` (${availability.reason})` : '';
+      return json({ 
+        error: `This date is not available for reservations${reason}` 
+      }, { status: 400 });
+    }
 
     // Owner or admin
     if (body.uid !== user.id) {
