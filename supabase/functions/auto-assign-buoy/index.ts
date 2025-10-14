@@ -7,7 +7,7 @@
 
 // @ts-ignore - ESM import for Deno runtime
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
-import { corsHeaders, handlePreflight } from '../_shared/cors.js'
+import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
 
 interface Payload {
   res_date: string; // 'YYYY-MM-DD'
