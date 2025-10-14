@@ -154,6 +154,11 @@
     }
   };
 
+  // Handle validation changes from child components
+  const handleValidationChange = (event: CustomEvent) => {
+    errors = { ...errors, ...event.detail.errors };
+  };
+
   const handleKeydown = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
       closeModal();
@@ -185,16 +190,25 @@
             bind:formData 
             {errors} 
             on:typeChange={handleTypeChange}
+            on:validationChange={handleValidationChange}
           />
 
           <!-- Open Water specific fields -->
           {#if formData.type === 'openwater'}
-            <FormOpenWaterFields bind:formData {errors} />
+            <FormOpenWaterFields 
+              bind:formData 
+              {errors} 
+              on:validationChange={handleValidationChange}
+            />
           {/if}
 
           <!-- Time fields for Pool and Classroom -->
           {#if formData.type !== 'openwater'}
-            <FormTimeFields bind:formData {errors} />
+            <FormTimeFields 
+              bind:formData 
+              {errors} 
+              on:validationChange={handleValidationChange}
+            />
           {/if}
         </div>
 
