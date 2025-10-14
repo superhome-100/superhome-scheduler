@@ -193,7 +193,6 @@
 
   // Handle validation changes from child components
   const handleValidationChange = (event: CustomEvent) => {
-<<<<<<< HEAD
     // If no specific errors are provided, trigger full form validation
     if (event.detail.errors && Object.keys(event.detail.errors).length === 0) {
       const { errors: validationErrors } = validateForm(formData);
@@ -202,9 +201,6 @@
       // Merge specific errors from child components
       errors = { ...errors, ...event.detail.errors };
     }
-=======
-    errors = { ...errors, ...event.detail.errors };
->>>>>>> develop
   };
 
   const handleKeydown = (event: KeyboardEvent) => {
@@ -261,11 +257,13 @@
 
           <!-- Time fields for Pool and Classroom -->
           {#if formData.type !== 'openwater'}
-            <FormTimeFields 
-              bind:formData 
-              {errors} 
-              on:validationChange={handleValidationChange}
-            />
+            <div class="time-fields-wrapper">
+              <FormTimeFields 
+                bind:formData 
+                {errors} 
+                on:validationChange={handleValidationChange}
+              />
+            </div>
           {/if}
         </div>
 
@@ -322,6 +320,10 @@
     margin-bottom: 1.5rem;
   }
 
+  .time-fields-wrapper {
+    grid-column: 1 / -1;
+  }
+
   /* Mobile Responsive */
   @media (max-width: 768px) {
     .modal-overlay {
@@ -335,6 +337,10 @@
     .form-grid {
       grid-template-columns: 1fr;
       gap: 0.75rem;
+    }
+
+    .time-fields-wrapper {
+      grid-column: 1;
     }
   }
 </style>

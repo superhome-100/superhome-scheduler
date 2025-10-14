@@ -26,15 +26,7 @@
 
   const handleTimeOfDayChange = () => {
     // Clear any existing time of day errors when user changes selection
-<<<<<<< HEAD
     if (errors.timeOfDay) {
-      delete errors.timeOfDay;
-    }
-    
-    // Trigger full form validation to include cutoff rules
-    dispatch('validationChange', { errors: {} });
-=======
-    if (errors.timeOfDay && errors.timeOfDay.includes('no longer available')) {
       delete errors.timeOfDay;
     }
     
@@ -51,9 +43,8 @@
       }
     }
     
-    // Trigger validation update
+    // Trigger full form validation to include cutoff rules
     dispatch('validationChange', { errors });
->>>>>>> develop
   };
 </script>
 

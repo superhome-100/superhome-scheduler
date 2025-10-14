@@ -21,6 +21,7 @@
     "dayjs": "^1.11.18"
   },
   "devDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.52.4",
     "@sveltejs/adapter-cloudflare": "^7.2.4",
     "@sveltejs/kit": "^2.46.4",
     "@sveltejs/vite-plugin-svelte": "^6.2.1",

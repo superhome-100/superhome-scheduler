@@ -1,11 +1,6 @@
 <script lang="ts">
-<<<<<<< HEAD
   import { createEventDispatcher, onMount, onDestroy } from 'svelte';
   import { now, isToday, isValidTimeFormat, normalize24HourTime } from '../../utils/dateUtils';
-=======
-  import { createEventDispatcher } from 'svelte';
-  import { now, isToday } from '../../utils/dateUtils';
->>>>>>> develop
 
   export let formData: any;
   export let errors: Record<string, string> = {};
@@ -16,8 +11,6 @@
   $: currentTime = now().format('HH:mm');
   $: isDateToday = formData.date ? isToday(formData.date) : false;
   $: minTime = isDateToday ? currentTime : undefined;
-
-<<<<<<< HEAD
   // Use utility functions from dateUtils
 
   // Generate 30-minute intervals for time dropdowns
@@ -106,15 +99,12 @@
     document.removeEventListener('click', handleClickOutside);
   });
 
-=======
->>>>>>> develop
   const handleTimeChange = (field: 'startTime' | 'endTime') => {
     // Clear any existing time errors when user changes time
     if (errors[field] && errors[field].includes('must be in the future')) {
       delete errors[field];
     }
     
-<<<<<<< HEAD
     // Auto-calculate end time when start time changes
     if (field === 'startTime' && formData.startTime) {
       const calculatedEndTime = calculateEndTime(formData.startTime);
@@ -126,12 +116,6 @@
       const currentTimeObj = now();
       const normalizedTime = normalize24HourTime(formData[field]);
       const selectedTime = now(`${formData.date}T${normalizedTime}`);
-=======
-    // Validate time in real-time when date is today
-    if (formData.date && formData[field] && isToday(formData.date)) {
-      const currentTimeObj = now();
-      const selectedTime = now(`${formData.date}T${formData[field]}`);
->>>>>>> develop
       
       if (selectedTime.isBefore(currentTimeObj)) {
         errors[field] = `${field === 'startTime' ? 'Start' : 'End'} time must be in the future`;
@@ -139,20 +123,13 @@
     }
     
     // Validate time order if both times are set
-    if (formData.startTime && formData.endTime && formData.startTime && formData.endTime) {
-<<<<<<< HEAD
+    if (formData.startTime && formData.endTime) {
       const startTimeNormalized = normalize24HourTime(formData.startTime);
       const endTimeNormalized = normalize24HourTime(formData.endTime);
       const startTime = now(`${formData.date}T${startTimeNormalized}`);
       const endTime = now(`${formData.date}T${endTimeNormalized}`);
       
       if (startTime.isAfter(endTime) || startTime.isSame(endTime)) {
-=======
-      const startTime = now(`${formData.date}T${formData.startTime}`);
-      const endTime = now(`${formData.date}T${formData.endTime}`);
-      
-      if (startTime.isAfter(endTime)) {
->>>>>>> develop
         errors.endTime = 'End time must be after start time';
       } else if (errors.endTime && errors.endTime.includes('must be after start time')) {
         delete errors.endTime;
@@ -162,122 +139,106 @@
     // Trigger validation update
     dispatch('validationChange', { errors });
   };
-<<<<<<< HEAD
-
-=======
->>>>>>> develop
 </script>
 
-<!-- Start Time (Only for Pool and Classroom) -->
-<div class="form-group">
-  <label for="startTime" class="form-label">Start Time *</label>
-<<<<<<< HEAD
-  <div class="dropdown-container">
-    <div 
-      class="dropdown-trigger"
-      class:error={errors.startTime}
-      on:click={() => toggleDropdown('startTime')}
-      role="button"
-      tabindex="0"
-      on:keydown={(e) => e.key === 'Enter' && toggleDropdown('startTime')}
-    >
-      <span class="dropdown-value">{formData.startTime || 'Select Start Time'}</span>
-      <span class="dropdown-arrow" class:open={startTimeDropdownOpen}>▼</span>
-    </div>
-    
-    {#if startTimeDropdownOpen}
-      <div class="dropdown-menu">
-        {#each startTimeSlots as timeSlot}
-          <div 
-            class="dropdown-option"
-            class:selected={formData.startTime === timeSlot}
-            on:click={() => selectTime('startTime', timeSlot)}
-            role="option"
-            aria-selected={formData.startTime === timeSlot}
-            tabindex="0"
-            on:keydown={(e) => e.key === 'Enter' && selectTime('startTime', timeSlot)}
-          >
-            {timeSlot}
-          </div>
-        {/each}
+<!-- Time Fields (Only for Pool and Classroom) -->
+<div class="time-fields-container">
+  <!-- Start Time -->
+  <div class="form-group time-field">
+    <label for="startTime" class="form-label">Start Time *</label>
+    <div class="dropdown-container">
+      <div 
+        class="dropdown-trigger"
+        class:error={errors.startTime}
+        on:click={() => toggleDropdown('startTime')}
+        role="button"
+        tabindex="0"
+        on:keydown={(e) => e.key === 'Enter' && toggleDropdown('startTime')}
+      >
+        <span class="dropdown-value">{formData.startTime || 'Select Start Time'}</span>
+        <span class="dropdown-arrow" class:open={startTimeDropdownOpen}>▼</span>
       </div>
+      
+      {#if startTimeDropdownOpen}
+        <div class="dropdown-menu">
+          {#each startTimeSlots as timeSlot}
+            <div 
+              class="dropdown-option"
+              class:selected={formData.startTime === timeSlot}
+              on:click={() => selectTime('startTime', timeSlot)}
+              role="option"
+              aria-selected={formData.startTime === timeSlot}
+              tabindex="0"
+              on:keydown={(e) => e.key === 'Enter' && selectTime('startTime', timeSlot)}
+            >
+              {timeSlot}
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+    {#if errors.startTime}
+      <span class="error-message">{errors.startTime}</span>
     {/if}
   </div>
-=======
-  <input
-    id="startTime"
-    type="time"
-    class="form-control"
-    class:error={errors.startTime}
-    bind:value={formData.startTime}
-    on:change={() => handleTimeChange('startTime')}
-    min={minTime}
-    required
-  />
->>>>>>> develop
-  {#if errors.startTime}
-    <span class="error-message">{errors.startTime}</span>
-  {/if}
-</div>
 
-<!-- End Time (Only for Pool and Classroom) -->
-<div class="form-group">
-  <label for="endTime" class="form-label">End Time *</label>
-<<<<<<< HEAD
-  <div class="dropdown-container">
-    <div 
-      class="dropdown-trigger"
-      class:error={errors.endTime}
-      on:click={() => toggleDropdown('endTime')}
-      role="button"
-      tabindex="0"
-      on:keydown={(e) => e.key === 'Enter' && toggleDropdown('endTime')}
-    >
-      <span class="dropdown-value">{formData.endTime || 'Select End Time'}</span>
-      <span class="dropdown-arrow" class:open={endTimeDropdownOpen}>▼</span>
-    </div>
-    
-    {#if endTimeDropdownOpen}
-      <div class="dropdown-menu">
-        {#each filteredEndTimeSlots as timeSlot}
-          <div 
-            class="dropdown-option"
-            class:selected={formData.endTime === timeSlot}
-            on:click={() => selectTime('endTime', timeSlot)}
-            role="option"
-            aria-selected={formData.endTime === timeSlot}
-            tabindex="0"
-            on:keydown={(e) => e.key === 'Enter' && selectTime('endTime', timeSlot)}
-          >
-            {timeSlot}
-          </div>
-        {/each}
+  <!-- End Time -->
+  <div class="form-group time-field">
+    <label for="endTime" class="form-label">End Time *</label>
+    <div class="dropdown-container">
+      <div 
+        class="dropdown-trigger"
+        class:error={errors.endTime}
+        on:click={() => toggleDropdown('endTime')}
+        role="button"
+        tabindex="0"
+        on:keydown={(e) => e.key === 'Enter' && toggleDropdown('endTime')}
+      >
+        <span class="dropdown-value">{formData.endTime || 'Select End Time'}</span>
+        <span class="dropdown-arrow" class:open={endTimeDropdownOpen}>▼</span>
       </div>
+      
+      {#if endTimeDropdownOpen}
+        <div class="dropdown-menu">
+          {#each filteredEndTimeSlots as timeSlot}
+            <div 
+              class="dropdown-option"
+              class:selected={formData.endTime === timeSlot}
+              on:click={() => selectTime('endTime', timeSlot)}
+              role="option"
+              aria-selected={formData.endTime === timeSlot}
+              tabindex="0"
+              on:keydown={(e) => e.key === 'Enter' && selectTime('endTime', timeSlot)}
+            >
+              {timeSlot}
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+    {#if errors.endTime}
+      <span class="error-message">{errors.endTime}</span>
     {/if}
   </div>
-=======
-  <input
-    id="endTime"
-    type="time"
-    class="form-control"
-    class:error={errors.endTime}
-    bind:value={formData.endTime}
-    on:change={() => handleTimeChange('endTime')}
-    min={minTime}
-    required
-  />
->>>>>>> develop
-  {#if errors.endTime}
-    <span class="error-message">{errors.endTime}</span>
-  {/if}
 </div>
 
 <style>
+  .time-fields-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
   .form-group {
     margin-bottom: 1rem;
   }
 
   .form-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .time-field {
     margin-bottom: 0;
   }
 
@@ -289,12 +250,19 @@
     margin-bottom: 0.5rem;
   }
 
-
   .error-message {
     display: block;
     font-size: 0.75rem;
     color: #ef4444;
     margin-top: 0.25rem;
+  }
+
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .time-fields-container {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
   }
 
   /* Dropdown container positioning */

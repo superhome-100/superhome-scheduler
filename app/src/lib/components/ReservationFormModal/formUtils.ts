@@ -1,8 +1,5 @@
-import { now, isToday, isPast } from '../../utils/dateUtils';
-<<<<<<< HEAD
+import { now, isToday, isPast, createDayjs } from '../../utils/dateUtils';
 import { isBeforeCutoff, getCutoffDescription, formatCutoffTime, getCutoffTime } from '../../utils/cutoffRules';
-=======
->>>>>>> develop
 
 export const validateForm = (formData: any) => {
   const errors: Record<string, string> = {};
@@ -10,9 +7,8 @@ export const validateForm = (formData: any) => {
   if (!formData.date) {
     errors.date = 'Date is required';
   } else {
-<<<<<<< HEAD
     // Check if date is in the past (using dayjs for proper timezone handling)
-    const dateObj = now(formData.date);
+    const dateObj = createDayjs(formData.date);
     const today = now();
     
     if (dateObj.isBefore(today, 'day')) {
@@ -50,11 +46,6 @@ export const validateForm = (formData: any) => {
           errors.date = cutoffDescription;
         }
       }
-=======
-    // Check if date is in the past
-    if (isPast(formData.date)) {
-      errors.date = 'Reservation date must be today or in the future';
->>>>>>> develop
     }
   }
   
@@ -70,8 +61,8 @@ export const validateForm = (formData: any) => {
     // Additional validation for time when date is today
     if (formData.date && formData.startTime && formData.endTime && isToday(formData.date)) {
       const currentTime = now();
-      const startTime = now(`${formData.date}T${formData.startTime}`);
-      const endTime = now(`${formData.date}T${formData.endTime}`);
+      const startTime = createDayjs(`${formData.date}T${formData.startTime}`);
+      const endTime = createDayjs(`${formData.date}T${formData.endTime}`);
       
       if (startTime.isBefore(currentTime)) {
         errors.startTime = 'Start time must be in the future';
