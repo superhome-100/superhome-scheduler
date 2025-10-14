@@ -1,5 +1,8 @@
 import { now, isToday, isPast } from '../../utils/dateUtils';
+<<<<<<< HEAD
 import { isBeforeCutoff, getCutoffDescription, formatCutoffTime, getCutoffTime } from '../../utils/cutoffRules';
+=======
+>>>>>>> develop
 
 export const validateForm = (formData: any) => {
   const errors: Record<string, string> = {};
@@ -7,6 +10,7 @@ export const validateForm = (formData: any) => {
   if (!formData.date) {
     errors.date = 'Date is required';
   } else {
+<<<<<<< HEAD
     // Check if date is in the past (using dayjs for proper timezone handling)
     const dateObj = now(formData.date);
     const today = now();
@@ -46,6 +50,11 @@ export const validateForm = (formData: any) => {
           errors.date = cutoffDescription;
         }
       }
+=======
+    // Check if date is in the past
+    if (isPast(formData.date)) {
+      errors.date = 'Reservation date must be today or in the future';
+>>>>>>> develop
     }
   }
   

@@ -193,6 +193,7 @@
 
   // Handle validation changes from child components
   const handleValidationChange = (event: CustomEvent) => {
+<<<<<<< HEAD
     // If no specific errors are provided, trigger full form validation
     if (event.detail.errors && Object.keys(event.detail.errors).length === 0) {
       const { errors: validationErrors } = validateForm(formData);
@@ -201,6 +202,9 @@
       // Merge specific errors from child components
       errors = { ...errors, ...event.detail.errors };
     }
+=======
+    errors = { ...errors, ...event.detail.errors };
+>>>>>>> develop
   };
 
   const handleKeydown = (event: KeyboardEvent) => {
