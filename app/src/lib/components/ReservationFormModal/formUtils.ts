@@ -62,7 +62,8 @@ export const getDefaultFormData = () => ({
   depth: '',
   openWaterType: '',
   studentCount: '',
-  // Equipment options for Open Water Autonomous types
+  // Equipment options for Open Water types
+  // Default pulley to true for Course/Coaching (will be set when type is selected)
   pulley: false,
   deepFimTraining: false,
   bottomPlate: false,

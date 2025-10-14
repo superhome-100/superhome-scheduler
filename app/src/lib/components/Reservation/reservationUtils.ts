@@ -10,8 +10,15 @@ export const getTypeDisplay = (type: string) => {
 export const getOpenWaterTypeDisplay = (openWaterType: string | null | undefined) => {
   if (!openWaterType) return 'Open Water';
   
-  // Format common open water types
+  // Format open water types
   const typeMap: Record<string, string> = {
+    // New system types
+    'course_coaching': 'Course/Coaching',
+    'autonomous_buoy': 'Autonomous on Buoy (0-89m)',
+    'autonomous_platform': 'Autonomous on Platform (0-99m)',
+    'autonomous_platform_cbs': 'Autonomous on Platform+CBS (90-130m)',
+    
+    // Legacy types
     'confined_water': 'Confined Water',
     'open_water': 'Open Water',
     'deep_water': 'Deep Water',

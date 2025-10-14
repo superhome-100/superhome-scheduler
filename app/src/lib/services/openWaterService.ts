@@ -32,6 +32,8 @@ export type BuoyGroupWithNames = {
   time_period: string
   buoy_name: string
   boat: string | null
+  boat_count?: number | null
+  open_water_type?: string | null
   member_uids: string[] | null
   member_names: (string | null)[] | null
 }
@@ -78,57 +80,36 @@ export async function loadAvailableBuoys(): Promise<Buoy[]> {
 }
 
 export async function getBuoyGroupsWithNames({ resDate, timePeriod }: { resDate: string; timePeriod: TimePeriod }): Promise<BuoyGroupWithNames[]> {
-  // Step 1: fetch groups for the day/period
-  const { data: groups, error: groupsErr } = await supabase
-    .from("buoy_group")
-    .select("id, res_date, time_period, buoy_name, boat")
-    .eq("res_date", resDate)
-    .eq("time_period", timePeriod)
-    .order("buoy_name", { ascending: true });
-  if (groupsErr) throw new Error(groupsErr.message);
-
-  const groupList = (groups ?? []) as Array<{ id: number; res_date: string; time_period: string; buoy_name: string; boat: string | null }>;
-  if (groupList.length === 0) return [];
-
-  const groupIds = groupList.map((g) => g.id);
-
-  // Step 2: fetch members for these groups from res_openwater (group_id foreign key)
-  const { data: members, error: memErr } = await supabase
-    .from("res_openwater")
-    .select("group_id, uid")
-    .in("group_id", groupIds);
-  if (memErr) throw new Error(memErr.message);
-
-  const memberList = (members ?? []) as Array<{ group_id: number | null; uid: string }>;
-  const uids = Array.from(new Set(memberList.map((m) => m.uid)));
-
-  // Step 3: fetch names from user_profiles with RLS allowing admin
-  let namesByUid = new Map<string, string | null>();
-  if (uids.length > 0) {
-    const { data: names, error: namesErr } = await supabase
-      .from("user_profiles")
-      .select("uid, name")
-      .in("uid", uids);
-    if (namesErr) throw new Error(namesErr.message);
-    const nameList = (names ?? []) as Array<{ uid: string; name: string | null }>;
-    nameList.forEach((n) => namesByUid.set(n.uid, n.name));
-  }
-
-  // Step 4: combine groups and members
-  const result = groupList.map((g) => {
-    const memberUids = memberList.filter((m) => m.group_id === g.id).map((m) => m.uid);
-    const memberNames = memberUids.map((uid) => namesByUid.get(uid) ?? null) as (string | null)[];
-    return {
-      id: g.id,
-      res_date: g.res_date,
-      time_period: g.time_period,
-      buoy_name: g.buoy_name,
-      boat: g.boat,
-      member_uids: memberUids.length ? memberUids : null,
-      member_names: memberNames.length ? memberNames : null,
-    };
+  // Use RPC that returns groups with member names and open_water_type
+  const { data, error } = await supabase.rpc('get_buoy_groups_with_names', {
+    p_res_date: resDate,
+    p_time_period: timePeriod,
   });
-  return result;
+  if (error) throw new Error(error.message);
+
+  const rows = (data ?? []) as Array<{
+    id: number;
+    res_date: string;
+    time_period: string;
+    buoy_name: string;
+    boat: string | null;
+    boat_count?: number | null;
+    open_water_type?: string | null;
+    member_uids?: string[] | null;
+    member_names?: (string | null)[] | null;
+  }>;
+
+  return rows.map((r) => ({
+    id: r.id,
+    res_date: r.res_date,
+    time_period: r.time_period,
+    buoy_name: r.buoy_name,
+    boat: r.boat,
+    boat_count: r.boat_count ?? null,
+    open_water_type: r.open_water_type ?? null,
+    member_uids: r.member_uids ?? null,
+    member_names: r.member_names ?? null,
+  }));
 }
 
 export async function getMyAssignmentsViaRpc(
@@ -158,6 +139,104 @@ export async function getMyAssignmentsViaRpc(
 
   const [am, pm] = await Promise.all([fetchAssignment("AM"), fetchAssignment("PM")]);
   return { AM: am, PM: pm };
+}
+
+// Types for group reservation details
+export interface GroupReservationMember {
+  uid: string;
+  name: string | null;
+  depth_m: number | null;
+  student_count: number | null;
+  bottom_plate: boolean;
+  pulley: boolean;
+  large_buoy: boolean;
+  activity_type: string | null;
+  open_water_type: string | null;
+}
+
+export interface GroupReservationDetails {
+  group_id: number;
+  res_date: string;
+  time_period: TimePeriod;
+  boat: string | null;
+  buoy_name: string | null;
+  members: GroupReservationMember[];
+}
+
+// Read-only helper to fetch all info required by the Group Reservation Details modal
+export async function getGroupReservationDetails(groupId: number): Promise<GroupReservationDetails | null> {
+  // Fetch members attached to the group along with their user names and required fields
+  const { data, error } = await supabase
+    .from("res_openwater")
+    .select(
+      [
+        "uid",
+        "res_date",
+        "time_period",
+        "depth_m",
+        "student_count",
+        "bottom_plate",
+        "pulley",
+        "large_buoy",
+        "activity_type",
+        "open_water_type",
+        "buoy_group:buoy_group(boat, buoy_name)"
+      ].join(", ")
+    )
+    .eq("group_id", groupId);
+
+  if (error) throw new Error(error.message);
+  const rows = ((data ?? []) as unknown) as Array<
+    {
+      uid: string;
+      res_date: string;
+      time_period: string | null;
+      depth_m: number | null;
+      student_count: number | null;
+      bottom_plate: boolean;
+      pulley: boolean;
+      large_buoy: boolean;
+      activity_type: string | null;
+      open_water_type: string | null;
+      buoy_group?: { boat: string | null; buoy_name: string | null } | null;
+    }
+  >;
+
+  if (!rows.length) return null;
+
+  // Fetch user names separately due to lack of direct FK from res_openwater to user_profiles
+  const uids = Array.from(new Set(rows.map((r) => r.uid)));
+  let nameMap = new Map<string, string | null>();
+  if (uids.length) {
+    const { data: names, error: namesErr } = await supabase
+      .from("user_profiles")
+      .select("uid, name")
+      .in("uid", uids);
+    if (namesErr) throw new Error(namesErr.message);
+    (names ?? []).forEach((n: any) => nameMap.set(n.uid, n.name ?? null));
+  }
+
+  const first = rows[0]!;
+  const details: GroupReservationDetails = {
+    group_id: groupId,
+    res_date: first.res_date,
+    time_period: (first.time_period === "PM" ? "PM" : "AM"),
+    boat: first.buoy_group?.boat ?? null,
+    buoy_name: first.buoy_group?.buoy_name ?? null,
+    members: rows.map((r) => ({
+      uid: r.uid,
+      name: nameMap.get(r.uid) ?? null,
+      depth_m: r.depth_m ?? null,
+      student_count: r.student_count ?? null,
+      bottom_plate: !!r.bottom_plate,
+      pulley: !!r.pulley,
+      large_buoy: !!r.large_buoy,
+      activity_type: r.activity_type,
+      open_water_type: r.open_water_type,
+    })),
+  };
+
+  return details;
 }
 
 export async function getMyAssignmentsDirect(

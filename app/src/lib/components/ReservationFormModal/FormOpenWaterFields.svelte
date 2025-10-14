@@ -108,30 +108,6 @@
   </div>
 {/if}
 
-<!-- Equipment Options (Only for Autonomous types) -->
-{#if formData.openWaterType && formData.openWaterType.startsWith('autonomous')}
-  <div class="form-group">
-    <div class="form-label">Equipment Options</div>
-    <div class="equipment-options">
-      <div class="checkbox-container">
-        <input id="pulley" type="checkbox" bind:checked={formData.pulley} />
-        <label for="pulley" class="checkbox-label">Pulley</label>
-      </div>
-      <div class="checkbox-container">
-        <input id="deepFimTraining" type="checkbox" bind:checked={formData.deepFimTraining} />
-        <label for="deepFimTraining" class="checkbox-label">Deep FIM Training</label>
-      </div>
-      <div class="checkbox-container">
-        <input id="bottomPlate" type="checkbox" bind:checked={formData.bottomPlate} />
-        <label for="bottomPlate" class="checkbox-label">Bottom Plate</label>
-      </div>
-      <div class="checkbox-container">
-        <input id="largeBuoy" type="checkbox" bind:checked={formData.largeBuoy} />
-        <label for="largeBuoy" class="checkbox-label">Large Buoy</label>
-      </div>
-    </div>
-  </div>
-{/if}
 
 <!-- Auto-pairing functionality removed -->
 
@@ -184,61 +160,5 @@
     font-size: 0.75rem;
     color: #ef4444;
     margin-top: 0.25rem;
-  }
-
-  .checkbox-container {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 0;
-  }
-
-  .checkbox-container input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: #3b82f6;
-  }
-
-  .checkbox-label {
-    font-size: 0.875rem;
-    color: #374151;
-    cursor: pointer;
-    line-height: 1.4;
-    user-select: text;
-  }
-
-  .checkbox-label:hover {
-    color: #1f2937;
-  }
-
-  .equipment-options {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 0.75rem;
-    margin-top: 0.5rem;
-  }
-
-  .equipment-options .checkbox-container {
-    padding: 0.75rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    background: #f9fafb;
-    transition: all 0.2s ease;
-  }
-
-  .equipment-options .checkbox-container:hover {
-    border-color: #d1d5db;
-    background: #f3f4f6;
-  }
-
-  .equipment-options input[type="checkbox"]:checked + .checkbox-label {
-    color: #1f2937;
-    font-weight: 500;
-  }
-
-  .equipment-options .checkbox-container:has(input[type="checkbox"]:checked) {
-    background: #dbeafe;
-    border-color: #3b82f6;
   }
 </style>

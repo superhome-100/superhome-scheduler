@@ -17,6 +17,8 @@
     type Buoy,
     type TimePeriod
   } from '../../services/openWaterService';
+  import { getGroupReservationDetails, type GroupReservationDetails } from '../../services/openWaterService';
+  import GroupReservationDetailsModal from './GroupReservationDetailsModal.svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -34,12 +36,29 @@
     boat: string | null;
     res_openwater?: Array<{ uid: string }>;
     member_names?: (string | null)[] | null;
+    boat_count?: number | null;
+    open_water_type?: string | null;
   };
+
+  // Handle click on divers group box (admin view)
+  async function handleGroupClick(e: CustomEvent<{ groupId: number; resDate: string; timePeriod: TimePeriod }>) {
+    try {
+      const details = await getGroupReservationDetails(e.detail.groupId);
+      groupDetails = details;
+      showGroupModal = !!details;
+    } catch (err) {
+      console.error('Failed to load group details:', err);
+      showGroupModal = false;
+    }
+  }
   let buoyGroups: BuoyGroupLite[] = [];
   let loadingBuoyGroups = false;
   // Boat editing is always inline via dropdown now (no edit mode)
   let availableBoats: string[] = ['Boat 1', 'Boat 2', 'Boat 3', 'Boat 4'];
   let availableBuoys: Buoy[] = [];
+  // Modal state for group reservation details
+  let showGroupModal = false;
+  let groupDetails: GroupReservationDetails | null = null;
 
   // Calendar type state
   let selectedCalendarType: 'pool' | 'openwater' | 'classroom' = 'pool';
@@ -139,7 +158,9 @@
         buoy_name: g.buoy_name ?? null,
         boat: g.boat ?? null,
         res_openwater: g.res_openwater,
-        member_names: g.member_names ?? []
+        member_names: g.member_names ?? [],
+        boat_count: typeof g.boat_count === 'number' ? g.boat_count : null,
+        open_water_type: g.open_water_type ?? null,
       }));
     } catch (error) {
       console.error('Error loading buoy groups:', error);
@@ -253,8 +274,9 @@
             loading={loadingBuoyGroups}
             onUpdateBuoy={updateBuoyAssignment}
             onUpdateBoat={updateBoatAssignment}
+            on:groupClick={handleGroupClick}
           />
-            {:else}
+          {:else}
           <OpenWaterUserLists
             {filteredReservations}
             findAssignment={findAssignment}
@@ -266,5 +288,15 @@
       <ClassroomCalendar timeSlots={timeSlots} reservations={filteredReservations} />
                     {/if}
   </div>
+  {#if showGroupModal && groupDetails}
+    <GroupReservationDetailsModal
+      open={showGroupModal}
+      resDate={groupDetails.res_date}
+      timePeriod={groupDetails.time_period}
+      boat={groupDetails.boat}
+      buoyName={groupDetails.buoy_name}
+      members={groupDetails.members}
+      on:close={() => (showGroupModal = false)}
+    />
+  {/if}
 </div>
-
