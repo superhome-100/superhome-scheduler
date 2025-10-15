@@ -103,7 +103,7 @@
         .from('reservations')
         .select(`
           *,
-          res_pool!left(start_time, end_time, lane, note),
+          res_pool!left(start_time, end_time, lane, pool_type, note),
           res_openwater!left(
             time_period, 
             depth_m, 
@@ -117,7 +117,7 @@
             note,
             group_id
           ),
-          res_classroom!left(start_time, end_time, room, note)
+          res_classroom!left(start_time, end_time, room, classroom_type, note)
         `)
         .eq('uid', $authStore.user.id)
         .order('res_date', { ascending: true });
@@ -138,6 +138,7 @@
           flattened.start_time = reservation.res_pool.start_time;
           flattened.end_time = reservation.res_pool.end_time;
           flattened.lane = reservation.res_pool.lane;
+          flattened.pool_type = reservation.res_pool.pool_type;
           flattened.note = reservation.res_pool.note;
           // Note: Use main reservation status, not detail table status
         } else if (reservation.res_type === 'open_water' && reservation.res_openwater) {
@@ -158,8 +159,8 @@
           flattened.start_time = reservation.res_classroom.start_time;
           flattened.end_time = reservation.res_classroom.end_time;
           flattened.room = reservation.res_classroom.room;
+          flattened.classroom_type = reservation.res_classroom.classroom_type;
           flattened.note = reservation.res_classroom.note;
-          // Note: Use main reservation status, not detail table status
         }
         
         // Remove the joined table objects to avoid confusion

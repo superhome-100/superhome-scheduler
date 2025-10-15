@@ -1,5 +1,6 @@
 <script lang="ts">
   import dayjs from 'dayjs';
+  import { onMount } from 'svelte';
   import ReservationTypeDetails from './ReservationTypeDetails.svelte';
   import OpenWaterDetailsLoader from './OpenWaterDetailsLoader.svelte';
 
@@ -8,6 +9,56 @@
   export let displayDate: string;
   export let displayNotes: string;
   export let owDepth: number | null = null;
+
+  const poolTypeLabel = (value?: string | null) => {
+    if (!value) return '';
+    if (value === 'course_coaching') return 'Course/Coaching';
+    if (value === 'autonomous') return 'Autonomous';
+    return value;
+  };
+
+  const classroomTypeLabel = (value?: string | null) => {
+    if (!value) return '';
+    if (value === 'course_coaching') return 'Course/Coaching';
+    if (value === 'workshop') return 'Workshop';
+    if (value === 'meeting') return 'Meeting';
+    return value;
+  };
+
+  // Derived pool type with fallbacks from raw reservation payload
+  $: derivedPoolType = reservation?.pool_type
+    ?? reservation?.raw_reservation?.pool_type
+    ?? reservation?.raw_reservation?.res_pool?.pool_type
+    ?? null;
+
+  // Derived classroom type with fallbacks from raw reservation payload
+  $: derivedClassroomType = reservation?.classroom_type
+    ?? reservation?.raw_reservation?.classroom_type
+    ?? reservation?.raw_reservation?.res_classroom?.classroom_type
+    ?? null;
+
+  // Debug: log when modal shows and when reservation changes
+  onMount(() => {
+    console.debug('ReservationDetailsBody: Modal shown', {
+      uid: reservation?.uid,
+      res_date: reservation?.res_date,
+      res_type: reservation?.res_type,
+      pool_type_present: (derivedPoolType != null),
+      pool_type: derivedPoolType
+    });
+  });
+
+  $: if (reservation) {
+    console.debug('ReservationDetailsBody: Reservation updated', {
+      uid: reservation?.uid,
+      res_date: reservation?.res_date,
+      res_type: reservation?.res_type,
+      pool_type_present: (derivedPoolType != null),
+      pool_type: derivedPoolType,
+      classroom_type_present: (derivedClassroomType != null),
+      classroom_type: derivedClassroomType
+    });
+  }
 </script>
 
 <div class="modal-body">
@@ -28,6 +79,20 @@
         <span class="detail-label">Status</span>
         <span class="detail-value">{reservation.status || reservation.res_status || 'pending'}</span>
       </div>
+
+      {#if (reservation.res_type === 'pool' || displayType === 'Pool') && derivedPoolType}
+        <div class="detail-item">
+          <span class="detail-label">Pool Type</span>
+          <span class="detail-value">{poolTypeLabel(derivedPoolType)}</span>
+        </div>
+      {/if}
+
+      {#if (reservation.res_type === 'classroom' || displayType === 'Classroom') && derivedClassroomType}
+        <div class="detail-item">
+          <span class="detail-label">Classroom Type</span>
+          <span class="detail-value">{classroomTypeLabel(derivedClassroomType)}</span>
+        </div>
+      {/if}
 
       {#if reservation.timeOfDay}
         <div class="detail-item">

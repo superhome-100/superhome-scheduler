@@ -163,6 +163,15 @@ function validatePoolDetails(details: PoolReservationDetails, isPartial = false)
     errors.push({ field: 'note', message: 'Note must be 500 characters or less' });
   }
 
+  // Require pool_type and validate allowed values
+  if (!isPartial || details.pool_type !== undefined) {
+    if (!details.pool_type) {
+      errors.push({ field: 'pool_type', message: 'Pool type is required' });
+    } else if (!['autonomous', 'course_coaching'].includes(details.pool_type)) {
+      errors.push({ field: 'pool_type', message: 'Invalid pool type' });
+    }
+  }
+
   return errors;
 }
 

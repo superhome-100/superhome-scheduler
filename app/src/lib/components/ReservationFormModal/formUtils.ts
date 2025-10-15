@@ -51,6 +51,20 @@ export const validateForm = (formData: any) => {
   
   // Time validation only for Pool and Classroom
   if (formData.type !== 'openwater') {
+    // Pool-specific required field
+    if (formData.type === 'pool') {
+      if (!formData.poolType) {
+        errors.poolType = 'Pool Type is required';
+      }
+    }
+
+    // Classroom-specific required field
+    if (formData.type === 'classroom') {
+      if (!formData.classroomType) {
+        errors.classroomType = 'Classroom Type is required';
+      }
+    }
+
     if (!formData.startTime) {
       errors.startTime = 'Start time is required';
     }
@@ -141,6 +155,10 @@ export const getDefaultFormData = () => ({
   notes: '',
   depth: '',
   openWaterType: '',
+  // Pool specific
+  poolType: '',
+  // Classroom specific
+  classroomType: 'course_coaching',
   studentCount: '',
   // Equipment options for Open Water types
   // Default pulley to true for Course/Coaching (will be set when type is selected)
