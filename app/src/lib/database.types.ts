@@ -34,6 +34,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      availabilities: {
+        Row: {
+          available: boolean
+          category: string | null
+          created_at: string | null
+          date: string
+          id: number
+          reason: string | null
+          res_type: Database["public"]["Enums"]["reservation_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          available?: boolean
+          category?: string | null
+          created_at?: string | null
+          date: string
+          id?: number
+          reason?: string | null
+          res_type: Database["public"]["Enums"]["reservation_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          available?: boolean
+          category?: string | null
+          created_at?: string | null
+          date?: string
+          id?: number
+          reason?: string | null
+          res_type?: Database["public"]["Enums"]["reservation_type"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       buoy: {
         Row: {
           buoy_name: string

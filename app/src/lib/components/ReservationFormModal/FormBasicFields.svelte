@@ -22,7 +22,7 @@
 
   const handleDateChange = () => {
     // Clear any existing date error when user changes date
-    if (errors.date && errors.date.includes('must be today or in the future')) {
+    if (errors.date) {
       delete errors.date;
     }
     
@@ -31,7 +31,7 @@
       errors.date = 'Reservation date must be today or in the future';
     }
     
-    // Trigger validation update
+    // Trigger full form validation to include cutoff rules
     dispatch('validationChange', { errors });
   };
 </script>

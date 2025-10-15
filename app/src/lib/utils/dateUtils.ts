@@ -54,7 +54,7 @@ export const formatDateForISO = (dateString: string): string => {
 };
 
 /**
- * Format time for 24-hour format (HH:MM)
+ * Format time for 24-hour format (HH:MM) with support for 24:00
  */
 export const formatTimeFor24Hour = (timeString: string): string => {
   if (!timeString) return '';
@@ -67,6 +67,47 @@ export const formatTimeFor24Hour = (timeString: string): string => {
     const time = dayjs(`2000-01-01T${timeString}`);
     return time.isValid() ? time.format('HH:mm') : timeString;
   }
+};
+
+/**
+ * Check if time string is in 24:00 format (24:00 to 24:59)
+ */
+export const is24HourFormat = (timeString: string): boolean => {
+  if (!timeString) return false;
+  return timeString.startsWith('24:');
+};
+
+/**
+ * Convert 24:00 format to valid dayjs time (23:59:59.999)
+ */
+export const normalize24HourTime = (timeString: string): string => {
+  if (!timeString) return '';
+  
+  if (timeString === '24:00') return '23:59:59.999';
+  if (timeString.startsWith('24:')) {
+    const minutes = timeString.split(':')[1];
+    return `23:59:${minutes}.999`;
+  }
+  
+  return timeString;
+};
+
+/**
+ * Validate time format including 24:00 format
+ */
+export const isValidTimeFormat = (timeString: string): boolean => {
+  if (!timeString) return true;
+  
+  // Allow 24:00 format (24:00 to 24:59)
+  if (timeString === '24:00') return true;
+  if (timeString.startsWith('24:')) {
+    const minutes = parseInt(timeString.split(':')[1]);
+    return minutes >= 0 && minutes <= 59;
+  }
+  
+  // Standard 24-hour format (00:00 to 23:59)
+  const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+  return timeRegex.test(timeString);
 };
 
 /**

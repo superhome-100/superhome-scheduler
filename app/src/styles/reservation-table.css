@@ -1,0 +1,181 @@
+/* Custom styles for resizable table functionality that can't be replicated with Tailwind/DaisyUI */
+.resizable-header {
+  position: relative;
+  user-select: none;
+}
+
+.resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: transparent;
+  cursor: col-resize;
+  transition: background-color 0.2s ease;
+}
+
+.resize-handle:hover {
+  background: #3b82f6;
+}
+
+.resizable-header:hover .resize-handle {
+  background: #e2e8f0;
+}
+
+.resizable-header:hover .resize-handle:hover {
+  background: #3b82f6;
+}
+
+/* Mobile responsive adjustments for table columns */
+@media (max-width: 640px) {
+  .resizable-header.w-36 {
+    width: 5rem;
+    min-width: 4rem;
+  }
+
+  .resizable-header.w-40 {
+    width: 5.5rem;
+    min-width: 4.5rem;
+  }
+
+  .resizable-header.w-auto {
+    min-width: 14rem;
+  }
+
+  /* Ensure divers group boxes have more space on mobile */
+  .divers-group-box {
+    min-height: 2.5rem;
+  }
+}
+
+/* Ensure balanced card heights and consistent styling */
+.reservation-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.reservation-card .card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.reservation-card .overflow-x-auto {
+  flex: 1;
+}
+
+/* Ensure tables fill available space */
+.reservation-card .table {
+  height: 100%;
+}
+
+/* Mobile responsive adjustments for reservation cards */
+@media (max-width: 1024px) {
+  .reservation-card {
+    min-height: 300px;
+  }
+}
+
+/* Extra small mobile devices - maintain 2x2 grid layout */
+@media (max-width: 480px) {
+  .card-title .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.0625rem;
+  }
+
+  .card-title .grid > div {
+    justify-content: center;
+    gap: 0.03125rem;
+  }
+
+  .card-title .grid span {
+    font-size: 0.45rem;
+    padding: 0.0625rem 0.125rem;
+    min-width: fit-content;
+  }
+
+  .card-title .grid span:not(.bg-primary\/10) {
+    font-size: 0.35rem;
+  }
+}
+
+/* Ensure rounded corners are properly displayed for divers group boxes */
+.divers-group-box {
+  border-radius: 0.5rem !important;
+  overflow: hidden;
+}
+
+/* Add spacing between table columns */
+.table td {
+  border-left: 1px solid transparent;
+  border-right: 1px solid transparent;
+}
+
+.table td:not(:last-child) {
+  border-right: 1px solid #e5e7eb;
+}
+
+/* Enhanced mobile spacing */
+@media (max-width: 640px) {
+  .table td {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  
+  .table td:first-child {
+    padding-left: 0.75rem;
+  }
+  
+  .table td:last-child {
+    padding-right: 0.75rem;
+  }
+
+  /* Mobile responsive boat capacity display */
+  .card-title .flex {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .card-title .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.125rem;
+    width: 100%;
+  }
+
+  .card-title .grid > div {
+    flex-direction: row;
+    gap: 0.0625rem;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-title .grid span {
+    font-size: 0.55rem;
+    padding: 0.125rem 0.1875rem;
+    white-space: nowrap;
+  }
+
+  .card-title .grid span:not(.bg-primary\/10) {
+    font-size: 0.45rem;
+    margin: 0;
+  }
+}
+
+/* Desktop spacing */
+@media (min-width: 641px) {
+  .table td {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  
+  .table td:first-child {
+    padding-left: 1rem;
+  }
+  
+  .table td:last-child {
+    padding-right: 1rem;
+  }
+}

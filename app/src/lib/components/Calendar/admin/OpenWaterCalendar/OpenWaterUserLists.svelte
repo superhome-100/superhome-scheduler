@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { formatDateForCalendar } from '../../utils/dateUtils';
-  import { getOpenWaterTypeDisplay } from '../Reservation/reservationUtils';
+  import { formatDateForCalendar } from '../../../../utils/dateUtils';
+  import { getOpenWaterTypeDisplay } from '../../../Reservation/reservationUtils';
 
   export let filteredReservations: any[];
   export let findAssignment: (uid: string, period: 'AM' | 'PM') => { buoy: string; boat: string };

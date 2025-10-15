@@ -1,12 +1,12 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { formatDateTime } from '../../utils/dateUtils';
+  import { formatDateTime } from '../../../utils/dateUtils';
   import dayjs from 'dayjs';
-  import ReservationDetailsHeader from './ResDetailsModal/ReservationDetailsHeader.svelte';
-  import ReservationDetailsBody from './ResDetailsModal/ReservationDetailsBody.svelte';
-  import ReservationDetailsActions from './ResDetailsModal/ReservationDetailsActions.svelte';
-  import OpenWaterDetailsLoader from './ResDetailsModal/OpenWaterDetailsLoader.svelte';
-  import './ResDetailsModal/ReservationDetailsStyles.css';
+  import ReservationDetailsHeader from './ReservationDetailsHeader.svelte';
+  import ReservationDetailsBody from './ReservationDetailsBody.svelte';
+  import ReservationDetailsActions from './ReservationDetailsActions.svelte';
+  import OpenWaterDetailsLoader from './OpenWaterDetailsLoader.svelte';
+  import './ReservationDetailsStyles.css';
 
   const dispatch = createEventDispatcher();
 
