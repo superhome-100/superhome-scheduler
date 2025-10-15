@@ -20,8 +20,6 @@
   const classroomTypeLabel = (value?: string | null) => {
     if (!value) return '';
     if (value === 'course_coaching') return 'Course/Coaching';
-    if (value === 'workshop') return 'Workshop';
-    if (value === 'meeting') return 'Meeting';
     return value;
   };
 
