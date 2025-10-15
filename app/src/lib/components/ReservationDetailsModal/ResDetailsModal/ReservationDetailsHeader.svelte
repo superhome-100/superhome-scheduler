@@ -9,6 +9,11 @@
   const closeModal = () => {
     dispatch('close');
   };
+
+  // Display-only label: map approved/confirmed -> "Approved"; otherwise capitalize first letter
+  $: displayStatusLabel = (displayStatus === 'approved' || displayStatus === 'confirmed')
+    ? 'Approved'
+    : (displayStatus ? displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1) : '');
 </script>
 
 <div class="modal-header">
@@ -30,7 +35,7 @@
       {displayType}
     </span>
     <span class="status-badge" class:approved={displayStatus === 'approved'} class:confirmed={displayStatus === 'confirmed'} class:pending={displayStatus === 'pending'} class:rejected={displayStatus === 'rejected'} class:completed={displayStatus === 'completed'} class:ongoing={displayStatus === 'ongoing'}>
-      {displayStatus}
+      {displayStatusLabel}
     </span>
   </div>
 </div>

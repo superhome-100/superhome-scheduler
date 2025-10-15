@@ -56,7 +56,7 @@
 
 <!-- Reservation Type -->
 <div class="form-group">
-  <label for="type" class="form-label">Reservation Type *</label>
+  <label for="type" class="form-label">Category Type *</label>
   <select
     id="type"
     class="form-control"

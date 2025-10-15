@@ -214,7 +214,7 @@
 
             <div class="form-control">
               <label for="res-type-select" class="label">
-                <span class="label-text">Reservation Type</span>
+                <span class="label-text">Category Type</span>
               </label>
               <select id="res-type-select" class="select select-bordered" bind:value={formData.res_type} required>
                 {#each reservationTypes as type}
