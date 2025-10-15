@@ -73,6 +73,7 @@
     align-items: flex-start;
     gap: 1rem;
     margin-bottom: 1rem;
+    padding: 0 1.5rem; /* Add balanced horizontal padding */
   }
 
   .badges {
@@ -158,6 +159,7 @@
       flex-direction: column;
       gap: 0.375rem;
       margin-bottom: 0.5rem;
+      padding: 0 0.75rem; /* Match modal header mobile padding */
     }
 
     .badges {

@@ -25,6 +25,7 @@ interface PoolReservationDetails {
   start_time: string | null;
   end_time: string | null;
   lane?: string | null;
+  pool_type?: string | null;
   note?: string | null;
 }
 
@@ -33,6 +34,7 @@ interface ClassroomReservationDetails {
   start_time: string | null;
   end_time: string | null;
   room?: string | null;
+  classroom_type?: string | null;
   note?: string | null;
 }
 
@@ -160,9 +162,9 @@ class ReservationService {
         .from('reservations')
         .select(`
           *,
-          res_pool!left(start_time, end_time, lane, note),
+          res_pool!left(start_time, end_time, lane, pool_type, note),
           res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, group_id, note),
-          res_classroom!left(start_time, end_time, room, note)
+          res_classroom!left(start_time, end_time, room, classroom_type, note)
         `);
 
       // Apply filters
@@ -231,9 +233,9 @@ class ReservationService {
         .from('reservations')
         .select(`
           *,
-          res_pool!left(start_time, end_time, lane, note),
+          res_pool!left(start_time, end_time, lane, pool_type, note),
           res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, group_id, note),
-          res_classroom!left(start_time, end_time, room, note)
+          res_classroom!left(start_time, end_time, room, classroom_type, note)
         `)
         .eq('uid', uid)
         .eq('res_date', res_date)

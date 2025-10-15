@@ -131,6 +131,7 @@ export type Database = {
       }
       res_classroom: {
         Row: {
+          classroom_type: string | null
           end_time: string | null
           note: string | null
           res_date: string
@@ -140,6 +141,7 @@ export type Database = {
           uid: string
         }
         Insert: {
+          classroom_type?: string | null
           end_time?: string | null
           note?: string | null
           res_date: string
@@ -149,6 +151,7 @@ export type Database = {
           uid: string
         }
         Update: {
+          classroom_type?: string | null
           end_time?: string | null
           note?: string | null
           res_date?: string
@@ -250,6 +253,7 @@ export type Database = {
           end_time: string | null
           lane: string | null
           note: string | null
+          pool_type: string | null
           res_date: string
           res_status: Database["public"]["Enums"]["reservation_status"]
           start_time: string | null
@@ -259,6 +263,7 @@ export type Database = {
           end_time?: string | null
           lane?: string | null
           note?: string | null
+          pool_type?: string | null
           res_date: string
           res_status?: Database["public"]["Enums"]["reservation_status"]
           start_time?: string | null
@@ -268,6 +273,7 @@ export type Database = {
           end_time?: string | null
           lane?: string | null
           note?: string | null
+          pool_type?: string | null
           res_date?: string
           res_status?: Database["public"]["Enums"]["reservation_status"]
           start_time?: string | null

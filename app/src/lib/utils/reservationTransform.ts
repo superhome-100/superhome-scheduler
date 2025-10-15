@@ -28,6 +28,8 @@ export interface UnifiedReservation {
   room?: string | null;
   depth_m?: number | null;
   buoy?: string | null;
+  pool_type?: string | null;
+  classroom_type?: string | null;
   // auto_adjust_closest field removed
   pulley?: boolean | null;
   deep_fim_training?: boolean | null;
@@ -195,6 +197,8 @@ export const transformReservationToUnified = (reservation: any): UnifiedReservat
     room: reservation.room ?? reservation.res_classroom?.room ?? null,
     depth_m: reservation.depth_m ?? reservation.res_openwater?.depth_m ?? null,
     buoy: reservation.buoy ?? reservation.res_openwater?.buoy ?? null,
+    pool_type: reservation.pool_type ?? reservation.res_pool?.pool_type ?? null,
+    classroom_type: reservation.classroom_type ?? reservation.res_classroom?.classroom_type ?? null,
     // auto_adjust_closest field removed
     pulley: (reservation.pulley ?? reservation.res_openwater?.pulley) ?? null,
     deep_fim_training: (reservation.deep_fim_training ?? reservation.res_openwater?.deep_fim_training) ?? null,

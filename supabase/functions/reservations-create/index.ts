@@ -114,8 +114,8 @@ async function checkAvailability(supabase: any, date: string, res_type: Reservat
 
 type ReservationType = 'pool' | 'open_water' | 'classroom'
 
-type PoolDetails = { start_time: string | null; end_time: string | null; lane?: string | null; note?: string | null }
- type ClassroomDetails = { start_time: string | null; end_time: string | null; room?: string | null; note?: string | null }
+type PoolDetails = { start_time: string | null; end_time: string | null; lane?: string | null; pool_type?: string | null; note?: string | null }
+ type ClassroomDetails = { start_time: string | null; end_time: string | null; room?: string | null; classroom_type?: string | null; note?: string | null }
  type OpenWaterDetails = { time_period: string | null; depth_m?: number | null; buoy?: string | null; auto_adjust_closest?: boolean; pulley?: boolean; deep_fim_training?: boolean; bottom_plate?: boolean; large_buoy?: boolean; open_water_type?: string | null; student_count?: number | null; group_id?: number | null; note?: string | null }
 
 interface Payload {

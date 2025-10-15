@@ -6,6 +6,8 @@
   import FormModalHeader from './FormModalHeader.svelte';
   import FormBasicFields from './FormBasicFields.svelte';
   import FormOpenWaterFields from './FormOpenWaterFields.svelte';
+  import FormPoolFields from './FormPoolFields.svelte';
+  import FormClassroomFields from './FormClassroomFields.svelte';
   import FormTimeFields from './FormTimeFields.svelte';
   import FormNotes from './FormNotes.svelte';
   import FormActions from './FormActions.svelte';
@@ -127,13 +129,15 @@
         reservationData.pool = {
           start_time: submissionData.startTime,
           end_time: submissionData.endTime,
-          note: submissionData.notes.trim() || undefined
+          note: submissionData.notes.trim() || undefined,
+          pool_type: formData.poolType || undefined
         };
       } else if (submissionData.type === 'classroom') {
         reservationData.classroom = {
           start_time: submissionData.startTime,
           end_time: submissionData.endTime,
-          note: submissionData.notes.trim() || undefined
+          note: submissionData.notes.trim() || undefined,
+          classroom_type: formData.classroomType || undefined
         };
       } else if (submissionData.type === 'openwater') {
         reservationData.openwater = {
@@ -246,11 +250,27 @@
             on:validationChange={handleValidationChange}
           />
 
+          {#if formData.type === 'pool'}
+            <FormPoolFields 
+              bind:formData
+              {errors}
+              on:validationChange={handleValidationChange}
+            />
+          {/if}
+
           <!-- Open Water specific fields -->
           {#if formData.type === 'openwater'}
             <FormOpenWaterFields 
               bind:formData 
               {errors} 
+              on:validationChange={handleValidationChange}
+            />
+          {/if}
+
+          {#if formData.type === 'classroom'}
+            <FormClassroomFields 
+              bind:formData
+              {errors}
               on:validationChange={handleValidationChange}
             />
           {/if}
