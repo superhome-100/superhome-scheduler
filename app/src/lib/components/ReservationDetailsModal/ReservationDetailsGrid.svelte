@@ -5,7 +5,10 @@
   
   // Status-based data display
   $: canonicalStatus = reservation?.status || reservation?.res_status || 'pending';
-  $: displayStatus = canonicalStatus === 'confirmed' ? 'approved' : canonicalStatus;
+  // Display label only: show "Approved" when status is confirmed/approved; otherwise keep original
+  $: displayStatus = (canonicalStatus === 'confirmed' || canonicalStatus === 'approved')
+    ? 'Approved'
+    : canonicalStatus;
   $: isConfirmed = canonicalStatus === 'confirmed';
   $: isPending = canonicalStatus === 'pending';
   $: isRejected = canonicalStatus === 'rejected';
@@ -66,7 +69,7 @@
   </div>
 
   <div class="detail-item">
-    <span class="detail-label">Type</span>
+    <span class="detail-label">Category</span>
     <span class="detail-value">
       {#if reservation?.type}
         {reservation.type}

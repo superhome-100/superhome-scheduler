@@ -353,7 +353,7 @@
         <form on:submit|preventDefault={handleCreateReservation}>
           <div class="form-control mb-4">
             <label class="label" for="create-res-type">
-              <span class="label-text">Reservation Type</span>
+              <span class="label-text">Category Type</span>
             </label>
             <select 
               class="select select-bordered w-full"

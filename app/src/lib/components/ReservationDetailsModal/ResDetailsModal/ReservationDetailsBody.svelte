@@ -57,6 +57,12 @@
       classroom_type: derivedClassroomType
     });
   }
+
+  // Display status mapping: show "Approved" for confirmed/approved
+  $: canonicalStatus = reservation?.status || reservation?.res_status || 'pending';
+  $: displayStatus = (canonicalStatus === 'confirmed' || canonicalStatus === 'approved')
+    ? 'Approved'
+    : canonicalStatus;
 </script>
 
 <div class="modal-body">
@@ -69,13 +75,13 @@
       </div>
 
       <div class="detail-item">
-        <span class="detail-label">Type</span>
+        <span class="detail-label">Category</span>
         <span class="detail-value">{displayType}</span>
       </div>
 
       <div class="detail-item">
         <span class="detail-label">Status</span>
-        <span class="detail-value">{reservation.status || reservation.res_status || 'pending'}</span>
+        <span class="detail-value">{displayStatus}</span>
       </div>
 
       {#if (reservation.res_type === 'pool' || displayType === 'Pool') && derivedPoolType}
