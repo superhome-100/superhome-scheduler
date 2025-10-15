@@ -29,6 +29,23 @@
       User Management
     </a>
   </li>
+  <!-- Admin should also see the same primary navigation as a normal user -->
+  <li>
+    <a 
+      class="sidebar-nav-button btn btn-ghost w-full justify-start text-left {$page.url.pathname === '/' ? 'active' : ''}"
+      href="/"
+    >
+      Dashboard
+    </a>
+  </li>
+  <li>
+    <a 
+      class="sidebar-nav-button btn btn-ghost w-full justify-start text-left {$page.url.pathname === '/reservation' ? 'active' : ''}"
+      href="/reservation"
+    >
+      Reservations
+    </a>
+  </li>
 {:else}
   <li>
     <a 
