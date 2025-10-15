@@ -20,8 +20,6 @@
   const classroomTypeLabel = (value?: string | null) => {
     if (!value) return '';
     if (value === 'course_coaching') return 'Course/Coaching';
-    if (value === 'workshop') return 'Workshop';
-    if (value === 'meeting') return 'Meeting';
     return value;
   };
 
@@ -29,7 +27,7 @@
   $: derivedPoolType = reservation?.pool_type
     ?? reservation?.raw_reservation?.pool_type
     ?? reservation?.raw_reservation?.res_pool?.pool_type
-    ?? null
+    ?? null;
 
   // Derived classroom type with fallbacks from raw reservation payload
   $: derivedClassroomType = reservation?.classroom_type

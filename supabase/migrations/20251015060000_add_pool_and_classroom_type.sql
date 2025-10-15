@@ -7,8 +7,8 @@ alter table if exists public.res_pool
 
 comment on column public.res_pool.pool_type is 'Type/category of pool reservation (e.g., training, lap, coaching)';
 
--- res_classroom: add classroom_type (text) for categorizing classroom reservations (e.g., lecture, workshop, exam)
+-- res_classroom: add classroom_type (text) for categorizing classroom reservations
 alter table if exists public.res_classroom
   add column if not exists classroom_type text;
 
-comment on column public.res_classroom.classroom_type is 'Type/category of classroom reservation (e.g., lecture, workshop, exam)';
+comment on column public.res_classroom.classroom_type is 'Type/category of classroom reservation';
