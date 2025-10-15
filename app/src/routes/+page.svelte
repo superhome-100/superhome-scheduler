@@ -56,10 +56,9 @@
   const handlePrivacyPolicy = (): void => {
     console.log('Privacy Policy clicked');
     // Add privacy policy navigation logic here
+    // Note: Admin users can manually navigate to /admin via the sidebar
+    // No automatic redirect to prevent page reloads
   };
-
-  // Note: Admin users can manually navigate to /admin via the sidebar
-  // No automatic redirect to prevent page reloads
 
   // Debug auth state changes
   $: console.log('Page: Auth state changed:', {
@@ -117,14 +116,8 @@
     })();
   }
 
-  // Redirect admin users to admin dashboard
-  $: if (adminChecked && isAdmin && $authStore.user) {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/admin';
-    }
-  }
-
-  // Admin users can navigate to /admin via sidebar - no automatic redirect
+  // Do not auto-redirect admins; they can use the sidebar to access /admin
+  // This preserves the ability for admins to use the standard Dashboard at '/'
 </script>
 
 <div data-theme="superhome">
@@ -154,18 +147,8 @@
           />
         </div>
       </div>
-    {:else if isAdmin}
-      <!-- Admin users should be redirected to admin dashboard -->
-      <div class="min-h-screen flex items-center justify-center">
-        <div class="flex flex-col items-center gap-4">
-          <LoadingSpinner 
-            size="lg" 
-            text="Redirecting to admin dashboard..." 
-            variant="login"
-          />
-        </div>
-      </div>
     {:else}
+      <!-- Admins are no longer auto-redirected; they can use the sidebar to access /admin -->
       <Dashboard />
     {/if}
   {:else}
