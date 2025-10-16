@@ -10,6 +10,7 @@
   import SingleDayView from '../Calendar/SingleDayView.svelte';
   import { reservationApi } from '../../api/reservationApi';
   import { userAdminService } from '../../services/userAdminService';
+  import { ReservationType } from '../../types/reservations';
 
   let users: any[] = [];
   let reservations: any[] = [];
@@ -70,7 +71,7 @@
   // Single day view state
   let showSingleDayView = false;
   let selectedDate: string = '';
-  let initialSingleDayType: 'pool' | 'openwater' | 'classroom' = 'pool';
+  let initialSingleDayType: ReservationType = ReservationType.pool;
   let stats = {
     totalUsers: 0,
     activeUsers: 0,

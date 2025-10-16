@@ -1,6 +1,14 @@
 import { now, isToday, isPast, createDayjs } from '../../utils/dateUtils';
 import { isBeforeCutoff, getCutoffDescription, formatCutoffTime, getCutoffTime } from '../../utils/cutoffRules';
 
+// Strong typing for Open Water types (reusable across this module)
+export enum OpenWaterType {
+  CourseCoaching = 'course_coaching',
+  AutonomousBuoy = 'autonomous_buoy',
+  AutonomousPlatform = 'autonomous_platform',
+  AutonomousPlatformCbs = 'autonomous_platform_cbs',
+}
+
 export const validateForm = (formData: any) => {
   const errors: Record<string, string> = {};
   
@@ -114,20 +122,20 @@ export const validateForm = (formData: any) => {
     
     // Depth validation based on type
     const depthNum = parseInt(formData.depth as unknown as string, 10);
-    if (formData.openWaterType && formData.openWaterType !== 'course_coaching') {
+    if (formData.openWaterType && formData.openWaterType !== OpenWaterType.CourseCoaching) {
       if (!formData.depth || isNaN(depthNum) || depthNum <= 0) {
         errors.depth = 'Depth (m) must be a positive number';
       } else {
         // Validate depth thresholds
-        if (formData.openWaterType === 'autonomous_buoy' && (depthNum < 15 || depthNum > 89)) {
+        if (formData.openWaterType === OpenWaterType.AutonomousBuoy && (depthNum < 15 || depthNum > 89)) {
           errors.depth = 'Depth must be between 15-89m for Autonomous on Buoy';
-        } else if (formData.openWaterType === 'autonomous_platform' && (depthNum < 15 || depthNum > 99)) {
+        } else if (formData.openWaterType === OpenWaterType.AutonomousPlatform && (depthNum < 15 || depthNum > 99)) {
           errors.depth = 'Depth must be between 15-99m for Autonomous on Platform';
-        } else if (formData.openWaterType === 'autonomous_platform_cbs' && (depthNum < 90 || depthNum > 130)) {
+        } else if (formData.openWaterType === OpenWaterType.AutonomousPlatformCbs && (depthNum < 90 || depthNum > 130)) {
           errors.depth = 'Depth must be between 90-130m for Autonomous on Platform+CBS';
         }
       }
-    } else if (formData.openWaterType === 'course_coaching') {
+    } else if (formData.openWaterType === OpenWaterType.CourseCoaching) {
       // Course/Coaching depth validation (0-130m)
       if (formData.depth && (!isNaN(depthNum) && (depthNum < 0 || depthNum > 130))) {
         errors.depth = 'Depth must be between 0-130m for Course/Coaching';
@@ -135,7 +143,7 @@ export const validateForm = (formData: any) => {
     }
     
     // Student count validation for Course/Coaching
-    if (formData.openWaterType === 'course_coaching') {
+    if (formData.openWaterType === OpenWaterType.CourseCoaching) {
       const studentCount = parseInt(formData.studentCount as unknown as string, 10);
       if (!formData.studentCount || isNaN(studentCount) || studentCount <= 0 || studentCount > 3) {
         errors.studentCount = 'Number of students must be between 1-3';
@@ -154,7 +162,7 @@ export const getDefaultFormData = () => ({
   endTime: '',
   notes: '',
   depth: '',
-  openWaterType: 'autonomous_buoy',
+  openWaterType: OpenWaterType.AutonomousBuoy,
   // Pool specific
   poolType: '',
   // Classroom specific

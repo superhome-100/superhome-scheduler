@@ -19,13 +19,14 @@
   } from '../../services/openWaterService';
   import { getGroupReservationDetails, type GroupReservationDetails } from '../../services/openWaterService';
   import GroupReservationDetailsModal from './admin/OpenWaterCalendar/GroupReservationDetailsModal.svelte';
+  import { ReservationType } from '../../types/reservations';
 
   const dispatch = createEventDispatcher();
 
   export let selectedDate: string;
   export let reservations: any[] = [];
   export let isAdmin: boolean = false;
-  export let initialType: 'pool' | 'openwater' | 'classroom' = 'pool';
+  export let initialType: ReservationType = ReservationType.pool;
 
   // Buoy group data
   type BuoyGroupLite = {
@@ -67,7 +68,7 @@
   let groupDetails: GroupReservationDetails | null = null;
 
   // Calendar type state
-  let selectedCalendarType: 'pool' | 'openwater' | 'classroom' = 'pool';
+  let selectedCalendarType: ReservationType = ReservationType.pool;
   let initializedCalendarType = false;
   
   // Initialize from parent-provided intent first, then URL parameter
@@ -82,8 +83,9 @@
       // Fallback to URL parameter if no initialType provided
       const urlParams = new URLSearchParams(window.location.search);
       const typeParam = urlParams.get('type');
-      if (typeParam && ['pool', 'openwater', 'classroom'].includes(typeParam)) {
-        selectedCalendarType = typeParam as 'pool' | 'openwater' | 'classroom';
+      const validTypes = Object.values(ReservationType);
+      if (typeParam && (validTypes as string[]).includes(typeParam)) {
+        selectedCalendarType = typeParam as ReservationType;
         initializedCalendarType = true;
         console.log('SingleDayView: Set selectedCalendarType from URL:', selectedCalendarType);
       }
@@ -129,14 +131,14 @@
   });
 
   $: filteredReservations = dayReservations.filter(reservation => {
-    if (selectedCalendarType === 'pool') return reservation.res_type === 'pool';
-    if (selectedCalendarType === 'openwater') return reservation.res_type === 'open_water';
-    if (selectedCalendarType === 'classroom') return reservation.res_type === 'classroom';
+    if (selectedCalendarType === ReservationType.pool) return reservation.res_type === 'pool';
+    if (selectedCalendarType === ReservationType.openwater) return reservation.res_type === 'open_water';
+    if (selectedCalendarType === ReservationType.classroom) return reservation.res_type === 'classroom';
     return false;
   });
 
   // Calendar type switching
-  const switchCalendarType = (type: 'pool' | 'openwater' | 'classroom') => {
+  const switchCalendarType = (type: ReservationType) => {
     selectedCalendarType = type;
     
     // Update URL parameter
@@ -144,7 +146,7 @@
     url.searchParams.set('type', type);
     window.history.replaceState({}, '', url.toString());
     
-    if (type === 'openwater' && isAdmin) {
+    if (type === ReservationType.openwater && isAdmin) {
       loadBuoyGroups();
       loadAvailableBuoys();
     }

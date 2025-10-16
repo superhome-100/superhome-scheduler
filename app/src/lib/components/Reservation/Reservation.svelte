@@ -14,10 +14,11 @@
   import { transformReservationForModal } from './reservationUtils';
   import { transformReservationToUnified } from '../../utils/reservationTransform';
   import { createEventDispatcher } from 'svelte';
+  import { ReservationType } from '../../types/reservations';
 
   const dispatch = createEventDispatcher();
 
-  let selectedType: 'pool' | 'openwater' | 'classroom' = 'openwater';
+  let selectedType: ReservationType = ReservationType.openwater;
   let showReservationModal = false;
   let showDetailsModal = false;
   let refreshing = false;
@@ -26,7 +27,7 @@
   // Single day view state
   let showSingleDayView = false;
   let selectedDate: string = '';
-  let initialSingleDayType: 'pool' | 'openwater' | 'classroom' = 'openwater';
+  let initialSingleDayType: ReservationType = ReservationType.openwater;
   
   // Database data
   let reservations: any[] = [];
@@ -49,7 +50,7 @@
     loadReservations();
   };
 
-  const handleTypeSelected = (event: CustomEvent) => {
+  const handleTypeSelected = (event: CustomEvent<{ type: ReservationType }>) => {
     console.log('Reservation: Type selected:', event.detail.type);
     selectedType = event.detail.type;
     console.log('Reservation: selectedType updated to:', selectedType);

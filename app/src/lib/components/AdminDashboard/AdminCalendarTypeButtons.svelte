@@ -2,21 +2,23 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { ReservationType } from '../../types/reservations';
 
-  export let selectedType: 'pool' | 'openwater' | 'classroom' = 'pool';
+  export let selectedType: ReservationType = ReservationType.pool;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{ typeSelected: { type: ReservationType } }>();
 
   // Initialize from URL parameter on mount
   onMount(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const typeParam = urlParams.get('type');
-    if (typeParam && ['pool', 'openwater', 'classroom'].includes(typeParam)) {
-      selectedType = typeParam as 'pool' | 'openwater' | 'classroom';
+    const validTypes = Object.values(ReservationType) as string[];
+    if (typeParam && validTypes.includes(typeParam)) {
+      selectedType = typeParam as ReservationType;
     }
   });
 
-  const selectType = (type: 'pool' | 'openwater' | 'classroom') => {
+  const selectType = (type: ReservationType) => {
     selectedType = type;
     
     // Update URL parameter
@@ -32,24 +34,24 @@
 <div class="flex justify-center mb-8 flex-wrap gap-6">
   <button 
     class="btn btn-sm btn-outline"
-    class:btn-active={selectedType === 'pool'}
-    on:click={() => selectType('pool')}
+    class:btn-active={selectedType === ReservationType.pool}
+    on:click={() => selectType(ReservationType.pool)}
     title="Pool Reservations"
   >
     Pool
   </button>
   <button 
     class="btn btn-sm btn-outline"
-    class:btn-active={selectedType === 'openwater'}
-    on:click={() => selectType('openwater')}
+    class:btn-active={selectedType === ReservationType.openwater}
+    on:click={() => selectType(ReservationType.openwater)}
     title="Open Water Reservations"
   >
     Open Water
   </button>
   <button 
     class="btn btn-sm btn-outline"
-    class:btn-active={selectedType === 'classroom'}
-    on:click={() => selectType('classroom')}
+    class:btn-active={selectedType === ReservationType.classroom}
+    on:click={() => selectType(ReservationType.classroom)}
     title="Classroom Reservations"
   >
     Classroom
