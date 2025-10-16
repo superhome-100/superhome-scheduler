@@ -19,6 +19,18 @@
   const dispatch = createEventDispatcher();
 
   let selectedType: ReservationType = ReservationType.openwater;
+  // Map selectedType to form modal initialType literal
+  $: initialTypeForModal = (() => {
+    switch (selectedType) {
+      case ReservationType.pool:
+        return 'pool';
+      case ReservationType.classroom:
+        return 'classroom';
+      case ReservationType.openwater:
+      default:
+        return 'openwater';
+    }
+  })();
   let showReservationModal = false;
   let showDetailsModal = false;
   let refreshing = false;
@@ -296,6 +308,7 @@
 <!-- Reservation Form Modal -->
 <ReservationFormModal 
   isOpen={showReservationModal}
+  initialType={initialTypeForModal}
   on:close={handleReservationModalClose}
   on:submit={handleReservationSubmit}
 />

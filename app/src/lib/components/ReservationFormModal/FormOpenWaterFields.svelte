@@ -5,6 +5,7 @@
 
   export let formData: any;
   export let errors: Record<string, string> = {};
+  export let submitAttempted: boolean = false;
 
   const dispatch = createEventDispatcher();
   
@@ -12,7 +13,7 @@
   $: depthConstraints = (() => {
     switch (formData.openWaterType) {
       case 'course_coaching':
-        return { min: 0, max: 130 };
+        return { min: 15, max: 130 };
       case 'autonomous_buoy':
         return { min: 15, max: 89 };
       case 'autonomous_platform':
@@ -46,6 +47,14 @@
     // Trigger full form validation to include cutoff rules
     dispatch('validationChange', { errors });
   };
+
+  // Depth field UX: only show error after touch or form submit
+  let depthTouched = false;
+  $: showDepthError = !!errors.depth && (submitAttempted || depthTouched);
+
+  // Student count UX: only show error after touch or form submit
+  let studentCountTouched = false;
+  $: showStudentCountError = !!errors.studentCount && (submitAttempted || studentCountTouched);
 </script>
 
 <!-- Time of Day (Only for Open Water) -->
@@ -95,16 +104,17 @@
     <select
       id="studentCount"
       class="form-control"
-      class:error={errors.studentCount}
+      class:error={showStudentCountError}
       bind:value={formData.studentCount}
       required
+      on:blur={() => (studentCountTouched = true)}
     >
       <option value="">Select number of students</option>
       <option value="1">1</option>
       <option value="2">2</option>
       <option value="3">3</option>
     </select>
-    {#if errors.studentCount}
+    {#if showStudentCountError}
       <span class="error-message">{errors.studentCount}</span>
     {/if}
   </div>
@@ -127,11 +137,12 @@
       inputmode="numeric"
       pattern="[0-9]*"
       class="form-control"
-      class:error={errors.depth}
+      class:error={showDepthError}
       bind:value={formData.depth}
       required={formData.openWaterType !== 'course_coaching'}
+      on:blur={() => (depthTouched = true)}
     />
-    {#if errors.depth}
+    {#if showDepthError}
       <span class="error-message">{errors.depth}</span>
     {/if}
   </div>

@@ -22,6 +22,14 @@ export const validateForm = (formData: any) => {
     if (dateObj.isBefore(today, 'day')) {
       errors.date = 'Reservation date must be today or in the future';
     } else {
+      // After 6pm, Pool/Classroom cannot reserve for Today
+      const cutoff = today.hour(18).minute(0).second(0).millisecond(0);
+      const afterCutoff = today.isSameOrAfter(cutoff);
+      const isPoolOrClassroom = formData.type === 'pool' || formData.type === 'classroom';
+      if (isPoolOrClassroom && isToday(formData.date) && afterCutoff) {
+        errors.date = 'After 6pm, Pool and Classroom reservations must be for tomorrow or later';
+      }
+
       // Check cut-off time validation
       const resTypeMap: Record<string, 'pool' | 'open_water' | 'classroom'> = {
         'pool': 'pool',
@@ -136,9 +144,11 @@ export const validateForm = (formData: any) => {
         }
       }
     } else if (formData.openWaterType === OpenWaterType.CourseCoaching) {
-      // Course/Coaching depth validation (0-130m)
-      if (formData.depth && (!isNaN(depthNum) && (depthNum < 0 || depthNum > 130))) {
-        errors.depth = 'Depth must be between 0-130m for Course/Coaching';
+      // Course/Coaching depth validation: enforce minimum 15m if provided
+      if (formData.depth) {
+        if (!isNaN(depthNum) && (depthNum < 15 || depthNum > 130)) {
+          errors.depth = 'Depth must be between 15-130m for Course/Coaching';
+        }
       }
     }
     
@@ -154,8 +164,24 @@ export const validateForm = (formData: any) => {
   return { errors, isValid: Object.keys(errors).length === 0 };
 };
 
+// Compute default date based on reservation type and current time (6pm cutoff)
+export const getDefaultDateForType = (type: 'openwater' | 'pool' | 'classroom') => {
+  const nowDt = now();
+  const cutoff = nowDt.hour(18).minute(0).second(0).millisecond(0);
+  const isAfterCutoff = nowDt.isSameOrAfter(cutoff);
+
+  if (type === 'openwater') {
+    // Before 6pm -> tomorrow; after 6pm -> day after tomorrow
+    const addDays = isAfterCutoff ? 2 : 1;
+    return nowDt.add(addDays, 'day').format('YYYY-MM-DD');
+  }
+  // Pool/Classroom: default today; after 6pm -> tomorrow
+  const addDays = isAfterCutoff ? 1 : 0;
+  return nowDt.add(addDays, 'day').format('YYYY-MM-DD');
+};
+
 export const getDefaultFormData = () => ({
-  date: '',
+  date: getDefaultDateForType('openwater'),
   type: 'openwater',
   timeOfDay: 'AM',
   startTime: '',
