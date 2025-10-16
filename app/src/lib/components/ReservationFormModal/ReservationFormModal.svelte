@@ -14,12 +14,14 @@
   import FormErrorAlert from './FormErrorAlert.svelte';
   import EquipmentOptions from './EquipmentOptions.svelte';
   import CutoffWarning from '../CutoffWarning.svelte';
-  import { validateForm, getDefaultFormData, getSubmissionData } from './formUtils';
+  import { validateForm, getDefaultFormData, getSubmissionData, getDefaultDateForType } from './formUtils';
   import { isBeforeCutoff } from '../../utils/cutoffRules';
 
   const dispatch = createEventDispatcher();
 
   export let isOpen = false;
+  // Optional initial type from caller (Reservation page calendar selection)
+  export let initialType: 'openwater' | 'pool' | 'classroom' | undefined;
 
   // Form data
   let formData = getDefaultFormData();
@@ -68,6 +70,7 @@
   let errors: Record<string, string> = {};
   let loading = false;
   let submitError: string | null = null;
+  let submitAttempted = false;
 
   const closeModal = () => {
     dispatch('close');
@@ -87,6 +90,7 @@
 
   const handleSubmit = async (event: Event) => {
     event.preventDefault();
+    submitAttempted = true;
     
     if (!validateFormData()) return;
     if (!$authStore.user) {
@@ -184,6 +188,7 @@
     errors = {};
     submitError = null;
     loading = false;
+    submitAttempted = false;
   };
 
   // Handle type change to reset time fields for Open Water
@@ -192,8 +197,34 @@
       // Clear time fields for Open Water
       formData.startTime = '';
       formData.endTime = '';
+    } else if (formData.type === 'pool') {
+      // Pool defaults
+      formData.poolType = 'autonomous';
+      formData.startTime = '08:00';
+      formData.endTime = '08:30';
+    } else if (formData.type === 'classroom') {
+      // Classroom defaults
+      formData.startTime = '08:00';
+      formData.endTime = '08:30';
     }
+    // Recompute default date based on type and current time cutoff
+    const mappedType: 'openwater' | 'pool' | 'classroom' = (formData.type as any) || 'pool';
+    formData.date = getDefaultDateForType(mappedType);
   };
+
+  // Apply initialType when modal opens (Reservation page)
+  let wasOpen = false;
+  $: if (isOpen && !wasOpen) {
+    wasOpen = true;
+    if (initialType && formData.type !== initialType) {
+      formData.type = initialType;
+      // Apply defaults for the selected type (times, date)
+      handleTypeChange();
+    }
+  }
+  $: if (!isOpen && wasOpen) {
+    wasOpen = false;
+  }
 
   // Handle validation changes from child components
   const handleValidationChange = (event: CustomEvent) => {
@@ -262,7 +293,8 @@
           {#if formData.type === 'openwater'}
             <FormOpenWaterFields 
               bind:formData 
-              {errors} 
+              {errors}
+              {submitAttempted}
               on:validationChange={handleValidationChange}
             />
           {/if}

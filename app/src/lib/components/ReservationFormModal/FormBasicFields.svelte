@@ -8,14 +8,28 @@
 
   const dispatch = createEventDispatcher();
 
-  // Get current date in YYYY-MM-DD format for min attribute
-  const currentDate = now().format('YYYY-MM-DD');
+  // Compute min selectable date: after 6pm, Pool/Classroom cannot pick Today
+  $: currentMinDate = (() => {
+    const n = now();
+    const cutoff = n.hour(18).minute(0).second(0).millisecond(0);
+    const afterCutoff = n.isSameOrAfter(cutoff);
+    if (formData?.type !== 'openwater' && afterCutoff) {
+      return n.add(1, 'day').format('YYYY-MM-DD');
+    }
+    return n.format('YYYY-MM-DD');
+  })();
 
   const handleTypeChange = () => {
     if (formData.type === 'openwater') {
       // Clear time fields for Open Water
       formData.startTime = '';
       formData.endTime = '';
+    }
+    // If after cutoff and switching to Pool/Classroom, ensure date respects min
+    if (formData.type !== 'openwater') {
+      if (formData.date && formData.date < currentMinDate) {
+        formData.date = currentMinDate;
+      }
     }
     dispatch('typeChange');
   };
@@ -46,7 +60,7 @@
     class:error={errors.date}
     bind:value={formData.date}
     on:change={handleDateChange}
-    min={currentDate}
+    min={currentMinDate}
     required
   />
   {#if errors.date}
