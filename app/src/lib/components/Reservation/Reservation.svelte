@@ -17,7 +17,7 @@
 
   const dispatch = createEventDispatcher();
 
-  let selectedType: 'pool' | 'openwater' | 'classroom' = 'pool';
+  let selectedType: 'pool' | 'openwater' | 'classroom' = 'openwater';
   let showReservationModal = false;
   let showDetailsModal = false;
   let refreshing = false;
@@ -26,7 +26,7 @@
   // Single day view state
   let showSingleDayView = false;
   let selectedDate: string = '';
-  let initialSingleDayType: 'pool' | 'openwater' | 'classroom' = 'pool';
+  let initialSingleDayType: 'pool' | 'openwater' | 'classroom' = 'openwater';
   
   // Database data
   let reservations: any[] = [];

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
 
-  export let selectedType: 'pool' | 'openwater' | 'classroom' = 'pool';
+  export let selectedType: 'pool' | 'openwater' | 'classroom' = 'openwater';
 
   const dispatch = createEventDispatcher();
 

@@ -7,7 +7,7 @@
 
   export let reservations: any[] = [];
   export let loading = false;
-  export let selectedType: 'pool' | 'openwater' | 'classroom' = 'pool';
+  export let selectedType: 'pool' | 'openwater' | 'classroom' = 'openwater';
 
   let calendarEl: HTMLDivElement;
   let calendar: Calendar | null = null;
@@ -176,7 +176,7 @@
       case 'classroom':
         return 'Classroom Calendar';
       default:
-        return 'Pool Calendar';
+        return 'Open Water Calendar';
     }
   })();
 
