@@ -1,16 +1,16 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { goto } from '$app/navigation';
+  import { ReservationType } from '../../types/reservations';
 
-  type CalendarType = 'pool' | 'openwater' | 'classroom';
-  export let value: CalendarType = 'pool';
+  export let value: ReservationType = ReservationType.pool;
 
-  const dispatch = createEventDispatcher<{ change: CalendarType }>();
+  const dispatch = createEventDispatcher<{ change: ReservationType }>();
 
   // Value is controlled by parent component
   // No need to initialize from URL parameter here
 
-  function setType(type: CalendarType) {
+  function setType(type: ReservationType) {
     if (value !== type) {
       value = type;
       
@@ -28,24 +28,24 @@
 <div class="flex justify-center mb-8 flex-wrap gap-6 button-container px-6 sm:px-4">
   <button 
     class="btn btn-sm btn-outline"
-    class:btn-active={value === 'pool'}
-    on:click={() => setType('pool')}
+    class:btn-active={value === ReservationType.pool}
+    on:click={() => setType(ReservationType.pool)}
     title="Pool Reservations"
   >
     Pool
   </button>
   <button 
     class="btn btn-sm btn-outline"
-    class:btn-active={value === 'openwater'}
-    on:click={() => setType('openwater')}
+    class:btn-active={value === ReservationType.openwater}
+    on:click={() => setType(ReservationType.openwater)}
     title="Open Water Reservations"
   >
     Open Water
   </button>
   <button 
     class="btn btn-sm btn-outline"
-    class:btn-active={value === 'classroom'}
-    on:click={() => setType('classroom')}
+    class:btn-active={value === ReservationType.classroom}
+    on:click={() => setType(ReservationType.classroom)}
     title="Classroom Reservations"
   >
     Classroom

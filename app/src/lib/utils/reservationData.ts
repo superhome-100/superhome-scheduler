@@ -1,4 +1,5 @@
 // Shared reservation data for Dashboard and Reservation views
+import { ReservationType } from '../types/reservations';
 export interface Reservation {
   id: number;
   date: string;
@@ -107,7 +108,7 @@ export const getReservationsWithDynamicStatus = (): Reservation[] => {
 };
 
 // Filter reservations by type (upcoming + ongoing)
-export const getReservationsByType = (type: 'pool' | 'openwater' | 'classroom'): Reservation[] => {
+export const getReservationsByType = (type: ReservationType): Reservation[] => {
   const typeMapping = {
     'pool': 'Pool',
     'openwater': 'Open Water',

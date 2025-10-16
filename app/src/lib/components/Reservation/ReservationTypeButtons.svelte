@@ -1,11 +1,12 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { ReservationType } from '../../types/reservations';
 
-  export let selectedType: 'pool' | 'openwater' | 'classroom' = 'pool';
+  export let selectedType: ReservationType = ReservationType.openwater;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{ typeSelected: { type: ReservationType } }>();
 
-  const selectType = (type: 'pool' | 'openwater' | 'classroom') => {
+  const selectType = (type: ReservationType) => {
     console.log('ReservationTypeButtons: Selecting type:', type);
     selectedType = type;
     dispatch('typeSelected', { type });
@@ -17,24 +18,24 @@
 <div class="flex justify-center mb-8 flex-wrap gap-6 button-container px-6 sm:px-4">
   <button 
     class="btn btn-sm btn-outline"
-    class:btn-active={selectedType === 'pool'}
-    on:click={() => selectType('pool')}
+    class:btn-active={selectedType === ReservationType.pool}
+    on:click={() => selectType(ReservationType.pool)}
     title="Pool Reservations"
   >
     Pool
   </button>
   <button 
     class="btn btn-sm btn-outline"
-    class:btn-active={selectedType === 'openwater'}
-    on:click={() => selectType('openwater')}
+    class:btn-active={selectedType === ReservationType.openwater}
+    on:click={() => selectType(ReservationType.openwater)}
     title="Open Water Reservations"
   >
     Open Water
   </button>
   <button 
     class="btn btn-sm btn-outline"
-    class:btn-active={selectedType === 'classroom'}
-    on:click={() => selectType('classroom')}
+    class:btn-active={selectedType === ReservationType.classroom}
+    on:click={() => selectType(ReservationType.classroom)}
     title="Classroom Reservations"
   >
     Classroom

@@ -2,12 +2,13 @@
   import { onMount, createEventDispatcher } from 'svelte';
   import { Calendar } from '@fullcalendar/core';
   import dayGridPlugin from '@fullcalendar/daygrid';
+  import { ReservationType } from '../../types/reservations';
 
   const dispatch = createEventDispatcher();
 
   export let reservations: any[] = [];
   export let loading = false;
-  export let selectedType: 'pool' | 'openwater' | 'classroom' = 'pool';
+  export let selectedType: ReservationType = ReservationType.openwater;
 
   let calendarEl: HTMLDivElement;
   let calendar: Calendar | null = null;
@@ -23,9 +24,9 @@
 
     // Filter reservations based on selected type
     const filteredReservations = reservations.filter(reservation => {
-      if (selectedType === 'pool') return reservation.res_type === 'pool';
-      if (selectedType === 'openwater') return reservation.res_type === 'open_water';
-      if (selectedType === 'classroom') return reservation.res_type === 'classroom';
+      if (selectedType === ReservationType.pool) return reservation.res_type === 'pool';
+      if (selectedType === ReservationType.openwater) return reservation.res_type === 'open_water';
+      if (selectedType === ReservationType.classroom) return reservation.res_type === 'classroom';
       return false;
     });
 
@@ -169,14 +170,14 @@
   // Reactive section title that updates when selectedType changes
   $: sectionTitle = (() => {
     switch (selectedType) {
-      case 'pool':
+      case ReservationType.pool:
         return 'Pool Calendar';
-      case 'openwater':
+      case ReservationType.openwater:
         return 'Open Water Calendar';
-      case 'classroom':
+      case ReservationType.classroom:
         return 'Classroom Calendar';
       default:
-        return 'Pool Calendar';
+        return 'Open Water Calendar';
     }
   })();
 
