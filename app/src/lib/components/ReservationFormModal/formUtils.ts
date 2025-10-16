@@ -148,13 +148,13 @@ export const validateForm = (formData: any) => {
 
 export const getDefaultFormData = () => ({
   date: '',
-  type: 'pool',
+  type: 'openwater',
   timeOfDay: 'AM',
   startTime: '',
   endTime: '',
   notes: '',
   depth: '',
-  openWaterType: '',
+  openWaterType: 'autonomous_buoy',
   // Pool specific
   poolType: '',
   // Classroom specific
