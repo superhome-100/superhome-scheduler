@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import dayjs from 'dayjs';
+import { openWaterLabelFromKey, type OpenWaterSubtypeKey } from '$lib/types/availability';
 
 export type ReservationCategory = 'pool' | 'open_water' | 'classroom';
 
@@ -27,12 +28,8 @@ export function mapSubtype(formType: 'pool' | 'openwater' | 'classroom', formDat
     return null;
   }
   // openwater
-  const t = formData?.openWaterType;
-  if (t === 'course_coaching') return 'Course/Coaching';
-  if (t === 'autonomous_buoy') return 'Autonomous on Buoy';
-  if (t === 'autonomous_platform') return 'Autonomous on Platform';
-  if (t === 'autonomous_platform_cbs') return 'Autonomous on Platform + CBS';
-  return null;
+  const t = formData?.openWaterType as OpenWaterSubtypeKey | undefined;
+  return t ? openWaterLabelFromKey(t) : null;
 }
 
 // Client-side check for block (READ-only). Returns true if a generic or specific block exists.

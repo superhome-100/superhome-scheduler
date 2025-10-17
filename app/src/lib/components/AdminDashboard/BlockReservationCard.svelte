@@ -21,7 +21,7 @@
   $: edgeFnOffline = !!error && /503|Service Temporarily Unavailable|Failed to fetch|edge function/i.test(error);
 
   // Filters / form
-  let selCategory: AvailabilityCategory = AvailabilityCategory.open_water;
+  let selCategory: AvailabilityCategory = AvailabilityCategory.openwater;
   let selType: string | null = 'Autonomous on Buoy';
   let selDate: string = dayjs().format('YYYY-MM-DD');
   let reason: string = '';
@@ -52,11 +52,18 @@
   function onCategoryChange(cat: AvailabilityCategory) {
     selCategory = cat;
     const opts = CategoryTypeOptions[selCategory];
-    if (selCategory === AvailabilityCategory.open_water) {
+    if (selCategory === AvailabilityCategory.openwater) {
       selType = 'Autonomous on Buoy';
     } else {
       selType = opts.length ? opts[0] : null;
     }
+  }
+
+  function categoryLabel(cat: AvailabilityCategory | string): string {
+    if (cat === AvailabilityCategory.openwater || cat === 'openwater' || cat === 'open_water') return 'Open Water';
+    if (cat === AvailabilityCategory.pool || cat === 'pool') return 'Pool';
+    if (cat === AvailabilityCategory.classroom || cat === 'classroom') return 'Classroom';
+    return String(cat);
   }
 
   async function addBlock() {
@@ -149,7 +156,7 @@
                 <label class="label py-1" for="block-category"><span class="label-text text-xs">Category</span></label>
                 <select id="block-category" class="select select-bordered select-xs w-full" bind:value={selCategory} on:change={(e) => onCategoryChange((e.target as HTMLSelectElement).value as AvailabilityCategory)}>
                   <option value={AvailabilityCategory.pool}>Pool</option>
-                  <option value={AvailabilityCategory.open_water}>Open Water</option>
+                  <option value={AvailabilityCategory.openwater}>Open Water</option>
                   <option value={AvailabilityCategory.classroom}>Classroom</option>
                 </select>
               </div>
@@ -216,7 +223,7 @@
                 {#each blocks as b}
                   <tr>
                     <td>{dayjs(b.date).format('YYYY-MM-DD')}</td>
-                    <td class="capitalize">{b.category.replace('_', ' ')}</td>
+                    <td class="capitalize">{categoryLabel(b.category)}</td>
                     <td>{b.type ?? '-'}</td>
                     <td>
                       {#if !b.available}

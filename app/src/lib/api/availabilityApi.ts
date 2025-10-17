@@ -28,6 +28,20 @@ export type CreateAvailabilityPayload = {
 };
 
 export class AvailabilityApi {
+  // Map UI literals to DB literals
+  private uiToDbCategory(cat: AvailabilityCategoryLiteral): 'pool' | 'open_water' | 'classroom' {
+    if (cat === 'openwater') return 'open_water';
+    return cat as 'pool' | 'classroom';
+  }
+
+  // Map DB literals to UI literals
+  private dbToUiCategory(cat: string): AvailabilityCategoryLiteral {
+    if (cat === 'open_water') return 'openwater';
+    if (cat === 'pool' || cat === 'classroom') return cat;
+    // Fallback: keep as-is but typed as any to avoid runtime error; callers should handle unknowns gracefully
+    return (cat as unknown) as AvailabilityCategoryLiteral;
+  }
+
   async list(): Promise<{ success: boolean; data: AvailabilityBlock[]; error?: string }> {
     try {
       const { data, error } = await supabase
@@ -35,7 +49,11 @@ export class AvailabilityApi {
         .select('*')
         .order('date', { ascending: false });
       if (error) return { success: false, data: [], error: error.message };
-      return { success: true, data: (data ?? []) as unknown as AvailabilityBlock[] };
+      const mapped = (data ?? []).map((row: any) => ({
+        ...row,
+        category: this.dbToUiCategory(row.category),
+      })) as AvailabilityBlock[];
+      return { success: true, data: mapped };
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to load availabilities';
       return { success: false, data: [], error: msg };
@@ -47,7 +65,7 @@ export class AvailabilityApi {
     const body = {
       action: 'create' as const,
       date: dayjs(payload.date).format('YYYY-MM-DD'),
-      category: payload.category,
+      category: this.uiToDbCategory(payload.category),
       type: normalizedType,
       available: payload.available ?? false,
       reason: payload.reason ?? null,

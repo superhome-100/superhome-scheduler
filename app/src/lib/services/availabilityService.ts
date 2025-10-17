@@ -1,5 +1,4 @@
 import { supabase } from '../utils/supabase';
-import type { ReservationType } from './reservationService';
 import type { Database } from '../database.types';
 
 type Availability = Database['public']['Tables']['availabilities']['Row'];
@@ -12,10 +11,12 @@ export interface AvailabilityCheck {
   hasOverride: boolean;
 }
 
+type DbCategory = Database['public']['Enums']['reservation_type'];
+
 export interface AvailabilityQuery {
   date: string;
-  res_type: ReservationType;
-  category?: string;
+  category: DbCategory; // DB enum: 'pool' | 'open_water' | 'classroom'
+  type?: string | null; // subtype within category, nullable
 }
 
 export class AvailabilityService {
@@ -24,18 +25,18 @@ export class AvailabilityService {
    * Default assumption: if not in table, then available
    */
   async checkAvailability(
-    date: string, 
-    res_type: ReservationType, 
-    category?: string
+    date: string,
+    category: DbCategory,
+    type?: string | null
   ): Promise<AvailabilityCheck> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('availabilities')
         .select('available, reason')
         .eq('date', date)
-        .eq('res_type', res_type)
-        .eq('category', category || null)
-        .single();
+        .eq('category', category);
+      query = type == null ? query.is('type', null) : query.eq('type', type);
+      const { data, error } = await query.single();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
         console.error('Error checking availability:', error);
@@ -69,9 +70,9 @@ export class AvailabilityService {
     try {
       const { data, error } = await supabase
         .from('availabilities')
-        .select('date, res_type, category, available, reason')
+        .select('date, category, type, available, reason')
         .in('date', queries.map(q => q.date))
-        .in('res_type', queries.map(q => q.res_type));
+        .in('category', queries.map(q => q.category));
 
       if (error) {
         console.error('Error checking multiple availabilities:', error);
@@ -79,15 +80,16 @@ export class AvailabilityService {
       }
 
       // Create a map of existing overrides
-      const overrides = new Map<string, Availability>();
+      type AvailabilitySubset = Pick<Availability, 'date' | 'category' | 'type' | 'available' | 'reason'>;
+      const overrides = new Map<string, AvailabilitySubset>();
       data?.forEach(override => {
-        const key = `${override.date}-${override.res_type}-${override.category || 'null'}`;
+        const key = `${override.date}-${override.category}-${override.type ?? 'null'}`;
         overrides.set(key, override);
       });
 
       // Check each query
       queries.forEach(query => {
-        const key = `${query.date}-${query.res_type}-${query.category || 'null'}`;
+        const key = `${query.date}-${query.category}-${query.type ?? 'null'}`;
         const override = overrides.get(key);
         
         if (override) {
@@ -115,8 +117,8 @@ export class AvailabilityService {
    * Get next available date for a type/category
    */
   async getNextAvailableDate(
-    res_type: ReservationType,
-    category?: string,
+    category: DbCategory,
+    type?: string | null,
     fromDate?: string
   ): Promise<string | null> {
     try {
@@ -124,11 +126,12 @@ export class AvailabilityService {
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + 30); // Look ahead 30 days
 
-      const { data, error } = await supabase
+      let rangeQuery = supabase
         .from('availabilities')
         .select('date, available')
-        .eq('res_type', res_type)
-        .eq('category', category || null)
+        .eq('category', category);
+      rangeQuery = type == null ? rangeQuery.is('type', null) : rangeQuery.eq('type', type);
+      const { data, error } = await rangeQuery
         .gte('date', startDate.toISOString().split('T')[0])
         .lte('date', endDate.toISOString().split('T')[0])
         .order('date', { ascending: true });
@@ -164,15 +167,16 @@ export class AvailabilityService {
   async getAvailabilityRange(
     startDate: string,
     endDate: string,
-    res_type: ReservationType,
-    category?: string
+    category: DbCategory,
+    type?: string | null
   ): Promise<Availability[]> {
     try {
-      const { data, error } = await supabase
+      let rangeAllQuery = supabase
         .from('availabilities')
         .select('*')
-        .eq('res_type', res_type)
-        .eq('category', category || null)
+        .eq('category', category);
+      rangeAllQuery = type == null ? rangeAllQuery.is('type', null) : rangeAllQuery.eq('type', type);
+      const { data, error } = await rangeAllQuery
         .gte('date', startDate)
         .lte('date', endDate)
         .order('date', { ascending: true });

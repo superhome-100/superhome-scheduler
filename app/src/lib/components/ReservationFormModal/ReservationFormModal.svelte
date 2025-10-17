@@ -17,7 +17,7 @@
   import { validateForm, getDefaultFormData, getSubmissionData, getDefaultDateForType, getDefaultTimesFor } from './formUtils';
   import { isBeforeCutoff } from '../../utils/cutoffRules';
   import { checkBlockForForm } from '../../utils/availabilityClient';
-  import { ReservationType } from '../../types/reservations';
+  import type { ReservationType } from '../../services/reservationService';
 
   const dispatch = createEventDispatcher();
 
@@ -39,21 +39,19 @@
     errors = validationErrors;
   }
 
-  // Map UI form type to shared ReservationType enum
-  const toReservationType = (t: 'openwater' | 'pool' | 'classroom'): ReservationType => {
-    if (t === 'openwater') return ReservationType.open_water;
-    if (t === 'pool') return ReservationType.pool;
-    return ReservationType.classroom;
+  // Map UI form type to service ReservationType ('open_water' | 'pool' | 'classroom')
+  const toServiceReservationType = (t: 'openwater' | 'pool' | 'classroom'): ReservationType => {
+    return t === 'openwater' ? 'open_water' : t;
   };
 
   // Reactive values for CutoffWarning to ensure updates
   $: currentReservationDate = formData.date;
-  $: currentResType = formData.type ? toReservationType(formData.type) : ReservationType.pool;
+  $: currentResType = formData.type ? toServiceReservationType(formData.type) : 'pool';
 
   // Check if cutoff time has passed (used for warnings and disabling actions)
   $: isCutoffPassed = (() => {
     if (!formData.date || !formData.type) return false;
-    const resType: ReservationType = formData.type ? toReservationType(formData.type) : ReservationType.pool;
+    const resType: ReservationType = formData.type ? toServiceReservationType(formData.type) : 'pool';
 
     // Open Water: evaluate against fixed slot start
     if (formData.type === 'openwater' && formData.timeOfDay) {
@@ -152,7 +150,7 @@
       // Map form type to database enum
       // Prepare reservation data for CRUD API
       const reservationData: CreateReservationData = {
-        res_type: toReservationType(submissionData.type as 'openwater' | 'pool' | 'classroom'),
+        res_type: toServiceReservationType(submissionData.type as 'openwater' | 'pool' | 'classroom'),
         res_date: reservationDateTime.toISOString(),
         res_status: 'pending'
       };

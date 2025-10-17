@@ -1,3 +1,5 @@
+import { openWaterLabelFromKey, type OpenWaterSubtypeKey } from './availability';
+
 export type ActivityType =
   | 'course_coaching'
   | 'autonomous_buoy_0_89'
@@ -25,10 +27,11 @@ export function typeLabel(act: ActivityType, openWaterType: string | null): stri
   if (act === 'autonomous_platform_cbs_90_130') return 'Autonomous on Platform + CBS (90-130m)';
   // Check open_water_type for course_coaching as well
   if (openWaterType === 'course_coaching') return 'Course/Coaching';
-  // Normalize plain open_water_type values to human-readable labels
-  if (openWaterType === 'autonomous_buoy') return 'Autonomous on Buoy';
-  if (openWaterType === 'autonomous_platform') return 'Autonomous on Platform';
-  if (openWaterType === 'autonomous_platform_cbs') return 'Autonomous on Platform + CBS';
+  // Normalize plain open_water_type values to human-readable labels via single source of truth
+  const key = openWaterType as OpenWaterSubtypeKey | null;
+  if (key && (key === 'autonomous_buoy' || key === 'autonomous_platform' || key === 'autonomous_platform_cbs')) {
+    return openWaterLabelFromKey(key);
+  }
   // Fallback to open_water_type display if provided
   return openWaterType || 'Open Water';
 }

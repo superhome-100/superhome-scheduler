@@ -1,69 +1,85 @@
 // Availability types and mappings (strict typing, reusable)
-// Keep aligned with DB: reservation_type enum uses 'pool' | 'open_water' | 'classroom'
-// UI may use ReservationType (openwater) so provide mapping helpers.
+// Keep aligned with UI/ReservationType: uses 'pool' | 'openwater' | 'classroom'
+// If DB uses a different literal (e.g., 'open_water'), map at API boundaries.
 
 import { ReservationType } from './reservations';
+import type { ReservationTypeLiteral } from './reservations';
 
-export enum AvailabilityCategory {
-  pool = 'pool',
-  open_water = 'open_water',
-  classroom = 'classroom',
+// Re-export ReservationType as AvailabilityCategory (value + type) to ensure single source of truth
+export const AvailabilityCategory = ReservationType;
+export type AvailabilityCategory = ReservationType;
+
+export type AvailabilityCategoryLiteral = ReservationTypeLiteral;
+
+// Literal unions matching DB-allowed values (single source of truth)
+export const POOL_TYPES = ['Autonomous', 'Course/Coaching'] as const;
+export type PoolType = typeof POOL_TYPES[number];
+
+// (Removed OPEN_WATER_TYPES in favor of OPEN_WATER_SUBTYPES below to keep a single source of truth)
+
+export const CLASSROOM_TYPES = ['Course/Coaching'] as const;
+export type ClassroomType = typeof CLASSROOM_TYPES[number];
+
+// Single source of truth for Open Water subtype keys -> base labels (no depth ranges)
+export const OPEN_WATER_SUBTYPES = {
+  course_coaching: 'Course/Coaching',
+  autonomous_buoy: 'Autonomous on Buoy',
+  autonomous_platform: 'Autonomous on Platform',
+  autonomous_platform_cbs: 'Autonomous on Platform + CBS',
+} as const;
+export type OpenWaterSubtypeKey = keyof typeof OPEN_WATER_SUBTYPES;
+
+// Labels array derived from the map (keeps literals centralized without duplicating strings)
+export const OPEN_WATER_LABELS = [
+  OPEN_WATER_SUBTYPES.course_coaching,
+  OPEN_WATER_SUBTYPES.autonomous_buoy,
+  OPEN_WATER_SUBTYPES.autonomous_platform,
+  OPEN_WATER_SUBTYPES.autonomous_platform_cbs,
+] as const;
+export type OpenWaterLabel = typeof OPEN_WATER_LABELS[number];
+
+export function openWaterLabelFromKey(key: OpenWaterSubtypeKey): OpenWaterLabel {
+  return OPEN_WATER_SUBTYPES[key];
 }
-
-export type AvailabilityCategoryLiteral = `${AvailabilityCategory}`;
-
-// Literal unions matching DB-allowed values (see migrations)
-export type PoolType = 'Autonomous' | 'Course/Coaching';
-export type OpenWaterType =
-  | 'Course/Coaching'
-  | 'Autonomous on Buoy'
-  | 'Autonomous on Platform'
-  | 'Autonomous on Platform + CBS';
-export type ClassroomType = 'Course/Coaching';
 
 // Mapping of category to its allowed type union
 export type CategoryTypeUnion<C extends AvailabilityCategory = AvailabilityCategory> =
-  C extends AvailabilityCategory.pool
+  C extends ReservationType.pool
     ? PoolType
-    : C extends AvailabilityCategory.open_water
-      ? OpenWaterType
+    : C extends ReservationType.openwater
+      ? OpenWaterLabel
       : ClassroomType;
 
 // Options list per category with strict typing
 export const CategoryTypeOptions: {
-  [AvailabilityCategory.pool]: Readonly<PoolType[]>;
-  [AvailabilityCategory.open_water]: Readonly<OpenWaterType[]>;
-  [AvailabilityCategory.classroom]: Readonly<ClassroomType[]>;
+  [ReservationType.pool]: Readonly<PoolType[]>;
+  [ReservationType.openwater]: Readonly<OpenWaterLabel[]>;
+  [ReservationType.classroom]: Readonly<ClassroomType[]>;
 } = {
-  [AvailabilityCategory.pool]: ['Autonomous', 'Course/Coaching'],
-  [AvailabilityCategory.open_water]: [
-    'Course/Coaching',
-    'Autonomous on Buoy',
-    'Autonomous on Platform',
-    'Autonomous on Platform + CBS',
-  ],
-  [AvailabilityCategory.classroom]: ['Course/Coaching'],
+  [ReservationType.pool]: POOL_TYPES,
+  [ReservationType.openwater]: OPEN_WATER_LABELS,
+  [ReservationType.classroom]: CLASSROOM_TYPES,
 };
 
 export function toAvailabilityCategory(rt: ReservationType): AvailabilityCategory {
   switch (rt) {
     case ReservationType.pool:
-      return AvailabilityCategory.pool;
+      return ReservationType.pool;
     case ReservationType.classroom:
-      return AvailabilityCategory.classroom;
+      return ReservationType.classroom;
     case ReservationType.openwater:
     default:
-      return AvailabilityCategory.open_water;
+      return ReservationType.openwater;
   }
 }
 
 export function fromAvailabilityCategory(cat: AvailabilityCategory): ReservationType {
   switch (cat) {
-    case AvailabilityCategory.pool:
+    case ReservationType.pool:
       return ReservationType.pool;
-    case AvailabilityCategory.classroom:
+    case ReservationType.classroom:
       return ReservationType.classroom;
-    case AvailabilityCategory.open_water:
+    case ReservationType.openwater:
     default:
       return ReservationType.openwater;
   }
