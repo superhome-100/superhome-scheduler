@@ -14,8 +14,10 @@
   import FormErrorAlert from './FormErrorAlert.svelte';
   import EquipmentOptions from './EquipmentOptions.svelte';
   import CutoffWarning from '../CutoffWarning.svelte';
-  import { validateForm, getDefaultFormData, getSubmissionData, getDefaultDateForType } from './formUtils';
+  import { validateForm, getDefaultFormData, getSubmissionData, getDefaultDateForType, getDefaultTimesFor } from './formUtils';
   import { isBeforeCutoff } from '../../utils/cutoffRules';
+  import { checkBlockForForm } from '../../utils/availabilityClient';
+  import { ReservationType } from '../../types/reservations';
 
   const dispatch = createEventDispatcher();
 
@@ -37,34 +39,67 @@
     errors = validationErrors;
   }
 
+  // Map UI form type to shared ReservationType enum
+  const toReservationType = (t: 'openwater' | 'pool' | 'classroom'): ReservationType => {
+    if (t === 'openwater') return ReservationType.open_water;
+    if (t === 'pool') return ReservationType.pool;
+    return ReservationType.classroom;
+  };
+
   // Reactive values for CutoffWarning to ensure updates
   $: currentReservationDate = formData.date;
-  $: currentResType = formData.type === 'openwater' ? 'open_water' : formData.type;
+  $: currentResType = formData.type ? toReservationType(formData.type) : ReservationType.pool;
 
-  // Check if cutoff time has passed
+  // Check if cutoff time has passed (used for warnings and disabling actions)
   $: isCutoffPassed = (() => {
     if (!formData.date || !formData.type) return false;
-    
-    const resTypeMap: Record<string, 'pool' | 'open_water' | 'classroom'> = {
-      'pool': 'pool',
-      'openwater': 'open_water',
-      'classroom': 'classroom'
-    };
-    
-    const resType = resTypeMap[formData.type] || 'pool';
-    
-    // For open water, use timeOfDay to determine the appropriate time
-    let reservationDateTime: Date;
+    const resType: ReservationType = formData.type ? toReservationType(formData.type) : ReservationType.pool;
+
+    // Open Water: evaluate against fixed slot start
     if (formData.type === 'openwater' && formData.timeOfDay) {
       const time = formData.timeOfDay === 'AM' ? '08:00' : '13:00';
-      reservationDateTime = new Date(`${formData.date}T${time}`);
-    } else {
-      // For pool and classroom, use startTime or default
-      reservationDateTime = new Date(`${formData.date}T${formData.startTime || '12:00'}`);
+      const reservationDateTime = new Date(`${formData.date}T${time}`);
+      return !isBeforeCutoff(reservationDateTime.toISOString(), resType);
     }
-    
-    return !isBeforeCutoff(reservationDateTime.toISOString(), resType);
+
+    // Pool/Classroom: only evaluate cutoff once a startTime is chosen
+    if ((formData.type === 'pool' || formData.type === 'classroom')) {
+      if (!formData.startTime) return false;
+      const reservationDateTime = new Date(`${formData.date}T${formData.startTime}`);
+      return !isBeforeCutoff(reservationDateTime.toISOString(), resType);
+    }
+
+    return false;
   })();
+
+  // Availability check (READ directly from DB per rules)
+  let isBlocked = false;
+  let blockedReason: string | null = null;
+
+  async function checkAvailabilityClient() {
+    isBlocked = false;
+    blockedReason = null;
+    if (!formData.date || !formData.type) return;
+    const res = await checkBlockForForm(formData);
+    isBlocked = res.isBlocked;
+    blockedReason = res.reason;
+  }
+
+  // Trigger availability check when relevant fields change
+  $: if (formData.date && formData.type) {
+    checkAvailabilityClient();
+  }
+
+  // Also trigger when subtype fields change
+  $: if (formData.type === 'pool' && formData.poolType && formData.date) {
+    checkAvailabilityClient();
+  }
+  $: if (formData.type === 'classroom' && formData.classroomType && formData.date) {
+    checkAvailabilityClient();
+  }
+  $: if (formData.type === 'openwater' && formData.openWaterType && formData.date) {
+    checkAvailabilityClient();
+  }
 
   // Form validation and loading state
   let errors: Record<string, string> = {};
@@ -115,15 +150,9 @@
       }
 
       // Map form type to database enum
-      const resTypeMap: Record<string, 'pool' | 'open_water' | 'classroom'> = {
-        'pool': 'pool',
-        'openwater': 'open_water',
-        'classroom': 'classroom'
-      };
-
       // Prepare reservation data for CRUD API
       const reservationData: CreateReservationData = {
-        res_type: resTypeMap[submissionData.type] || 'pool',
+        res_type: toReservationType(submissionData.type as 'openwater' | 'pool' | 'classroom'),
         res_date: reservationDateTime.toISOString(),
         res_status: 'pending'
       };
@@ -198,14 +227,16 @@
       formData.startTime = '';
       formData.endTime = '';
     } else if (formData.type === 'pool') {
-      // Pool defaults
+      // Pool defaults with 30-min logic
       formData.poolType = 'autonomous';
-      formData.startTime = '08:00';
-      formData.endTime = '08:30';
+      const t = getDefaultTimesFor('pool');
+      formData.startTime = t.startTime;
+      formData.endTime = t.endTime;
     } else if (formData.type === 'classroom') {
-      // Classroom defaults
-      formData.startTime = '08:00';
-      formData.endTime = '08:30';
+      // Classroom defaults with 30-min logic
+      const t = getDefaultTimesFor('classroom');
+      formData.startTime = t.startTime;
+      formData.endTime = t.endTime;
     }
     // Recompute default date based on type and current time cutoff
     const mappedType: 'openwater' | 'pool' | 'classroom' = (formData.type as any) || 'pool';
@@ -262,6 +293,16 @@
 
       <form on:submit={handleSubmit} class="modal-body">
         <FormErrorAlert {submitError} />
+        {#if isBlocked}
+          <div class="alert alert-error mb-3 text-sm">
+            <span class="font-bold text-red-600">
+              This date is currently blocked for {formData.type}.
+            </span>
+            {#if blockedReason}
+              <span class="ml-2 text-red-600">Reason: {blockedReason}</span>
+            {/if}
+          </div>
+        {/if}
         
         <!-- Cut-off Warning -->
         {#if currentReservationDate && currentResType}
@@ -326,7 +367,7 @@
         <FormNotes bind:formData />
 
         <!-- Actions -->
-        <FormActions {loading} isCutoffPassed={isCutoffPassed} on:close={closeModal} />
+        <FormActions {loading} isCutoffPassed={(isCutoffPassed || isBlocked)} on:close={closeModal} />
       </form>
     </div>
   </div>

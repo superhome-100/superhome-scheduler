@@ -37,32 +37,32 @@ export type Database = {
       availabilities: {
         Row: {
           available: boolean
-          category: string | null
+          category: Database["public"]["Enums"]["reservation_type"]
           created_at: string | null
           date: string
           id: number
           reason: string | null
-          res_type: Database["public"]["Enums"]["reservation_type"]
+          type: string | null
           updated_at: string | null
         }
         Insert: {
           available?: boolean
-          category?: string | null
+          category: Database["public"]["Enums"]["reservation_type"]
           created_at?: string | null
           date: string
           id?: number
           reason?: string | null
-          res_type: Database["public"]["Enums"]["reservation_type"]
+          type?: string | null
           updated_at?: string | null
         }
         Update: {
           available?: boolean
-          category?: string | null
+          category?: Database["public"]["Enums"]["reservation_type"]
           created_at?: string | null
           date?: string
           id?: number
           reason?: string | null
-          res_type?: Database["public"]["Enums"]["reservation_type"]
+          type?: string | null
           updated_at?: string | null
         }
         Relationships: []

@@ -6,11 +6,12 @@
   import PendingReservations from './PendingReservations.svelte';
   import UserManagement from './UserManagement.svelte';
   import AdminCalendar from './AdminCalendar.svelte';
-  import ReservationDetailsModal from '../ReservationDetailsModal/ReservationDetailsModal.svelte';
+  import ReservationDetailsModal from './ReservationDetailsModal.svelte';
   import SingleDayView from '../Calendar/SingleDayView.svelte';
   import { reservationApi } from '../../api/reservationApi';
   import { userAdminService } from '../../services/userAdminService';
   import { ReservationType } from '../../types/reservations';
+  import BlockReservationCard from './BlockReservationCard.svelte';
 
   let users: any[] = [];
   let reservations: any[] = [];
@@ -304,6 +305,8 @@
             on:reservationAction={(e: any) => handleReservationAction(e.detail.reservation, e.detail.action)}
             on:openReservationDetails={(e: any) => openReservationDetails(e.detail)}
           />
+          <!-- Block Reservation Section Card (below Pending Reservation Requests) -->
+          <BlockReservationCard />
         {:else if adminView === 'calendar'}
           {#if showSingleDayView}
             <SingleDayView

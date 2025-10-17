@@ -2,10 +2,14 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 
+type ReservationCategory = 'pool' | 'open_water' | 'classroom';
+
 interface AvailabilityCheckRequest {
-  date: string;
-  res_type: string;
-  category?: string;
+  date: string; // YYYY-MM-DD or ISO
+  // Updated schema: prefer category/type; keep res_type for backward compatibility
+  category?: ReservationCategory;
+  type?: string | null;
+  res_type?: ReservationCategory; // legacy
 }
 
 serve(async (req) => {
@@ -39,37 +43,49 @@ serve(async (req) => {
       );
     }
 
-    const { date, res_type, category }: AvailabilityCheckRequest = await req.json();
+    const body: AvailabilityCheckRequest = await req.json();
+    const date = body?.date;
+    const category: ReservationCategory | undefined = body?.category ?? body?.res_type;
+    const subType: string | null | undefined = body?.type;
 
-    if (!date || !res_type) {
+    if (!date || !category) {
       return new Response(
-        JSON.stringify({ error: 'Date and res_type are required' }),
+        JSON.stringify({ error: 'Date and category are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Check availability
+    // Fetch overrides for the date and category; evaluate specific vs generic
+    const dateOnly = date.split('T')[0];
     const { data, error } = await supabaseClient
       .from('availabilities')
-      .select('available, reason')
-      .eq('date', date)
-      .eq('res_type', res_type)
-      .eq('category', category || null)
-      .single();
+      .select('available, reason, type')
+      .eq('date', dateOnly)
+      .eq('category', category);
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+    if (error) {
       return new Response(
         JSON.stringify({ error: error.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // If no row found, it's available by default
-    const result = {
-      isAvailable: data ? data.available : true,
-      reason: data?.reason || null,
-      hasOverride: !!data
-    };
+    let isAvailable = true;
+    let reason: string | null = null;
+    let hasOverride = false;
+
+    if (data && data.length > 0) {
+      const specific = subType ? data.find((row: any) => row.type === subType) : null;
+      const generic = data.find((row: any) => row.type === null);
+      const override = specific ?? generic;
+      if (override) {
+        isAvailable = !!override.available;
+        reason = override.reason || null;
+        hasOverride = true;
+      }
+    }
+
+    const result = { isAvailable, reason, hasOverride };
 
     return new Response(
       JSON.stringify({ data: result }),
