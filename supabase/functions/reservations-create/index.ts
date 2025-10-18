@@ -75,40 +75,47 @@ function getCutoffDescription(res_type: ReservationType): string {
   return CUTOFF_RULES[res_type].description
 }
 
-async function checkAvailability(supabase: any, date: string, res_type: ReservationType, category?: string): Promise<{ isAvailable: boolean; reason?: string }> {
+async function checkAvailability(
+  supabase: any,
+  date: string,
+  res_type: ReservationType,
+  subtype: string | null | undefined
+): Promise<{ isAvailable: boolean; reason?: string }> {
   try {
-    let query = supabase
+    const dateOnly = date.split('T')[0];
+    const { data, error } = await supabase
       .from('availabilities')
-      .select('available, reason')
-      .eq('date', date.split('T')[0]) // Extract date part
-      .eq('res_type', res_type)
-    
-    // Handle category properly - if undefined, query for null category
-    if (category === undefined) {
-      query = query.is('category', null)
-    } else {
-      query = query.eq('category', category)
-    }
-    
-    const { data, error } = await query.single()
+      .select('available, reason, type')
+      .eq('date', dateOnly)
+      .eq('category', res_type);
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-      console.error('Error checking availability:', error)
-      return { isAvailable: false }
+    if (error) {
+      console.error('Error checking availability:', error);
+      return { isAvailable: false };
     }
 
-    // If no row found, it's available by default
-    if (!data) {
-      return { isAvailable: true }
+    if (!data || data.length === 0) {
+      // No overrides: available by default
+      return { isAvailable: true };
+    }
+
+    // Prefer specific subtype override, fall back to generic (type IS NULL or empty string)
+    const specific = subtype ? data.find((row: any) => row.type === subtype) : null;
+    const generic = data.find((row: any) => row.type === null || row.type === '');
+    const override = specific ?? generic;
+
+    if (!override) {
+      // No applicable override -> available by default
+      return { isAvailable: true };
     }
 
     return {
-      isAvailable: data.available,
-      reason: data.reason || undefined
-    }
+      isAvailable: override.available,
+      reason: override.reason || undefined
+    };
   } catch (error) {
-    console.error('Error checking availability:', error)
-    return { isAvailable: false }
+    console.error('Error checking availability:', error);
+    return { isAvailable: false };
   }
 }
 
@@ -173,8 +180,18 @@ Deno.serve(async (req: Request) => {
       }, { status: 400 });
     }
 
-    // Check availability
-    const availability = await checkAvailability(supabase, body.res_date, body.res_type);
+    // Determine subtype for availability checks based on reservation type
+    let subtype: string | null | undefined = null;
+    if (body.res_type === 'pool') {
+      subtype = body.pool?.pool_type ?? null;
+    } else if (body.res_type === 'classroom') {
+      subtype = body.classroom?.classroom_type ?? null;
+    } else if (body.res_type === 'open_water') {
+      subtype = body.openwater?.open_water_type ?? null;
+    }
+
+    // Check availability (category = res_type, type = subtype or null)
+    const availability = await checkAvailability(supabase, body.res_date, body.res_type, subtype);
     if (!availability.isAvailable) {
       const reason = availability.reason ? ` (${availability.reason})` : '';
       return json({ 

@@ -22,12 +22,12 @@ export const validateForm = (formData: any) => {
     if (dateObj.isBefore(today, 'day')) {
       errors.date = 'Reservation date must be today or in the future';
     } else {
-      // After 6pm, Pool/Classroom cannot reserve for Today
-      const cutoff = today.hour(18).minute(0).second(0).millisecond(0);
+      // After 7:30pm, Pool/Classroom cannot reserve for Today
+      const cutoff = today.hour(19).minute(30).second(0).millisecond(0);
       const afterCutoff = today.isSameOrAfter(cutoff);
       const isPoolOrClassroom = formData.type === 'pool' || formData.type === 'classroom';
       if (isPoolOrClassroom && isToday(formData.date) && afterCutoff) {
-        errors.date = 'After 6pm, Pool and Classroom reservations must be for tomorrow or later';
+        errors.date = 'After 7:30pm, Pool and Classroom reservations must be for tomorrow or later';
       }
 
       // Check cut-off time validation
@@ -50,16 +50,13 @@ export const validateForm = (formData: any) => {
         reservationDateTime = new Date(`${formData.date}T${formData.startTime || '12:00'}`);
       }
       
-      if (!isBeforeCutoff(reservationDateTime.toISOString(), resType)) {
-        const cutoffDescription = getCutoffDescription(resType);
-        
-        // Only show cutoff time for Open Water reservations
-        if (resType === 'open_water') {
+      // Only apply date-level cutoff validation for Open Water.
+      // For Pool/Classroom, time-level validation handles 30-min lead; do not flag date as error.
+      if (resType === 'open_water') {
+        if (!isBeforeCutoff(reservationDateTime.toISOString(), resType)) {
+          const cutoffDescription = getCutoffDescription(resType);
           const cutoffTime = getCutoffTime(resType, reservationDateTime.toISOString());
           errors.date = `${cutoffDescription}. Cut-off time was ${formatCutoffTime(cutoffTime)}`;
-        } else {
-          // For Pool and Classroom, just show the description
-          errors.date = cutoffDescription;
         }
       }
     }
@@ -167,16 +164,17 @@ export const validateForm = (formData: any) => {
 // Compute default date based on reservation type and current time (6pm cutoff)
 export const getDefaultDateForType = (type: 'openwater' | 'pool' | 'classroom') => {
   const nowDt = now();
-  const cutoff = nowDt.hour(18).minute(0).second(0).millisecond(0);
-  const isAfterCutoff = nowDt.isSameOrAfter(cutoff);
-
   if (type === 'openwater') {
-    // Before 6pm -> tomorrow; after 6pm -> day after tomorrow
-    const addDays = isAfterCutoff ? 2 : 1;
+    // Open Water keeps 6pm cutoff logic for default date
+    const owCutoff = nowDt.hour(18).minute(0).second(0).millisecond(0);
+    const owAfterCutoff = nowDt.isSameOrAfter(owCutoff);
+    const addDays = owAfterCutoff ? 2 : 1;
     return nowDt.add(addDays, 'day').format('YYYY-MM-DD');
   }
-  // Pool/Classroom: default today; after 6pm -> tomorrow
-  const addDays = isAfterCutoff ? 1 : 0;
+  // Pool/Classroom use 7:30pm cutoff: before -> today, after -> tomorrow
+  const pcCutoff = nowDt.hour(19).minute(30).second(0).millisecond(0);
+  const pcAfterCutoff = nowDt.isSameOrAfter(pcCutoff);
+  const addDays = pcAfterCutoff ? 1 : 0;
   return nowDt.add(addDays, 'day').format('YYYY-MM-DD');
 };
 
@@ -214,4 +212,57 @@ export const getSubmissionData = (formData: any) => {
     }
   }
   return submissionData;
+};
+
+// Compute default Start/End times for Pool/Classroom respecting 30-minute intervals
+// Rules:
+// - If selected type is Pool/Classroom and current time is BEFORE 6pm: date defaults to today (handled by getDefaultDateForType)
+//   - Start time = next 30-minute slot from now, clamped within 08:00 to 19:30
+//   - End time = Start + 30 minutes (max 20:00)
+// - If AFTER 6pm: date defaults to tomorrow and Start=08:00, End=08:30
+export const getDefaultTimesFor = (type: 'openwater' | 'pool' | 'classroom') => {
+  if (type === 'openwater') {
+    return { startTime: '', endTime: '' };
+  }
+
+  const nowDt = now();
+  // Pool/Classroom cutoff at 7:30pm
+  const cutoff = nowDt.hour(19).minute(30).second(0).millisecond(0);
+  const afterCutoff = nowDt.isSameOrAfter(cutoff);
+
+  // After cutoff -> tomorrow 08:00-08:30
+  if (afterCutoff) {
+    return { startTime: '08:00', endTime: '08:30' };
+  }
+
+  // Before cutoff -> today: compute next slot after adding 30 minutes to current time, rounded up to 30-min grid
+  const plus30 = nowDt.add(30, 'minute');
+  const hour = plus30.hour();
+  const minute = plus30.minute();
+
+  // Round up to the next 30-minute mark from plus30 (00 -> 30, 01-30 -> 30, 31-59 -> +1h:00)
+  const roundedMinutes = minute === 0 ? 30 : (minute <= 30 ? 30 : 60);
+  let startHour = hour + (roundedMinutes === 60 ? 1 : 0);
+  let startMinute = roundedMinutes === 60 ? 0 : roundedMinutes;
+
+  // Clamp to operating window 08:00 - 19:30 for start times
+  if (startHour < 8) {
+    startHour = 8; startMinute = 0;
+  }
+  // If rounding pushed beyond 19:30, clamp to 19:30
+  if (startHour > 19 || (startHour === 19 && startMinute > 30)) {
+    startHour = 19; startMinute = 30;
+  }
+
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const startTime = `${pad(startHour)}:${pad(startMinute)}`;
+
+  // End time = start + 30 minutes, cap at 20:00
+  let endHour = startHour;
+  let endMinute = startMinute + 30;
+  if (endMinute >= 60) { endHour += 1; endMinute = 0; }
+  if (endHour > 20 || (endHour === 20 && endMinute > 0)) { endHour = 20; endMinute = 0; }
+  const endTime = `${pad(endHour)}:${pad(endMinute)}`;
+
+  return { startTime, endTime };
 };

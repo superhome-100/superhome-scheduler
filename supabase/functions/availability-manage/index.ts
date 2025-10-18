@@ -6,10 +6,11 @@ interface AvailabilityRequest {
   action: 'create' | 'update' | 'delete' | 'get';
   id?: number;
   date?: string;
-  res_type?: string;
-  category?: string;
+  // Updated schema: category = reservation_type enum, type = text
+  category?: 'pool' | 'open_water' | 'classroom';
+  type?: string | null;
   available?: boolean;
-  reason?: string;
+  reason?: string | null;
 }
 
 serve(async (req) => {
@@ -57,13 +58,13 @@ serve(async (req) => {
       );
     }
 
-    const { action, id, date, res_type, category, available, reason }: AvailabilityRequest = await req.json();
+    const { action, id, date, category, type, available, reason }: AvailabilityRequest = await req.json();
 
     switch (action) {
       case 'create':
-        if (!date || !res_type) {
+        if (!date || !category) {
           return new Response(
-            JSON.stringify({ error: 'Date and res_type are required' }),
+            JSON.stringify({ error: 'Date and category are required' }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
@@ -72,10 +73,10 @@ serve(async (req) => {
           .from('availabilities')
           .insert({
             date,
-            res_type,
-            category: category || null,
+            category,
+            type: type ?? null,
             available: available ?? true,
-            reason: reason || null
+            reason: reason ?? null
           })
           .select()
           .single();
@@ -102,8 +103,8 @@ serve(async (req) => {
 
         const updateData: any = {};
         if (date !== undefined) updateData.date = date;
-        if (res_type !== undefined) updateData.res_type = res_type;
         if (category !== undefined) updateData.category = category;
+        if (type !== undefined) updateData.type = type;
         if (available !== undefined) updateData.available = available;
         if (reason !== undefined) updateData.reason = reason;
 
