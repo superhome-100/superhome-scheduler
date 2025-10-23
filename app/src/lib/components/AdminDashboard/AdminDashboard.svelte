@@ -9,9 +9,13 @@
   import ReservationDetailsModal from './ReservationDetailsModal.svelte';
   import SingleDayView from '../Calendar/SingleDayView.svelte';
   import { reservationApi } from '../../api/reservationApi';
+  import { reservationService } from '../../services/reservationService';
   import { userAdminService } from '../../services/userAdminService';
   import { ReservationType } from '../../types/reservations';
   import BlockReservationCard from './BlockReservationCard.svelte';
+  import Toast from '../Toast.svelte';
+  import { MSG_NO_CLASSROOMS } from '$lib/constants/messages';
+  import ErrorModal from '../ErrorModal.svelte';
 
   let users: any[] = [];
   let reservations: any[] = [];
@@ -19,6 +23,11 @@
   let loading = true;
   let refreshing = false;
   let error: string | null = null;
+  let toastOpen = false;
+  let toastMessage = '';
+  // Centered error modal for reservation action errors
+  let errorModalOpen = false;
+  let errorModalMessage = '';
 
   // Handle pull-to-refresh
   const handleRefresh = async () => {
@@ -148,7 +157,10 @@
             *,
             user_profiles!reservations_uid_fkey (
               name
-            )
+            ),
+            res_pool!left(start_time, end_time, lane, pool_type, note),
+            res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, note),
+            res_classroom!left(start_time, end_time, room, classroom_type, student_count, note)
           `)
           .order('created_at', { ascending: false });
         
@@ -190,15 +202,22 @@
     processingReservation = reservationKey;
 
     try {
-      const newStatus = action === 'approve' ? 'confirmed' : 'rejected';
-      
-      const result = await reservationApi.updateReservationStatus(
-        reservation.uid,
-        reservation.res_date,
-        newStatus
-      );
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to update reservation status');
+      if (action === 'approve' && reservation?.res_type === 'classroom') {
+        // Use the new approval pathway which validates and auto-assigns a room
+        const result = await reservationService.approveReservation(reservation.uid, reservation.res_date);
+        if (!result.success) {
+          throw new Error(result.error || MSG_NO_CLASSROOMS);
+        }
+      } else {
+        const newStatus = action === 'approve' ? 'confirmed' : 'rejected';
+        const result = await reservationApi.updateReservationStatus(
+          reservation.uid,
+          reservation.res_date,
+          newStatus
+        );
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to update reservation status');
+        }
       }
 
       // Refresh data
@@ -211,7 +230,25 @@
 
     } catch (err) {
       console.error(`Error ${action}ing reservation:`, err);
-      error = err instanceof Error ? err.message : `Failed to ${action} reservation`;
+      // Extract message
+      const msg = typeof err === 'object' && err && 'message' in (err as any)
+        ? (err as any).message as string
+        : String(err);
+      // Derive the best message possible
+      let displayMsg = msg || `Failed to ${action} reservation`;
+      const hasSpecific = (
+        displayMsg.includes('No pool lanes available') ||
+        displayMsg.includes('No classrooms available') ||
+        displayMsg.toLowerCase().includes('already booked')
+      );
+      // For classroom approvals, if we don't have a specific message, show the capacity fallback
+      if (action === 'approve' && reservation?.res_type === 'classroom' && !hasSpecific) {
+        displayMsg = MSG_NO_CLASSROOMS;
+      }
+      // Prefer modal in the center instead of toast
+      errorModalMessage = displayMsg;
+      errorModalOpen = true;
+      // Do not set page-level error here to keep the dashboard visible
     } finally {
       processingReservation = null;
     }
@@ -349,4 +386,7 @@
     on:closeModal={closeReservationDetails}
     on:reservationAction={(e: any) => handleReservationAction(e.detail.reservation, e.detail.action)}
   />
+  <ErrorModal bind:open={errorModalOpen} title="Reservation Error" message={errorModalMessage} />
+  <!-- Keeping Toast available for other non-blocking notices if needed -->
+  <Toast type="error" bind:open={toastOpen} message={toastMessage} position="center" vertical="middle" />
 </div>

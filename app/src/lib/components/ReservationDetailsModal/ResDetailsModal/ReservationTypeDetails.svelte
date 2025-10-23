@@ -15,11 +15,19 @@
 {/if}
 
 <!-- Classroom specific details -->
-{#if displayType === 'Classroom' && reservation.room}
-  <div class="detail-item">
-    <span class="detail-label">Room</span>
-    <span class="detail-value">{reservation.room}</span>
-  </div>
+{#if displayType === 'Classroom'}
+  {#if reservation.room}
+    <div class="detail-item">
+      <span class="detail-label">Room</span>
+      <span class="detail-value">{reservation.room}</span>
+    </div>
+  {/if}
+  {#if (reservation.classroom_type === 'course_coaching' || reservation.res_classroom?.classroom_type === 'course_coaching') && (reservation.student_count || reservation.res_classroom?.student_count)}
+    <div class="detail-item">
+      <span class="detail-label">No. of Students</span>
+      <span class="detail-value">{reservation.student_count ?? reservation.res_classroom?.student_count}</span>
+    </div>
+  {/if}
 {/if}
 
 <!-- Open Water specific details -->

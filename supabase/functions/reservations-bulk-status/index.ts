@@ -1,9 +1,11 @@
 // Supabase Edge Function: reservations-bulk-status
 // - Validates caller is authenticated and has 'admin' privilege
 // - Performs bulk status updates on reservations under RLS
+// - When confirming, delegates to reservations-update to enforce auto-assign rules
 // - Deno environment (TypeScript)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
+import { corsHeaders, handlePreflight } from '../_shared/cors.ts';
 
 interface Payload {
   reservations: Array<{ uid: string; res_date: string }>;
@@ -12,13 +14,16 @@ interface Payload {
 
 function json(body: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(body), {
-    headers: { 'content-type': 'application/json', ...(init.headers || {}) },
+    headers: { 'content-type': 'application/json', ...corsHeaders, ...(init.headers || {}) },
     ...init
   });
 }
 
 Deno.serve(async (req: Request) => {
   try {
+    const pre = handlePreflight(req);
+    if (pre) return pre;
+
     if (req.method !== 'POST') {
       return json({ error: 'Method Not Allowed' }, { status: 405 });
     }
@@ -61,18 +66,44 @@ Deno.serve(async (req: Request) => {
     let updated = 0;
     const errors: string[] = [];
 
-    // Perform updates sequentially to keep it simple and respect RLS
+    // Perform updates sequentially to respect RLS and apply per-item logic
     for (const r of body.reservations) {
-      const { error } = await supabase
-        .from('reservations')
-        .update({ res_status: body.status, updated_at: new Date().toISOString() })
-        .eq('uid', r.uid)
-        .eq('res_date', r.res_date);
+      try {
+        if (body.status === 'confirmed') {
+          // Delegate to reservations-update so that auto-assign checks (pool lanes/classrooms) run
+          const resp = await fetch(`${SUPABASE_URL}/functions/v1/reservations-update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+            body: JSON.stringify({
+              uid: r.uid,
+              res_date: r.res_date,
+              parent: { res_status: 'confirmed' }
+            })
+          });
 
-      if (error) {
-        errors.push(`${r.uid}-${r.res_date}: ${error.message}`);
-      } else {
-        updated++;
+          if (!resp.ok) {
+            const errTxt = await resp.text().catch(() => 'Unknown error');
+            errors.push(`${r.uid}-${r.res_date}: ${errTxt}`);
+            continue;
+          }
+          updated++;
+        } else {
+          // For non-confirm transitions, direct update is fine
+          const { error } = await supabase
+            .from('reservations')
+            .update({ res_status: body.status, updated_at: new Date().toISOString() })
+            .eq('uid', r.uid)
+            .eq('res_date', r.res_date);
+
+          if (error) {
+            errors.push(`${r.uid}-${r.res_date}: ${error.message}`);
+          } else {
+            updated++;
+          }
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        errors.push(`${r.uid}-${r.res_date}: ${msg}`);
       }
     }
 

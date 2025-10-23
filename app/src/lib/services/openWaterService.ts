@@ -1,4 +1,4 @@
-import { supabase } from "../utils/supabase";
+import { supabase, withAuthRetry } from "../utils/supabase";
 import { callFunction } from "../utils/functions";
 
 export type TimePeriod = "AM" | "PM";
@@ -208,10 +208,12 @@ export async function getGroupReservationDetails(groupId: number): Promise<Group
   const uids = Array.from(new Set(rows.map((r) => r.uid)));
   let nameMap = new Map<string, string | null>();
   if (uids.length) {
-    const { data: names, error: namesErr } = await supabase
-      .from("user_profiles")
-      .select("uid, name")
-      .in("uid", uids);
+    const { data: names, error: namesErr } = await withAuthRetry<Array<{ uid: string; name: string | null }>>(async () =>
+      await supabase
+        .from("user_profiles")
+        .select("uid, name")
+        .in("uid", uids)
+    );
     if (namesErr) throw new Error(namesErr.message);
     (names ?? []).forEach((n: any) => nameMap.set(n.uid, n.name ?? null));
   }

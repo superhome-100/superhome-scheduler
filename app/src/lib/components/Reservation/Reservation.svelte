@@ -130,7 +130,7 @@
             note,
             group_id
           ),
-          res_classroom!left(start_time, end_time, room, classroom_type, note)
+          res_classroom!left(start_time, end_time, room, classroom_type, student_count, note)
         `)
         .eq('uid', $authStore.user.id)
         .order('res_date', { ascending: true });
@@ -173,6 +173,7 @@
           flattened.end_time = reservation.res_classroom.end_time;
           flattened.room = reservation.res_classroom.room;
           flattened.classroom_type = reservation.res_classroom.classroom_type;
+          flattened.student_count = reservation.res_classroom.student_count;
           flattened.note = reservation.res_classroom.note;
         }
         

@@ -16,8 +16,9 @@
   import CutoffWarning from '../CutoffWarning.svelte';
   import { validateForm, getDefaultFormData, getSubmissionData, getDefaultDateForType, getDefaultTimesFor } from './formUtils';
   import { isBeforeCutoff } from '../../utils/cutoffRules';
-  import { checkBlockForForm } from '../../utils/availabilityClient';
+  import { checkBlockForForm, checkCapacityForForm } from '$lib/utils/availabilityClient';
   import type { ReservationType } from '../../services/reservationService';
+  import Toast from '../Toast.svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -99,11 +100,56 @@
     checkAvailabilityClient();
   }
 
+  // New: Pool/Classroom capacity check (READ-only)
+  async function checkCapacityClient() {
+    if (!formData?.date || !formData?.startTime || !formData?.endTime) {
+      capacityBlocked = false;
+      capacityMessage = null;
+      capacityKind = null;
+      return;
+    }
+    if (formData.type !== 'pool' && formData.type !== 'classroom') {
+      capacityBlocked = false;
+      capacityMessage = null;
+      capacityKind = null;
+      return;
+    }
+    const res = await checkCapacityForForm(formData);
+    capacityBlocked = !res.available;
+    capacityKind = res.kind;
+    capacityMessage = res.available ? null : (res.reason || (res.kind === 'pool' ? 'No pool lanes available for the selected time' : 'No classrooms available for the selected time window'));
+  }
+
+  $: if ((formData.type === 'pool' || formData.type === 'classroom') && formData.date && formData.startTime && formData.endTime) {
+    checkCapacityClient();
+  }
+
+  // When classroom capacity is blocked, surface a toast immediately
+  $: if (capacityBlocked && capacityKind === 'classroom' && capacityMessage) {
+    showErrorToast(capacityMessage);
+  }
+
   // Form validation and loading state
   let errors: Record<string, string> = {};
   let loading = false;
   let submitError: string | null = null;
   let submitAttempted = false;
+  // Disable submit when we know no lane is available for Pool
+  let noLaneError = false;
+  // Disable submit when we know no classroom is available
+  let noRoomError = false;
+  // Client-side capacity check result for Pool/Classroom
+  let capacityBlocked = false;
+  let capacityMessage: string | null = null;
+  let capacityKind: 'pool' | 'classroom' | null = null;
+
+  // Toast state for capacity errors
+  let toastOpen = false;
+  let toastMessage = '';
+  const showErrorToast = (msg: string) => {
+    toastMessage = msg;
+    toastOpen = true;
+  };
 
   const closeModal = () => {
     dispatch('close');
@@ -124,6 +170,13 @@
   const handleSubmit = async (event: Event) => {
     event.preventDefault();
     submitAttempted = true;
+    noLaneError = false;
+    noRoomError = false;
+    // Also surface capacity blocked error immediately
+    if (capacityBlocked && capacityMessage) {
+      submitError = capacityMessage;
+      return;
+    }
     
     if (!validateFormData()) return;
     if (!$authStore.user) {
@@ -161,14 +214,20 @@
           start_time: submissionData.startTime,
           end_time: submissionData.endTime,
           note: submissionData.notes.trim() || undefined,
-          pool_type: formData.poolType || undefined
+          pool_type: formData.poolType || undefined,
+          student_count: formData.poolType === 'course_coaching'
+            ? parseInt(formData.studentCount as unknown as string, 10)
+            : undefined
         };
       } else if (submissionData.type === 'classroom') {
         reservationData.classroom = {
           start_time: submissionData.startTime,
           end_time: submissionData.endTime,
           note: submissionData.notes.trim() || undefined,
-          classroom_type: formData.classroomType || undefined
+          classroom_type: formData.classroomType || undefined,
+          student_count: formData.classroomType === 'course_coaching'
+            ? parseInt(formData.studentCount as unknown as string, 10)
+            : undefined
         };
       } else if (submissionData.type === 'openwater') {
         reservationData.openwater = {
@@ -200,6 +259,16 @@
         closeModal();
       } else {
         submitError = result.error || 'Failed to create reservation';
+        // Detect no-lane availability error from edge function and disable submit
+        if (submitError && submitError.includes('No pool lanes available')) {
+          noLaneError = true;
+        }
+        // Detect no-room availability error from edge function and disable submit
+        if (submitError && submitError.includes('No classrooms available')) {
+          noRoomError = true;
+          // Also show a toast for classroom unavailability
+          showErrorToast(submitError);
+        }
       }
       
     } catch (err) {
@@ -216,6 +285,11 @@
     submitError = null;
     loading = false;
     submitAttempted = false;
+    noLaneError = false;
+    noRoomError = false;
+    capacityBlocked = false;
+    capacityMessage = null;
+    capacityKind = null;
   };
 
   // Handle type change to reset time fields for Open Water
@@ -324,6 +398,7 @@
             <FormPoolFields 
               bind:formData
               {errors}
+              {submitAttempted}
               on:validationChange={handleValidationChange}
             />
           {/if}
@@ -342,6 +417,7 @@
             <FormClassroomFields 
               bind:formData
               {errors}
+              {submitAttempted}
               on:validationChange={handleValidationChange}
             />
           {/if}
@@ -364,12 +440,20 @@
         <!-- Notes -->
         <FormNotes bind:formData />
 
+        {#if capacityBlocked && capacityMessage}
+          <div class="alert my-2 text-sm" class:alert-error={capacityKind === 'pool'} class:alert-warning={capacityKind !== 'pool'}>
+            <span class={(capacityKind === 'pool' || capacityKind === 'classroom') ? 'text-red-600 font-semibold' : ''}>{capacityMessage}</span>
+          </div>
+        {/if}
         <!-- Actions -->
-        <FormActions {loading} isCutoffPassed={(isCutoffPassed || isBlocked)} on:close={closeModal} />
+        <FormActions {loading} isCutoffPassed={(isCutoffPassed || isBlocked || noLaneError || noRoomError || capacityBlocked)} on:close={closeModal} />
       </form>
     </div>
   </div>
 {/if}
+
+<!-- Global toast for error notifications (capacity/submit) -->
+<Toast type="error" bind:open={toastOpen} message={toastMessage} />
 
 <style>
   .modal-overlay {

@@ -47,8 +47,9 @@
       return false;
     });
 
-    // Create calendar events from filtered reservations
-    const events = filteredReservations.map(reservationToCalendarEvent);
+    // Group reservations by date and create participant count events
+    const groupedReservations = groupReservationsByDate(filteredReservations);
+    const events = createParticipantCountEvents(groupedReservations);
 
     // Initialize FullCalendar
     calendar = new Calendar(calendarEl, {
@@ -71,26 +72,57 @@
         dispatch('dateClick', { date: dateStr, type: selectedType });
       },
       eventDidMount: (info) => {
-        // Add custom styling based on reservation type and status
-        const reservation = info.event.extendedProps.reservation;
         const element = info.el;
+        const extendedProps = info.event.extendedProps;
         
-        // Add type-specific styling
-        if (reservation.res_type === 'pool') {
-          element.style.borderLeft = '4px solid #3b82f6';
-        } else if (reservation.res_type === 'open_water') {
-          element.style.borderLeft = '4px solid #10b981';
-        } else if (reservation.res_type === 'classroom') {
-          element.style.borderLeft = '4px solid #ef4444';
-        }
+        // Handle participant count events
+        if (extendedProps.type === 'participant-count') {
+          // Add data attributes for CSS targeting
+          element.setAttribute('data-participant-count', 'true');
+          element.setAttribute('data-type', selectedType);
+          
+          // Style as a badge
+          element.style.borderRadius = '12px';
+          element.style.fontWeight = '600';
+          element.style.fontSize = '0.75rem';
+          element.style.padding = '4px 8px';
+          element.style.margin = '2px';
+          element.style.display = 'inline-block';
+          element.style.minWidth = '60px';
+          element.style.textAlign = 'center';
+          element.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+          
+          // Add hover effect
+          element.addEventListener('mouseenter', () => {
+            element.style.transform = 'translateY(-1px)';
+            element.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
+          });
+          
+          element.addEventListener('mouseleave', () => {
+            element.style.transform = 'translateY(0)';
+            element.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+          });
+        } else {
+          // Legacy styling for individual reservations (if any remain)
+          const reservation = extendedProps.reservation;
+          
+          // Add type-specific styling
+          if (reservation.res_type === 'pool') {
+            element.style.borderLeft = '4px solid #3b82f6';
+          } else if (reservation.res_type === 'open_water') {
+            element.style.borderLeft = '4px solid #10b981';
+          } else if (reservation.res_type === 'classroom') {
+            element.style.borderLeft = '4px solid #ef4444';
+          }
 
-        // Add status indicator
-        if (reservation.res_status === 'pending') {
-          element.style.borderTop = '3px solid #f59e0b';
-        } else if (reservation.res_status === 'confirmed') {
-          element.style.borderTop = '3px solid #10b981';
-        } else if (reservation.res_status === 'rejected') {
-          element.style.borderTop = '3px solid #ef4444';
+          // Add status indicator
+          if (reservation.res_status === 'pending') {
+            element.style.borderTop = '3px solid #f59e0b';
+          } else if (reservation.res_status === 'confirmed') {
+            element.style.borderTop = '3px solid #10b981';
+          } else if (reservation.res_status === 'rejected') {
+            element.style.borderTop = '3px solid #ef4444';
+          }
         }
       }
     });
@@ -142,6 +174,141 @@
   $: if (reservations || selectedType) {
     setTimeout(initializeCalendar, 0);
   }
+
+  // Group reservations by date and count participants
+  const groupReservationsByDate = (reservations: any[]) => {
+    const grouped: Record<string, any[]> = {};
+    
+    reservations.forEach(reservation => {
+      const dateStr = reservation.res_date.split('T')[0];
+      if (!grouped[dateStr]) {
+        grouped[dateStr] = [];
+      }
+      grouped[dateStr].push(reservation);
+    });
+    
+    return grouped;
+  };
+
+  // Count participants for a given reservation (instructor + students)
+  const countParticipants = (reservation: any) => {
+    // Always count 1 instructor + students (if any)
+    // Prefer nested detail tables for strict typing
+    let studentCount = 0;
+    if (reservation.res_type === 'classroom') {
+      studentCount = reservation?.res_classroom?.student_count ?? 0;
+    } else if (reservation.res_type === 'pool') {
+      studentCount = reservation?.res_pool?.student_count ?? 0;
+    } else if (reservation.res_type === 'open_water') {
+      studentCount = reservation?.res_openwater?.student_count ?? 0;
+    } else {
+      // Fallback to any flattened field if present
+      studentCount = reservation?.student_count ?? 0;
+    }
+    const totalCount = 1 + (Number.isFinite(studentCount) ? studentCount : 0);
+    return totalCount;
+  };
+
+  // Helper: a classroom reservation is considered "plotted" once approved and has timetable details
+  const isApprovedAndPlottedClassroom = (reservation: any) => {
+    if (reservation?.res_type !== 'classroom') return false;
+    // "approved" maps to confirmed status in our schema
+    const approved = reservation?.res_status === 'confirmed';
+    const start = reservation?.res_classroom?.start_time;
+    const end = reservation?.res_classroom?.end_time;
+    const room = reservation?.res_classroom?.room;
+    const hasTimetable = !!start && !!end && room !== null && room !== undefined && String(room) !== '';
+    return approved && hasTimetable;
+  };
+
+  // Get time period from reservation
+  const getTimePeriod = (reservation: any) => {
+    const d = new Date(reservation.res_date);
+    const hour = d.getHours();
+    return hour < 12 ? 'AM' : 'PM';
+  };
+
+  // Convert grouped reservations to calendar events with participant counts
+  const createParticipantCountEvents = (groupedReservations: Record<string, any[]>) => {
+    const events: any[] = [];
+    
+    Object.entries(groupedReservations).forEach(([dateStr, dayReservations]) => {
+      if (selectedType === ReservationType.openwater) {
+        // For Open Water, show AM/PM badges
+        const amReservations = dayReservations.filter(r => getTimePeriod(r) === 'AM');
+        const pmReservations = dayReservations.filter(r => getTimePeriod(r) === 'PM');
+        
+        // Create AM event if there are AM reservations
+        if (amReservations.length > 0) {
+          const amParticipantCount = amReservations.reduce((sum, r) => sum + countParticipants(r), 0);
+          
+          events.push({
+            id: `am-${dateStr}`,
+            title: `AM +${amParticipantCount}`,
+            start: `${dateStr}T08:00:00`,
+            backgroundColor: '#10b981',
+            borderColor: '#10b981',
+            textColor: '#ffffff',
+            extendedProps: {
+              type: 'participant-count',
+              timePeriod: 'AM',
+              count: amParticipantCount,
+              reservations: amReservations
+            }
+          });
+        }
+        
+        // Create PM event if there are PM reservations
+        if (pmReservations.length > 0) {
+          const pmParticipantCount = pmReservations.reduce((sum, r) => sum + countParticipants(r), 0);
+          
+          events.push({
+            id: `pm-${dateStr}`,
+            title: `PM +${pmParticipantCount}`,
+            start: `${dateStr}T14:00:00`,
+            backgroundColor: '#10b981',
+            borderColor: '#10b981',
+            textColor: '#ffffff',
+            extendedProps: {
+              type: 'participant-count',
+              timePeriod: 'PM',
+              count: pmParticipantCount,
+              reservations: pmReservations
+            }
+          });
+        }
+      } else {
+        // For Pool and Classroom, show single daily count
+        // Classroom (admin): only include approved (confirmed) and plotted (has start/end/room)
+        const filtered = selectedType === ReservationType.classroom
+          ? dayReservations.filter((r) => isApprovedAndPlottedClassroom(r))
+          : dayReservations;
+        const totalParticipantCount = filtered.reduce((sum, r) => sum + countParticipants(r), 0);
+        if (totalParticipantCount > 0) {
+          // Use different colors based on reservation type
+          const backgroundColor = selectedType === ReservationType.classroom ? '#ef4444' : '#3b82f6';
+          const borderColor = selectedType === ReservationType.classroom ? '#ef4444' : '#3b82f6';
+          
+          events.push({
+            id: `day-${dateStr}`,
+            title: `+${totalParticipantCount}`,
+            start: `${dateStr}T12:00:00`,
+            backgroundColor: backgroundColor,
+            borderColor: borderColor,
+            textColor: '#ffffff',
+            extendedProps: {
+              type: 'participant-count',
+              timePeriod: 'ALL',
+              count: totalParticipantCount,
+              reservations: filtered
+            }
+          });
+        }
+      }
+    });
+    
+    return events;
+  };
 
   // Convert reservation to calendar event
   const reservationToCalendarEvent = (reservation: any) => {
@@ -364,6 +531,42 @@
     display: none; 
   }
 
+  /* Participant count badge styling */
+  :global(.fc .fc-daygrid-event[data-participant-count="true"]) {
+    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    font-size: 0.75rem !important;
+    padding: 4px 8px !important;
+    margin: 2px !important;
+    display: inline-block !important;
+    min-width: 60px !important;
+    text-align: center !important;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3) !important;
+    transition: all 0.2s ease !important;
+  }
+
+  :global(.fc .fc-daygrid-event[data-participant-count="true"]:hover) {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4) !important;
+  }
+
+  :global(.fc .fc-daygrid-event[data-participant-count="true"] .fc-event-title) {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+  }
+
+  /* Open Water participant count styling */
+  :global(.fc .fc-daygrid-event[data-participant-count="true"][data-type="openwater"]) {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3) !important;
+  }
+
+  :global(.fc .fc-daygrid-event[data-participant-count="true"][data-type="openwater"]:hover) {
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4) !important;
+  }
+
   /* Mobile responsive */
   @media (max-width: 768px) {
     /* Mobile: smaller date boxes */
@@ -375,6 +578,13 @@
     :global(.fc-daygrid-more-link) {
       font-size: 0.625rem !important;
       padding: 1px 6px !important;
+    }
+
+    /* Mobile: smaller participant count badges */
+    :global(.fc .fc-daygrid-event[data-participant-count="true"]) {
+      font-size: 0.625rem !important;
+      padding: 2px 6px !important;
+      min-width: 50px !important;
     }
   }
 </style>

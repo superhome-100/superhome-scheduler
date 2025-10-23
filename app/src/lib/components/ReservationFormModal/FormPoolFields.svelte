@@ -4,6 +4,7 @@
 
   export let formData: any;
   export let errors: Record<string, string> = {};
+  export let submitAttempted: boolean = false;
 
   const dispatch = createEventDispatcher();
 
@@ -11,6 +12,10 @@
     // Trigger parent validation if needed
     dispatch('validationChange', { errors: {} });
   };
+
+  // Student count UX: only show error after touch or form submit
+  let studentCountTouched = false;
+  $: showStudentCountError = !!errors.studentCount && (submitAttempted || studentCountTouched);
 </script>
 
 <!-- Pool Type -->
@@ -33,6 +38,30 @@
     <span class="error-message">{errors.poolType}</span>
   {/if}
 </div>
+
+<!-- Student Count (Only for Course/Coaching) -->
+{#if formData.poolType === 'course_coaching'}
+  <div class="form-group">
+    <label for="poolStudentCount" class="form-label">No. of Students *</label>
+    <select
+      id="poolStudentCount"
+      class="form-control"
+      class:error={showStudentCountError}
+      bind:value={formData.studentCount}
+      on:change={handleChange}
+      on:blur={() => (studentCountTouched = true)}
+      required
+    >
+      <option value="">Select number of students</option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+    </select>
+    {#if showStudentCountError}
+      <span class="error-message">{errors.studentCount}</span>
+    {/if}
+  </div>
+{/if}
 
 <style>
   .form-group { margin-bottom: 1rem; }

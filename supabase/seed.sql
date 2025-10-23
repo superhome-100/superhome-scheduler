@@ -121,3 +121,57 @@ values
   ('00000000-0000-0000-0000-000000000004', (select d1 from date_range), 'pending', 'AM', 93, null, true, false, false, false, null, null, 'autonomous_platform_cbs'),
   ('00000000-0000-0000-0000-000000000005', (select d1 from date_range), 'pending', 'AM', 94, null, true, false, false, false, null, null, 'autonomous_platform_cbs')
 on conflict (uid, res_date) do nothing;
+
+-- Classroom reservations (PENDING, unassigned room) to simulate auto-assign and room capacity
+with date_range as (
+  select (now() at time zone 'utc')::date + 1 as d1
+)
+insert into public.reservations (uid, res_date, res_type, res_status, created_at, updated_at)
+values
+  (
+    '11111111-1111-1111-1111-111111111111',
+    (select d1 from date_range) + interval '9 hours',
+    'classroom',
+    'pending',
+    now(),
+    now()
+  ),
+  (
+    '22222222-2222-2222-2222-222222222222',
+    (select d1 from date_range) + interval '9 hours',
+    'classroom',
+    'pending',
+    now(),
+    now()
+  ),
+  (
+    '33333333-3333-3333-3333-333333333333',
+    (select d1 from date_range) + interval '9 hours',
+    'classroom',
+    'pending',
+    now(),
+    now()
+  ),
+  (
+    '44444444-4444-4444-4444-444444444444',
+    (select d1 from date_range) + interval '9 hours',
+    'classroom',
+    'pending',
+    now(),
+    now()
+  )
+on conflict do nothing;
+
+-- Classroom detail rows matching the above (room intentionally NULL, classroom_type uses 'course_coaching')
+with date_range as (
+  select (now() at time zone 'utc')::date + 1 as d1
+)
+insert into public.res_classroom (
+  uid, res_date, res_status, start_time, end_time, room, note, classroom_type, student_count
+)
+values
+  ('11111111-1111-1111-1111-111111111111', (select d1 from date_range) + interval '9 hours', 'pending', '09:00'::time, '11:00'::time, null, 'Seed: classroom auto-assign #1', 'course_coaching', 2),
+  ('22222222-2222-2222-2222-222222222222', (select d1 from date_range) + interval '9 hours', 'pending', '09:00'::time, '11:00'::time, null, 'Seed: classroom auto-assign #2', 'course_coaching', 3),
+  ('33333333-3333-3333-3333-333333333333', (select d1 from date_range) + interval '9 hours', 'pending', '09:00'::time, '11:00'::time, null, 'Seed: classroom auto-assign #3', 'course_coaching', 1),
+  ('44444444-4444-4444-4444-444444444444', (select d1 from date_range) + interval '9 hours', 'pending', '09:00'::time, '11:00'::time, null, 'Seed: classroom auto-assign #4', 'course_coaching', 2)
+on conflict (uid, res_date) do nothing;

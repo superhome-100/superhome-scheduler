@@ -26,6 +26,7 @@ interface PoolReservationDetails {
   end_time: string | null;
   lane?: string | null;
   pool_type?: string | null;
+  student_count?: number | null;
   note?: string | null;
 }
 
@@ -35,6 +36,7 @@ interface ClassroomReservationDetails {
   end_time: string | null;
   room?: string | null;
   classroom_type?: string | null;
+  student_count?: number | null;
   note?: string | null;
 }
 
@@ -154,6 +156,24 @@ class ReservationService {
   }
 
   /**
+   * APPROVE - Approve a classroom reservation (server validates and auto-assigns room)
+   */
+  async approveReservation(
+    uid: string,
+    res_date: string
+  ): Promise<ServiceResponse<{ ok: boolean; room?: string }>> {
+    try {
+      if (!uid || !res_date) return { success: false, error: 'Missing uid or res_date' };
+      const payload = { uid, res_date };
+      const { data, error } = await callFunction<typeof payload, { ok: boolean; room?: string }>('reservations-approve', payload);
+      if (error) return { success: false, error };
+      return { success: true, data: data ?? { ok: true } };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+    }
+  }
+
+  /**
    * READ - Get reservations with optional filtering
    */
   async getReservations(options: ReservationQueryOptions = {}): Promise<ServiceResponse<CompleteReservation[]>> {
@@ -162,9 +182,9 @@ class ReservationService {
         .from('reservations')
         .select(`
           *,
-          res_pool!left(start_time, end_time, lane, pool_type, note),
+          res_pool!left(start_time, end_time, lane, pool_type, student_count, note),
           res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, group_id, note),
-          res_classroom!left(start_time, end_time, room, classroom_type, note)
+          res_classroom!left(start_time, end_time, room, classroom_type, student_count, note)
         `);
 
       // Apply filters
@@ -233,9 +253,9 @@ class ReservationService {
         .from('reservations')
         .select(`
           *,
-          res_pool!left(start_time, end_time, lane, pool_type, note),
+          res_pool!left(start_time, end_time, lane, pool_type, student_count, note),
           res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, group_id, note),
-          res_classroom!left(start_time, end_time, room, classroom_type, note)
+          res_classroom!left(start_time, end_time, room, classroom_type, student_count, note)
         `)
         .eq('uid', uid)
         .eq('res_date', res_date)

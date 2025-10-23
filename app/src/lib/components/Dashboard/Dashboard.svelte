@@ -76,7 +76,7 @@
           *,
           res_pool!left(start_time, end_time, lane, pool_type, note),
           res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, note),
-          res_classroom!left(start_time, end_time, room, classroom_type, note)
+          res_classroom!left(start_time, end_time, room, classroom_type, student_count, note)
         `)
         .eq('uid', $authStore.user.id)
         .order('res_date', { ascending: true });
