@@ -5,6 +5,7 @@
 
   export let displayType: string;
   export let displayStatus: string;
+  export let userName: string = '';
 
   const closeModal = () => {
     dispatch('close');
@@ -30,6 +31,11 @@
 </div>
 
 <div class="reservation-header">
+  {#if userName}
+    <div class="user-name">
+      {userName}
+    </div>
+  {/if}
   <div class="badges">
     <span class="type-badge" class:pool={displayType === 'Pool'} class:openwater={displayType === 'Open Water'} class:classroom={displayType === 'Classroom'}>
       {displayType}
@@ -150,6 +156,14 @@
     color: #7c3aed;
   }
 
+  .user-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e293b;
+    text-align: left;
+    margin-bottom: 0.25rem;
+  }
+
   /* Mobile Responsive */
   @media (max-width: 768px) {
     .modal-header {
@@ -174,6 +188,12 @@
     .type-badge, .status-badge {
       font-size: 0.625rem;
       padding: 0.1875rem 0.375rem;
+    }
+
+    .user-name {
+      font-size: 0.75rem;
+      text-align: left;
+      margin-bottom: 0.125rem;
     }
   }
 </style>

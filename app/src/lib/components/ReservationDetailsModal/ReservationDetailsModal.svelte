@@ -12,6 +12,7 @@
 
   export let isOpen = false;
   export let reservation: any = null;
+  export let isAdmin: boolean = false;
 
   const closeModal = () => {
     dispatch('close');
@@ -59,6 +60,32 @@
   }
   
   $: displayNotes = reservation?.notes || reservation?.note;
+
+  // Get user's full name for admin display
+  const getUserFullName = (res: any): string => {
+    if (!isAdmin) return '';
+    
+    // Try to get full name from user_profiles.name
+    const fullName = res?.user_profiles?.name;
+    if (fullName) {
+      return fullName;
+    }
+    
+    // Fallback to other name fields for admin
+    const username = res?.user_profiles?.username || res?.username;
+    const email = res?.user_profiles?.email || res?.email;
+    
+    if (username) {
+      return username;
+    } else if (email) {
+      return email.split('@')[0]; // Use email prefix as fallback
+    }
+    
+    // Final fallback for admin
+    return 'Unknown User';
+  };
+
+  $: userName = isAdmin ? getUserFullName(reservation) : '';
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -77,6 +104,7 @@
       <ReservationDetailsHeader 
         {displayType} 
         {displayStatus} 
+        {userName}
         on:close={closeModal}
       />
 
@@ -85,6 +113,7 @@
         {displayType}
         {displayDate}
         {displayNotes}
+        {isAdmin}
         bind:owDepth
       />
 

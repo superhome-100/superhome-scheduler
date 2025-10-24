@@ -2,6 +2,7 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import dayjs from 'dayjs';
   import { getBuoyGroupsWithNames } from '../../utils/autoAssignBuoy';
+  import { authStore } from '../../stores/auth';
 
   import SingleDayHeader from './SingleDayHeader.svelte';
   import CalendarTypeSwitcher from './CalendarTypeSwitcher.svelte';
@@ -133,7 +134,16 @@
   $: filteredReservations = dayReservations.filter(reservation => {
     if (selectedCalendarType === ReservationType.pool) return reservation.res_type === 'pool';
     if (selectedCalendarType === ReservationType.openwater) return reservation.res_type === 'open_water';
-    if (selectedCalendarType === ReservationType.classroom) return reservation.res_type === 'classroom';
+    if (selectedCalendarType === ReservationType.classroom) {
+      // Accept either explicit classroom type or flat classroom rows (room/start_time present)
+      const isExplicit = reservation.res_type === 'classroom';
+      const isFlatClassroom = !!(
+        reservation.room ||
+        reservation.classroom_type ||
+        (reservation.res_classroom && (reservation.res_classroom.room || reservation.res_classroom.start_time))
+      );
+      return isExplicit || isFlatClassroom;
+    }
     return false;
   });
 
@@ -319,7 +329,7 @@
       </div>
     {:else if selectedCalendarType === 'classroom'}
       <!-- CLASSROOM CALENDAR: Shared between Admin and User -->
-      <ClassroomCalendar timeSlots={timeSlots} reservations={filteredReservations} />
+      <ClassroomCalendar timeSlots={timeSlots} reservations={filteredReservations} currentUserId={$authStore.user?.id} {isAdmin} />
                     {/if}
   </div>
   {#if showGroupModal && groupDetails}

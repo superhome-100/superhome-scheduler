@@ -28,7 +28,12 @@
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-xl font-semibold text-[#00294C] flex items-center gap-2">
         Pending Reservation Requests 
-        <div class="badge badge-error text-white font-bold text-base min-w-8 h-8 px-3 shadow-sm">
+        <div 
+          class="badge badge-error font-bold text-sm md:text-base w-6 h-6 md:w-8 md:h-8 shadow ring-1 ring-white/90 border border-white/60 flex items-center justify-center rounded-full"
+          style="color:#ffffff !important; background-color:#dc3545 !important; border-color:rgba(255,255,255,0.6) !important;"
+          aria-label="Pending reservations count"
+          title="Pending reservations"
+        >
           {stats.pendingReservations}
         </div>
       </h2>

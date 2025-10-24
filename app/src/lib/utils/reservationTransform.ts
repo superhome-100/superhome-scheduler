@@ -205,7 +205,11 @@ export const transformReservationToUnified = (reservation: any): UnifiedReservat
     bottom_plate: (reservation.bottom_plate ?? reservation.res_openwater?.bottom_plate) ?? null,
     large_buoy: (reservation.large_buoy ?? reservation.res_openwater?.large_buoy) ?? null,
     open_water_type: reservation.open_water_type ?? reservation.res_openwater?.open_water_type ?? null,
-    student_count: reservation.student_count ?? reservation.res_openwater?.student_count ?? null,
+    student_count: (
+      reservation.student_count
+      ?? reservation.res_openwater?.student_count
+      ?? reservation.res_classroom?.student_count
+    ) ?? null,
     
     // Raw reservation for additional data fetching
     raw_reservation: reservation

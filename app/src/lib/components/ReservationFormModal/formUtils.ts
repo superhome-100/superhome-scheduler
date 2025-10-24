@@ -69,12 +69,26 @@ export const validateForm = (formData: any) => {
       if (!formData.poolType) {
         errors.poolType = 'Pool Type is required';
       }
+      // Student count for Pool Course/Coaching
+      if (formData.poolType === 'course_coaching') {
+        const studentCount = parseInt(formData.studentCount as unknown as string, 10);
+        if (!formData.studentCount || isNaN(studentCount) || studentCount <= 0 || studentCount > 3) {
+          errors.studentCount = 'Number of students must be between 1-3';
+        }
+      }
     }
 
     // Classroom-specific required field
     if (formData.type === 'classroom') {
       if (!formData.classroomType) {
         errors.classroomType = 'Classroom Type is required';
+      }
+      // Student count for Classroom Course/Coaching
+      if (formData.classroomType === 'course_coaching') {
+        const studentCount = parseInt(formData.studentCount as unknown as string, 10);
+        if (!formData.studentCount || isNaN(studentCount) || studentCount <= 0 || studentCount > 3) {
+          errors.studentCount = 'Number of students must be between 1-3';
+        }
       }
     }
 

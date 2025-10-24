@@ -9,6 +9,18 @@
   export let displayDate: string;
   export let displayNotes: string;
   export let owDepth: number | null = null;
+  export let isAdmin: boolean = false;
+
+  // Format time values gracefully (supports HH:mm and HH:mm:ss)
+  const formatTime = (t?: string | null) => {
+    if (!t) return '';
+    let parsed = dayjs(t, ['HH:mm', 'HH:mm:ss'], true);
+    if (!parsed.isValid()) {
+      // Fallback: try generic parse (ISO or Date-like)
+      parsed = dayjs(t);
+    }
+    return parsed.isValid() ? parsed.format('h:mm A') : t;
+  };
 
   const poolTypeLabel = (value?: string | null) => {
     if (!value) return '';
@@ -31,38 +43,59 @@
 
   // Derived classroom type with fallbacks from raw reservation payload
   $: derivedClassroomType = reservation?.classroom_type
+    ?? reservation?.res_classroom?.classroom_type
     ?? reservation?.raw_reservation?.classroom_type
     ?? reservation?.raw_reservation?.res_classroom?.classroom_type
     ?? null;
 
-  // Debug: log when modal shows and when reservation changes
-  onMount(() => {
-    console.debug('ReservationDetailsBody: Modal shown', {
-      uid: reservation?.uid,
-      res_date: reservation?.res_date,
-      res_type: reservation?.res_type,
-      pool_type_present: (derivedPoolType != null),
-      pool_type: derivedPoolType
-    });
-  });
+  // Derived start/end times with robust fallbacks (Pool/Classroom)
+  $: rawStartTime = (
+    reservation?.start_time
+    ?? reservation?.startTime
+    ?? reservation?.res_classroom?.start_time
+    ?? reservation?.res_pool?.start_time
+    ?? reservation?.raw_reservation?.start_time
+    ?? reservation?.raw_reservation?.res_classroom?.start_time
+    ?? reservation?.raw_reservation?.res_pool?.start_time
+    ?? null
+  );
 
-  $: if (reservation) {
-    console.debug('ReservationDetailsBody: Reservation updated', {
-      uid: reservation?.uid,
-      res_date: reservation?.res_date,
-      res_type: reservation?.res_type,
-      pool_type_present: (derivedPoolType != null),
-      pool_type: derivedPoolType,
-      classroom_type_present: (derivedClassroomType != null),
-      classroom_type: derivedClassroomType
-    });
-  }
+  // Derived room and student count
+  $: derivedRoom = (
+    reservation?.room
+    ?? reservation?.res_classroom?.room
+    ?? reservation?.raw_reservation?.room
+    ?? reservation?.raw_reservation?.res_classroom?.room
+    ?? null
+  );
+
+  $: derivedStudentCount = (
+    reservation?.student_count
+    ?? reservation?.res_classroom?.student_count
+    ?? reservation?.raw_reservation?.student_count
+    ?? reservation?.raw_reservation?.res_classroom?.student_count
+    ?? null
+  );
+
+  $: rawEndTime = (
+    reservation?.end_time
+    ?? reservation?.endTime
+    ?? reservation?.res_classroom?.end_time
+    ?? reservation?.res_pool?.end_time
+    ?? reservation?.raw_reservation?.end_time
+    ?? reservation?.raw_reservation?.res_classroom?.end_time
+    ?? reservation?.raw_reservation?.res_pool?.end_time
+    ?? null
+  );
+
+  // (Debug logging removed to keep file lean and within line limits)
 
   // Display status mapping: show "Approved" for confirmed/approved
   $: canonicalStatus = reservation?.status || reservation?.res_status || 'pending';
   $: displayStatus = (canonicalStatus === 'confirmed' || canonicalStatus === 'approved')
     ? 'Approved'
     : canonicalStatus;
+
 </script>
 
 <div class="modal-body">
@@ -84,6 +117,7 @@
         <span class="detail-value">{displayStatus}</span>
       </div>
 
+
       {#if (reservation.res_type === 'pool' || displayType === 'Pool') && derivedPoolType}
         <div class="detail-item">
           <span class="detail-label">Pool Type</span>
@@ -91,26 +125,51 @@
         </div>
       {/if}
 
-      {#if (reservation.res_type === 'classroom' || displayType === 'Classroom') && derivedClassroomType}
+      <!-- Classroom Type will be shown later in a fixed position for Classroom -->
+
+      {#if displayType === 'Open Water'}
+        {#if reservation.time_period || reservation.timeOfDay}
+          <div class="detail-item">
+            <span class="detail-label">Time Period</span>
+            <span class="detail-value">{reservation.time_period ?? reservation.timeOfDay}</span>
+          </div>
+        {/if}
+      {:else if displayType === 'Pool' || displayType === 'Classroom'}
+        {#if rawStartTime || rawEndTime}
+          <div class="detail-item">
+            <span class="detail-label">Start Time</span>
+            <span class="detail-value">{rawStartTime ? formatTime(rawStartTime) : '—'}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">End Time</span>
+            <span class="detail-value">{rawEndTime ? formatTime(rawEndTime) : '—'}</span>
+          </div>
+        {/if}
+      {/if}
+
+      {#if displayType === 'Classroom'}
+        <div class="detail-item">
+          <span class="detail-label">No. of Students</span>
+          <span class="detail-value">{derivedStudentCount ?? '—'}</span>
+        </div>
         <div class="detail-item">
           <span class="detail-label">Classroom Type</span>
-          <span class="detail-value">{classroomTypeLabel(derivedClassroomType)}</span>
+          <span class="detail-value">{derivedClassroomType ? classroomTypeLabel(derivedClassroomType) : '—'}</span>
         </div>
-      {/if}
-
-      {#if reservation.timeOfDay}
         <div class="detail-item">
-          <span class="detail-label">Time Period</span>
-          <span class="detail-value">{reservation.timeOfDay}</span>
+          <span class="detail-label">Room assigned</span>
+          <span class="detail-value">{derivedRoom ?? '—'}</span>
         </div>
       {/if}
 
-      <!-- Type-specific details -->
-      <ReservationTypeDetails {reservation} {displayType} {owDepth} />
+      <!-- Type-specific details (skip for Classroom to avoid duplicates in admin layout) -->
+      {#if displayType !== 'Classroom'}
+        <ReservationTypeDetails {reservation} {displayType} {owDepth} />
+      {/if}
     </div>
 
     <!-- Equipment Grid (2x2) -->
-    {#if (reservation.pulley !== null || reservation.deep_fim_training !== null || reservation.bottom_plate !== null || reservation.large_buoy !== null)}
+    {#if !(isAdmin && displayType === 'Classroom') && (reservation.pulley !== null || reservation.deep_fim_training !== null || reservation.bottom_plate !== null || reservation.large_buoy !== null)}
       <div class="equipment-section">
         <h3 class="equipment-title">Equipment</h3>
         <div class="equipment-grid">
@@ -142,7 +201,7 @@
       </div>
     {/if}
 
-    {#if displayNotes}
+    {#if !(isAdmin && displayType === 'Classroom') && displayNotes}
       <div class="notes-section">
         <h3 class="notes-title">Notes</h3>
         <p class="notes-content">{displayNotes}</p>

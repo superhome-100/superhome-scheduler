@@ -38,6 +38,93 @@ function getCutoffTime(res_type: ReservationType, reservationDate: string): Date
   }
 }
 
+async function findAvailableRoom(
+  supabase: any,
+  res_date_iso: string,
+  start_time: string | null,
+  end_time: string | null
+): Promise<string | null> {
+  // Query all classroom reservations for the same calendar day
+  const date = new Date(res_date_iso)
+  const dayStart = new Date(date)
+  dayStart.setUTCHours(0, 0, 0, 0)
+  const dayEnd = new Date(dayStart)
+  dayEnd.setUTCDate(dayStart.getUTCDate() + 1)
+
+  const { data, error } = await supabase
+    .from('res_classroom')
+    .select('room, start_time, end_time')
+    .gte('res_date', dayStart.toISOString())
+    .lt('res_date', dayEnd.toISOString());
+
+  if (error) {
+    console.error('Error fetching existing classroom reservations:', error);
+    return null;
+  }
+
+  const occupiedByRoom: Record<string, boolean> = {};
+  for (const row of data || []) {
+    if (row.room && overlaps(row.start_time, row.end_time, start_time, end_time)) {
+      occupiedByRoom[row.room] = true;
+    }
+  }
+
+  for (let room = 1; room <= 3; room++) {
+    const key = String(room);
+    if (!occupiedByRoom[key]) return key;
+  }
+  return null;
+}
+
+// ---- Pool lane auto-assignment helpers ----
+function timeToMinutes(t: string | null): number {
+  if (!t) return -1;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function overlaps(aStart: string | null, aEnd: string | null, bStart: string | null, bEnd: string | null): boolean {
+  const aS = timeToMinutes(aStart);
+  const aE = timeToMinutes(aEnd);
+  const bS = timeToMinutes(bStart);
+  const bE = timeToMinutes(bEnd);
+  if (aS < 0 || aE < 0 || bS < 0 || bE < 0) return false;
+  return aS < bE && aE > bS;
+}
+
+async function findAvailableLane(
+  supabase: any,
+  uid: string,
+  res_date_iso: string,
+  start_time: string | null,
+  end_time: string | null
+): Promise<string | null> {
+  // Fetch existing pool reservations for the same date
+  const { data, error } = await supabase
+    .from('res_pool')
+    .select('lane, start_time, end_time')
+    .eq('res_date', res_date_iso);
+
+  if (error) {
+    console.error('Error fetching existing pool reservations:', error);
+    return null;
+  }
+
+  const occupiedByLane: Record<string, boolean> = {};
+  for (const row of data || []) {
+    if (row.lane && overlaps(row.start_time, row.end_time, start_time, end_time)) {
+      occupiedByLane[row.lane] = true;
+    }
+  }
+
+  // Lanes 1..8
+  for (let lane = 1; lane <= 8; lane++) {
+    const key = String(lane);
+    if (!occupiedByLane[key]) return key;
+  }
+  return null;
+}
+
 function isBeforeCutoff(reservationDate: string, res_type: ReservationType): boolean {
   const resDate = new Date(reservationDate)
   const now = new Date()
@@ -121,8 +208,8 @@ async function checkAvailability(
 
 type ReservationType = 'pool' | 'open_water' | 'classroom'
 
-type PoolDetails = { start_time: string | null; end_time: string | null; lane?: string | null; pool_type?: string | null; note?: string | null }
- type ClassroomDetails = { start_time: string | null; end_time: string | null; room?: string | null; classroom_type?: string | null; note?: string | null }
+type PoolDetails = { start_time: string | null; end_time: string | null; lane?: string | null; pool_type?: string | null; student_count?: number | null; note?: string | null }
+ type ClassroomDetails = { start_time: string | null; end_time: string | null; room?: string | null; classroom_type?: string | null; student_count?: number | null; note?: string | null }
  type OpenWaterDetails = { time_period: string | null; depth_m?: number | null; buoy?: string | null; auto_adjust_closest?: boolean; pulley?: boolean; deep_fim_training?: boolean; bottom_plate?: boolean; large_buoy?: boolean; open_water_type?: string | null; student_count?: number | null; group_id?: number | null; note?: string | null }
 
 interface Payload {
@@ -199,6 +286,46 @@ Deno.serve(async (req: Request) => {
       }, { status: 400 });
     }
 
+    // Classroom capacity check (authoritative): block creation when no room available for selected time
+    if (body.res_type === 'classroom') {
+      const s = body.classroom?.start_time ?? null;
+      const e = body.classroom?.end_time ?? null;
+      if (!s || !e) {
+        return json({ error: 'Start and end time are required for classroom reservations' }, { status: 400 });
+      }
+      const toMin = (raw: string | null) => {
+        if (!raw) return NaN;
+        const m = String(raw).match(/^(\d{2}):(\d{2})/);
+        if (!m) return NaN;
+        return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+      };
+      const sUser = toMin(s);
+      const eUser = toMin(e);
+      const dateOnly = String(body.res_date).split('T')[0];
+      const from = `${dateOnly} 00:00:00+00`;
+      const to = `${dateOnly} 23:59:59+00`;
+      const { data: overlaps, error: overErr } = await supabase
+        .from('reservations')
+        .select('res_status, res_classroom(start_time, end_time)')
+        .eq('res_type', 'classroom')
+        .gte('res_date', from)
+        .lte('res_date', to)
+        .in('res_status', ['pending', 'confirmed']);
+      if (overErr) {
+        return json({ error: overErr.message }, { status: 400 });
+      }
+      const overlapsCount = (overlaps || []).reduce((acc: number, r: any) => {
+        const sDb = toMin(r?.res_classroom?.start_time ?? null);
+        const eDb = toMin(r?.res_classroom?.end_time ?? null);
+        if (Number.isNaN(sDb) || Number.isNaN(eDb) || Number.isNaN(sUser) || Number.isNaN(eUser)) return acc;
+        return sDb < eUser && eDb > sUser ? acc + 1 : acc;
+      }, 0);
+      const CAPACITY = 3; // TODO: replace with settings-backed capacity
+      if (overlapsCount >= CAPACITY) {
+        return json({ error: 'No classrooms available for the selected time window' }, { status: 409 });
+      }
+    }
+
     // Owner or admin
     if (body.uid !== user.id) {
       const { data: profile, error: profileErr } = await supabase
@@ -253,12 +380,14 @@ Deno.serve(async (req: Request) => {
     switch (body.res_type) {
       case 'pool':
         if (body.pool) {
+          // Do not auto-assign lane on creation; handled on admin approval
           const { error } = await supabase.from('res_pool').insert({ uid: body.uid, res_date: res_date_iso, ...body.pool })
           detailError = error
         }
         break
       case 'classroom':
         if (body.classroom) {
+          // Do not auto-assign room on creation; handled on admin approval
           const { error } = await supabase.from('res_classroom').insert({ uid: body.uid, res_date: res_date_iso, ...body.classroom })
           detailError = error
         }

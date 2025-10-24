@@ -27,7 +27,92 @@ export async function callFunction<TReq extends Record<string, unknown>, TRes>(
       }
     });
     
-    if (error) return { data: null, error: error.message };
+    if (error) {
+      // Try to extract a more specific error message from the response when available
+      const anyErr = error as unknown as {
+        message?: string;
+        name?: string;
+        context?: { body?: any; error?: any; response?: Response; status?: number; statusText?: string };
+        status?: number;
+        statusText?: string;
+        cause?: any;
+      };
+
+      let detailed: string | undefined;
+      const body = anyErr?.context?.body;
+      // Prefer JSON error from context.body
+      if (body !== undefined && body !== null) {
+        if (typeof body === 'string') {
+          // attempt to parse JSON string; otherwise use raw string
+          try {
+            const parsed = JSON.parse(body);
+            if (typeof parsed?.error === 'string') detailed = parsed.error;
+            else if (typeof parsed?.message === 'string') detailed = parsed.message;
+          } catch {
+            // raw string body (may already be human-readable)
+            if (!detailed && body.trim().length > 0) detailed = body.trim();
+          }
+        } else if (typeof body === 'object') {
+          if (typeof (body as any)?.error === 'string') detailed = (body as any).error as string;
+          else if (typeof (body as any)?.message === 'string') detailed = (body as any).message as string;
+        }
+      }
+      // Attempt to read from context.response if provided and body wasn't set
+      if (!detailed && anyErr?.context?.response) {
+        try {
+          const resp = anyErr.context.response;
+          // Try JSON first via clone
+          try {
+            const parsed: any = await resp.clone().json();
+            if (parsed) {
+              if (typeof parsed.error === 'string') detailed = parsed.error;
+              else if (typeof parsed.message === 'string') detailed = parsed.message;
+              else if (typeof parsed.detail === 'string') detailed = parsed.detail;
+            }
+          } catch {}
+          // Fallback to text if JSON not helpful
+          if (!detailed) {
+            try {
+              const txt = await resp.clone().text();
+              if (txt && txt.trim().length > 0) {
+                try {
+                  const parsed2 = JSON.parse(txt);
+                  if (typeof parsed2?.error === 'string') detailed = parsed2.error;
+                  else if (typeof parsed2?.message === 'string') detailed = parsed2.message;
+                  else if (typeof parsed2?.detail === 'string') detailed = parsed2.detail;
+                  else detailed = txt;
+                } catch {
+                  detailed = txt;
+                }
+              }
+            } catch {}
+          }
+          // Last resort: statusText
+          if (!detailed) {
+            const st = (resp as any).statusText as string | undefined;
+            if (st && st.trim().length > 0) detailed = st;
+          }
+        } catch {}
+      }
+      // Some environments put message under context.error.message or context.error
+      if (!detailed && anyErr?.context?.error) {
+        const ctxErr = anyErr.context.error as any;
+        if (typeof ctxErr?.message === 'string') detailed = ctxErr.message;
+        else if (typeof ctxErr?.error === 'string') detailed = ctxErr.error;
+        else if (typeof ctxErr === 'string' && ctxErr.trim().length > 0) detailed = ctxErr;
+      }
+      // Supabase sometimes places details in cause
+      if (!detailed && anyErr?.cause) {
+        const c = anyErr.cause as any;
+        if (typeof c?.message === 'string') detailed = c.message;
+        else if (typeof c?.error === 'string') detailed = c.error;
+      }
+      // In some cases, data may contain the body even for non-2xx
+      if (!detailed && data && typeof data === 'object' && (data as any).error) {
+        detailed = (data as any).error as string;
+      }
+      return { data: null, error: detailed || error.message };
+    }
     return { data: data ?? null, error: null };
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Edge function call failed';

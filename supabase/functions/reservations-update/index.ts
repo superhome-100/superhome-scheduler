@@ -4,6 +4,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
+import { MSG_NO_POOL_LANES, MSG_NO_CLASSROOMS } from '../_shared/strings.ts'
 
 // Cut-off rules (same as cutoffRules.ts)
 const CUTOFF_RULES = {
@@ -20,6 +21,46 @@ const CUTOFF_RULES = {
     description: 'Classroom reservations must be made at least 30 minutes in advance'
   }
 } as const
+
+async function findAvailableRoom(
+  supabase: any,
+  res_date_iso: string,
+  start_time: string | null,
+  end_time: string | null,
+  excludeUid: string
+): Promise<string | null> {
+  // Fetch all classroom reservations on the same calendar day, not just exact timestamp
+  const date = new Date(res_date_iso)
+  const dayStart = new Date(date)
+  dayStart.setUTCHours(0, 0, 0, 0)
+  const dayEnd = new Date(dayStart)
+  dayEnd.setUTCDate(dayStart.getUTCDate() + 1)
+
+  const { data, error } = await supabase
+    .from('res_classroom')
+    .select('uid, room, start_time, end_time')
+    .gte('res_date', dayStart.toISOString())
+    .lt('res_date', dayEnd.toISOString());
+
+  if (error) {
+    console.error('Error fetching existing classroom reservations:', error);
+    return null;
+  }
+
+  const occupied: Record<string, boolean> = {};
+  for (const row of data || []) {
+    if (row.uid === excludeUid) continue;
+    if (row.room && overlaps(row.start_time, row.end_time, start_time, end_time)) {
+      occupied[row.room] = true;
+    }
+  }
+
+  for (let room = 1; room <= 3; room++) {
+    const key = String(room);
+    if (!occupied[key]) return key;
+  }
+  return null;
+}
 
 type ReservationType = 'pool' | 'open_water' | 'classroom'
 
@@ -75,6 +116,54 @@ function formatCutoffTime(cutoffTime: Date): string {
 
 function getCutoffDescription(res_type: ReservationType): string {
   return CUTOFF_RULES[res_type].description
+}
+
+// ---- Pool lane auto-assignment helpers (mirror create) ----
+function timeToMinutes(t: string | null): number {
+  if (!t) return -1;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function overlaps(aStart: string | null, aEnd: string | null, bStart: string | null, bEnd: string | null): boolean {
+  const aS = timeToMinutes(aStart);
+  const aE = timeToMinutes(aEnd);
+  const bS = timeToMinutes(bStart);
+  const bE = timeToMinutes(bEnd);
+  if (aS < 0 || aE < 0 || bS < 0 || bE < 0) return false;
+  return aS < bE && aE > bS;
+}
+
+async function findAvailableLane(
+  supabase: any,
+  res_date_iso: string,
+  start_time: string | null,
+  end_time: string | null,
+  excludeUid: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('res_pool')
+    .select('uid, lane, start_time, end_time')
+    .eq('res_date', res_date_iso);
+
+  if (error) {
+    console.error('Error fetching existing pool reservations:', error);
+    return null;
+  }
+
+  const occupied: Record<string, boolean> = {};
+  for (const row of data || []) {
+    if (row.uid === excludeUid) continue;
+    if (row.lane && overlaps(row.start_time, row.end_time, start_time, end_time)) {
+      occupied[row.lane] = true;
+    }
+  }
+
+  for (let lane = 1; lane <= 8; lane++) {
+    const key = String(lane);
+    if (!occupied[key]) return key;
+  }
+  return null;
 }
 
 async function checkAvailability(supabase: any, date: string, res_type: ReservationType, category?: string): Promise<{ isAvailable: boolean; reason?: string }> {
@@ -161,6 +250,9 @@ Deno.serve(async (req: Request) => {
     const res_type = currentReservation.res_type as ReservationType
     const targetDate = body.parent?.res_date || body.res_date
 
+    // Determine intent early
+    const isApprovingRequest = body.parent?.res_status === 'confirmed'
+
     // Validate cut-off time if date is being changed
     if (body.parent?.res_date && !isBeforeCutoff(targetDate, res_type)) {
       const cutoffTime = getCutoffTime(res_type, targetDate);
@@ -193,19 +285,25 @@ Deno.serve(async (req: Request) => {
       if (!isAdmin) return json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Update parent if provided
+    // Update parent if provided, but defer status=confirmed for pool/classroom until after auto-assign
     if (body.parent && (body.parent.res_status || body.parent.res_date)) {
       const parentUpdate: any = {}
-      if (body.parent.res_status) parentUpdate.res_status = body.parent.res_status
-      if (body.parent.res_date) parentUpdate.res_date = body.parent.res_date
-      parentUpdate.updated_at = new Date().toISOString()
+      const isPoolOrClassroom = res_type === 'pool' || res_type === 'classroom'
 
-      const { error: parentErr } = await supabase
-        .from('reservations')
-        .update(parentUpdate)
-        .eq('uid', body.uid)
-        .eq('res_date', body.res_date)
-      if (parentErr) return json({ error: parentErr.message }, { status: 400 })
+      // Only set res_status here if not approving pool/classroom (we will set after successful auto-assign)
+      if (body.parent.res_status && !(isApprovingRequest && isPoolOrClassroom)) {
+        parentUpdate.res_status = body.parent.res_status
+      }
+      if (body.parent.res_date) parentUpdate.res_date = body.parent.res_date
+      if (Object.keys(parentUpdate).length > 0) {
+        parentUpdate.updated_at = new Date().toISOString()
+        const { error: parentErr } = await supabase
+          .from('reservations')
+          .update(parentUpdate)
+          .eq('uid', body.uid)
+          .eq('res_date', body.res_date)
+        if (parentErr) return json({ error: parentErr.message }, { status: 400 })
+      }
     }
 
     // Determine current type to choose detail table
@@ -218,12 +316,92 @@ Deno.serve(async (req: Request) => {
 
     if (curErr) return json({ error: curErr.message }, { status: 404 })
 
-    if (cur.res_type === 'pool' && body.pool) {
-      const { error } = await supabase.from('res_pool').update(body.pool).eq('uid', body.uid).eq('res_date', body.res_date)
-      if (error) return json({ error: error.message }, { status: 400 })
-    } else if (cur.res_type === 'classroom' && body.classroom) {
-      const { error } = await supabase.from('res_classroom').update(body.classroom).eq('uid', body.uid).eq('res_date', body.res_date)
-      if (error) return json({ error: error.message }, { status: 400 })
+    const isApproving = isApprovingRequest;
+
+    if (cur.res_type === 'pool') {
+      if (isApproving) {
+        // On approval, auto-assign lane if missing
+        const { data: poolRow, error: poolErr } = await supabase
+          .from('res_pool')
+          .select('lane, start_time, end_time')
+          .eq('uid', body.uid)
+          .eq('res_date', body.res_date)
+          .single();
+        if (poolErr) return json({ error: poolErr.message }, { status: 400 });
+        const hasLane = !!(poolRow?.lane && poolRow.lane !== '');
+        if (!hasLane) {
+          const lane = await findAvailableLane(
+            supabase,
+            body.res_date,
+            poolRow?.start_time ?? null,
+            poolRow?.end_time ?? null,
+            body.uid
+          );
+          if (lane) {
+            const { error } = await supabase
+              .from('res_pool')
+              .update({ lane })
+              .eq('uid', body.uid)
+              .eq('res_date', body.res_date);
+            if (error) return json({ error: error.message }, { status: 400 });
+          } else {
+            return json({ error: MSG_NO_POOL_LANES }, { status: 400 });
+          }
+        }
+        // Auto-assign succeeded or lane already present: now set parent status to confirmed
+        const { error: parentErr2 } = await supabase
+          .from('reservations')
+          .update({ res_status: 'confirmed', updated_at: new Date().toISOString() })
+          .eq('uid', body.uid)
+          .eq('res_date', body.res_date)
+        if (parentErr2) return json({ error: parentErr2.message }, { status: 400 })
+      } else if (body.pool) {
+        // Non-approval updates: do not auto-assign
+        const { error } = await supabase.from('res_pool').update(body.pool).eq('uid', body.uid).eq('res_date', body.res_date)
+        if (error) return json({ error: error.message }, { status: 400 })
+      }
+    } else if (cur.res_type === 'classroom') {
+      if (isApproving) {
+        // On approval, auto-assign room if missing
+        const { data: classRow, error: classErr } = await supabase
+          .from('res_classroom')
+          .select('room, start_time, end_time')
+          .eq('uid', body.uid)
+          .eq('res_date', body.res_date)
+          .single();
+        if (classErr) return json({ error: classErr.message }, { status: 400 });
+        const hasRoom = !!(classRow?.room && classRow.room !== '');
+        if (!hasRoom) {
+          const room = await findAvailableRoom(
+            supabase,
+            body.res_date,
+            classRow?.start_time ?? null,
+            classRow?.end_time ?? null,
+            body.uid
+          );
+          if (room) {
+            const { error } = await supabase
+              .from('res_classroom')
+              .update({ room })
+              .eq('uid', body.uid)
+              .eq('res_date', body.res_date);
+            if (error) return json({ error: error.message }, { status: 400 });
+          } else {
+            return json({ error: MSG_NO_CLASSROOMS }, { status: 400 });
+          }
+        }
+        // Auto-assign succeeded or room already present: now set parent status to confirmed
+        const { error: parentErr2 } = await supabase
+          .from('reservations')
+          .update({ res_status: 'confirmed', updated_at: new Date().toISOString() })
+          .eq('uid', body.uid)
+          .eq('res_date', body.res_date)
+        if (parentErr2) return json({ error: parentErr2.message }, { status: 400 })
+      } else if (body.classroom) {
+        // Non-approval updates: do not auto-assign
+        const { error } = await supabase.from('res_classroom').update(body.classroom).eq('uid', body.uid).eq('res_date', body.res_date)
+        if (error) return json({ error: error.message }, { status: 400 })
+      }
     } else if (cur.res_type === 'open_water' && body.openwater) {
       const { error } = await supabase.from('res_openwater').update(body.openwater).eq('uid', body.uid).eq('res_date', body.res_date)
       if (error) return json({ error: error.message }, { status: 400 })
