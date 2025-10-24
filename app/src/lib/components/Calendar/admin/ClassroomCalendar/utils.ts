@@ -2,17 +2,36 @@
 // Keep classroom-specific extractors here. Generic time functions are imported from shared.
 import { toMin, hhmm, buildSlotMins } from '$lib/calendar/timeGrid';
 
-export const getStartHHmm = (res: any): string => {
+// Minimal, reusable structure used by classroom calendar utilities
+// Covers both current shape (nested res_classroom) and legacy flat fields
+export interface ClassroomResLike {
+  uid?: string;
+  id?: string | number; // legacy or UI-generated ids
+  res_id?: string | number; // legacy
+  start_time?: string | null; // legacy flat
+  end_time?: string | null; // legacy flat
+  startTime?: string | null; // older camelCase variants
+  endTime?: string | null;
+  room?: string | number | null; // may be numeric or string in some datasets
+  res_classroom?: {
+    start_time?: string | null;
+    end_time?: string | null;
+    room?: string | number | null;
+  } | null;
+  __display_room_idx?: number; // assigned for layout only
+}
+
+export const getStartHHmm = (res: ClassroomResLike): string => {
   return (
     hhmm(res?.start_time) || hhmm(res?.res_classroom?.start_time) || hhmm(res?.startTime)
   );
 };
 
-export const getEndHHmm = (res: any): string => {
+export const getEndHHmm = (res: ClassroomResLike): string => {
   return hhmm(res?.end_time) || hhmm(res?.res_classroom?.end_time) || hhmm(res?.endTime);
 };
 
-export const getRoom = (res: any): string => {
+export const getRoom = (res: ClassroomResLike): string => {
   return (
     (res?.room != null ? String(res.room) : '') ||
     (res?.res_classroom?.room != null ? String(res.res_classroom.room) : '')
@@ -30,7 +49,7 @@ const indexAtOrAfter = (slotMins: number[], mins: number): number => {
 };
 
 export const computeStartEndIdx = (
-  res: any,
+  res: ClassroomResLike,
   slotMins: number[]
 ): { startIdx: number; endIdx: number } => {
   const s = getStartHHmm(res);
@@ -44,10 +63,10 @@ export const computeStartEndIdx = (
 
 // Assign rooms for display if not specified, avoiding overlaps per slot indices
 export const assignProvisionalRooms = (
-  reservations: any[],
+  reservations: ClassroomResLike[],
   rooms: string[],
   slotMins: number[]
-): any[] => {
+): ClassroomResLike[] => {
   if (!Array.isArray(reservations) || !slotMins.length) return reservations;
   const cloned = reservations.map((r) => ({ ...r }));
   cloned.sort(
@@ -94,9 +113,12 @@ export const assignProvisionalRooms = (
   return cloned;
 };
 
-export const resKey = (r: any, rooms: string[]): string => {
+export const resKey = (r: ClassroomResLike, rooms: string[]): string => {
   const room = getRoom(r);
   const ridx = (r.__display_room_idx ?? (room ? rooms.indexOf(room) : 'X')) as string | number;
-  return r?.id || r?.uid || r?.res_id || `${ridx}-${getStartHHmm(r)}-${getEndHHmm(r)}`;
+  const candidate = (r?.id ?? r?.uid ?? r?.res_id);
+  if (candidate !== undefined && candidate !== null && candidate !== '') {
+    return String(candidate);
+  }
+  return `${ridx}-${getStartHHmm(r)}-${getEndHHmm(r)}`;
 };
-
