@@ -71,8 +71,10 @@
 
   $: derivedStudentCount = (
     reservation?.student_count
+    ?? reservation?.res_pool?.student_count
     ?? reservation?.res_classroom?.student_count
     ?? reservation?.raw_reservation?.student_count
+    ?? reservation?.raw_reservation?.res_pool?.student_count
     ?? reservation?.raw_reservation?.res_classroom?.student_count
     ?? null
   );
@@ -111,6 +113,13 @@
         <span class="detail-label">Category</span>
         <span class="detail-value">{displayType}</span>
       </div>
+
+      {#if displayType === 'Classroom'}
+        <div class="detail-item">
+          <span class="detail-label">Classroom Type</span>
+          <span class="detail-value">{derivedClassroomType ? classroomTypeLabel(derivedClassroomType) : '—'}</span>
+        </div>
+      {/if}
 
       <div class="detail-item">
         <span class="detail-label">Status</span>
@@ -153,12 +162,13 @@
           <span class="detail-value">{derivedStudentCount ?? '—'}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">Classroom Type</span>
-          <span class="detail-value">{derivedClassroomType ? classroomTypeLabel(derivedClassroomType) : '—'}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Room assigned</span>
+          <span class="detail-label">Room Assigned</span>
           <span class="detail-value">{derivedRoom ?? '—'}</span>
+        </div>
+      {:else if displayType === 'Pool' && ((derivedStudentCount ?? 0) > 0 || derivedPoolType === 'course_coaching')}
+        <div class="detail-item">
+          <span class="detail-label">No. of Students</span>
+          <span class="detail-value">{derivedStudentCount ?? '—'}</span>
         </div>
       {/if}
 
@@ -169,7 +179,11 @@
     </div>
 
     <!-- Equipment Grid (2x2) -->
-    {#if !(isAdmin && displayType === 'Classroom') && (reservation.pulley !== null || reservation.deep_fim_training !== null || reservation.bottom_plate !== null || reservation.large_buoy !== null)}
+    {#if (
+        displayType === 'Open Water'
+        && (reservation.open_water_type === 'course_coaching' || reservation.open_water_type === 'autonomous_buoy')
+        && (reservation.pulley !== null || reservation.bottom_plate !== null || reservation.large_buoy !== null || reservation.deep_fim_training !== null)
+      )}
       <div class="equipment-section">
         <h3 class="equipment-title">Equipment</h3>
         <div class="equipment-grid">

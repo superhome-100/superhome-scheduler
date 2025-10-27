@@ -1,10 +1,30 @@
 <script lang="ts">
   import { hourSlotsFrom, computeGridMetrics, rectForRange, buildSlotMins } from '$lib/calendar/timeGrid';
   import { getStartHHmm, getEndHHmm, getLane, assignProvisionalLanes, resKey } from './poolUtils';
+  import type { PoolResLike } from './poolUtils';
+  import ReservationDetailsModal from '../../../ReservationDetailsModal/ReservationDetailsModal.svelte';
 
   export let timeSlots: string[];
-  export let reservations: any[];
+  export let reservations: PoolResLike[];
   export let lanes: string[] = Array.from({ length: 8 }, (_, i) => String(i + 1));
+  // Optional current user id for labeling own reservations as "You"
+  export let currentUserId: string | undefined = undefined;
+  // Admin mode - shows full names instead of generic labels
+  export let isAdmin: boolean = false;
+
+  // Modal state and handlers (mirror ClassroomCalendar)
+  let isModalOpen = false;
+  let selectedReservation: PoolResLike | null = null;
+
+  const handleReservationClick = (reservation: PoolResLike) => {
+    selectedReservation = reservation;
+    isModalOpen = true;
+  };
+
+  const closeModal = () => {
+    isModalOpen = false;
+    selectedReservation = null;
+  };
 
   // Derived hour slots and grid rows
   $: hourSlots = hourSlotsFrom(timeSlots || []);
@@ -19,11 +39,66 @@
   // Grid vertical metrics
   $: ({ gridStartMin, gridEndMin } = computeGridMetrics(hourSlots, HOUR_ROW_PX));
 
-  function rectForReservation(res: any) {
+  function rectForReservation(res: PoolResLike) {
     const s = getStartHHmm(res);
     const e = getEndHHmm(res);
     return rectForRange(s, e, gridStartMin, gridEndMin, HOUR_ROW_PX);
   }
+
+  // User id extraction and display helpers (aligned with ClassroomCalendar)
+  const getResUserId = (res: PoolResLike): string | undefined => (
+    (res?.uid && String(res.uid)) ||
+    (res?.user_id && String(res.user_id)) ||
+    (res?.user?.id && String(res.user.id)) ||
+    (res?.user_profiles?.id && String(res.user_profiles.id))
+  );
+
+  const getDisplayName = (res: PoolResLike): string => {
+    const uid = getResUserId(res);
+    // Only show "You" in non-admin views
+    if (!isAdmin && currentUserId && uid && String(uid) === String(currentUserId)) return 'You';
+    if (isAdmin) {
+      const fullName = res?.user_profiles?.name;
+      if (fullName) return fullName;
+      const username = res?.user_profiles?.username || res?.username;
+      const email = res?.user_profiles?.email || res?.email;
+      if (username) return username;
+      if (email) return email.split('@')[0];
+      return 'Unknown User';
+    } else {
+      let name = res?.user_profiles?.name || res?.user_profiles?.nickname || res?.user_profiles?.username || res?.nickname || res?.username || res?.name || res?.title || '';
+      const uuidV4 = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const hex24 = /^[0-9a-f]{24}$/i;
+      const hex32 = /^[0-9a-f]{32}$/i;
+      if (!name || uuidV4.test(String(name)) || hex24.test(String(name)) || hex32.test(String(name))) name = 'Member';
+      return name;
+    }
+  };
+
+  // Extract student count for pool reservations (flattened or nested under res_pool)
+  const getStudentCount = (res: PoolResLike): number => {
+    const n = res?.student_count ?? res?.res_pool?.student_count ?? null;
+    const parsed = typeof n === 'string' ? parseInt(n, 10) : n;
+    return Number.isFinite(parsed) && (parsed as number) > 0 ? (parsed as number) : 0;
+  };
+
+  // Extract pool_type; we expect 'autonomous' or 'course_coaching'
+  // Tolerate camelCase fallbacks from any transformed sources
+  const getPoolType = (res: PoolResLike): string | null => (
+    (res?.pool_type
+      ?? res?.poolType
+      ?? res?.res_pool?.pool_type
+      ?? res?.res_pool?.poolType
+      ?? null) as string | null
+  );
+
+  // Display label with optional + N suffix (Course/Coaching style)
+  const getDisplayLabel = (res: PoolResLike): string => {
+    const base = getDisplayName(res);
+    const count = getStudentCount(res);
+    // Show suffix whenever a positive student_count exists. Keep label compact: "Base + N"
+    return count > 0 ? `${base} + ${count}` : base;
+  };
 </script>
 
 <div class="bg-white rounded-lg border border-base-300 overflow-hidden shadow-sm">
@@ -54,45 +129,50 @@
       {/each}
     </div>
 
-    <!-- Overlay per lane; one card per booking spanning vertically -->
+    <!-- Overlay: one element per reservation spanning columns = number of people -->
     <div class="pointer-events-none absolute inset-0 grid" style={`grid-template-columns: 80px repeat(${lanes.length}, 1fr); grid-template-rows: ${rowTemplate}; z-index: 10;`}>
       {#if displayReservations && displayReservations.length}
-        {#each lanes as laneLabel, lidx}
-          <div class="relative" style={`grid-column: ${lidx + 2} / ${lidx + 3}; grid-row: 2 / ${2 + hourSlots.length};`}>
-            {#each (
-              displayReservations
-                .filter(r => {
-                  const explicit = String(getLane(r) || '');
-                  const explicitIdx = explicit ? lanes.indexOf(explicit) : -1;
-                  const dIdx = (r.__display_lane_idx ?? explicitIdx);
-                  return dIdx === lidx;
-                })
-                .map((r, rIdx) => ({ r, rIdx, rect: rectForReservation(r) }))
-                .filter(x => !!x.rect)
-                .sort((a, b) => (a.rect!.topPx - b.rect!.topPx))
-            ) as item (`${resKey(item.r, lanes)}-${item.rIdx}`)}
-              {@const reservation = item.r}
-              {@const rect = item.rect}
-              {#if rect}
-                <div
-                  class="pointer-events-auto absolute left-1 right-1 rounded-lg text-[0.7rem] sm:text-sm cursor-pointer hover:font-semibold shadow-sm bg-gradient-to-br from-blue-100 to-blue-200 text-blue-900 border border-blue-300 flex flex-col justify-center p-2 overflow-hidden z-10"
-                  style={`top: ${rect.topPx}px; height: ${rect.heightPx}px;`}
-                  role="button"
-                  tabindex="0"
-                  aria-label="View pool reservation details"
-                >
-                  <div class="flex items-center gap-2 justify-between">
-                    <div class="font-medium truncate">{reservation.user_profiles?.name || 'Unknown'}</div>
-                    <div class="shrink-0 text-[10px] sm:text-xs text-base-content/70">
-                      {getStartHHmm(reservation)}–{getEndHHmm(reservation)}
-                    </div>
+        {#each (
+          displayReservations
+            .map((r, rIdx) => ({ r, rIdx, rect: rectForReservation(r) }))
+            .filter(x => !!x.rect && typeof x.r.__display_lane_idx === 'number')
+            .sort((a, b) => (a.rect!.topPx - b.rect!.topPx))
+        ) as item (`${resKey(item.r, lanes)}-${item.rIdx}`)}
+          {@const reservation = item.r}
+          {@const rect = item.rect}
+          {@const startLane = reservation.__display_lane_idx as number}
+          {@const span = (reservation.__display_span as number) || 1}
+          {#if rect}
+            <!-- Grid area spans across contiguous lanes; +2 because column 1 is the time gutter -->
+            <div class="relative" style={`grid-column: ${startLane + 2} / ${startLane + 2 + span}; grid-row: 2 / ${2 + hourSlots.length};`}>
+              <div
+                class="pointer-events-auto absolute left-1 right-1 rounded-lg text-[0.7rem] sm:text-sm cursor-pointer hover:font-semibold shadow-sm bg-gradient-to-br from-blue-100 to-blue-200 text-blue-900 border border-blue-300 flex flex-col justify-center p-2 overflow-hidden z-10"
+                style={`top: ${rect.topPx}px; height: ${rect.heightPx}px;`}
+                on:click={() => handleReservationClick(reservation)}
+                on:keydown={(e) => e.key === 'Enter' && handleReservationClick(reservation)}
+                role="button"
+                tabindex="0"
+                aria-label="View pool reservation details"
+              >
+                <div class="flex items-center gap-2 justify-between">
+                  <div class="font-medium truncate">{getDisplayLabel(reservation)}</div>
+                  <div class="shrink-0 text-[10px] sm:text-xs text-base-content/70">
+                    {getStartHHmm(reservation)}–{getEndHHmm(reservation)}
                   </div>
                 </div>
-              {/if}
-            {/each}
-          </div>
+              </div>
+            </div>
+          {/if}
         {/each}
       {/if}
     </div>
   </div>
 </div>
+
+<!-- Reservation Details Modal -->
+<ReservationDetailsModal 
+  bind:isOpen={isModalOpen}
+  reservation={selectedReservation}
+  {isAdmin}
+  on:close={closeModal}
+/>

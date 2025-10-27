@@ -1,4 +1,5 @@
--- Seed users, profiles, and open water reservations for testing auto-assign buoy
+-- Seed users, profiles, pool, and classroom reservations for testing
+-- Open Water reservations are commented out as per requirements
 set search_path = public;
 
 -- Use fixed UUIDs for reproducibility
@@ -54,11 +55,12 @@ values
   ('00000000-0000-0000-0000-000000000005', 'Tina', array['user'])
 on conflict (uid) do nothing;
 
+-- Open Water reservations parent rows - COMMENTED OUT
+
 -- Target test date (use next day to avoid timezone clashes)
 with date_range as (
   select (now() at time zone 'utc')::date + 1 as d1
 )
--- Reservations parent rows (PENDING open_water) - 20 total (1 day)
 insert into public.reservations (uid, res_date, res_type, res_status, created_at, updated_at)
 select uid, res_date, 'open_water', 'pending', now(), now()
 from (
@@ -85,8 +87,10 @@ from (
 ) t(uid, res_date)
 on conflict do nothing;
 
--- Open water detail rows (1 day total, 20 reservations)
+
+-- Open water detail rows (1 day total, 20 reservations) - COMMENTED OUT
 -- AM slot only: 4 activity types x 5 divers each with appropriate depths
+
 with date_range as (
   select (now() at time zone 'utc')::date + 1 as d1
 )
@@ -122,44 +126,60 @@ values
   ('00000000-0000-0000-0000-000000000005', (select d1 from date_range), 'pending', 'AM', 94, null, true, false, false, false, null, null, 'autonomous_platform_cbs')
 on conflict (uid, res_date) do nothing;
 
--- Classroom reservations (PENDING, unassigned room) to simulate auto-assign and room capacity
+
+-- Pool reservations (PENDING, unassigned lane) to simulate lane capacity and overlap logic
+-- Target test date (use next day to avoid timezone clashes)
 with date_range as (
   select (now() at time zone 'utc')::date + 1 as d1
 )
 insert into public.reservations (uid, res_date, res_type, res_status, created_at, updated_at)
 values
-  (
-    '11111111-1111-1111-1111-111111111111',
-    (select d1 from date_range) + interval '9 hours',
-    'classroom',
-    'pending',
-    now(),
-    now()
-  ),
-  (
-    '22222222-2222-2222-2222-222222222222',
-    (select d1 from date_range) + interval '9 hours',
-    'classroom',
-    'pending',
-    now(),
-    now()
-  ),
-  (
-    '33333333-3333-3333-3333-333333333333',
-    (select d1 from date_range) + interval '9 hours',
-    'classroom',
-    'pending',
-    now(),
-    now()
-  ),
-  (
-    '44444444-4444-4444-4444-444444444444',
-    (select d1 from date_range) + interval '9 hours',
-    'classroom',
-    'pending',
-    now(),
-    now()
-  )
+  -- 8 overlapping pool reservations at 10:00-11:00 to simulate full capacity
+  ('11111111-1111-1111-1111-111111111111', (select d1 from date_range) + interval '10 hours', 'pool', 'pending', now(), now()),
+  ('22222222-2222-2222-2222-222222222222', (select d1 from date_range) + interval '10 hours', 'pool', 'pending', now(), now()),
+  ('33333333-3333-3333-3333-333333333333', (select d1 from date_range) + interval '10 hours', 'pool', 'pending', now(), now()),
+  ('44444444-4444-4444-4444-444444444444', (select d1 from date_range) + interval '10 hours', 'pool', 'pending', now(), now()),
+  ('55555555-5555-5555-5555-555555555555', (select d1 from date_range) + interval '10 hours', 'pool', 'pending', now(), now()),
+  ('66666666-6666-6666-6666-666666666666', (select d1 from date_range) + interval '10 hours', 'pool', 'pending', now(), now()),
+  ('77777777-7777-7777-7777-777777777777', (select d1 from date_range) + interval '10 hours', 'pool', 'pending', now(), now()),
+  ('88888888-8888-8888-8888-888888888888', (select d1 from date_range) + interval '10 hours', 'pool', 'pending', now(), now()),
+  -- 2 more non-overlapping slots for variety (11:00-12:00)
+  ('99999999-9999-9999-9999-999999999999', (select d1 from date_range) + interval '11 hours', 'pool', 'pending', now(), now()),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', (select d1 from date_range) + interval '11 hours', 'pool', 'pending', now(), now())
+on conflict do nothing;
+
+-- Pool detail rows matching the above (lane intentionally NULL, pool_type mixes autonomous and course/coaching)
+with date_range as (
+  select (now() at time zone 'utc')::date + 1 as d1
+)
+insert into public.res_pool (
+  uid, res_date, res_status, start_time, end_time, lane, note, pool_type, student_count
+)
+values
+  -- 10:00-11:00 block (8 overlapping)
+  ('11111111-1111-1111-1111-111111111111', (select d1 from date_range) + interval '10 hours', 'pending', '10:00'::time, '11:00'::time, null, 'Seed: pool overlap #1', 'autonomous', null),
+  ('22222222-2222-2222-2222-222222222222', (select d1 from date_range) + interval '10 hours', 'pending', '10:00'::time, '11:00'::time, null, 'Seed: pool overlap #2', 'course_coaching', 2),
+  ('33333333-3333-3333-3333-333333333333', (select d1 from date_range) + interval '10 hours', 'pending', '10:00'::time, '11:00'::time, null, 'Seed: pool overlap #3', 'autonomous', null),
+  ('44444444-4444-4444-4444-444444444444', (select d1 from date_range) + interval '10 hours', 'pending', '10:00'::time, '11:00'::time, null, 'Seed: pool overlap #4', 'course_coaching', 1),
+  ('55555555-5555-5555-5555-555555555555', (select d1 from date_range) + interval '10 hours', 'pending', '10:00'::time, '11:00'::time, null, 'Seed: pool overlap #5', 'autonomous', null),
+  ('66666666-6666-6666-6666-666666666666', (select d1 from date_range) + interval '10 hours', 'pending', '10:00'::time, '11:00'::time, null, 'Seed: pool overlap #6', 'course_coaching', 3),
+  ('77777777-7777-7777-7777-777777777777', (select d1 from date_range) + interval '10 hours', 'pending', '10:00'::time, '11:00'::time, null, 'Seed: pool overlap #7', 'autonomous', null),
+  ('88888888-8888-8888-8888-888888888888', (select d1 from date_range) + interval '10 hours', 'pending', '10:00'::time, '11:00'::time, null, 'Seed: pool overlap #8', 'course_coaching', 2),
+  -- 11:00-12:00 block (2 items)
+  ('99999999-9999-9999-9999-999999999999', (select d1 from date_range) + interval '11 hours', 'pending', '11:00'::time, '12:00'::time, null, 'Seed: pool next slot #1', 'autonomous', null),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', (select d1 from date_range) + interval '11 hours', 'pending', '11:00'::time, '12:00'::time, null, 'Seed: pool next slot #2', 'course_coaching', 1)
+on conflict (uid, res_date) do nothing;
+
+-- Classroom reservations (PENDING, unassigned room)
+with date_range as (
+  select (now() at time zone 'utc')::date + 1 as d1
+)
+insert into public.reservations (uid, res_date, res_type, res_status, created_at, updated_at)
+values
+  ('11111111-1111-1111-1111-111111111111', (select d1 from date_range) + interval '9 hours', 'classroom', 'pending', now(), now()),
+  ('22222222-2222-2222-2222-222222222222', (select d1 from date_range) + interval '9 hours', 'classroom', 'pending', now(), now()),
+  ('33333333-3333-3333-3333-333333333333', (select d1 from date_range) + interval '9 hours', 'classroom', 'pending', now(), now()),
+  ('44444444-4444-4444-4444-444444444444', (select d1 from date_range) + interval '9 hours', 'classroom', 'pending', now(), now())
 on conflict do nothing;
 
 -- Classroom detail rows matching the above (room intentionally NULL, classroom_type uses 'course_coaching')

@@ -134,34 +134,64 @@ function overlaps(aStart: string | null, aEnd: string | null, bStart: string | n
   return aS < bE && aE > bS;
 }
 
+// Compute how many contiguous lanes a reservation occupies
+function poolSpanWidth(pool_type: string | null | undefined, student_count: number | null | undefined, totalLanes: number): number {
+  if (pool_type === 'course_coaching') {
+    const sc = typeof student_count === 'number' && Number.isFinite(student_count) ? student_count : 0
+    const width = 1 + Math.max(0, sc)
+    return Math.max(1, Math.min(width, totalLanes))
+  }
+  return 1
+}
+
 async function findAvailableLane(
   supabase: any,
   res_date_iso: string,
   start_time: string | null,
   end_time: string | null,
-  excludeUid: string
+  excludeUid: string,
+  requiredSpan: number,
+  totalLanes: number = 8
 ): Promise<string | null> {
+  // Fetch all pool reservations on the same calendar day, not just exact timestamp
+  const date = new Date(res_date_iso)
+  const dayStart = new Date(date)
+  dayStart.setUTCHours(0, 0, 0, 0)
+  const dayEnd = new Date(dayStart)
+  dayEnd.setUTCDate(dayStart.getUTCDate() + 1)
+
   const { data, error } = await supabase
     .from('res_pool')
-    .select('uid, lane, start_time, end_time')
-    .eq('res_date', res_date_iso);
+    .select('uid, lane, start_time, end_time, res_date, pool_type, student_count')
+    .gte('res_date', dayStart.toISOString())
+    .lt('res_date', dayEnd.toISOString());
 
   if (error) {
     console.error('Error fetching existing pool reservations:', error);
     return null;
   }
 
-  const occupied: Record<string, boolean> = {};
+  const occupied: Set<string> = new Set();
   for (const row of data || []) {
     if (row.uid === excludeUid) continue;
-    if (row.lane && overlaps(row.start_time, row.end_time, start_time, end_time)) {
-      occupied[row.lane] = true;
+    if (!row.lane) continue;
+    if (!overlaps(row.start_time, row.end_time, start_time, end_time)) continue;
+    const rowSpan = poolSpanWidth(row.pool_type as string | null, row.student_count as number | null, totalLanes);
+    const startLaneNum = parseInt(String(row.lane), 10);
+    if (!Number.isFinite(startLaneNum)) continue;
+    for (let l = startLaneNum; l < startLaneNum + rowSpan && l <= totalLanes; l++) {
+      occupied.add(String(l));
     }
   }
 
-  for (let lane = 1; lane <= 8; lane++) {
-    const key = String(lane);
-    if (!occupied[key]) return key;
+  // Find first contiguous block of requiredSpan free lanes
+  const span = Math.max(1, Math.min(requiredSpan, totalLanes));
+  for (let startLane = 1; startLane + span - 1 <= totalLanes; startLane++) {
+    let free = true;
+    for (let l = startLane; l < startLane + span; l++) {
+      if (occupied.has(String(l))) { free = false; break; }
+    }
+    if (free) return String(startLane);
   }
   return null;
 }
@@ -323,19 +353,22 @@ Deno.serve(async (req: Request) => {
         // On approval, auto-assign lane if missing
         const { data: poolRow, error: poolErr } = await supabase
           .from('res_pool')
-          .select('lane, start_time, end_time')
+          .select('lane, start_time, end_time, pool_type, student_count')
           .eq('uid', body.uid)
           .eq('res_date', body.res_date)
           .single();
         if (poolErr) return json({ error: poolErr.message }, { status: 400 });
         const hasLane = !!(poolRow?.lane && poolRow.lane !== '');
         if (!hasLane) {
+          const requiredSpan = poolSpanWidth(poolRow?.pool_type ?? null, poolRow?.student_count as number | null, 8)
           const lane = await findAvailableLane(
             supabase,
             body.res_date,
             poolRow?.start_time ?? null,
             poolRow?.end_time ?? null,
-            body.uid
+            body.uid,
+            requiredSpan,
+            8
           );
           if (lane) {
             const { error } = await supabase

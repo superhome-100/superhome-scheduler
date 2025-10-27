@@ -99,6 +99,31 @@
               </span>
             </div>
             
+            {#if selectedReservation.res_type === 'pool'}
+              {#if selectedReservation.pool_type}
+                <div class="flex items-start gap-3 min-w-0">
+                  <span class="font-semibold text-[#00294C] text-xs flex-shrink-0 w-16">Pool Type:</span> 
+                  <span class="text-xs text-[#00294C] truncate flex-1">{selectedReservation.pool_type}</span>
+                </div>
+              {/if}
+              
+              {@const totalLanes = 8}
+              {@const explicitLane = selectedReservation?.lane ?? selectedReservation?.res_pool?.lane}
+              {@const startIdx = typeof selectedReservation?.__display_lane_idx === 'number' ? (selectedReservation.__display_lane_idx as number) : (explicitLane ? (Number(explicitLane) - 1) : -1)}
+              {@const poolType = selectedReservation?.pool_type ?? selectedReservation?.poolType ?? selectedReservation?.res_pool?.pool_type ?? selectedReservation?.res_pool?.poolType}
+              {@const studentsRaw = selectedReservation?.student_count ?? selectedReservation?.res_pool?.student_count}
+              {@const students = typeof studentsRaw === 'string' ? parseInt(studentsRaw, 10) : (studentsRaw || 0)}
+              {@const spanFromType = poolType === 'course_coaching' ? Math.max(1, Math.min(1 + (Number.isFinite(students) ? students : 0), totalLanes)) : 1}
+              {@const span = typeof selectedReservation?.__display_span === 'number' ? (selectedReservation.__display_span as number) : spanFromType}
+              {@const lanes = (startIdx >= 0 && span > 0) ? Array.from({ length: span }, (_, i) => String(startIdx + 1 + i)).filter(n => Number(n) >= 1 && Number(n) <= totalLanes) : []}
+              {#if lanes.length}
+                <div class="flex items-start gap-3 min-w-0">
+                  <span class="font-semibold text-[#00294C] text-xs flex-shrink-0 w-16">Lane(s):</span> 
+                  <span class="text-xs text-[#00294C] truncate flex-1">{lanes.join(', ')}</span>
+                </div>
+              {/if}
+            {/if}
+            
             <div class="flex items-start gap-3 min-w-0">
               <span class="font-semibold text-[#00294C] text-xs flex-shrink-0 w-16">Requested:</span> 
               <span class="text-xs text-[#00294C] truncate flex-1">{dayjs(selectedReservation.created_at).format('dddd, MMMM D, YYYY [at] h:mm A')}</span>
