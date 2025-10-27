@@ -14,7 +14,7 @@
   import { ReservationType } from '../../types/reservations';
   import BlockReservationCard from './BlockReservationCard.svelte';
   import Toast from '../Toast.svelte';
-  import { MSG_NO_CLASSROOMS } from '$lib/constants/messages';
+  import { MSG_NO_CLASSROOMS, MSG_NO_POOL_LANES } from '$lib/constants/messages';
   import ErrorModal from '../ErrorModal.svelte';
 
   let users: any[] = [];
@@ -158,16 +158,49 @@
             user_profiles!reservations_uid_fkey (
               name
             ),
-            res_pool!left(start_time, end_time, lane, pool_type, note),
-            res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, note),
-            res_classroom!left(start_time, end_time, room, classroom_type, student_count, note)
+            res_pool!left(*),
+            res_openwater!left(*),
+            res_classroom!left(*)
           `)
           .order('created_at', { ascending: false });
         
         if (!reservationsError) {
-          reservationsData = resData || [];
+          // Transform the data to include pool type and lane at the root level
+          reservationsData = (resData || []).map(res => ({
+            ...res,
+            // Flatten pool details
+            ...(res.res_pool ? {
+              lane: res.res_pool.lane,
+              pool_type: res.res_pool.pool_type,
+              start_time: res.res_pool.start_time || res.start_time,
+              end_time: res.res_pool.end_time || res.end_time,
+              note: res.res_pool.note || res.note
+            } : {}),
+            // Flatten open water details
+            ...(res.res_openwater ? {
+              time_period: res.res_openwater.time_period,
+              depth_m: res.res_openwater.depth_m,
+              buoy: res.res_openwater.buoy,
+              pulley: res.res_openwater.pulley,
+              deep_fim_training: res.res_openwater.deep_fim_training,
+              bottom_plate: res.res_openwater.bottom_plate,
+              large_buoy: res.res_openwater.large_buoy,
+              open_water_type: res.res_openwater.open_water_type,
+              student_count: res.res_openwater.student_count
+            } : {}),
+            // Flatten classroom details
+            ...(res.res_classroom ? {
+              room: res.res_classroom.room,
+              classroom_type: res.res_classroom.classroom_type,
+              start_time: res.res_classroom.start_time || res.start_time,
+              end_time: res.res_classroom.end_time || res.end_time,
+              student_count: res.res_classroom.student_count,
+              note: res.res_classroom.note || res.note
+            } : {})
+          }));
+          
           pendingReservationsData = reservationsData.filter(r => r.res_status === 'pending');
-          console.log('AdminDashboard: Successfully loaded reservations:', reservationsData.length);
+          console.log('AdminDashboard: Successfully loaded and transformed reservations:', reservationsData.length);
         }
       } catch (resErr) {
         console.log('AdminDashboard: Reservations table not found, skipping...');
@@ -244,6 +277,10 @@
       // For classroom approvals, if we don't have a specific message, show the capacity fallback
       if (action === 'approve' && reservation?.res_type === 'classroom' && !hasSpecific) {
         displayMsg = MSG_NO_CLASSROOMS;
+      }
+      // For pool approvals, if we don't have a specific message, show the lane capacity fallback
+      if (action === 'approve' && reservation?.res_type === 'pool' && !hasSpecific) {
+        displayMsg = MSG_NO_POOL_LANES;
       }
       // Prefer modal in the center instead of toast
       errorModalMessage = displayMsg;

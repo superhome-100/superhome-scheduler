@@ -89,22 +89,41 @@ export interface CapacityResult {
 export async function checkPoolCapacity(dateISO: string, start_time: string, end_time: string): Promise<CapacityResult> {
   try {
     const dateOnly = dayjs(dateISO).format('YYYY-MM-DD');
+    const from = `${dateOnly} 00:00:00+00`;
+    const to = `${dateOnly} 23:59:59+00`;
+    // Query from parent reservations to include status and joined pool times
     const { data, error } = await supabase
-      .from('res_pool')
-      .select('lane, start_time, end_time')
-      .eq('res_date', dateOnly);
+      .from('reservations')
+      .select(`
+        res_status,
+        res_pool(start_time, end_time, lane)
+      `)
+      .eq('res_type', 'pool')
+      .gte('res_date', from)
+      .lte('res_date', to)
+      .in('res_status', ['pending', 'confirmed']);
     if (error) return { available: true };
 
-    // Count lanes occupied that overlap
-    const occupiedByLane = new Set<string>();
+    // Count overlapping reservations regardless of assigned lane; compare with lane capacity
+    let overlappingCount = 0;
+    const toMin = (raw: string) => {
+      const m = raw.match(/^(\d{2}):(\d{2})/);
+      if (!m) return NaN;
+      return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+    };
+    const sUser = toMin(start_time);
+    const eUser = toMin(end_time);
     for (const row of data || []) {
-      if (!row?.lane) continue;
-      if (row.start_time && row.end_time && overlaps(row.start_time, row.end_time, start_time, end_time)) {
-        occupiedByLane.add(String(row.lane));
-      }
+      const s = (row as any)?.res_pool?.start_time as string | undefined;
+      const e = (row as any)?.res_pool?.end_time as string | undefined;
+      if (!s || !e) continue;
+      const sDb = toMin(s);
+      const eDb = toMin(e);
+      if (Number.isNaN(sDb) || Number.isNaN(eDb) || Number.isNaN(sUser) || Number.isNaN(eUser)) continue;
+      if (sDb < eUser && eDb > sUser) overlappingCount += 1;
     }
-    const capacity = 8;
-    const available = occupiedByLane.size < capacity;
+    const capacity = 8; // lanes 1..8
+    const available = overlappingCount < capacity;
     return available ? { available } : { available, reason: MSG_NO_POOL_LANES };
   } catch {
     return { available: true };

@@ -145,29 +145,48 @@
     <div class="detail-item type-section pool">
       <span class="detail-label">Pool Details</span>
       <div class="type-details">
-        {#if reservation?.start_time}
-          <div class="type-detail-item">
-            <span class="type-detail-label">Start Time:</span>
-            <span class="type-detail-value">{dayjs(`2000-01-01T${reservation.start_time}`).format('h:mm A')}</span>
-          </div>
-        {/if}
-        {#if reservation?.end_time}
-          <div class="type-detail-item">
-            <span class="type-detail-label">End Time:</span>
-            <span class="type-detail-value">{dayjs(`2000-01-01T${reservation.end_time}`).format('h:mm A')}</span>
-          </div>
-        {/if}
-        {#if reservation?.lane}
-          <div class="type-detail-item">
-            <span class="type-detail-label">Lane:</span>
-            <span class="type-detail-value">{reservation.lane}</span>
-          </div>
-        {/if}
-        {#if reservation?.note}
-          <div class="type-detail-item">
-            <span class="type-detail-label">Note:</span>
-            <span class="type-detail-value">{reservation.note}</span>
-          </div>
+        {#if reservation}
+          {#key reservation}
+            {#await Promise.resolve(reservation) then r}
+              {#if r}
+                {#if r.start_time}
+                  <div class="type-detail-item">
+                    <span class="type-detail-label">Start Time:</span>
+                    <span class="type-detail-value">{dayjs(`2000-01-01T${reservation.start_time}`).format('h:mm A')}</span>
+                  </div>
+                {/if}
+                {#if r.end_time}
+                  <div class="type-detail-item">
+                    <span class="type-detail-label">End Time:</span>
+                    <span class="type-detail-value">{dayjs(`2000-01-01T${reservation.end_time}`).format('h:mm A')}</span>
+                  </div>
+                {/if}
+                {#if (function() { return true; })()}
+                  {@const totalLanes = 8}
+                  {@const explicitLane = r?.lane ?? r?.res_pool?.lane}
+                  {@const startIdx = typeof r?.__display_lane_idx === 'number' ? (r.__display_lane_idx as number) : (explicitLane ? (Number(explicitLane) - 1) : -1)}
+                  {@const poolType = r?.pool_type ?? r?.res_pool?.pool_type}
+                  {@const studentsRaw = r?.student_count ?? r?.res_pool?.student_count}
+                  {@const students = typeof studentsRaw === 'string' ? parseInt(studentsRaw, 10) : (studentsRaw || 0)}
+                  {@const spanFromType = poolType === 'course_coaching' ? Math.max(1, Math.min(1 + (Number.isFinite(students) ? students : 0), totalLanes)) : 1}
+                  {@const span = typeof r?.__display_span === 'number' ? (r.__display_span as number) : spanFromType}
+                  {@const lanes = (startIdx >= 0 && span > 0) ? Array.from({ length: span }, (_, i) => String(startIdx + 1 + i)).filter(n => Number(n) >= 1 && Number(n) <= totalLanes) : []}
+                  {#if lanes.length}
+                    <div class="type-detail-item">
+                      <span class="type-detail-label">Lane(s):</span>
+                      <span class="type-detail-value">{lanes.join(', ')}</span>
+                    </div>
+                  {/if}
+                {/if}
+                {#if r.note}
+                  <div class="type-detail-item">
+                    <span class="type-detail-label">Note:</span>
+                    <span class="type-detail-value">{reservation.note}</span>
+                  </div>
+                {/if}
+              {/if}
+            {/await}
+          {/key}
         {/if}
       </div>
     </div>

@@ -22,52 +22,105 @@ export const resKey = (r: any, lanes: string[]): string => {
   return r?.id || r?.uid || r?.res_id || `${lidx}-${getStartHHmm(r)}-${getEndHHmm(r)}`;
 };
 
+// Extractors for counts
+export const getStudentCount = (res: any): number => {
+  const raw = res?.student_count ?? res?.res_pool?.student_count ?? 0;
+  const n = typeof raw === 'string' ? parseInt(raw, 10) : raw;
+  return Number.isFinite(n) && n > 0 ? n as number : 0;
+};
+
+export const getPeopleCount = (res: any): number => {
+  // Count owner/instructor (1) + students
+  const students = getStudentCount(res);
+  return 1 + students;
+};
+
+// Pool type extractor tolerant to various shapes
+export const getPoolType = (res: any): string | null => (
+  (res?.pool_type
+    ?? res?.poolType
+    ?? res?.res_pool?.pool_type
+    ?? res?.res_pool?.poolType
+    ?? null) as string | null
+);
+
+// Compute how many contiguous lanes a reservation should occupy for display/assignment
+// - course_coaching: occupies (1 + student_count)
+// - autonomous or others: occupies 1 lane
+const getSpanWidth = (res: any, totalLanes: number): number => {
+  const type = getPoolType(res);
+  if (type === 'course_coaching') {
+    const width = getPeopleCount(res);
+    return Math.max(1, Math.min(width, totalLanes));
+  }
+  return 1;
+};
+
 export function assignProvisionalLanes(reservations: any[], lanes: string[], slotMins: number[]) {
   if (!Array.isArray(reservations) || !slotMins.length) return reservations;
   const cloned = reservations.map((r) => ({ ...r }));
   cloned.sort((a, b) => toMin(getStartHHmm(a) || '00:00') - toMin(getStartHHmm(b) || '00:00'));
 
-  const occ = lanes.map(() => new Set<number>());
+  // Occupancy tracker per lane: set of slot indices occupied
+  const occ: Array<Set<number>> = lanes.map(() => new Set<number>());
   const occupyRange = (laneIdx: number, startIdx: number, endIdx: number) => {
     for (let i = startIdx; i < endIdx; i++) occ[laneIdx].add(i);
   };
-  const isFree = (laneIdx: number, startIdx: number, endIdx: number) => {
-    for (let i = startIdx; i < endIdx; i++) if (occ[laneIdx].has(i)) return false;
+  const lanesRangeFree = (startLane: number, span: number, startIdx: number, endIdx: number): boolean => {
+    for (let l = startLane; l < startLane + span; l++) {
+      if (l < 0 || l >= lanes.length) return false;
+      for (let i = startIdx; i < endIdx; i++) {
+        if (occ[l].has(i)) return false;
+      }
+    }
     return true;
   };
-
+  const occupyLaneSpan = (startLane: number, span: number, startIdx: number, endIdx: number) => {
+    for (let l = startLane; l < startLane + span; l++) occupyRange(l, startIdx, endIdx);
+  };
   const indexAtOrAfter = (mins: number): number => {
     if (!slotMins.length) return -1;
     for (let i = 0; i < slotMins.length; i++) if (slotMins[i] >= mins) return i;
     return -1;
   };
 
-  // Pre-occupy explicit lanes
-  for (const r of cloned) {
-    const explicit = String(getLane(r) || '');
-    const lidx = explicit ? lanes.indexOf(explicit) : -1;
-    const sIdx = indexAtOrAfter(toMin(getStartHHmm(r)));
-    let eIdx = indexAtOrAfter(toMin(getEndHHmm(r)));
-    if (eIdx === -1) eIdx = slotMins.length;
-    if (lidx >= 0 && sIdx >= 0 && eIdx > sIdx) occupyRange(lidx, sIdx, eIdx);
-  }
+  // Helper to clamp width to available lanes
+  const clampSpan = (width: number) => Math.max(1, Math.min(width, lanes.length));
 
-  // Assign the rest
+  // Pre-occupy explicit starting lanes (treat explicit lane as starting lane)
   for (const r of cloned) {
     const explicit = String(getLane(r) || '');
-    const lidx = explicit ? lanes.indexOf(explicit) : -1;
+    const startLane = explicit ? lanes.indexOf(explicit) : -1;
     const sIdx = indexAtOrAfter(toMin(getStartHHmm(r)));
     let eIdx = indexAtOrAfter(toMin(getEndHHmm(r)));
     if (eIdx === -1) eIdx = slotMins.length;
     if (sIdx < 0 || eIdx <= sIdx) continue;
-    if (lidx >= 0) {
-      r.__display_lane_idx = lidx;
-      continue;
+    if (startLane >= 0) {
+      const span = getSpanWidth(r, lanes.length);
+      // Only pre-occupy if the contiguous span fits and is free; otherwise leave for assignment phase
+      if (startLane + span <= lanes.length && lanesRangeFree(startLane, span, sIdx, eIdx)) {
+        r.__display_lane_idx = startLane;
+        r.__display_span = span;
+        occupyLaneSpan(startLane, span, sIdx, eIdx);
+      }
     }
-    for (let i = 0; i < lanes.length; i++) {
-      if (isFree(i, sIdx, eIdx)) {
-        r.__display_lane_idx = i;
-        occupyRange(i, sIdx, eIdx);
+  }
+
+  // Assign remaining reservations to first available contiguous span
+  for (const r of cloned) {
+    if (typeof r.__display_lane_idx === 'number') continue; // already placed
+    const sIdx = indexAtOrAfter(toMin(getStartHHmm(r)));
+    let eIdx = indexAtOrAfter(toMin(getEndHHmm(r)));
+    if (eIdx === -1) eIdx = slotMins.length;
+    if (sIdx < 0 || eIdx <= sIdx) continue;
+
+    const span = getSpanWidth(r, lanes.length);
+    // search start lane where a contiguous span fits
+    for (let startLane = 0; startLane + span <= lanes.length; startLane++) {
+      if (lanesRangeFree(startLane, span, sIdx, eIdx)) {
+        r.__display_lane_idx = startLane;
+        r.__display_span = span;
+        occupyLaneSpan(startLane, span, sIdx, eIdx);
         break;
       }
     }

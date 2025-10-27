@@ -4,14 +4,34 @@
   export let reservation: any;
   export let displayType: string;
   export let owDepth: number | null = null;
+
+  // Resolve assigned boat from various possible shapes
+  $: assignedBoat = (
+    reservation?.boat
+    ?? reservation?.buoy_group?.boat
+    ?? reservation?.raw_reservation?.boat
+    ?? reservation?.raw_reservation?.buoy_group?.boat
+    ?? null
+  );
 </script>
 
 <!-- Pool specific details -->
-{#if displayType === 'Pool' && reservation.lane}
-  <div class="detail-item">
-    <span class="detail-label">Lane</span>
-    <span class="detail-value">{reservation.lane}</span>
-  </div>
+{#if displayType === 'Pool'}
+  {@const totalLanes = 8}
+  {@const explicitLane = reservation?.lane ?? reservation?.res_pool?.lane}
+  {@const startIdx = typeof reservation?.__display_lane_idx === 'number' ? (reservation.__display_lane_idx as number) : (explicitLane ? (Number(explicitLane) - 1) : -1)}
+  {@const poolType = reservation?.pool_type ?? reservation?.poolType ?? reservation?.res_pool?.pool_type ?? reservation?.res_pool?.poolType}
+  {@const studentsRaw = reservation?.student_count ?? reservation?.res_pool?.student_count}
+  {@const students = typeof studentsRaw === 'string' ? parseInt(studentsRaw, 10) : (studentsRaw || 0)}
+  {@const spanFromType = poolType === 'course_coaching' ? Math.max(1, Math.min(1 + (Number.isFinite(students) ? students : 0), totalLanes)) : 1}
+  {@const span = typeof reservation?.__display_span === 'number' ? (reservation.__display_span as number) : spanFromType}
+  {@const lanes = (startIdx >= 0 && span > 0) ? Array.from({ length: span }, (_, i) => String(startIdx + 1 + i)).filter(n => Number(n) >= 1 && Number(n) <= totalLanes) : []}
+  {#if lanes.length}
+    <div class="detail-item">
+      <span class="detail-label">Lane(s)</span>
+      <span class="detail-value">{lanes.join(', ')}</span>
+    </div>
+  {/if}
 {/if}
 
 <!-- Classroom specific details -->
@@ -65,6 +85,14 @@
     <div class="detail-item">
       <span class="detail-label">Depth (m)</span>
       <span class="detail-value">{owDepth !== null ? owDepth : reservation.depth_m}</span>
+    </div>
+  {/if}
+
+  <!-- Assigned Boat -->
+  {#if assignedBoat}
+    <div class="detail-item">
+      <span class="detail-label">Assigned Boat</span>
+      <span class="detail-value">{assignedBoat}</span>
     </div>
   {/if}
   

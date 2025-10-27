@@ -221,6 +221,17 @@
     return approved && hasTimetable;
   };
 
+  // Helper: a pool reservation is considered "plotted" once approved and has start/end and lane assigned
+  const isApprovedAndPlottedPool = (reservation: any) => {
+    if (reservation?.res_type !== 'pool') return false;
+    const approved = reservation?.res_status === 'confirmed';
+    const start = reservation?.res_pool?.start_time;
+    const end = reservation?.res_pool?.end_time;
+    const lane = reservation?.res_pool?.lane;
+    const hasTimetable = !!start && !!end && lane !== null && lane !== undefined && String(lane) !== '';
+    return approved && hasTimetable;
+  };
+
   // Get time period from reservation
   const getTimePeriod = (reservation: any) => {
     const d = new Date(reservation.res_date);
@@ -279,10 +290,12 @@
         }
       } else {
         // For Pool and Classroom, show single daily count
-        // Classroom (admin): only include approved (confirmed) and plotted (has start/end/room)
+        // Classroom: only approved + plotted; Pool: only approved + plotted
         const filtered = selectedType === ReservationType.classroom
           ? dayReservations.filter((r) => isApprovedAndPlottedClassroom(r))
-          : dayReservations;
+          : selectedType === ReservationType.pool
+            ? dayReservations.filter((r) => isApprovedAndPlottedPool(r))
+            : dayReservations;
         const totalParticipantCount = filtered.reduce((sum, r) => sum + countParticipants(r), 0);
         if (totalParticipantCount > 0) {
           // Use different colors based on reservation type

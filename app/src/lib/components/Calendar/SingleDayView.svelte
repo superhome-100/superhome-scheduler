@@ -147,6 +147,29 @@
     return false;
   });
 
+  // Only show approved and plotted Pool reservations (confirmed with start/end and assigned lane)
+  $: approvedPlottedPoolReservations = filteredReservations.filter(r => {
+    if (selectedCalendarType !== ReservationType.pool) return false;
+    if (r.res_type !== 'pool') return false;
+    const approved = r.res_status === 'confirmed';
+    // Support both admin (joined res_pool) and user (flattened fields) data shapes
+    const start = r?.res_pool?.start_time ?? r?.start_time ?? null;
+    const end = r?.res_pool?.end_time ?? r?.end_time ?? null;
+    const lane = (r?.res_pool?.lane ?? r?.lane ?? null);
+    const hasTimetable = !!start && !!end && lane !== null && lane !== undefined && String(lane) !== '';
+    return approved && hasTimetable;
+  });
+
+  // Only show approved Classroom reservations with defined times (mirrors pool approval filter)
+  $: approvedClassroomReservations = filteredReservations.filter(r => {
+    if (selectedCalendarType !== ReservationType.classroom) return false;
+    // Accept explicit classroom or flat classroom rows; type filtering already handled above
+    const approved = r.res_status === 'confirmed';
+    const start = r?.res_classroom?.start_time ?? r?.start_time ?? null;
+    const end = r?.res_classroom?.end_time ?? r?.end_time ?? null;
+    return approved && !!start && !!end;
+  });
+
   // Calendar type switching
   const switchCalendarType = (type: ReservationType) => {
     selectedCalendarType = type;
@@ -295,8 +318,8 @@
   <!-- Calendar Content -->
   <div class="px-6 sm:px-4 md:px-8 lg:px-12 min-h-[60vh] max-w-screen-xl mx-auto" class:max-w-none={selectedCalendarType === 'openwater'}>
     {#if selectedCalendarType === 'pool'}
-      <!-- POOL CALENDAR: Shared between Admin and User -->
-      <PoolCalendar {timeSlots} reservations={filteredReservations} />
+      <!-- POOL CALENDAR: Only approved and plotted reservations -->
+      <PoolCalendar {timeSlots} reservations={approvedPlottedPoolReservations} currentUserId={$authStore.user?.id} {isAdmin} />
     {:else if selectedCalendarType === 'openwater'}
       <!-- OPEN WATER CALENDAR: Different views for Admin vs User -->
       <div class="flex flex-col gap-8 lg:gap-8" class:grid={!isAdmin} class:grid-cols-2={!isAdmin}>
@@ -328,8 +351,8 @@
         {/if}
       </div>
     {:else if selectedCalendarType === 'classroom'}
-      <!-- CLASSROOM CALENDAR: Shared between Admin and User -->
-      <ClassroomCalendar timeSlots={timeSlots} reservations={filteredReservations} currentUserId={$authStore.user?.id} {isAdmin} />
+      <!-- CLASSROOM CALENDAR: Only approved classroom reservations -->
+      <ClassroomCalendar timeSlots={timeSlots} reservations={approvedClassroomReservations} currentUserId={$authStore.user?.id} {isAdmin} />
                     {/if}
   </div>
   {#if showGroupModal && groupDetails}

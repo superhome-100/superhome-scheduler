@@ -116,7 +116,7 @@
         .from('reservations')
         .select(`
           *,
-          res_pool!left(start_time, end_time, lane, pool_type, note),
+          res_pool!left(start_time, end_time, lane, pool_type, student_count, note),
           res_openwater!left(
             time_period, 
             depth_m, 
@@ -152,6 +152,8 @@
           flattened.end_time = reservation.res_pool.end_time;
           flattened.lane = reservation.res_pool.lane;
           flattened.pool_type = reservation.res_pool.pool_type;
+          // Ensure student_count is available for UI labels (e.g., "You + N of students")
+          flattened.student_count = reservation.res_pool.student_count;
           flattened.note = reservation.res_pool.note;
           // Note: Use main reservation status, not detail table status
         } else if (reservation.res_type === 'open_water' && reservation.res_openwater) {
