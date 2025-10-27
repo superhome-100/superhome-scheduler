@@ -1,10 +1,11 @@
 <script lang="ts">
   import { hourSlotsFrom, computeGridMetrics, rectForRange, buildSlotMins } from '$lib/calendar/timeGrid';
   import { getStartHHmm, getEndHHmm, getLane, assignProvisionalLanes, resKey } from './poolUtils';
+  import type { PoolResLike } from './poolUtils';
   import ReservationDetailsModal from '../../../ReservationDetailsModal/ReservationDetailsModal.svelte';
 
   export let timeSlots: string[];
-  export let reservations: any[];
+  export let reservations: PoolResLike[];
   export let lanes: string[] = Array.from({ length: 8 }, (_, i) => String(i + 1));
   // Optional current user id for labeling own reservations as "You"
   export let currentUserId: string | undefined = undefined;
@@ -13,9 +14,9 @@
 
   // Modal state and handlers (mirror ClassroomCalendar)
   let isModalOpen = false;
-  let selectedReservation: any = null;
+  let selectedReservation: PoolResLike | null = null;
 
-  const handleReservationClick = (reservation: any) => {
+  const handleReservationClick = (reservation: PoolResLike) => {
     selectedReservation = reservation;
     isModalOpen = true;
   };
@@ -38,21 +39,21 @@
   // Grid vertical metrics
   $: ({ gridStartMin, gridEndMin } = computeGridMetrics(hourSlots, HOUR_ROW_PX));
 
-  function rectForReservation(res: any) {
+  function rectForReservation(res: PoolResLike) {
     const s = getStartHHmm(res);
     const e = getEndHHmm(res);
     return rectForRange(s, e, gridStartMin, gridEndMin, HOUR_ROW_PX);
   }
 
   // User id extraction and display helpers (aligned with ClassroomCalendar)
-  const getResUserId = (res: any): string | undefined => (
+  const getResUserId = (res: PoolResLike): string | undefined => (
     (res?.uid && String(res.uid)) ||
     (res?.user_id && String(res.user_id)) ||
     (res?.user?.id && String(res.user.id)) ||
     (res?.user_profiles?.id && String(res.user_profiles.id))
   );
 
-  const getDisplayName = (res: any): string => {
+  const getDisplayName = (res: PoolResLike): string => {
     const uid = getResUserId(res);
     // Only show "You" in non-admin views
     if (!isAdmin && currentUserId && uid && String(uid) === String(currentUserId)) return 'You';
@@ -75,7 +76,7 @@
   };
 
   // Extract student count for pool reservations (flattened or nested under res_pool)
-  const getStudentCount = (res: any): number => {
+  const getStudentCount = (res: PoolResLike): number => {
     const n = res?.student_count ?? res?.res_pool?.student_count ?? null;
     const parsed = typeof n === 'string' ? parseInt(n, 10) : n;
     return Number.isFinite(parsed) && (parsed as number) > 0 ? (parsed as number) : 0;
@@ -83,7 +84,7 @@
 
   // Extract pool_type; we expect 'autonomous' or 'course_coaching'
   // Tolerate camelCase fallbacks from any transformed sources
-  const getPoolType = (res: any): string | null => (
+  const getPoolType = (res: PoolResLike): string | null => (
     (res?.pool_type
       ?? res?.poolType
       ?? res?.res_pool?.pool_type
@@ -92,7 +93,7 @@
   );
 
   // Display label with optional + N suffix (Course/Coaching style)
-  const getDisplayLabel = (res: any): string => {
+  const getDisplayLabel = (res: PoolResLike): string => {
     const base = getDisplayName(res);
     const count = getStudentCount(res);
     // Show suffix whenever a positive student_count exists. Keep label compact: "Base + N"
