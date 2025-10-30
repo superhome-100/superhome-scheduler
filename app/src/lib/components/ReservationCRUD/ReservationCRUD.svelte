@@ -352,17 +352,17 @@
 
   <!-- Create Reservation Modal -->
   {#if showCreateForm}
-    <div class="modal modal-open">
-      <div class="modal-box">
-        <h3 class="font-bold text-lg mb-4">Create New Reservation</h3>
+    <div class="modal modal-open p-2 sm:p-3">
+      <div class="modal-box w-full max-w-sm sm:max-w-md max-h-[100svh] overflow-visible">
+        <h3 class="font-bold text-base mb-3">Create New Reservation</h3>
         
         <form on:submit|preventDefault={handleCreateReservation}>
-          <div class="form-control mb-4">
+          <div class="form-control mb-3">
             <label class="label" for="create-res-type">
               <span class="label-text">Category Type</span>
             </label>
             <select 
-              class="select select-bordered w-full"
+              class="select select-bordered select-sm w-full"
               id="create-res-type"
               bind:value={createFormData.res_type}
             >
@@ -372,13 +372,13 @@
             </select>
           </div>
 
-          <div class="form-control mb-4">
+          <div class="form-control mb-3">
             <label class="label" for="create-res-datetime">
               <span class="label-text">Date & Time</span>
             </label>
             <input 
               type="datetime-local"
-              class="input input-bordered w-full"
+              class="input input-bordered input-sm w-full"
               id="create-res-datetime"
               bind:value={createFormData.res_date}
               min={currentDateTime}
@@ -388,49 +388,49 @@
 
           <!-- Pool-specific fields -->
           {#if createFormData.res_type === 'pool'}
-            <div class="form-control mb-4">
+            <div class="form-control mb-3">
               <label class="label" for="create-pool-start">
                 <span class="label-text">Start Time</span>
               </label>
               <input 
                 type="time"
-                class="input input-bordered w-full"
+                class="input input-bordered input-sm w-full"
                 id="create-pool-start"
                 bind:value={createFormData.pool!.start_time}
                 required
               />
             </div>
-            <div class="form-control mb-4">
+            <div class="form-control mb-3">
               <label class="label" for="create-pool-end">
                 <span class="label-text">End Time</span>
               </label>
               <input 
                 type="time"
-                class="input input-bordered w-full"
+                class="input input-bordered input-sm w-full"
                 id="create-pool-end"
                 bind:value={createFormData.pool!.end_time}
                 required
               />
             </div>
-            <div class="form-control mb-4">
+            <div class="form-control mb-3">
               <label class="label" for="create-pool-lane">
                 <span class="label-text">Lane (optional)</span>
               </label>
               <input 
                 type="text"
-                class="input input-bordered w-full"
+                class="input input-bordered input-sm w-full"
                 id="create-pool-lane"
                 bind:value={createFormData.pool!.lane}
                 placeholder="Lane assignment"
               />
             </div>
 
-            <div class="form-control mb-4">
+            <div class="form-control mb-3">
               <label class="label" for="create-pool-notes">
                 <span class="label-text">Notes (optional)</span>
               </label>
               <textarea 
-                class="textarea textarea-bordered w-full"
+                class="textarea textarea-bordered textarea-sm w-full"
                 id="create-pool-notes"
                 bind:value={createFormData.pool!.note}
                 placeholder="Additional notes..."
@@ -438,11 +438,11 @@
             </div>
           {/if}
 
-          <div class="modal-action">
-            <button type="button" class="btn btn-ghost" on:click={() => showCreateForm = false}>
+          <div class="modal-action mt-1">
+            <button type="button" class="btn btn-ghost btn-sm" on:click={() => showCreateForm = false}>
               Cancel
             </button>
-            <button type="submit" class="btn btn-primary" disabled={$reservationStore.loading}>
+            <button type="submit" class="btn btn-primary btn-sm" disabled={$reservationStore.loading}>
               Create Reservation
             </button>
           </div>
@@ -453,17 +453,17 @@
 
   <!-- Edit Reservation Modal -->
   {#if showEditForm && selectedReservation}
-    <div class="modal modal-open">
-      <div class="modal-box">
-        <h3 class="font-bold text-lg mb-4">Edit Reservation</h3>
+    <div class="modal modal-open p-2 sm:p-3">
+      <div class="modal-box w-full max-w-sm sm:max-w-md max-h-[100svh] overflow-visible">
+        <h3 class="font-bold text-base mb-3">Edit Reservation</h3>
         
         <form on:submit|preventDefault={handleUpdateReservation}>
-          <div class="form-control mb-4">
+          <div class="form-control mb-3">
             <label class="label" for="edit-status">
               <span class="label-text">Status</span>
             </label>
             <select 
-              class="select select-bordered w-full"
+              class="select select-bordered select-sm w-full"
               id="edit-status"
               bind:value={editFormData.res_status}
             >
@@ -473,13 +473,13 @@
             </select>
           </div>
 
-          <div class="form-control mb-4">
+          <div class="form-control mb-3">
             <label class="label" for="edit-res-datetime">
               <span class="label-text">Date & Time</span>
             </label>
             <input 
               type="datetime-local"
-              class="input input-bordered w-full"
+              class="input input-bordered input-sm w-full"
               id="edit-res-datetime"
               bind:value={editFormData.res_date}
               min={currentDateTime}
@@ -490,11 +490,11 @@
           <!-- Type-specific fields would go here -->
           <!-- Similar to create form but for editing -->
 
-          <div class="modal-action">
-            <button type="button" class="btn btn-ghost" on:click={closeEditForm}>
+          <div class="modal-action mt-1">
+            <button type="button" class="btn btn-ghost btn-sm" on:click={closeEditForm}>
               Cancel
             </button>
-            <button type="submit" class="btn btn-primary" disabled={$reservationStore.loading}>
+            <button type="submit" class="btn btn-primary btn-sm" disabled={$reservationStore.loading}>
               Update Reservation
             </button>
           </div>

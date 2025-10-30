@@ -38,32 +38,16 @@
     if (timeRemaining.totalMinutes <= 0) {
       return 'Cut-off time has passed';
     }
-
-    // For Pool and Classroom, only show time remaining if cutoff has passed
-    if (resType === 'pool' || resType === 'classroom') {
-      return null; // Don't show time remaining for Pool/Classroom
-    }
-
-    // For Open Water, show time remaining
-    if (timeRemaining.hours > 0) {
-      return `${timeRemaining.hours}h ${timeRemaining.minutes}m remaining`;
-    } else {
-      return `${timeRemaining.minutes} minutes remaining`;
-    }
+    // Do not show remaining time for any type; only show message when cutoff has passed
+    return null;
   })();
 
-  // Reactive warning level
+  // Reactive warning level: only show when cutoff has passed
   $: warningLevel = (() => {
     if (timeRemaining.totalMinutes <= 0) {
       return 'error';
-    } else if (resType === 'pool' || resType === 'classroom') {
-      // For Pool and Classroom, don't show warning unless cutoff has passed
-      return null;
-    } else if (timeRemaining.totalMinutes <= 60) {
-      return 'warning';
-    } else {
-      return 'info';
     }
+    return null; // No alert before cutoff for any type
   })();
 
   // Reactive warning icon
@@ -115,15 +99,10 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={warningIcon} />
       </svg>
       <div class="alert-text">
-        <span class="font-medium text-sm">
-          {getCutoffDescription(resType)}
-        </span>
+        {#if timeDisplay}
+          <span class="font-medium text-sm">{timeDisplay}</span>
+        {/if}
       </div>
     </div>
-    {#if timeDisplay}
-      <div class="text-xs text-opacity-80 mt-1">
-        {timeDisplay}
-      </div>
-    {/if}
   </div>
 {/if}

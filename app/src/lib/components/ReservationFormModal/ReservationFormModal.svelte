@@ -437,8 +437,10 @@
           {/if}
         </div>
 
-        <!-- Equipment Options -->
-        <EquipmentOptions bind:formData />
+        <!-- Equipment Options: Open Water only -->
+        {#if formData.type === 'openwater'}
+          <EquipmentOptions bind:formData />
+        {/if}
 
         <!-- Notes -->
         <FormNotes bind:formData />

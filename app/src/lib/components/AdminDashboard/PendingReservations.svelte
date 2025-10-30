@@ -21,6 +21,14 @@
       dispatch('openReservationDetails', reservation);
     };
 
+    // Keyboard accessibility for clickable list items
+    function handleItemKeydown(event: KeyboardEvent, reservation: any) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openReservationDetails(reservation);
+      }
+    }
+
   </script>
 
   <div class="card bg-base-100 shadow-sm border border-base-300 rounded-xl p-6 mb-8">
@@ -48,7 +56,13 @@
       <!-- Mobile compact list -->
       <div class="pending-mobile" class:scrollable={pendingReservations.length > 5}>
         {#each pendingReservations as reservation}
-          <div class="flex items-center justify-between py-3 border-b border-base-300 last:border-b-0 gap-3 min-h-[60px] rounded-xl m-2 p-2">
+          <div 
+            class="flex items-center justify-between gap-3 min-h-[60px] rounded-xl m-2 p-4 md:p-3 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary bg-base-100"
+            role="button"
+            tabindex="0"
+            on:click={() => openReservationDetails(reservation)}
+            on:keydown={(e) => handleItemKeydown(e as KeyboardEvent, reservation)}
+          >
             <div class="flex flex-col gap-1 min-w-0 flex-1">
               <div class="font-semibold text-[#00294C] text-sm truncate">
                 {reservation.user_profiles?.name || 'Unknown User'}
@@ -60,9 +74,35 @@
                 <span>{dayjs(reservation.res_date).format('MMM D, YYYY')}</span>
               </div>
             </div>
-            <div class="flex-shrink-0 ml-2">
-              <button class="btn btn-primary btn-sm font-medium whitespace-nowrap" style="color: #00294C !important;" on:click={() => openReservationDetails(reservation)}>
-                View Details
+            <!-- Action icon buttons; prevent propagation per button -->
+            <div class="flex-shrink-0 ml-2 flex items-center gap-2" role="group" aria-label="Reservation actions">
+              <button 
+                class="btn btn-circle btn-ghost btn-xs"
+                style="background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important;"
+                on:click|stopPropagation={() => handleReservationAction(reservation, 'reject')}
+                type="button"
+                disabled={processingReservation === `${reservation.uid}-${reservation.res_date}`}
+                aria-busy={processingReservation === `${reservation.uid}-${reservation.res_date}`}
+                aria-label="Reject reservation"
+                title="Reject"
+              >
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true">
+                  <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+              <button 
+                class="btn btn-circle btn-ghost btn-xs"
+                style="background-color: #28a745 !important; border-color: #28a745 !important; color: white !important;"
+                on:click|stopPropagation={() => handleReservationAction(reservation, 'approve')}
+                type="button"
+                disabled={processingReservation === `${reservation.uid}-${reservation.res_date}`}
+                aria-busy={processingReservation === `${reservation.uid}-${reservation.res_date}`}
+                aria-label="Approve reservation"
+                title="Approve"
+              >
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true">
+                  <path d="M9 16.17 4.83 12l-1.42 1.41L9 19l12-12-1.41-1.41z"/>
+                </svg>
               </button>
             </div>
           </div>
@@ -181,25 +221,16 @@
       position: relative;
     }
 
-    /* Ensure outlines are always visible for mobile */
+    /* Mobile item appearance: remove per-item border in mobile view */
     .pending-mobile > div {
       position: relative;
       z-index: 1;
-      border: 2px solid #00294C;
+      border: none;
       border-radius: 0.75rem; /* rounded-xl */
     }
     
     .pending-mobile > div::before {
-      content: '';
-      position: absolute;
-      top: -2px;
-      left: -2px;
-      right: -2px;
-      bottom: -2px;
-      border: 1px solid #00294C;
-      border-radius: 0.75rem; /* rounded-xl to match the main border */
-      z-index: -1;
-      pointer-events: none;
+      display: none;
     }
 
     /* Text truncation utilities */
