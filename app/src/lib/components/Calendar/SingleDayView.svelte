@@ -99,7 +99,8 @@
   }
 
   const handleBackToCalendar = () => {
-    dispatch('backToCalendar');
+    // Return the last active selection so parent pages can restore it
+    dispatch('backToCalendar', { type: selectedCalendarType });
   };
 
   // Current user (for user account single day view) - no longer needed for data loading

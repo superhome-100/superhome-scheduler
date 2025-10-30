@@ -3,6 +3,7 @@
   import dayjs from 'dayjs';
   import { availabilityApi } from '../../api/availabilityApi';
   import { AvailabilityCategory, CategoryTypeOptions } from '../../types/availability';
+  import { showLoading, hideLoading } from '../../stores/ui';
 
   type BlockRow = {
     id: number;
@@ -36,10 +37,12 @@
   async function loadBlocks() {
     resetMessages();
     listLoading = true;
+    showLoading('Loading blocks...');
     const res = await availabilityApi.list();
     if (!res.success) {
       error = res.error ?? 'Failed to load blocks';
       listLoading = false;
+      hideLoading();
       return;
     }
     // Only display blocks (available=false). Keep sorted by date desc
@@ -47,6 +50,7 @@
       .filter(b => !b.available)
       .sort((a, b) => b.date.localeCompare(a.date)) as BlockRow[];
     listLoading = false;
+    hideLoading();
   }
 
   function onCategoryChange(cat: AvailabilityCategory) {
@@ -69,6 +73,7 @@
   async function addBlock() {
     resetMessages();
     loading = true;
+    showLoading('Adding block...');
     const res = await availabilityApi.create({
       date: selDate,
       category: selCategory,
@@ -77,6 +82,7 @@
       reason: reason ? reason : null,
     });
     loading = false;
+    hideLoading();
     if (!res.success) {
       error = res.error ?? 'Failed to add block';
       return;
@@ -88,8 +94,10 @@
   async function deleteBlock(id: number) {
     resetMessages();
     loading = true;
+    showLoading('Deleting block...');
     const res = await availabilityApi.remove(id);
     loading = false;
+    hideLoading();
     if (!res.success) {
       error = res.error ?? 'Failed to delete block';
       return;
@@ -107,10 +115,7 @@
     <div class="flex items-center justify-between">
       <h2 class="card-title text-sm">Block Reservation</h2>
       <div class="flex gap-2">
-        <button class="btn btn-ghost btn-xs" on:click={loadBlocks} disabled={listLoading}>
-          {#if listLoading}
-            <span class="loading loading-spinner loading-2xs"></span>
-          {/if}
+        <button class="btn btn-ghost btn-xs" on:click={loadBlocks} disabled={listLoading} aria-busy={listLoading}>
           Refresh
         </button>
       </div>
@@ -189,10 +194,7 @@
     </div>
 
     <div class="mt-2">
-      <button class="btn btn-primary btn-xs" on:click={addBlock} disabled={loading}>
-        {#if loading}
-          <span class="loading loading-spinner loading-2xs"></span>
-        {/if}
+      <button class="btn btn-primary btn-xs" on:click={addBlock} disabled={loading} aria-busy={loading}>
         Add Block
       </button>
     </div>

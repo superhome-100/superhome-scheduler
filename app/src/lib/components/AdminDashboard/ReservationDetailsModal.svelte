@@ -1,6 +1,5 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import LoadingSpinner from '../LoadingSpinner.svelte';
   import { getTypeDisplay } from '../../utils/reservationTransform';
   import dayjs from 'dayjs';
 
@@ -140,16 +139,13 @@
             style="background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important;"
             on:click={() => handleReservationAction('reject')}
             disabled={processingReservation === `${selectedReservation.uid}-${selectedReservation.res_date}`}
+            aria-busy={processingReservation === `${selectedReservation.uid}-${selectedReservation.res_date}`}
             title="Reject reservation"
           >
-            {#if processingReservation === `${selectedReservation.uid}-${selectedReservation.res_date}`}
-              <LoadingSpinner size="sm" />
-            {:else}
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-              </svg>
-              Reject
-            {/if}
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+            Reject
           </button>
           
           <button 
@@ -157,16 +153,13 @@
             style="background-color: #28a745 !important; border-color: #28a745 !important; color: white !important;"
             on:click={() => handleReservationAction('approve')}
             disabled={processingReservation === `${selectedReservation.uid}-${selectedReservation.res_date}`}
+            aria-busy={processingReservation === `${selectedReservation.uid}-${selectedReservation.res_date}`}
             title="Approve reservation"
           >
-            {#if processingReservation === `${selectedReservation.uid}-${selectedReservation.res_date}`}
-              <LoadingSpinner size="sm" />
-            {:else}
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-              </svg>
-              Approve
-            {/if}
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+            </svg>
+            Approve
           </button>
         </div>
       </div>

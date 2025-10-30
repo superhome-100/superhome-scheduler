@@ -3,6 +3,7 @@
   import { availabilityService } from '../../services/availabilityService';
   import type { ReservationType } from '../../services/reservationService';
   import type { Database } from '../../database.types';
+  import { showLoading, hideLoading } from '../../stores/ui';
 
   type Availability = Database['public']['Tables']['availabilities']['Row'];
 
@@ -63,6 +64,7 @@
     error = '';
 
     try {
+      showLoading(selectedAvailability ? 'Updating availability...' : 'Creating availability...');
       if (selectedAvailability) {
         // Update existing
         const result = await availabilityService.updateAvailabilityOverride(
@@ -99,6 +101,7 @@
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to save availability';
     } finally {
+      hideLoading();
       loading = false;
     }
   }
@@ -112,6 +115,7 @@
     error = '';
 
     try {
+      showLoading('Deleting availability...');
       const result = await availabilityService.deleteAvailabilityOverride(availability.id);
       if (!result.success) {
         throw new Error(result.error);
@@ -121,6 +125,7 @@
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to delete availability';
     } finally {
+      hideLoading();
       loading = false;
     }
   }
@@ -264,10 +269,7 @@
             <button type="button" class="btn btn-ghost" on:click={resetForm}>
               Cancel
             </button>
-            <button type="submit" class="btn btn-primary" disabled={loading}>
-              {#if loading}
-                <span class="loading loading-spinner loading-sm"></span>
-              {/if}
+            <button type="submit" class="btn btn-primary" disabled={loading} aria-busy={loading}>
               {selectedAvailability ? 'Update' : 'Create'}
             </button>
           </div>

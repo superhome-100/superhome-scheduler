@@ -5,6 +5,7 @@
   import { reservationApi } from '../../api/reservationApi';
   import type { CreateReservationData, CompleteReservation } from '../../api/reservationApi';
   import { now } from '../../utils/dateUtils';
+  import { showLoading, hideLoading } from '../../stores/ui';
 
   // Component state
   let showCreateForm = false;
@@ -43,7 +44,7 @@
   // Create reservation
   const handleCreateReservation = async () => {
     if (!$authStore.user) return;
-
+    showLoading('Creating reservation...');
     const result = await reservationStore.createReservation($authStore.user.id, createFormData);
     
     if (result.success) {
@@ -54,12 +55,13 @@
     } else {
       console.error('Failed to create reservation:', result.error);
     }
+    hideLoading();
   };
 
   // Update reservation
   const handleUpdateReservation = async () => {
     if (!$authStore.user || !selectedReservation) return;
-
+    showLoading('Updating reservation...');
     const result = await reservationStore.updateReservation(
       selectedReservation.uid,
       selectedReservation.res_date,
@@ -74,12 +76,13 @@
     } else {
       console.error('Failed to update reservation:', result.error);
     }
+    hideLoading();
   };
 
   // Delete reservation
   const handleDeleteReservation = async (reservation: CompleteReservation) => {
     if (!confirm('Are you sure you want to delete this reservation?')) return;
-
+    showLoading('Deleting reservation...');
     const result = await reservationStore.deleteReservation(reservation.uid, reservation.res_date);
     
     if (result.success) {
@@ -87,10 +90,12 @@
     } else {
       console.error('Failed to delete reservation:', result.error);
     }
+    hideLoading();
   };
 
   // Update reservation status
   const handleUpdateStatus = async (reservation: CompleteReservation, status: 'confirmed' | 'rejected') => {
+    showLoading(status === 'confirmed' ? 'Approving reservation...' : 'Rejecting reservation...');
     const result = await reservationStore.updateReservationStatus(
       reservation.uid,
       reservation.res_date,
@@ -102,6 +107,7 @@
     } else {
       console.error(`Failed to ${status} reservation:`, result.error);
     }
+    hideLoading();
   };
 
   // Form helpers
@@ -437,12 +443,7 @@
               Cancel
             </button>
             <button type="submit" class="btn btn-primary" disabled={$reservationStore.loading}>
-              {#if $reservationStore.loading}
-                <span class="loading loading-spinner loading-sm"></span>
-                Creating...
-              {:else}
-                Create Reservation
-              {/if}
+              Create Reservation
             </button>
           </div>
         </form>
@@ -494,12 +495,7 @@
               Cancel
             </button>
             <button type="submit" class="btn btn-primary" disabled={$reservationStore.loading}>
-              {#if $reservationStore.loading}
-                <span class="loading loading-spinner loading-sm"></span>
-                Updating...
-              {:else}
-                Update Reservation
-              {/if}
+              Update Reservation
             </button>
           </div>
         </form>
