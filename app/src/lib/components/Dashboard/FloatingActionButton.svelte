@@ -38,7 +38,7 @@
     align-items: center;
     justify-content: center;
     background: #3b82f6;
-    color: hsl(var(--bc));
+    color: #fff;
     border: none;
     width: 56px;
     height: 56px;

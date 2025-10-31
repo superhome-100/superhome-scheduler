@@ -16,6 +16,7 @@ export interface MemberRow {
   bottom_plate: boolean;
   pulley: boolean;
   large_buoy: boolean;
+  deep_fim_training: boolean;
   activity_type: ActivityType;
   open_water_type: string | null;
 }

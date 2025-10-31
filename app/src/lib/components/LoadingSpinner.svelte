@@ -17,13 +17,13 @@
 
 {#if variant === 'overlay'}
   <div 
-    class="fixed inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center"
+    class="fixed inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center"
     style="z-index: {zIndex};"
   >
-    <div class="flex flex-col items-center gap-4 p-8 bg-white rounded-xl shadow-lg border border-gray-200">
+    <div class="flex flex-col items-center gap-3">
       <div class={spinnerClass}></div>
       {#if text}
-        <div class="text-sm font-medium text-gray-600">{text}</div>
+        <div class="text-sm font-medium text-gray-700">{text}</div>
       {/if}
     </div>
   </div>

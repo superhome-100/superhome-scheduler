@@ -1,6 +1,5 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import LoadingSpinner from '../LoadingSpinner.svelte';
 
   export let loading = false;
   export let isCutoffPassed = false;
@@ -24,13 +23,9 @@
     type="submit" 
     class="btn btn-primary"
     disabled={loading || isCutoffPassed}
+    aria-busy={loading}
   >
-    {#if loading}
-      <LoadingSpinner size="sm" />
-      Submitting...
-    {:else}
-      Submit Reservation
-    {/if}
+    Submit Reservation
   </button>
 </div>
 

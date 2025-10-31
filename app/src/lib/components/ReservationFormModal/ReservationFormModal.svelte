@@ -19,6 +19,7 @@
   import { checkBlockForForm, checkCapacityForForm } from '$lib/utils/availabilityClient';
   import type { ReservationType } from '../../services/reservationService';
   import Toast from '../Toast.svelte';
+  import { showLoading, hideLoading } from '../../stores/ui';
 
   const dispatch = createEventDispatcher();
 
@@ -247,6 +248,7 @@
       }
 
       // Use CRUD system to create reservation
+      showLoading('Submitting reservation...');
       const result = await reservationStore.createReservation($authStore.user.id, reservationData);
       
       if (result.success) {
@@ -276,6 +278,7 @@
       submitError = err instanceof Error ? err.message : 'Failed to create reservation';
     } finally {
       loading = false;
+      hideLoading();
     }
   };
 
@@ -434,8 +437,10 @@
           {/if}
         </div>
 
-        <!-- Equipment Options -->
-        <EquipmentOptions bind:formData />
+        <!-- Equipment Options: Open Water only -->
+        {#if formData.type === 'openwater'}
+          <EquipmentOptions bind:formData />
+        {/if}
 
         <!-- Notes -->
         <FormNotes bind:formData />

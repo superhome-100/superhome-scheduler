@@ -1,0 +1,46 @@
+/* Shared styles for ReservationTypeSwitcher */
+.btn {
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-active {
+  background-color: #00294C !important; /* prussian-blue */
+  border-color: #00294C !important;
+  color: white !important;
+}
+
+.btn-active:hover {
+  background-color: #001F3D !important; /* oxford-blue-2 as hover */
+  border-color: #001F3D !important;
+}
+
+/* Ensure higher specificity for our active state regardless of DaisyUI variant precedence */
+.btn.active-res {
+  background-color: #00294C !important; /* prussian-blue */
+  border-color: #00294C !important;
+  color: #ffffff !important;
+}
+
+.btn.active-res:hover {
+  background-color: #001F3D !important; /* oxford-blue-2 */
+  border-color: #001F3D !important;
+}
+
+.button-container {
+  padding: 1rem 0; /* vertical rhythm */
+}
+
+@media (max-width: 768px) {
+  .btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem; /* text-sm */
+  }
+
+  .flex.gap-6 {
+    gap: 0.5rem !important;
+  }
+
+  .button-container {
+    padding: 0.5rem 0;
+  }
+}

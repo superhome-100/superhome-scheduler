@@ -40,6 +40,8 @@
   let showSingleDayView = false;
   let selectedDate: string = '';
   let initialSingleDayType: ReservationType = ReservationType.openwater;
+  // Remember the last calendar-level type to restore after Single Day view
+  let lastCalendarType: ReservationType = selectedType;
   
   // Database data
   let reservations: any[] = [];
@@ -87,15 +89,19 @@
   const handleCalendarDateClick = (event: CustomEvent) => {
     const detail: any = event.detail;
     selectedDate = typeof detail === 'string' ? detail : detail?.date;
+    // Capture the current calendar selection before entering single-day
+    lastCalendarType = selectedType;
     initialSingleDayType = typeof detail === 'string' ? selectedType : (detail?.type || selectedType);
     console.log('Reservation: Date clicked - selectedType:', selectedType, 'initialSingleDayType:', initialSingleDayType, 'detail:', detail);
     showSingleDayView = true;
   };
 
   // Handle back to calendar
-  const handleBackToCalendar = () => {
+  const handleBackToCalendar = (e: CustomEvent<{ type?: ReservationType }>) => {
     showSingleDayView = false;
     selectedDate = '';
+    // Use the last active selection within Single Day view when returning
+    selectedType = e?.detail?.type ?? lastCalendarType;
   };
 
   // Load user's reservations from Supabase with detail tables

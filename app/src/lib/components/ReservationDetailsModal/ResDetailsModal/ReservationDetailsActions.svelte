@@ -39,7 +39,7 @@
 
   .btn-primary {
     background: #3b82f6;
-    color: hsl(var(--bc));
+    color: #ffffff; /* Ensure white text for primary button */
   }
 
   .btn-primary:hover {

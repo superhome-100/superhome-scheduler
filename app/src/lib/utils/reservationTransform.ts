@@ -200,10 +200,34 @@ export const transformReservationToUnified = (reservation: any): UnifiedReservat
     pool_type: reservation.pool_type ?? reservation.res_pool?.pool_type ?? reservation.raw_reservation?.pool_type ?? null,
     classroom_type: reservation.classroom_type ?? reservation.res_classroom?.classroom_type ?? null,
     // auto_adjust_closest field removed
-    pulley: reservation.pulley ?? reservation.res_pool?.pulley ?? reservation.raw_reservation?.pulley ?? null,
-    deep_fim_training: reservation.deep_fim_training ?? reservation.res_pool?.deep_fim_training ?? reservation.raw_reservation?.deep_fim_training ?? null,
-    bottom_plate: reservation.bottom_plate ?? reservation.res_pool?.bottom_plate ?? reservation.raw_reservation?.bottom_plate ?? null,
-    large_buoy: reservation.large_buoy ?? reservation.res_pool?.large_buoy ?? reservation.raw_reservation?.large_buoy ?? null,
+    pulley: (
+      reservation.pulley
+      ?? reservation.res_openwater?.pulley
+      ?? reservation.res_pool?.pulley
+      ?? reservation.raw_reservation?.pulley
+      ?? null
+    ),
+    deep_fim_training: (
+      reservation.deep_fim_training
+      ?? reservation.res_openwater?.deep_fim_training
+      ?? reservation.res_pool?.deep_fim_training
+      ?? reservation.raw_reservation?.deep_fim_training
+      ?? null
+    ),
+    bottom_plate: (
+      reservation.bottom_plate
+      ?? reservation.res_openwater?.bottom_plate
+      ?? reservation.res_pool?.bottom_plate
+      ?? reservation.raw_reservation?.bottom_plate
+      ?? null
+    ),
+    large_buoy: (
+      reservation.large_buoy
+      ?? reservation.res_openwater?.large_buoy
+      ?? reservation.res_pool?.large_buoy
+      ?? reservation.raw_reservation?.large_buoy
+      ?? null
+    ),
     open_water_type: reservation.open_water_type ?? reservation.res_openwater?.open_water_type ?? null,
     student_count: (
       reservation.student_count

@@ -3,6 +3,13 @@
   import { typeLabel, showEquipment } from '$lib/types/groupReservation';
 
   export let member: MemberRow;
+
+  // Only show equipment for Course/Coaching and Autonomous on Buoy
+  $: shouldShowEquipment = (
+    showEquipment(member.activity_type) ||
+    member.open_water_type === 'course_coaching' ||
+    member.open_water_type === 'autonomous_buoy'
+  );
 </script>
 
 <div class="member-card">
@@ -26,22 +33,25 @@
       </div>
     {/if}
     
-    {#if showEquipment(member.activity_type)}
+    {#if shouldShowEquipment}
       <div class="member-equipment">
-        <span class="member-detail-label">Equipment:</span>
-        <div class="equipment-badges">
-          {#if member.bottom_plate}
-            <span class="equipment-badge">Bottom Plate</span>
-          {/if}
-          {#if member.pulley}
-            <span class="equipment-badge">Pulley</span>
-          {/if}
-          {#if member.large_buoy}
-            <span class="equipment-badge">Large Buoy</span>
-          {/if}
-          {#if !member.bottom_plate && !member.pulley && !member.large_buoy}
-            <span class="equipment-badge none">None</span>
-          {/if}
+        <div class="equipment-grid">
+          <div class="equipment-item">
+            <span class="equipment-label">Pulley</span>
+            <span class="equipment-value">{member.pulley ? 'Yes' : 'No'}</span>
+          </div>
+          <div class="equipment-item">
+            <span class="equipment-label">Deep FIM Training</span>
+            <span class="equipment-value">{member.deep_fim_training ? 'Yes' : 'No'}</span>
+          </div>
+          <div class="equipment-item">
+            <span class="equipment-label">Bottom Plate</span>
+            <span class="equipment-value">{member.bottom_plate ? 'Yes' : 'No'}</span>
+          </div>
+          <div class="equipment-item">
+            <span class="equipment-label">Large Buoy</span>
+            <span class="equipment-value">{member.large_buoy ? 'Yes' : 'No'}</span>
+          </div>
         </div>
       </div>
     {/if}
@@ -119,24 +129,39 @@
     gap: 0.25rem;
   }
 
-  .equipment-badges {
-    display: flex;
-    gap: 0.25rem;
-    flex-wrap: wrap;
+  /* Compact equipment grid */
+  .equipment-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.25rem 0.5rem;
   }
 
-  .equipment-badge {
+  .equipment-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border-top: 1px solid #e5e7eb; /* thin separator */
+    padding-top: 0.25rem;
+  }
+
+  /* Remove top border for first row items in 2-column grid */
+  .equipment-item:nth-child(1),
+  .equipment-item:nth-child(2) {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .equipment-label {
     font-size: 0.625rem;
-    padding: 0.125rem 0.375rem;
-    border-radius: 6px;
-    background: rgba(59, 130, 246, 0.1);
-    color: #1d4ed8;
+    color: #64748b;
     font-weight: 500;
   }
 
-  .equipment-badge.none {
-    background: rgba(107, 114, 128, 0.1);
-    color: #6b7280;
+  .equipment-value {
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: #1e293b;
   }
 
   /* Mobile Responsive */
@@ -146,19 +171,25 @@
     }
 
     .member-header {
-      flex-direction: column;
+      flex-direction: row; /* keep name and type on one row */
+      align-items: center;
       gap: 0.25rem;
       margin-bottom: 0.5rem;
     }
 
     .member-name {
       font-size: 0.75rem;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .member-type {
       font-size: 0.625rem;
       padding: 0.125rem 0.375rem;
-      align-self: flex-start;
+      align-self: auto;
+      white-space: nowrap;
     }
 
     .member-detail-label,
@@ -166,9 +197,20 @@
       font-size: 0.625rem;
     }
 
-    .equipment-badge {
-      font-size: 0.5rem;
-      padding: 0.125rem 0.25rem;
+    /* Keep depth label and value on one line */
+    .member-detail {
+      flex-wrap: nowrap;
+    }
+    .member-detail-label {
+      white-space: nowrap;
+    }
+    .member-detail-value {
+      white-space: nowrap;
+    }
+
+    .equipment-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.25rem 0.5rem;
     }
   }
 </style>

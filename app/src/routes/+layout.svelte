@@ -8,6 +8,7 @@
   import { getUserInfo, sidebarActions } from '../lib/stores/sidebar';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
+  import GlobalLoadingOverlay from '../lib/components/GlobalLoadingOverlay.svelte';
 
   let isAdmin = false;
   let checked = false;
@@ -73,14 +74,20 @@
         </div>
       </main>
     </div>
+    <!-- Global loading overlay -->
+    <GlobalLoadingOverlay />
     {:else}
       <!-- No sidebar for login/signup pages -->
       <slot />
+      <!-- Global loading overlay -->
+      <GlobalLoadingOverlay />
     {/if}
   {:else}
     {#if isPublicRoute}
       <!-- Allow public routes to render their content (e.g., login page) -->
       <slot />
+      <!-- Global loading overlay -->
+      <GlobalLoadingOverlay />
     {:else}
       <div class="min-h-screen flex items-center justify-center">
         <div class="alert alert-warning max-w-md">
@@ -88,10 +95,14 @@
           <a class="link link-primary" href="/login">Go to login</a>
         </div>
       </div>
+      <!-- Global loading overlay -->
+      <GlobalLoadingOverlay />
     {/if}
   {/if}
 {:else}
   <div class="min-h-screen flex items-center justify-center">
     <span class="loading loading-spinner loading-lg" aria-label="Loading..."></span>
   </div>
+  <!-- Global loading overlay -->
+  <GlobalLoadingOverlay />
 {/if}

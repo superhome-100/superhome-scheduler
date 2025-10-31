@@ -16,6 +16,7 @@
   import Toast from '../Toast.svelte';
   import { MSG_NO_CLASSROOMS, MSG_NO_POOL_LANES } from '$lib/constants/messages';
   import ErrorModal from '../ErrorModal.svelte';
+  import { showLoading, hideLoading } from '../../stores/ui';
 
   let users: any[] = [];
   let reservations: any[] = [];
@@ -45,6 +46,7 @@
   // This wires the bulk operation to the same refresh flow as PullToRefresh
   async function bulkUpdatePendingReservations(status: 'pending' | 'confirmed' | 'rejected') {
     try {
+      showLoading('Updating reservations...');
       // Show the same visual state used by PullToRefresh
       refreshing = true;
 
@@ -65,6 +67,7 @@
     } catch (e) {
       console.error('Bulk update error:', e);
     } finally {
+      hideLoading();
       refreshing = false;
     }
   }
@@ -122,7 +125,16 @@
   };
 
   // Handle back to calendar
-  const handleBackToCalendar = () => {
+  const handleBackToCalendar = (e: CustomEvent<{ type?: ReservationType }>) => {
+    // If SingleDayView provides the last active type, reflect it in the URL
+    const backType = e?.detail?.type;
+    if (backType && typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('type', backType);
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    // Now switch back to calendar view
     showSingleDayView = false;
     selectedDate = '';
   };
@@ -235,6 +247,7 @@
     processingReservation = reservationKey;
 
     try {
+      showLoading(action === 'approve' ? 'Approving reservation...' : 'Rejecting reservation...');
       if (action === 'approve' && reservation?.res_type === 'classroom') {
         // Use the new approval pathway which validates and auto-assigns a room
         const result = await reservationService.approveReservation(reservation.uid, reservation.res_date);
@@ -287,6 +300,7 @@
       errorModalOpen = true;
       // Do not set page-level error here to keep the dashboard visible
     } finally {
+      hideLoading();
       processingReservation = null;
     }
   };

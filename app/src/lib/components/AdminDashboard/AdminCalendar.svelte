@@ -12,15 +12,15 @@
 
   let selectedType: ReservationType = ReservationType.pool;
 
-  // Initialize from URL parameter on mount
-  onMount(() => {
+  // Initialize from URL parameter synchronously (before first render) to avoid flicker
+  if (typeof window !== 'undefined') {
     const urlParams = new URLSearchParams(window.location.search);
     const typeParam = urlParams.get('type');
     const validTypes = Object.values(ReservationType) as string[];
     if (typeParam && validTypes.includes(typeParam)) {
       selectedType = typeParam as ReservationType;
     }
-  });
+  }
 
   let calendarEl: HTMLDivElement;
   let calendar: Calendar | null = null;
