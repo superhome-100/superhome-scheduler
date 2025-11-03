@@ -245,9 +245,10 @@
     
     Object.entries(groupedReservations).forEach(([dateStr, dayReservations]) => {
       if (selectedType === ReservationType.openwater) {
-        // For Open Water, show AM/PM badges
-        const amReservations = dayReservations.filter(r => getTimePeriod(r) === 'AM');
-        const pmReservations = dayReservations.filter(r => getTimePeriod(r) === 'PM');
+        // For Open Water, show AM/PM badges ONLY for approved/confirmed reservations
+        const confirmedReservations = dayReservations.filter((r) => r?.res_status === 'confirmed');
+        const amReservations = confirmedReservations.filter((r) => getTimePeriod(r) === 'AM');
+        const pmReservations = confirmedReservations.filter((r) => getTimePeriod(r) === 'PM');
         
         // Create AM event if there are AM reservations
         if (amReservations.length > 0) {
