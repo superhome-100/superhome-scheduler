@@ -12,6 +12,19 @@
       dispatch('reservationClick', reservation);
     }
   };
+
+  // For Open Water, hide numeric time and show only AM/PM
+  const getReservationTimeDisplay = (r: any): string => {
+    if (r?.type === 'Open Water') {
+      if (r?.period) return String(r.period).toUpperCase();
+      if (r?.startTime) {
+        const match = String(r.startTime).match(/\b(AM|PM)\b/i);
+        return match ? match[0].toUpperCase() : '';
+      }
+      return '';
+    }
+    return r?.startTime ?? '';
+  };
 </script>
 
 <div 
@@ -24,7 +37,7 @@
 >
   <div class="compact-content">
     <span class="compact-date">{new Date(reservation.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-    <span class="compact-time">{reservation.startTime}</span>
+    <span class="compact-time">{getReservationTimeDisplay(reservation)}</span>
     <ReservationBadges {reservation} compact={true} />
   </div>
 </div>

@@ -366,6 +366,201 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Same-type duplicate check: prevent creating a reservation if the user already
+    // has one for the same type and time on the same date.
+    {
+      const dateOnly = String(body.res_date).split('T')[0];
+      const from = `${dateOnly} 00:00:00+00`;
+      const to = `${dateOnly} 23:59:59+00`;
+
+      // Determine start time key for the incoming reservation
+      let candidateTime: string | null = null;
+      const normalizeTime = (raw: string | null | undefined): string | null => {
+        if (!raw) return null;
+        const m = String(raw).match(/^(\d{1,2}):(\d{2})/);
+        if (!m) return null;
+        const hh = m[1].padStart(2, '0');
+        const mm = m[2];
+        return `${hh}:${mm}`;
+      };
+      if (body.res_type === 'open_water') {
+        const tp = (body.openwater?.time_period || 'AM').toUpperCase();
+        candidateTime = tp === 'PM' ? '13:00' : '08:00';
+      } else if (body.res_type === 'pool') {
+        candidateTime = normalizeTime(body.pool?.start_time);
+      } else if (body.res_type === 'classroom') {
+        candidateTime = normalizeTime(body.classroom?.start_time);
+      }
+
+      if (!candidateTime) {
+        return json({ error: 'Missing start time for duplicate check' }, { status: 400 });
+      }
+
+      // Fetch same-type reservations by the same user on the same day
+      const { data: sameType, error: sameErr } = await supabase
+        .from('reservations')
+        .select(`
+          res_type,
+          res_openwater(time_period, open_water_type),
+          res_pool(start_time, pool_type),
+          res_classroom(start_time, classroom_type)
+        `)
+        .eq('uid', body.uid)
+        .eq('res_type', body.res_type)
+        .in('res_status', ['pending', 'confirmed'])
+        .gte('res_date', from)
+        .lte('res_date', to);
+
+      if (sameErr) {
+        return json({ error: sameErr.message }, { status: 400 });
+      }
+
+      const timeOf = (r: any): string | null => {
+        if (r.res_type === 'open_water') {
+          const tp = (r?.res_openwater?.time_period || 'AM').toUpperCase();
+          return tp === 'PM' ? '13:00' : '08:00';
+        }
+        if (r.res_type === 'pool') return normalizeTime(r?.res_pool?.start_time ?? null);
+        if (r.res_type === 'classroom') return normalizeTime(r?.res_classroom?.start_time ?? null);
+        return null;
+      };
+
+      const duplicate = (sameType || []).find((r: any) => {
+        const t = timeOf(r);
+        return !!t && t === candidateTime;
+      });
+
+      if (duplicate) {
+        const pretty = (s: string | null | undefined) => {
+          if (!s) return null;
+          const x = String(s).toLowerCase();
+          if (x === 'course_coaching') return 'Course/Coaching';
+          return x.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
+        };
+        const category = duplicate.res_type === 'open_water' ? 'Open Water' : (duplicate.res_type === 'pool' ? 'Pool' : (duplicate.res_type === 'classroom' ? 'Classroom' : 'Reservation'));
+        const subtype = duplicate.res_type === 'open_water' ? pretty(duplicate?.res_openwater?.open_water_type) : (duplicate.res_type === 'pool' ? pretty(duplicate?.res_pool?.pool_type) : (duplicate.res_type === 'classroom' ? pretty(duplicate?.res_classroom?.classroom_type) : null));
+        const typeLabel = subtype ? `${category} ${subtype}` : category;
+
+        const dateObj = new Date(body.res_date);
+        const datePart = dateObj.toLocaleString('en-US', {
+          year: 'numeric', month: 'long', day: 'numeric'
+        });
+        // For Open Water, show AM/PM period instead of numeric time
+        let timeLabel: string;
+        if (duplicate.res_type === 'open_water') {
+          const tp = (duplicate?.res_openwater?.time_period || 'AM').toUpperCase();
+          timeLabel = tp === 'PM' ? 'PM' : 'AM';
+        } else {
+          // Pure HH:mm -> 12-hour conversion without timezone shifting
+          const [h, m] = candidateTime.split(':').map((n) => parseInt(n, 10));
+          const h12 = ((h + 11) % 12) + 1;
+          const ampm = h >= 12 ? 'PM' : 'AM';
+          const mm = String(m).padStart(2, '0');
+          timeLabel = `${h12}:${mm} ${ampm}`;
+        }
+
+        // Use 400 as requested for duplicate same-type, structured JSON
+        return json({
+          error: 'duplicate',
+          message: `Already have a reservation for ${typeLabel} on ${datePart} at ${timeLabel}.`
+        }, { status: 400 });
+      }
+    }
+
+    // Cross-type conflict check: block if user already has a reservation of a different type
+    // at the same date and time (open water uses fixed slot times: 08:00 AM / 01:00 PM)
+    {
+      const dateOnly = String(body.res_date).split('T')[0];
+      const from = `${dateOnly} 00:00:00+00`;
+      const to = `${dateOnly} 23:59:59+00`;
+
+      // Determine the candidate "start time" string for the new reservation
+      let candidateTime: string | null = null;
+      if (body.res_type === 'open_water') {
+        const tp = (body.openwater?.time_period || 'AM').toUpperCase();
+        candidateTime = tp === 'PM' ? '13:00' : '08:00';
+      } else if (body.res_type === 'pool') {
+        candidateTime = body.pool?.start_time ?? null;
+      } else if (body.res_type === 'classroom') {
+        candidateTime = body.classroom?.start_time ?? null;
+      }
+
+      if (!candidateTime) {
+        return json({ error: 'Missing start time for conflict check' }, { status: 400 });
+      }
+
+      // Fetch reservations of other types for same user and same day
+      const { data: existing, error: existErr } = await supabase
+        .from('reservations')
+        .select(`
+          res_type,
+          res_openwater(time_period, open_water_type),
+          res_pool(start_time, pool_type),
+          res_classroom(start_time, classroom_type)
+        `)
+        .eq('uid', body.uid)
+        .neq('res_type', body.res_type)
+        .in('res_status', ['pending', 'confirmed'])
+        .gte('res_date', from)
+        .lte('res_date', to);
+
+      if (existErr) {
+        return json({ error: existErr.message }, { status: 400 });
+      }
+
+      // Helper to compute the comparable time string for an existing reservation
+      const timeOf = (r: any): string | null => {
+        if (r.res_type === 'open_water') {
+          const tp = (r?.res_openwater?.time_period || 'AM').toUpperCase();
+          return tp === 'PM' ? '13:00' : '08:00';
+        }
+        if (r.res_type === 'pool') return r?.res_pool?.start_time ?? null;
+        if (r.res_type === 'classroom') return r?.res_classroom?.start_time ?? null;
+        return null;
+      };
+
+      const found = (existing || []).find((r: any) => {
+        const t = timeOf(r);
+        return !!t && t === candidateTime;
+      });
+
+      if (found) {
+        // Build human-readable type label and time string
+        const pretty = (s: string | null | undefined) => {
+          if (!s) return null;
+          const x = String(s).toLowerCase();
+          if (x === 'course_coaching') return 'Course/Coaching';
+          return x.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
+        };
+        const category = found.res_type === 'open_water' ? 'Open Water' : (found.res_type === 'pool' ? 'Pool' : (found.res_type === 'classroom' ? 'Classroom' : 'Reservation'));
+        const subtype = found.res_type === 'open_water' ? pretty(found?.res_openwater?.open_water_type) : (found.res_type === 'pool' ? pretty(found?.res_pool?.pool_type) : (found.res_type === 'classroom' ? pretty(found?.res_classroom?.classroom_type) : null));
+        const typeLabel = subtype ? `${category} ${subtype}` : category;
+
+        const dateObj = new Date(body.res_date);
+        const datePart = dateObj.toLocaleString('en-US', {
+          year: 'numeric', month: 'long', day: 'numeric'
+        });
+        // Format time based on reservation type
+        let timeLabel: string;
+        if (found.res_type === 'open_water') {
+          const tp = (found?.res_openwater?.time_period || 'AM').toUpperCase();
+          timeLabel = tp === 'PM' ? 'PM' : 'AM';
+        } else {
+          // Pure HH:mm -> 12-hour conversion without timezone shifting
+          const [h, m] = candidateTime.split(':').map((n) => parseInt(n, 10));
+          const h12 = ((h + 11) % 12) + 1;
+          const ampm = h >= 12 ? 'PM' : 'AM';
+          const mm = String(m).padStart(2, '0');
+          timeLabel = `${h12}:${mm} ${ampm}`;
+        }
+
+        return json({
+          error: 'conflict',
+          message: `Already have a reservation for ${typeLabel} on ${datePart} at ${timeLabel}.`
+        }, { status: 409 });
+      }
+    }
+
     // Owner or admin
     if (body.uid !== user.id) {
       const { data: profile, error: profileErr } = await supabase

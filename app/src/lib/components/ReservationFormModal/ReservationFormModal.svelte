@@ -144,12 +144,26 @@
   let capacityMessage: string | null = null;
   let capacityKind: 'pool' | 'classroom' | null = null;
 
+  // Scroll helpers for ensuring error visibility
+  let modalEl: HTMLDivElement | null = null;
+  const scrollToTop = () => {
+    if (modalEl) {
+      try {
+        modalEl.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch {
+        modalEl.scrollTop = 0;
+      }
+    }
+  };
+
   // Toast state for capacity errors
   let toastOpen = false;
   let toastMessage = '';
   const showErrorToast = (msg: string) => {
     toastMessage = msg;
     toastOpen = true;
+    // Ensure the user sees the error immediately
+    scrollToTop();
   };
 
   const closeModal = () => {
@@ -176,6 +190,7 @@
     // Also surface capacity blocked error immediately
     if (capacityBlocked && capacityMessage) {
       submitError = capacityMessage;
+      scrollToTop();
       return;
     }
     
@@ -261,6 +276,7 @@
         closeModal();
       } else {
         submitError = result.error || 'Failed to create reservation';
+        scrollToTop();
         // Detect no-lane availability error from edge function and disable submit
         if (submitError && submitError.includes('No pool lanes available')) {
           noLaneError = true;
@@ -269,6 +285,10 @@
         if (submitError && submitError.includes('No classrooms available')) {
           noRoomError = true;
           // Also show a toast for classroom unavailability
+          showErrorToast(submitError);
+        }
+        // Detect cross-type conflict message and show toast
+        if (submitError && submitError.startsWith('Already have a reservation for ')) {
           showErrorToast(submitError);
         }
       }
@@ -363,7 +383,7 @@
     aria-label="Reservation Request"
     tabindex="-1"
   >
-    <div class="modal-content">
+    <div class="modal-content" bind:this={modalEl}>
       <FormModalHeader on:close={closeModal} />
 
       <form on:submit={handleSubmit} class="modal-body">

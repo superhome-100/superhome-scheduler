@@ -6,12 +6,31 @@
   import type { CreateReservationData, CompleteReservation } from '../../api/reservationApi';
   import { now } from '../../utils/dateUtils';
   import { showLoading, hideLoading } from '../../stores/ui';
+  import Toast from '../Toast.svelte';
 
   // Component state
   let showCreateForm = false;
   let selectedReservation: CompleteReservation | null = null;
   let showEditForm = false;
   let activeTab: 'upcoming' | 'past' | 'all' = 'upcoming';
+
+  // Toast state for error notifications
+  let toastOpen = false;
+  let toastMessage = '';
+  const showErrorToast = (msg: string) => {
+    toastMessage = msg;
+    toastOpen = true;
+    scrollToTop();
+  };
+
+  // Scroll helper for page-level component
+  const scrollToTop = () => {
+    try {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      // no-op
+    }
+  };
 
   // Get current datetime for min attribute
   const currentDateTime = now().format('YYYY-MM-DDTHH:mm');
@@ -54,6 +73,11 @@
       console.log('Reservation created successfully');
     } else {
       console.error('Failed to create reservation:', result.error);
+      if (result.error && result.error.startsWith('Already have a reservation for ')) {
+        showErrorToast(result.error);
+      }
+      // Ensure the user sees the error immediately
+      scrollToTop();
     }
     hideLoading();
   };
@@ -503,6 +527,9 @@
     </div>
   {/if}
 </div>
+
+<!-- Global toast for error notifications (duplicate/conflict) -->
+<Toast type="error" bind:open={toastOpen} message={toastMessage} />
 
 <style>
   .reservation-crud-container {
