@@ -141,6 +141,148 @@ class ReservationService {
 
       const { data, error } = await callFunction<typeof payload, any>('reservations-create', payload);
       if (error) {
+        // When reservations-create returns an error, attempt to detect a duplicate reservation
+        // Broaden trigger: generic non-2xx, 'Bad Request', or any error string (we’ll no-op if not duplicate)
+        const shouldProbeDuplicate = /non-2xx status code/i.test(error) || /Edge Function/i.test(error) || /bad request/i.test(error) || true;
+        if (shouldProbeDuplicate) {
+          // Duplicate detection for same-type same-time on same date
+          const dateOnly = new Date(reservationData.res_date).toISOString().split('T')[0];
+          const from = `${dateOnly}T00:00:00.000Z`;
+          const to = `${dateOnly}T23:59:59.999Z`;
+
+          const resType = reservationData.res_type;
+          const normalizeTime = (raw: string | null | undefined): string | null => {
+            if (!raw) return null;
+            const m = String(raw).match(/^(\d{1,2}):(\d{2})/);
+            if (!m) return null;
+            const hh = m[1].padStart(2, '0');
+            const mm = m[2];
+            return `${hh}:${mm}`;
+          };
+          const candidateTime = (() => {
+            if (resType === 'open_water') {
+              const tp = (reservationData.openwater?.time_period || 'AM').toUpperCase();
+              return tp === 'PM' ? '13:00' : '08:00';
+            }
+            if (resType === 'pool') return normalizeTime(reservationData.pool?.start_time);
+            if (resType === 'classroom') return normalizeTime(reservationData.classroom?.start_time);
+            return null;
+          })();
+
+          if (candidateTime) {
+            // Query same user, same type, same day, pending/confirmed
+            const { data: existing, error: qErr } = await this.supabase
+              .from('reservations')
+              .select(`
+                res_type,
+                res_openwater(time_period, open_water_type),
+                res_pool(start_time, pool_type),
+                res_classroom(start_time, classroom_type)
+              `)
+              .eq('uid', uid)
+              .eq('res_type', resType)
+              .in('res_status', ['pending', 'confirmed'])
+              .gte('res_date', from)
+              .lte('res_date', to);
+
+            if (!qErr) {
+              const timeOf = (r: any): string | null => {
+                if (r.res_type === 'open_water') {
+                  const tp = (r?.res_openwater?.time_period || 'AM').toUpperCase();
+                  return tp === 'PM' ? '13:00' : '08:00';
+                }
+                if (r.res_type === 'pool') return normalizeTime(r?.res_pool?.start_time ?? null);
+                if (r.res_type === 'classroom') return normalizeTime(r?.res_classroom?.start_time ?? null);
+                return null;
+              };
+              const dup = (existing || []).find((r: any) => {
+                const t = timeOf(r);
+                return !!t && t === candidateTime;
+              });
+              if (dup) {
+                const pretty = (s: string | null | undefined) => {
+                  if (!s) return null;
+                  const x = String(s).toLowerCase();
+                  if (x === 'course_coaching') return 'Course/Coaching';
+                  return x.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
+                };
+                const category = dup.res_type === 'open_water' ? 'Open Water' : (dup.res_type === 'pool' ? 'Pool' : (dup.res_type === 'classroom' ? 'Classroom' : 'Reservation'));
+                // Prefer DB subtype, fallback to submitted data
+                const fallbackSubtype = (() => {
+                  if (dup.res_type === 'open_water') return pretty(reservationData.openwater?.open_water_type);
+                  if (dup.res_type === 'pool') return pretty(reservationData.pool?.pool_type);
+                  if (dup.res_type === 'classroom') return pretty(reservationData.classroom?.classroom_type);
+                  return null;
+                })();
+                const dbSubtype = dup.res_type === 'open_water' ? pretty(dup?.res_openwater?.open_water_type) : (dup.res_type === 'pool' ? pretty(dup?.res_pool?.pool_type) : (dup.res_type === 'classroom' ? pretty(dup?.res_classroom?.classroom_type) : null));
+                const subtype = dbSubtype ?? fallbackSubtype;
+                const typeLabel = subtype ? `${category} ${subtype}` : category;
+
+                const dateObj = new Date(reservationData.res_date);
+                const datePart = dateObj.toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                // Format time: Open Water uses AM/PM period; Pool/Classroom use numeric time (no timezone shifting)
+                let timeLabel: string;
+                if (dup.res_type === 'open_water') {
+                  const tp = (reservationData.openwater?.time_period || dup?.res_openwater?.time_period || 'AM').toUpperCase();
+                  timeLabel = tp === 'PM' ? 'PM' : 'AM';
+                } else {
+                  const [h, m] = candidateTime.split(':').map((n) => parseInt(n, 10));
+                  const h12 = ((h + 11) % 12) + 1;
+                  const ampm = h >= 12 ? 'PM' : 'AM';
+                  const mm = String(m).padStart(2, '0');
+                  timeLabel = `${h12}:${mm} ${ampm}`;
+                }
+
+                return { success: false, error: `Already have a reservation for ${typeLabel} on ${datePart} at ${timeLabel}.` };
+              }
+              // If no same-type duplicate, attempt cross-type conflict detection
+              const { data: others, error: otherErr } = await this.supabase
+                .from('reservations')
+                .select(`
+                  res_type,
+                  res_openwater(time_period, open_water_type),
+                  res_pool(start_time, pool_type),
+                  res_classroom(start_time, classroom_type)
+                `)
+                .eq('uid', uid)
+                .neq('res_type', resType)
+                .in('res_status', ['pending', 'confirmed'])
+                .gte('res_date', from)
+                .lte('res_date', to);
+              if (!otherErr) {
+                const conflict = (others || []).find((r: any) => {
+                  const t = timeOf(r);
+                  return !!t && t === candidateTime;
+                });
+                if (conflict) {
+                  const pretty = (s: string | null | undefined) => {
+                    if (!s) return null;
+                    const x = String(s).toLowerCase();
+                    if (x === 'course_coaching') return 'Course/Coaching';
+                    return x.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
+                  };
+                  const category = conflict.res_type === 'open_water' ? 'Open Water' : (conflict.res_type === 'pool' ? 'Pool' : (conflict.res_type === 'classroom' ? 'Classroom' : 'Reservation'));
+                  const subtype = conflict.res_type === 'open_water' ? pretty(conflict?.res_openwater?.open_water_type) : (conflict.res_type === 'pool' ? pretty(conflict?.res_pool?.pool_type) : (conflict.res_type === 'classroom' ? pretty(conflict?.res_classroom?.classroom_type) : null));
+                  const typeLabel = subtype ? `${category} ${subtype}` : category;
+                  const dateObj = new Date(reservationData.res_date);
+                  const datePart = dateObj.toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                  let timeLabel: string;
+                  if (conflict.res_type === 'open_water') {
+                    const tp = (conflict?.res_openwater?.time_period || 'AM').toUpperCase();
+                    timeLabel = tp === 'PM' ? 'PM' : 'AM';
+                  } else {
+                    const [h, m] = candidateTime.split(':').map((n) => parseInt(n, 10));
+                    const h12 = ((h + 11) % 12) + 1;
+                    const ampm = h >= 12 ? 'PM' : 'AM';
+                    const mm = String(m).padStart(2, '0');
+                    timeLabel = `${h12}:${mm} ${ampm}`;
+                  }
+                  return { success: false, error: `Already have a reservation for ${typeLabel} on ${datePart} at ${timeLabel}.` };
+                }
+              }
+            }
+          }
+        }
         return { success: false, error };
       }
 

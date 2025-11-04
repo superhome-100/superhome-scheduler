@@ -169,6 +169,50 @@ export const formatTimeForCalendar = (timeString: string): string => {
 };
 
 /**
+ * Format a compact time label for a reservation-like object.
+ * - For open water: show only AM/PM (from time_period if present, else derive from start_time)
+ * - For others: show a range when start/end are available; fallback to single time of res_date
+ * Accepts either raw reservation or unified reservation shapes.
+ */
+export const formatCompactTime = (reservation: any): string => {
+  if (!reservation) return '';
+
+  const type = reservation?.res_type || reservation?.type;
+  if (type === 'open_water') {
+    const period = reservation?.time_period
+      || reservation?.period
+      || reservation?.res_openwater?.time_period
+      || reservation?.res_open_water?.time_period;
+    if (period) return String(period).toUpperCase();
+
+    const st = reservation?.start_time || reservation?.startTime;
+    if (st) {
+      const m = String(st).match(/\b(AM|PM)\b/i);
+      return m ? m[0].toUpperCase() : dayjs(`2000-01-01T${st}`).format('A');
+    }
+    return '';
+  }
+
+  const start = reservation?.start_time || reservation?.startTime;
+  const end = reservation?.end_time || reservation?.endTime;
+  if (start && end) {
+    const s = dayjs(`2000-01-01T${start}`);
+    const e = dayjs(`2000-01-01T${end}`);
+    if (s.isValid() && e.isValid()) {
+      return `${s.format('h:mm A')} - ${e.format('h:mm A')}`;
+    }
+    return `${start} - ${end}`;
+  }
+
+  if (reservation?.res_date) {
+    const d = dayjs(reservation.res_date);
+    return d.isValid() ? d.format('h:mm A') : '';
+  }
+
+  return '';
+};
+
+/**
  * Create a dayjs object from date string
  */
 export const createDayjs = (dateString: string) => {

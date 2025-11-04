@@ -1,7 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { formatDateForCalendar } from '../../utils/dateUtils';
-  import dayjs from 'dayjs';
+  import { formatDateForCalendar, formatCompactTime } from '../../utils/dateUtils';
   import LoadingSpinner from '../LoadingSpinner.svelte';
 
   export let upcomingReservations: any[] = [];
@@ -45,6 +44,9 @@
     // Return the exact database enum values
     return status || 'pending';
   };
+
+  // Use shared compact time formatter for consistency
+  const getCompactTime = (reservation: any): string => formatCompactTime(reservation);
 </script>
 
 <!-- Reservations Sections -->
@@ -85,15 +87,7 @@
             >
               <div class="compact-content">
                 <span class="compact-date">{formatDateForCalendar(reservation.res_date)}</span>
-                  <span class="compact-time">
-                    {#if reservation.res_type === 'open_water' && reservation.time_period}
-                      {reservation.time_period}
-                    {:else if reservation.start_time && reservation.end_time}
-                      {dayjs(`2000-01-01T${reservation.start_time}`).format('h:mm A')} - {dayjs(`2000-01-01T${reservation.end_time}`).format('h:mm A')}
-                    {:else}
-                      {dayjs(reservation.res_date).format('h:mm A')}
-                    {/if}
-                  </span>
+                  <span class="compact-time">{getCompactTime(reservation)}</span>
                 <span class="type-badge compact" class:pool={reservation.res_type === 'pool'} class:openwater={reservation.res_type === 'open_water'} class:classroom={reservation.res_type === 'classroom'}>
                   {getTypeDisplay(reservation.res_type)}
                 </span>
@@ -146,15 +140,7 @@
             >
               <div class="compact-content">
                 <span class="compact-date">{formatDateForCalendar(reservation.res_date)}</span>
-                  <span class="compact-time">
-                    {#if reservation.res_type === 'open_water' && reservation.time_period}
-                      {reservation.time_period}
-                    {:else if reservation.start_time && reservation.end_time}
-                      {dayjs(`2000-01-01T${reservation.start_time}`).format('h:mm A')} - {dayjs(`2000-01-01T${reservation.end_time}`).format('h:mm A')}
-                    {:else}
-                      {dayjs(reservation.res_date).format('h:mm A')}
-                    {/if}
-                  </span>
+                  <span class="compact-time">{getCompactTime(reservation)}</span>
                 <span class="type-badge compact" class:pool={reservation.res_type === 'pool'} class:openwater={reservation.res_type === 'open_water'} class:classroom={reservation.res_type === 'classroom'}>
                   {getTypeDisplay(reservation.res_type)}
                 </span>

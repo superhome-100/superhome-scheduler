@@ -46,15 +46,17 @@ export async function callFunction<TReq extends Record<string, unknown>, TRes>(
           // attempt to parse JSON string; otherwise use raw string
           try {
             const parsed = JSON.parse(body);
-            if (typeof parsed?.error === 'string') detailed = parsed.error;
-            else if (typeof parsed?.message === 'string') detailed = parsed.message;
+            // Prefer friendly message when present (server may send error codes like 'duplicate'/'conflict')
+            if (typeof parsed?.message === 'string') detailed = parsed.message;
+            else if (typeof parsed?.error === 'string') detailed = parsed.error;
           } catch {
             // raw string body (may already be human-readable)
             if (!detailed && body.trim().length > 0) detailed = body.trim();
           }
         } else if (typeof body === 'object') {
-          if (typeof (body as any)?.error === 'string') detailed = (body as any).error as string;
-          else if (typeof (body as any)?.message === 'string') detailed = (body as any).message as string;
+          const obj = body as any;
+          if (typeof obj?.message === 'string') detailed = obj.message as string;
+          else if (typeof obj?.error === 'string') detailed = obj.error as string;
         }
       }
       // Attempt to read from context.response if provided and body wasn't set
@@ -65,8 +67,8 @@ export async function callFunction<TReq extends Record<string, unknown>, TRes>(
           try {
             const parsed: any = await resp.clone().json();
             if (parsed) {
-              if (typeof parsed.error === 'string') detailed = parsed.error;
-              else if (typeof parsed.message === 'string') detailed = parsed.message;
+              if (typeof parsed.message === 'string') detailed = parsed.message;
+              else if (typeof parsed.error === 'string') detailed = parsed.error;
               else if (typeof parsed.detail === 'string') detailed = parsed.detail;
             }
           } catch {}
@@ -77,8 +79,8 @@ export async function callFunction<TReq extends Record<string, unknown>, TRes>(
               if (txt && txt.trim().length > 0) {
                 try {
                   const parsed2 = JSON.parse(txt);
-                  if (typeof parsed2?.error === 'string') detailed = parsed2.error;
-                  else if (typeof parsed2?.message === 'string') detailed = parsed2.message;
+                  if (typeof parsed2?.message === 'string') detailed = parsed2.message;
+                  else if (typeof parsed2?.error === 'string') detailed = parsed2.error;
                   else if (typeof parsed2?.detail === 'string') detailed = parsed2.detail;
                   else detailed = txt;
                 } catch {
@@ -109,7 +111,8 @@ export async function callFunction<TReq extends Record<string, unknown>, TRes>(
       }
       // In some cases, data may contain the body even for non-2xx
       if (!detailed && data && typeof data === 'object' && (data as any).error) {
-        detailed = (data as any).error as string;
+        const d = data as any;
+        detailed = typeof d.message === 'string' ? d.message : (typeof d.error === 'string' ? d.error : undefined);
       }
       return { data: null, error: detailed || error.message };
     }
