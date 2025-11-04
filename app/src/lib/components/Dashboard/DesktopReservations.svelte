@@ -1,7 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { formatDateForCalendar } from '../../utils/dateUtils';
-  import dayjs from 'dayjs';
+  import { formatDateForCalendar, formatCompactTime } from '../../utils/dateUtils';
   import LoadingSpinner from '../LoadingSpinner.svelte';
 
   export let upcomingReservations: any[] = [];
@@ -46,27 +45,8 @@
     return status || 'pending';
   };
 
-  // Normalize compact time label; for Open Water show only AM/PM
-  const getCompactTime = (reservation: any): string => {
-    if (reservation?.res_type === 'open_water') {
-      const period = reservation?.time_period || reservation?.period || reservation?.res_openwater?.time_period || reservation?.res_open_water?.time_period;
-      if (period) return String(period).toUpperCase();
-      const st = reservation?.start_time || reservation?.startTime;
-      if (st) {
-        const m = String(st).match(/\b(AM|PM)\b/i);
-        return m ? m[0].toUpperCase() : dayjs(`2000-01-01T${st}`).format('A');
-      }
-      return '';
-    }
-    if (reservation?.start_time && reservation?.end_time) {
-      return `${dayjs(`2000-01-01T${reservation.start_time}`).format('h:mm A')} - ${dayjs(`2000-01-01T${reservation.end_time}`).format('h:mm A')}`;
-    }
-    if (reservation?.startTime && reservation?.endTime) {
-      return `${reservation.startTime} - ${reservation.endTime}`;
-    }
-    if (reservation?.res_date) return dayjs(reservation.res_date).format('h:mm A');
-    return '';
-  };
+  // Use shared compact time formatter for consistency
+  const getCompactTime = (reservation: any): string => formatCompactTime(reservation);
 </script>
 
 <!-- Reservations Sections -->
