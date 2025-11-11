@@ -1,10 +1,13 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { formatDateForCalendar, formatCompactTime } from '../../utils/dateUtils';
+  // Reservation item formatting is handled inside ReservationCard
+  import ReservationCard from '../ReservationCard/ReservationCard.svelte';
   import LoadingSpinner from '../LoadingSpinner.svelte';
+  import GroupedCompletedList from '../ReservationTotals/GroupedCompletedList.svelte';
 
   export let upcomingReservations: any[] = [];
   export let completedReservations: any[] = [];
+  export let monthlyTotals: Record<string, number> = {};
   export let loading = false;
   export let error: string | null = null;
 
@@ -29,24 +32,6 @@
   const handleNewReservation = () => {
     dispatch('newReservation');
   };
-
-
-  const getTypeDisplay = (type: string) => {
-    const typeMap: Record<string, string> = {
-      pool: 'Pool',
-      open_water: 'Open Water',
-      classroom: 'Classroom'
-    };
-    return typeMap[type] || type;
-  };
-
-  const getStatusDisplay = (status: string) => {
-    // Return the exact database enum values
-    return status || 'pending';
-  };
-
-  // Use shared compact time formatter for consistency
-  const getCompactTime = (reservation: any): string => formatCompactTime(reservation);
 </script>
 
 <!-- Reservations Sections -->
@@ -76,26 +61,7 @@
       {:else if upcomingReservations.length > 0}
         <div class="reservation-list compact">
           {#each upcomingReservations.slice(0, 3) as reservation}
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div 
-              class="reservation-item compact" 
-              on:click={() => handleReservationClick(reservation)}
-              role="button"
-              tabindex="0"
-              aria-label="View reservation details"
-            >
-              <div class="compact-content">
-                <span class="compact-date">{formatDateForCalendar(reservation.res_date)}</span>
-                  <span class="compact-time">{getCompactTime(reservation)}</span>
-                <span class="type-badge compact" class:pool={reservation.res_type === 'pool'} class:openwater={reservation.res_type === 'open_water'} class:classroom={reservation.res_type === 'classroom'}>
-                  {getTypeDisplay(reservation.res_type)}
-                </span>
-                <span class="status-badge compact" class:confirmed={reservation.res_status === 'confirmed'} class:pending={reservation.res_status === 'pending'} class:rejected={reservation.res_status === 'rejected'}>
-                  {getStatusDisplay(reservation.res_status)}
-                </span>
-              </div>
-            </div>
+            <ReservationCard reservation={reservation} showPrice={false} on:click={() => handleReservationClick(reservation)} />
           {/each}
         </div>
       {:else}
@@ -129,27 +95,12 @@
         </div>
       {:else if completedReservations.length > 0}
         <div class="reservation-list compact">
-          {#each completedReservations.slice(0, 2) as reservation}
-            <div 
-              class="reservation-item compact" 
-              on:click={() => handleReservationClick(reservation)}
-              on:keydown={(e) => e.key === 'Enter' && handleReservationClick(reservation)}
-              role="button"
-              tabindex="0"
-              aria-label="View reservation details"
-            >
-              <div class="compact-content">
-                <span class="compact-date">{formatDateForCalendar(reservation.res_date)}</span>
-                  <span class="compact-time">{getCompactTime(reservation)}</span>
-                <span class="type-badge compact" class:pool={reservation.res_type === 'pool'} class:openwater={reservation.res_type === 'open_water'} class:classroom={reservation.res_type === 'classroom'}>
-                  {getTypeDisplay(reservation.res_type)}
-                </span>
-                <span class="status-badge compact" class:confirmed={reservation.res_status === 'confirmed'} class:pending={reservation.res_status === 'pending'} class:rejected={reservation.res_status === 'rejected'}>
-                  {getStatusDisplay(reservation.res_status)}
-                </span>
-              </div>
-            </div>
-          {/each}
+          <GroupedCompletedList
+            reservations={completedReservations}
+            monthlyTotals={monthlyTotals}
+            limit={2}
+            on:reservationClick={(e) => handleReservationClick(e.detail)}
+          />
         </div>
       {:else}
         <div class="empty-state">
@@ -285,107 +236,11 @@
     overflow-y: auto;
   }
 
-  .reservation-item.compact {
-    padding: 1rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    cursor: pointer;
-  }
-
-  .reservation-item.compact:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
-  }
-
-  .compact-content {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: nowrap;
-    overflow: hidden;
-  }
-
-  .compact-date {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #1e293b;
-    min-width: 2.5rem;
-    flex-shrink: 0;
-  }
-
-  .compact-time {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #64748b;
-    min-width: 3rem;
-    flex-shrink: 0;
-  }
-
-  .type-badge.compact {
-    padding: 0.125rem 0.5rem;
-    font-size: 0.6875rem;
-  }
-
-  .status-badge.compact {
-    padding: 0.125rem 0.5rem;
-    font-size: 0.6875rem;
-  }
-
   /* Reservation List */
   .reservation-list {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-  }
-
-  .type-badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .type-badge.pool {
-    background: rgba(59, 130, 246, 0.1);
-    color: #1d4ed8;
-  }
-
-  .type-badge.openwater {
-    background: rgba(16, 185, 129, 0.1);
-    color: #059669;
-  }
-
-  .type-badge.classroom {
-    background: rgba(220, 38, 38, 0.1);
-    color: #dc2626;
-  }
-
-  .status-badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .status-badge.confirmed {
-    background: rgba(16, 185, 129, 0.1);
-    color: #059669;
-  }
-
-  .status-badge.pending {
-    background: rgba(245, 158, 11, 0.1);
-    color: #d97706;
-  }
-
-  .status-badge.rejected {
-    background: rgba(220, 38, 38, 0.1);
-    color: #dc2626;
   }
 
   /* Mobile Responsive */

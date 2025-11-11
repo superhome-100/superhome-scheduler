@@ -231,7 +231,7 @@ type ReservationStatus = 'pending' | 'confirmed' | 'rejected'
 type UpdatePayload = {
   uid: string
   res_date: string
-  parent?: { res_status?: ReservationStatus; res_date?: string }
+  parent?: { res_status?: ReservationStatus; res_date?: string; price?: number }
   pool?: Record<string, unknown>
   classroom?: Record<string, unknown>
   openwater?: Record<string, unknown>
@@ -316,7 +316,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Update parent if provided, but defer status=confirmed for pool/classroom until after auto-assign
-    if (body.parent && (body.parent.res_status || body.parent.res_date)) {
+    if (body.parent && (body.parent.res_status || body.parent.res_date || typeof body.parent.price === 'number')) {
       const parentUpdate: any = {}
       const isPoolOrClassroom = res_type === 'pool' || res_type === 'classroom'
 
@@ -325,6 +325,7 @@ Deno.serve(async (req: Request) => {
         parentUpdate.res_status = body.parent.res_status
       }
       if (body.parent.res_date) parentUpdate.res_date = body.parent.res_date
+      if (typeof body.parent.price === 'number') parentUpdate.price = body.parent.price
       if (Object.keys(parentUpdate).length > 0) {
         parentUpdate.updated_at = new Date().toISOString()
         const { error: parentErr } = await supabase

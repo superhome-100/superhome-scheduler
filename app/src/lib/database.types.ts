@@ -129,9 +129,76 @@ export type Database = {
           },
         ]
       }
+      price_template_updates: {
+        Row: {
+          auto_ow: number
+          auto_pool: number
+          coach_classroom: number
+          coach_ow: number
+          coach_pool: number
+          created_at: string
+          id: string
+          platform_ow: number
+          platformcbs_ow: number
+          price_template_name: string
+        }
+        Insert: {
+          auto_ow: number
+          auto_pool: number
+          coach_classroom: number
+          coach_ow: number
+          coach_pool: number
+          created_at?: string
+          id: string
+          platform_ow: number
+          platformcbs_ow: number
+          price_template_name: string
+        }
+        Update: {
+          auto_ow?: number
+          auto_pool?: number
+          coach_classroom?: number
+          coach_ow?: number
+          coach_pool?: number
+          created_at?: string
+          id?: string
+          platform_ow?: number
+          platformcbs_ow?: number
+          price_template_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_template_updates_price_template_name_fkey"
+            columns: ["price_template_name"]
+            isOneToOne: false
+            referencedRelation: "price_templates"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
+      price_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
       res_classroom: {
         Row: {
-          classroom_type: string | null
+          classroom_type:
+            | Database["public"]["Enums"]["classroom_activity_type"]
+            | null
           end_time: string | null
           note: string | null
           res_date: string
@@ -142,7 +209,9 @@ export type Database = {
           uid: string
         }
         Insert: {
-          classroom_type?: string | null
+          classroom_type?:
+            | Database["public"]["Enums"]["classroom_activity_type"]
+            | null
           end_time?: string | null
           note?: string | null
           res_date: string
@@ -153,7 +222,9 @@ export type Database = {
           uid: string
         }
         Update: {
-          classroom_type?: string | null
+          classroom_type?:
+            | Database["public"]["Enums"]["classroom_activity_type"]
+            | null
           end_time?: string | null
           note?: string | null
           res_date?: string
@@ -256,7 +327,7 @@ export type Database = {
           end_time: string | null
           lane: string | null
           note: string | null
-          pool_type: string | null
+          pool_type: Database["public"]["Enums"]["pool_activity_type"] | null
           res_date: string
           res_status: Database["public"]["Enums"]["reservation_status"]
           start_time: string | null
@@ -267,7 +338,7 @@ export type Database = {
           end_time?: string | null
           lane?: string | null
           note?: string | null
-          pool_type?: string | null
+          pool_type?: Database["public"]["Enums"]["pool_activity_type"] | null
           res_date: string
           res_status?: Database["public"]["Enums"]["reservation_status"]
           start_time?: string | null
@@ -278,7 +349,7 @@ export type Database = {
           end_time?: string | null
           lane?: string | null
           note?: string | null
-          pool_type?: string | null
+          pool_type?: Database["public"]["Enums"]["pool_activity_type"] | null
           res_date?: string
           res_status?: Database["public"]["Enums"]["reservation_status"]
           start_time?: string | null
@@ -298,6 +369,7 @@ export type Database = {
       reservations: {
         Row: {
           created_at: string
+          price: number | null
           res_date: string
           res_status: Database["public"]["Enums"]["reservation_status"]
           res_type: Database["public"]["Enums"]["reservation_type"]
@@ -306,6 +378,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          price?: number | null
           res_date: string
           res_status?: Database["public"]["Enums"]["reservation_status"]
           res_type: Database["public"]["Enums"]["reservation_type"]
@@ -314,6 +387,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          price?: number | null
           res_date?: string
           res_status?: Database["public"]["Enums"]["reservation_status"]
           res_type?: Database["public"]["Enums"]["reservation_type"]
@@ -334,6 +408,7 @@ export type Database = {
         Row: {
           created_at: string
           name: string | null
+          price_template_name: string | null
           privileges: string[]
           status: Database["public"]["Enums"]["user_status"]
           uid: string
@@ -342,6 +417,7 @@ export type Database = {
         Insert: {
           created_at?: string
           name?: string | null
+          price_template_name?: string | null
           privileges?: string[]
           status?: Database["public"]["Enums"]["user_status"]
           uid: string
@@ -350,18 +426,31 @@ export type Database = {
         Update: {
           created_at?: string
           name?: string | null
+          price_template_name?: string | null
           privileges?: string[]
           status?: Database["public"]["Enums"]["user_status"]
           uid?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_price_template_name_fkey"
+            columns: ["price_template_name"]
+            isOneToOne: false
+            referencedRelation: "price_templates"
+            referencedColumns: ["name"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      _apply_reservation_price: {
+        Args: { p_res_ts: string; p_uid: string }
+        Returns: undefined
+      }
       _compute_openwater_activity_type: {
         Args: {
           p_activity: Database["public"]["Enums"]["openwater_activity_type"]
@@ -417,6 +506,40 @@ export type Database = {
       }
       compute_boat_count: {
         Args: { p_group_id: number }
+        Returns: number
+      }
+      compute_monthly_completed_totals: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          month: string
+          total: number
+          ym: string
+        }[]
+      }
+      compute_prices_for_reservation: {
+        Args: { p_res_date: string; p_uid: string }
+        Returns: {
+          category: string
+          price: number
+          price_field: string
+          type_key: string
+        }[]
+      }
+      compute_prices_for_reservation_at: {
+        Args: { p_res_ts: string; p_uid: string }
+        Returns: {
+          category: string
+          price: number
+          price_field: string
+          type_key: string
+        }[]
+      }
+      compute_reservation_total: {
+        Args: { p_res_date: string }
+        Returns: number
+      }
+      compute_reservation_total_for: {
+        Args: { p_res_ts: string; p_uid: string }
         Returns: number
       }
       find_best_buoy_for_depth: {
@@ -694,11 +817,13 @@ export type Database = {
       }
     }
     Enums: {
+      classroom_activity_type: "course_coaching"
       openwater_activity_type:
         | "course_coaching"
-        | "autonomous_buoy_0_89"
-        | "autonomous_platform_0_99"
-        | "autonomous_platform_cbs_90_130"
+        | "autonomous_buoy"
+        | "autonomous_platform"
+        | "autonomous_platform_cbs"
+      pool_activity_type: "course_coaching" | "autonomous"
       reservation_status: "pending" | "confirmed" | "rejected"
       reservation_type: "pool" | "open_water" | "classroom"
       user_status: "active" | "disabled"
@@ -832,12 +957,14 @@ export const Constants = {
   },
   public: {
     Enums: {
+      classroom_activity_type: ["course_coaching"],
       openwater_activity_type: [
         "course_coaching",
-        "autonomous_buoy_0_89",
-        "autonomous_platform_0_99",
-        "autonomous_platform_cbs_90_130",
+        "autonomous_buoy",
+        "autonomous_platform",
+        "autonomous_platform_cbs",
       ],
+      pool_activity_type: ["course_coaching", "autonomous"],
       reservation_status: ["pending", "confirmed", "rejected"],
       reservation_type: ["pool", "open_water", "classroom"],
       user_status: ["active", "disabled"],

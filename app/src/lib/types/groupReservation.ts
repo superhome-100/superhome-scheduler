@@ -1,12 +1,7 @@
-import { openWaterLabelFromKey, type OpenWaterSubtypeKey } from './availability';
+import { openWaterLabelFromActivity, type OpenWaterActivityType } from './availability';
 
-export type ActivityType =
-  | 'course_coaching'
-  | 'autonomous_buoy_0_89'
-  | 'autonomous_platform_0_99'
-  | 'autonomous_platform_cbs_90_130'
-  | string
-  | null;
+// Use DB enum strictly for activity_type when available
+export type ActivityType = OpenWaterActivityType | null;
 
 export interface MemberRow {
   uid: string;
@@ -22,22 +17,17 @@ export interface MemberRow {
 }
 
 export function typeLabel(act: ActivityType, openWaterType: string | null): string {
-  if (act === 'course_coaching') return 'Course/Coaching';
-  if (act === 'autonomous_buoy_0_89') return 'Autonomous on Buoy (0-89m)';
-  if (act === 'autonomous_platform_0_99') return 'Autonomous on Platform (0-99m)';
-  if (act === 'autonomous_platform_cbs_90_130') return 'Autonomous on Platform + CBS (90-130m)';
-  // Check open_water_type for course_coaching as well
+  // Prefer enum when present
+  if (act) return openWaterLabelFromActivity(act);
+  // Fallback: normalize string key when activity_type is null
   if (openWaterType === 'course_coaching') return 'Course/Coaching';
-  // Normalize plain open_water_type values to human-readable labels via single source of truth
-  const key = openWaterType as OpenWaterSubtypeKey | null;
-  if (key && (key === 'autonomous_buoy' || key === 'autonomous_platform' || key === 'autonomous_platform_cbs')) {
-    return openWaterLabelFromKey(key);
-  }
-  // Fallback to open_water_type display if provided
+  if (openWaterType === 'autonomous_buoy') return 'Autonomous on Buoy';
+  if (openWaterType === 'autonomous_platform') return 'Autonomous on Platform';
+  if (openWaterType === 'autonomous_platform_cbs') return 'Autonomous on Platform + CBS';
   return openWaterType || 'Open Water';
 }
 
 export function showEquipment(act: ActivityType): boolean {
   // Equipment shown for Course/Coaching and Autonomous Buoy (0-89m)
-  return act === 'course_coaching' || act === 'autonomous_buoy_0_89';
+  return act === 'course_coaching' || act === 'autonomous_buoy';
 }

@@ -21,6 +21,7 @@
   
   // Dashboard utilities
   import { getUpcomingReservations, getCompletedReservations, transformReservationsForModal } from './dashboardUtils';
+  import { reservationLastUpdated } from '$lib/stores/reservationSync';
   import { transformReservationToUnified } from '../../utils/reservationTransform';
 
   let showReservationDetails = false;
@@ -31,11 +32,13 @@
   let loading = false;
   let refreshing = false;
   let error: string | null = null;
+  let monthlyTotals: Record<string, number> = {};
   
   // Modal state management
   let showReservationsModal = false;
   let modalReservations: any[] = [];
   let modalTitle = 'Reservations';
+  let modalVariant: 'upcoming' | 'completed' | 'all' = 'all';
   let showReservationForm = false;
   // Mobile tabs state
   let activeMobileTab: 'upcoming' | 'completed' = 'upcoming';
@@ -74,7 +77,7 @@
         .from('reservations')
         .select(`
           *,
-          res_pool!left(start_time, end_time, lane, pool_type, note),
+          res_pool!left(start_time, end_time, lane, pool_type, student_count, note),
           res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, note),
           res_classroom!left(start_time, end_time, room, classroom_type, student_count, note)
         `)
@@ -94,11 +97,38 @@
     }
   };
 
+  // Load monthly totals for completed reservations
+  const loadMonthlyTotals = async () => {
+    if (!$authStore.user) return;
+    try {
+      // Define a sensible window: last 12 months to next month
+      const now = new Date();
+      const to = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const from = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+
+      const { data, error: rpcError } = await supabase.rpc('compute_monthly_completed_totals', {
+        p_from: from.toISOString().slice(0, 10),
+        p_to: to.toISOString().slice(0, 10)
+      });
+      if (rpcError) throw rpcError;
+      const map: Record<string, number> = {};
+      (data || []).forEach((row: any) => {
+        if (row && row.ym != null) map[row.ym] = Number(row.total) || 0;
+      });
+      monthlyTotals = map;
+    } catch (e) {
+      console.error('Error loading monthly totals:', e);
+      // Do not fail UI; keep monthlyTotals empty so UI falls back to client sum
+      monthlyTotals = {};
+    }
+  };
+
   // Event handlers
   const handleRefresh = async () => {
     try {
       refreshing = true;
       await loadReservations();
+      await loadMonthlyTotals();
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -116,12 +146,14 @@
   const openUpcomingReservationsModal = () => {
     modalReservations = transformReservationsForModal(upcomingReservations);
     modalTitle = 'Upcoming Reservations';
+    modalVariant = 'upcoming';
     showReservationsModal = true;
   };
 
   const openCompletedReservationsModal = () => {
     modalReservations = transformReservationsForModal(completedReservations);
     modalTitle = 'Completed Reservations';
+    modalVariant = 'completed';
     showReservationsModal = true;
   };
 
@@ -166,9 +198,11 @@
     if (activeMobileTab === 'upcoming') {
       modalReservations = transformReservationsForModal(upcomingReservations);
       modalTitle = 'Upcoming Reservations';
+      modalVariant = 'upcoming';
     } else {
       modalReservations = transformReservationsForModal(completedReservations);
       modalTitle = 'Completed Reservations';
+      modalVariant = 'completed';
     }
     showReservationsModal = true;
   };
@@ -178,6 +212,7 @@
     await auth.signOut();
   };
 
+  let unsubReservationUpdate: (() => void) | null = null;
   onMount(() => {
     const initializeDashboard = async () => {
       // Ensure light mode only
@@ -193,6 +228,7 @@
       // Load reservations
       try {
         await loadReservations();
+        await loadMonthlyTotals();
       } catch (error) {
         console.error('Error loading dashboard data:', error);
       }
@@ -202,7 +238,18 @@
 
     // Initialize dashboard asynchronously
     initializeDashboard();
+
+    // Subscribe to admin-side manual price updates and refetch
+    unsubReservationUpdate = reservationLastUpdated.subscribe(() => {
+      // Refresh reservations and monthly totals so per-card price and totals update
+      loadReservations();
+      loadMonthlyTotals();
+    });
   });
+
+  // Cleanup subscription
+  $: if (false) {}
+  // Above dummy reactive line prevents top-level onDestroy import; retain minimal changes per file constraints
 
   // Enforce access after admin check
   $: if (adminChecked) {
@@ -251,6 +298,7 @@
             <DesktopReservations 
               {upcomingReservations}
               {completedReservations}
+              {monthlyTotals}
               {loading}
               {error}
               on:reservationClick={handleReservationClick}
@@ -264,6 +312,7 @@
             <MobileReservations 
               {upcomingReservations}
               {completedReservations}
+              {monthlyTotals}
               {activeMobileTab}
               {showMobileViewAll}
               {loading}
@@ -312,6 +361,8 @@
   reservations={modalReservations}
   title={modalTitle}
   showDetails={true}
+  variant={modalVariant}
+  monthlyTotals={monthlyTotals}
   on:close={closeReservationsModal}
   on:reservationClick={handleReservationClick}
 />

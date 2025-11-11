@@ -80,6 +80,7 @@ interface CreateReservationData {
 interface UpdateReservationData {
   res_status?: ReservationStatus;
   res_date?: string;
+  price?: number;
   // Pool details
   pool?: Partial<PoolReservationDetails>;
   // Classroom details
@@ -438,10 +439,11 @@ class ReservationService {
   ): Promise<ServiceResponse<CompleteReservation>> {
     try {
       const payload: any = { uid, res_date };
-      if (updateData.res_status || updateData.res_date) {
+      if (updateData.res_status || updateData.res_date || typeof updateData.price === 'number') {
         payload.parent = {
           ...(updateData.res_status ? { res_status: updateData.res_status } : {}),
-          ...(updateData.res_date ? { res_date: updateData.res_date } : {})
+          ...(updateData.res_date ? { res_date: updateData.res_date } : {}),
+          ...(typeof updateData.price === 'number' ? { price: updateData.price } : {})
         };
       }
       if (updateData.pool) payload.pool = updateData.pool;
