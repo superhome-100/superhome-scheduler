@@ -3,9 +3,9 @@ import type { Database } from '../database.types';
 import { callFunction } from '../utils/functions';
 import { supabase } from '../utils/supabase';
 
-// Enforce strict typing for ReservationType and ReservationStatus
-export type ReservationType = 'pool' | 'open_water' | 'classroom';
-export type ReservationStatus = 'pending' | 'confirmed' | 'rejected';
+// Enforce strict typing using generated enums from Database
+export type ReservationType = Database['public']['Enums']['reservation_type'];
+export type ReservationStatus = Database['public']['Enums']['reservation_status'];
 
 // Use dependency injection for supabase client for better testability and reusability
 // Example: pass supabase client as a parameter to service functions

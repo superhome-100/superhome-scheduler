@@ -2,20 +2,35 @@
   import { onMount, onDestroy } from 'svelte';
   import { supabase } from '../../utils/supabase';
   import { reservationLastUpdated } from '$lib/stores/reservationSync';
+  import type { Database } from '$lib/database.types';
 
   export let uid: string;
   export let resDate: string; // 'YYYY-MM-DD'
   // Optional filters to avoid summing prices across categories for the same date
   // Pass the reservation's category (e.g., 'pool' | 'open_water' | 'classroom')
   // and/or the specific type_key (e.g., 'course_coaching', 'autonomous', ...)
-  export let category: string | undefined;
-  export let typeKey: string | undefined;
+  export let category: Database['public']['Enums']['reservation_type'] | undefined;
+  export let typeKey:
+    | Database['public']['Enums']['pool_activity_type']
+    | Database['public']['Enums']['classroom_activity_type']
+    | Database['public']['Enums']['openwater_activity_type']
+    | undefined;
 
   type PriceRow = {
-    category: string;
-    type_key: string;
+    category: Database['public']['Enums']['reservation_type'];
+    type_key:
+      | Database['public']['Enums']['pool_activity_type']
+      | Database['public']['Enums']['classroom_activity_type']
+      | Database['public']['Enums']['openwater_activity_type'];
     price: number;
-    price_field: string;
+    price_field:
+      | 'coach_pool'
+      | 'auto_pool'
+      | 'coach_classroom'
+      | 'coach_ow'
+      | 'auto_ow'
+      | 'platform_ow'
+      | 'platformcbs_ow';
   };
 
   let rows: PriceRow[] = [];
