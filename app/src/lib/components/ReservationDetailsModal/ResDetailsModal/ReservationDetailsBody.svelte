@@ -37,8 +37,17 @@
 
   // Derived pool type with fallbacks from raw reservation payload
   $: derivedPoolType = reservation?.pool_type
+    ?? reservation?.poolType
+    ?? reservation?.pool?.pool_type
+    ?? reservation?.pool?.poolType
+    ?? reservation?.res_pool?.pool_type
+    ?? reservation?.res_pool?.poolType
     ?? reservation?.raw_reservation?.pool_type
+    ?? reservation?.raw_reservation?.poolType
+    ?? reservation?.raw_reservation?.pool?.pool_type
+    ?? reservation?.raw_reservation?.pool?.poolType
     ?? reservation?.raw_reservation?.res_pool?.pool_type
+    ?? reservation?.raw_reservation?.res_pool?.poolType
     ?? null;
 
   // Derived classroom type with fallbacks from raw reservation payload
@@ -71,12 +80,42 @@
 
   $: derivedStudentCount = (
     reservation?.student_count
+    ?? reservation?.pool?.student_count
+    ?? reservation?.pool?.studentCount
     ?? reservation?.res_pool?.student_count
+    ?? reservation?.res_pool?.studentCount
+    ?? reservation?.res_openwater?.student_count
+    ?? reservation?.res_openwater?.studentCount
     ?? reservation?.res_classroom?.student_count
-    ?? reservation?.raw_reservation?.student_count
+    ?? reservation?.res_classroom?.studentCount
+    ?? reservation?.raw_reservation?.pool?.student_count
+    ?? reservation?.raw_reservation?.pool?.studentCount
     ?? reservation?.raw_reservation?.res_pool?.student_count
+    ?? reservation?.raw_reservation?.res_pool?.studentCount
+    ?? reservation?.raw_reservation?.res_openwater?.student_count
+    ?? reservation?.raw_reservation?.res_openwater?.studentCount
     ?? reservation?.raw_reservation?.res_classroom?.student_count
+    ?? reservation?.raw_reservation?.res_classroom?.studentCount
+    ?? reservation?.raw_reservation?.student_count
+    ?? reservation?.raw_reservation?.studentCount
     ?? null
+  );
+
+  // Coerce to number when possible for reliable comparisons
+  $: derivedStudentCountNum = (
+    typeof derivedStudentCount === 'string'
+      ? parseInt(derivedStudentCount as string, 10)
+      : (derivedStudentCount as number | null)
+  );
+
+  // Fallback: if Pool Course/Coaching and no student_count, infer from display span (span = 1 + students)
+  $: inferredStudentsFromSpan = (
+    (displayType === 'Pool' && derivedPoolType === 'course_coaching' && typeof reservation?.__display_span === 'number')
+      ? Math.max(0, (reservation.__display_span as number) - 1)
+      : null
+  );
+  $: effectiveStudentCount = (
+    (derivedStudentCountNum ?? inferredStudentsFromSpan ?? null)
   );
 
   $: rawEndTime = (
@@ -165,10 +204,10 @@
           <span class="detail-label">Room Assigned</span>
           <span class="detail-value">{derivedRoom ?? '—'}</span>
         </div>
-      {:else if displayType === 'Pool' && ((derivedStudentCount ?? 0) > 0 || derivedPoolType === 'course_coaching')}
+      {:else if displayType === 'Pool' && ((effectiveStudentCount ?? 0) > 0 || derivedPoolType === 'course_coaching')}
         <div class="detail-item">
           <span class="detail-label">No. of Students</span>
-          <span class="detail-value">{derivedStudentCount ?? '—'}</span>
+          <span class="detail-value">{effectiveStudentCount ?? derivedStudentCount ?? '—'}</span>
         </div>
       {/if}
 

@@ -1,0 +1,12 @@
+/* Hide number input arrows for compact UI */
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+.no-spinner[type=number] {
+  appearance: textfield; /* standard */
+  -moz-appearance: textfield; /* Firefox */
+}

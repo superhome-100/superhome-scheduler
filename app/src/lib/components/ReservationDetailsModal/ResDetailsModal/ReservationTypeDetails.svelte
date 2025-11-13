@@ -20,8 +20,29 @@
   {@const totalLanes = 8}
   {@const explicitLane = reservation?.lane ?? reservation?.res_pool?.lane}
   {@const startIdx = typeof reservation?.__display_lane_idx === 'number' ? (reservation.__display_lane_idx as number) : (explicitLane ? (Number(explicitLane) - 1) : -1)}
-  {@const poolType = reservation?.pool_type ?? reservation?.poolType ?? reservation?.res_pool?.pool_type ?? reservation?.res_pool?.poolType}
-  {@const studentsRaw = reservation?.student_count ?? reservation?.res_pool?.student_count}
+  {@const poolType = (
+    reservation?.pool_type
+    ?? reservation?.poolType
+    ?? reservation?.res_pool?.pool_type
+    ?? reservation?.res_pool?.poolType
+    ?? reservation?.raw_reservation?.pool_type
+    ?? reservation?.raw_reservation?.poolType
+    ?? reservation?.raw_reservation?.res_pool?.pool_type
+    ?? reservation?.raw_reservation?.res_pool?.poolType
+  )}
+  {@const studentsRaw = (
+    reservation?.student_count
+    ?? reservation?.pool?.student_count
+    ?? reservation?.pool?.studentCount
+    ?? reservation?.res_pool?.student_count
+    ?? reservation?.res_pool?.studentCount
+    ?? reservation?.raw_reservation?.student_count
+    ?? reservation?.raw_reservation?.studentCount
+    ?? reservation?.raw_reservation?.pool?.student_count
+    ?? reservation?.raw_reservation?.pool?.studentCount
+    ?? reservation?.raw_reservation?.res_pool?.student_count
+    ?? reservation?.raw_reservation?.res_pool?.studentCount
+  )}
   {@const students = typeof studentsRaw === 'string' ? parseInt(studentsRaw, 10) : (studentsRaw || 0)}
   {@const spanFromType = poolType === 'course_coaching' ? Math.max(1, Math.min(1 + (Number.isFinite(students) ? students : 0), totalLanes)) : 1}
   {@const span = typeof reservation?.__display_span === 'number' ? (reservation.__display_span as number) : spanFromType}
@@ -42,10 +63,19 @@
       <span class="detail-value">{reservation.room}</span>
     </div>
   {/if}
-  {#if (reservation.classroom_type === 'course_coaching' || reservation.res_classroom?.classroom_type === 'course_coaching') && (reservation.student_count || reservation.res_classroom?.student_count)}
+  {@const classroomStudents = (
+    reservation?.student_count
+    ?? reservation?.res_classroom?.student_count
+    ?? reservation?.res_classroom?.studentCount
+    ?? reservation?.raw_reservation?.student_count
+    ?? reservation?.raw_reservation?.studentCount
+    ?? reservation?.raw_reservation?.res_classroom?.student_count
+    ?? reservation?.raw_reservation?.res_classroom?.studentCount
+  )}
+  {#if (reservation.classroom_type === 'course_coaching' || reservation.res_classroom?.classroom_type === 'course_coaching') && classroomStudents}
     <div class="detail-item">
       <span class="detail-label">No. of Students</span>
-      <span class="detail-value">{reservation.student_count ?? reservation.res_classroom?.student_count}</span>
+      <span class="detail-value">{classroomStudents}</span>
     </div>
   {/if}
 {/if}
@@ -73,10 +103,19 @@
   {/if}
   
   <!-- Student Count (for Course/Coaching) -->
-  {#if reservation.open_water_type === 'course_coaching' && reservation.student_count}
+  {@const owStudents = (
+    reservation?.student_count
+    ?? reservation?.res_openwater?.student_count
+    ?? reservation?.res_openwater?.studentCount
+    ?? reservation?.raw_reservation?.student_count
+    ?? reservation?.raw_reservation?.studentCount
+    ?? reservation?.raw_reservation?.res_openwater?.student_count
+    ?? reservation?.raw_reservation?.res_openwater?.studentCount
+  )}
+  {#if reservation.open_water_type === 'course_coaching' && owStudents}
     <div class="detail-item">
       <span class="detail-label">No. of Students</span>
-      <span class="detail-value">{reservation.student_count}</span>
+      <span class="detail-value">{owStudents}</span>
     </div>
   {/if}
   

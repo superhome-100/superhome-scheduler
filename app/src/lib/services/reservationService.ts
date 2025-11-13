@@ -3,9 +3,9 @@ import type { Database } from '../database.types';
 import { callFunction } from '../utils/functions';
 import { supabase } from '../utils/supabase';
 
-// Enforce strict typing for ReservationType and ReservationStatus
-export type ReservationType = 'pool' | 'open_water' | 'classroom';
-export type ReservationStatus = 'pending' | 'confirmed' | 'rejected';
+// Enforce strict typing using generated enums from Database
+export type ReservationType = Database['public']['Enums']['reservation_type'];
+export type ReservationStatus = Database['public']['Enums']['reservation_status'];
 
 // Use dependency injection for supabase client for better testability and reusability
 // Example: pass supabase client as a parameter to service functions
@@ -80,6 +80,7 @@ interface CreateReservationData {
 interface UpdateReservationData {
   res_status?: ReservationStatus;
   res_date?: string;
+  price?: number;
   // Pool details
   pool?: Partial<PoolReservationDetails>;
   // Classroom details
@@ -438,10 +439,11 @@ class ReservationService {
   ): Promise<ServiceResponse<CompleteReservation>> {
     try {
       const payload: any = { uid, res_date };
-      if (updateData.res_status || updateData.res_date) {
+      if (updateData.res_status || updateData.res_date || typeof updateData.price === 'number') {
         payload.parent = {
           ...(updateData.res_status ? { res_status: updateData.res_status } : {}),
-          ...(updateData.res_date ? { res_date: updateData.res_date } : {})
+          ...(updateData.res_date ? { res_date: updateData.res_date } : {}),
+          ...(typeof updateData.price === 'number' ? { price: updateData.price } : {})
         };
       }
       if (updateData.pool) payload.pool = updateData.pool;

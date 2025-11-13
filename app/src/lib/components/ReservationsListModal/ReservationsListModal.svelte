@@ -2,6 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import ListModalHeader from './ListModalHeader.svelte';
   import ReservationList from './ReservationList.svelte';
+  import GroupedCompletedList from '../ReservationTotals/GroupedCompletedList.svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -9,6 +10,10 @@
   export let reservations: any[] = [];
   export let title = 'Reservations';
   export let showDetails = false; // New prop to enable click functionality
+  // Controls how the list is rendered in the modal
+  export let variant: 'upcoming' | 'completed' | 'all' = 'all';
+  // Optional server-computed monthly totals keyed by 'YYYY-MM'
+  export let monthlyTotals: Record<string, number> = {};
 
   const closeModal = () => {
     dispatch('close');
@@ -49,11 +54,21 @@
       <ListModalHeader {title} on:close={closeModal} />
 
       <div class="modal-body">
-        <ReservationList 
-          {reservations} 
-          {showDetails}
-          on:reservationClick={handleReservationClick}
-        />
+        {#if variant === 'completed'}
+          <!-- Grouped monthly list with totals for Completed reservations -->
+          <GroupedCompletedList
+            reservations={reservations}
+            monthlyTotals={monthlyTotals}
+            on:reservationClick={(e) => handleReservationClick(e)}
+          />
+        {:else}
+          <!-- Flat list for Upcoming / All -->
+          <ReservationList 
+            {reservations} 
+            {showDetails}
+            on:reservationClick={handleReservationClick}
+          />
+        {/if}
       </div>
     </div>
   </div>

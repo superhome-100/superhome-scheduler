@@ -13,10 +13,13 @@
   import { userAdminService } from '../../services/userAdminService';
   import { ReservationType } from '../../types/reservations';
   import BlockReservationCard from './BlockReservationCard.svelte';
+  import PriceTemplateCard from './PriceTemplateCard.svelte';
   import Toast from '../Toast.svelte';
   import { MSG_NO_CLASSROOMS, MSG_NO_POOL_LANES } from '$lib/constants/messages';
   import ErrorModal from '../ErrorModal.svelte';
   import { showLoading, hideLoading } from '../../stores/ui';
+  import AdminSectionSwitcher from './AdminSectionSwitcher.svelte';
+  import AdminUserReservations from './AdminUserReservations.svelte';
 
   let users: any[] = [];
   let reservations: any[] = [];
@@ -80,6 +83,8 @@
   let processingReservation: string | null = null;
   let selectedReservation: any = null;
   let adminView = 'dashboard'; // Track which admin view to show
+  // Admin section within dashboard
+  let adminSection: 'pending' | 'price' | 'block' | 'user_res' = 'pending';
   
   // Single day view state
   let showSingleDayView = false;
@@ -363,6 +368,14 @@
 
   onMount(() => {
     console.log('AdminDashboard: Component mounted, loading admin data...');
+    // Initialize section from URL if present
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      const section = url.searchParams.get('section');
+      if (section === 'pending' || section === 'price' || section === 'block' || section === 'user_res') {
+        adminSection = section;
+      }
+    }
     loadAdminData();
   });
 
@@ -385,16 +398,28 @@
       {:else}
         <!-- Content based on admin view -->
         {#if adminView === 'dashboard'}
-          <PendingReservations 
-            {pendingReservations}
-            {stats}
-            {processingReservation}
-            on:refresh={handleRefresh}
-            on:reservationAction={(e: any) => handleReservationAction(e.detail.reservation, e.detail.action)}
-            on:openReservationDetails={(e: any) => openReservationDetails(e.detail)}
-          />
-          <!-- Block Reservation Section Card (below Pending Reservation Requests) -->
-          <BlockReservationCard />
+          <!-- Single active button with dropdown for section switching -->
+          <AdminSectionSwitcher selected={adminSection} on:select={(e) => (adminSection = e.detail.section)} />
+
+          {#if adminSection === 'pending'}
+            <PendingReservations 
+              {pendingReservations}
+              {stats}
+              {processingReservation}
+              on:refresh={handleRefresh}
+              on:reservationAction={(e: any) => handleReservationAction(e.detail.reservation, e.detail.action)}
+              on:openReservationDetails={(e: any) => openReservationDetails(e.detail)}
+            />
+          {:else if adminSection === 'user_res'}
+            <AdminUserReservations
+              reservations={reservations}
+              on:openReservationDetails={(e) => openReservationDetails(e.detail)}
+            />
+          {:else if adminSection === 'price'}
+            <PriceTemplateCard />
+          {:else}
+            <BlockReservationCard />
+          {/if}
         {:else if adminView === 'calendar'}
           {#if showSingleDayView}
             <SingleDayView

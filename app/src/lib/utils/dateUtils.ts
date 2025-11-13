@@ -37,6 +37,66 @@ export const formatDateTime = (dateString: string, timeString?: string): string 
 };
 
 /**
+ * Extract Open Water depth as a display string (e.g., "12 m").
+ * Supports multiple reservation shapes and property names.
+ */
+export const getOpenWaterDepth = (reservation: any): string => {
+  if (!reservation) return '';
+  const type = reservation?.res_type || reservation?.type;
+  if (!(type === 'open_water' || type === 'Open Water')) return '';
+
+  // Possible locations of depth
+  const candidates = [
+    reservation?.depth,
+    reservation?.depth_m,
+    reservation?.depthMeters,
+    reservation?.depth_meters,
+    reservation?.max_depth,
+    reservation?.maxDepth,
+    reservation?.max_depth_m,
+    reservation?.max_depth_meters,
+    reservation?.res_openwater?.depth,
+    reservation?.res_open_water?.depth,
+    reservation?.res_openwater?.max_depth,
+    reservation?.res_open_water?.max_depth,
+    reservation?.openwater?.depth,
+    reservation?.open_water?.depth,
+    reservation?.res_openwater?.depth_m,
+    reservation?.res_open_water?.depth_m,
+    reservation?.res_openwater?.depth_meters,
+    reservation?.res_open_water?.depth_meters,
+  ];
+
+  const val = candidates.find((v) => v !== undefined && v !== null && v !== '');
+  if (val === undefined) {
+    // Fallback: try any key containing "depth" on root or nested openwater objects
+    const depthFromRoot = Object.keys(reservation).find((k) => /depth/i.test(k) && reservation[k] != null && reservation[k] !== '');
+    if (depthFromRoot) {
+      const dv: any = (reservation as any)[depthFromRoot];
+      const num = Number(dv);
+      return !isNaN(num) && isFinite(num) ? `${num} m` : String(dv);
+    }
+    const ow = reservation.res_openwater || reservation.res_open_water || reservation.openwater || reservation.open_water;
+    if (ow && typeof ow === 'object') {
+      const k = Object.keys(ow).find((kk) => /depth/i.test(kk) && (ow as any)[kk] != null && (ow as any)[kk] !== '');
+      if (k) {
+        const dv: any = (ow as any)[k];
+        const num = Number(dv);
+        return !isNaN(num) && isFinite(num) ? `${num} m` : String(dv);
+      }
+    }
+    return '';
+  }
+
+  const num = Number(val);
+  if (!isNaN(num) && isFinite(num)) {
+    return `${num} m`;
+  }
+  // Fallback to string value
+  return String(val);
+};
+
+/**
  * Get time of day (AM/PM) from date
  */
 export const getTimeOfDay = (date: string | Date): 'AM' | 'PM' => {
@@ -49,7 +109,7 @@ export const getTimeOfDay = (date: string | Date): 'AM' | 'PM' => {
  */
 export const formatDateForISO = (dateString: string): string => {
   if (!dateString) return '';
-  const date = dayjs(dateString);
+  const date = dayjs.utc(dateString);
   return date.isValid() ? date.format('YYYY-MM-DD') : dateString;
 };
 
@@ -147,7 +207,8 @@ export const getRelativeTime = (dateString: string): string => {
  */
 export const formatDateForCalendar = (dateString: string): string => {
   const date = dayjs(dateString);
-  return date.isValid() ? date.format('MMM D') : dateString;
+  // Compact format: e.g., "7 Nov"
+  return date.isValid() ? date.format('D MMM') : dateString;
 };
 
 /**
@@ -178,14 +239,17 @@ export const formatCompactTime = (reservation: any): string => {
   if (!reservation) return '';
 
   const type = reservation?.res_type || reservation?.type;
-  if (type === 'open_water') {
+  if (type === 'open_water' || type === 'Open Water') {
     const period = reservation?.time_period
       || reservation?.period
       || reservation?.res_openwater?.time_period
       || reservation?.res_open_water?.time_period;
     if (period) return String(period).toUpperCase();
 
-    const st = reservation?.start_time || reservation?.startTime;
+    const st = reservation?.start_time
+      || reservation?.startTime
+      || reservation?.res_openwater?.start_time
+      || reservation?.res_open_water?.start_time;
     if (st) {
       const m = String(st).match(/\b(AM|PM)\b/i);
       return m ? m[0].toUpperCase() : dayjs(`2000-01-01T${st}`).format('A');
@@ -193,8 +257,26 @@ export const formatCompactTime = (reservation: any): string => {
     return '';
   }
 
-  const start = reservation?.start_time || reservation?.startTime;
-  const end = reservation?.end_time || reservation?.endTime;
+  const start = reservation?.start_time
+    || reservation?.startTime
+    || reservation?.start
+    || reservation?.start_at
+    || reservation?.res_classroom?.start_time
+    || reservation?.res_pool?.start_time
+    || reservation?.classroom?.start_time
+    || reservation?.pool?.start_time
+    || reservation?.res_details?.start_time
+    || reservation?.resDetails?.startTime;
+  const end = reservation?.end_time
+    || reservation?.endTime
+    || reservation?.end
+    || reservation?.end_at
+    || reservation?.res_classroom?.end_time
+    || reservation?.res_pool?.end_time
+    || reservation?.classroom?.end_time
+    || reservation?.pool?.end_time
+    || reservation?.res_details?.end_time
+    || reservation?.resDetails?.endTime;
   if (start && end) {
     const s = dayjs(`2000-01-01T${start}`);
     const e = dayjs(`2000-01-01T${end}`);
@@ -202,6 +284,12 @@ export const formatCompactTime = (reservation: any): string => {
       return `${s.format('h:mm A')} - ${e.format('h:mm A')}`;
     }
     return `${start} - ${end}`;
+  }
+
+  // If only start exists, show single time
+  if (start && !end) {
+    const s = dayjs(`2000-01-01T${start}`);
+    return s.isValid() ? s.format('h:mm A') : String(start);
   }
 
   if (reservation?.res_date) {
