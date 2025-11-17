@@ -58,6 +58,8 @@
     // Only show "You" in non-admin views
     if (!isAdmin && currentUserId && uid && String(uid) === String(currentUserId)) return 'You';
     if (isAdmin) {
+      const nick = res?.user_profiles?.nickname;
+      if (nick) return nick;
       const fullName = res?.user_profiles?.name;
       if (fullName) return fullName;
       const username = res?.user_profiles?.username || res?.username;
@@ -66,7 +68,7 @@
       if (email) return email.split('@')[0];
       return 'Unknown User';
     } else {
-      let name = res?.user_profiles?.name || res?.user_profiles?.nickname || res?.user_profiles?.username || res?.nickname || res?.username || res?.name || res?.title || '';
+      let name = res?.user_profiles?.nickname || res?.user_profiles?.name || res?.user_profiles?.username || res?.nickname || res?.username || res?.name || res?.title || '';
       const uuidV4 = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       const hex24 = /^[0-9a-f]{24}$/i;
       const hex32 = /^[0-9a-f]{32}$/i;

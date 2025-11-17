@@ -50,7 +50,7 @@
           <div class="space-y-3">
             <div class="flex items-start gap-3 min-w-0">
               <span class="font-semibold text-[#00294C] text-xs flex-shrink-0 w-16">User:</span> 
-              <span class="text-xs text-[#00294C] truncate flex-1">{selectedReservation.user_profiles?.name || 'Unknown User'}</span>
+              <span class="text-xs text-[#00294C] truncate flex-1">{selectedReservation.user_profiles?.nickname || selectedReservation.user_profiles?.name || 'Unknown User'}</span>
             </div>
             
             <div class="flex items-start gap-3 min-w-0">

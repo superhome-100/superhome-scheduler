@@ -408,6 +408,7 @@ export type Database = {
         Row: {
           created_at: string
           name: string | null
+          nickname: string | null
           price_template_name: string | null
           privileges: string[]
           status: Database["public"]["Enums"]["user_status"]
@@ -417,6 +418,7 @@ export type Database = {
         Insert: {
           created_at?: string
           name?: string | null
+          nickname?: string | null
           price_template_name?: string | null
           privileges?: string[]
           status?: Database["public"]["Enums"]["user_status"]
@@ -426,6 +428,7 @@ export type Database = {
         Update: {
           created_at?: string
           name?: string | null
+          nickname?: string | null
           price_template_name?: string | null
           privileges?: string[]
           status?: Database["public"]["Enums"]["user_status"]
@@ -797,6 +800,15 @@ export type Database = {
         Returns: {
           boat: string
           buoy_name: string
+        }[]
+      }
+      get_openwater_pair_info: {
+        Args: { p_res_date: string; p_uid: string }
+        Returns: {
+          auto_adjust_closest: boolean
+          depth_m: number
+          paired_name: string
+          paired_uid: string
         }[]
       }
       handle_odd_divers: {

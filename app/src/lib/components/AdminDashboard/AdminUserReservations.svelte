@@ -70,14 +70,14 @@
     if (q.length < 2) return;
     const { data, error } = await supabase
       .from('user_profiles')
-      .select('uid,name')
-      .ilike('name', `%${q}%`)
-      .order('name', { ascending: true })
+      .select('uid, nickname, name')
+      .or(`nickname.ilike.%${q}%,name.ilike.%${q}%`)
+      .order('nickname', { ascending: true })
       .limit(10);
     if (!error) {
       suggestions = (data || [])
-        .filter((d) => !!d.name && !!d.uid)
-        .map((d) => ({ id: d.uid as string, name: d.name as string }));
+        .filter((d) => (!!d.nickname || !!d.name) && !!d.uid)
+        .map((d) => ({ id: d.uid as string, name: (d.nickname as string) || (d.name as string) }));
       showSuggestions = suggestions.length > 0;
     } else {
       suggestions = [];
@@ -89,7 +89,7 @@
   // Helper: normalize user name
   const getUserName = (r: any): string => {
     return (
-      r?.user_profiles?.name || r?.user?.name || r?.user_name || ''
+      r?.user_profiles?.nickname || r?.user_profiles?.name || r?.user?.name || r?.user_name || ''
     ).toString();
   };
 
