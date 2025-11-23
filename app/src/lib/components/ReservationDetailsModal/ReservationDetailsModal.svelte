@@ -65,11 +65,11 @@
   const getUserFullName = (res: any): string => {
     if (!isAdmin) return '';
     
-    // Try to get full name from user_profiles.name
+    // Prefer nickname from user_profiles, fallback to name
+    const nick = res?.user_profiles?.nickname;
+    if (nick) return nick;
     const fullName = res?.user_profiles?.name;
-    if (fullName) {
-      return fullName;
-    }
+    if (fullName) return fullName;
     
     // Fallback to other name fields for admin
     const username = res?.user_profiles?.username || res?.username;

@@ -15,20 +15,24 @@ export async function ensureUserProfile(user: User | null): Promise<void> {
   try {
     if (!user) return;
     const uid = user.id;
+    const displayName = (user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'User') as string;
     
     // First check if profile already exists
     const { data: existingProfile } = await supabase
       .from('user_profiles')
-      .select('uid')
+      .select('uid, nickname')
       .eq('uid', uid)
       .single();
     
     if (existingProfile) {
-      // Profile exists, just update the name if needed
+      // Profile exists, update the name; if nickname is missing/empty, set it to displayName
+      const currentNick = (existingProfile as any)?.nickname as string | null;
+      const nextNick = currentNick && String(currentNick).trim().length > 0 ? currentNick : displayName;
       await supabase
         .from('user_profiles')
         .update({
-          name: user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'User',
+          name: displayName,
+          nickname: nextNick,
           updated_at: new Date().toISOString()
         })
         .eq('uid', uid);
@@ -38,7 +42,8 @@ export async function ensureUserProfile(user: User | null): Promise<void> {
         .from('user_profiles')
         .insert({
           uid,
-          name: user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'User',
+          name: displayName,
+          nickname: displayName,
           // status and privileges use defaults from DB
           updated_at: new Date().toISOString()
         });

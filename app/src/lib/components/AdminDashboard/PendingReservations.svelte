@@ -65,7 +65,7 @@
           >
             <div class="flex flex-col gap-1 min-w-0 flex-1">
               <div class="font-semibold text-[#00294C] text-sm truncate">
-                {reservation.user_profiles?.name || 'Unknown User'}
+                {reservation.user_profiles?.nickname || reservation.user_profiles?.name || 'Unknown User'}
               </div>
               <div class="flex items-center gap-2 text-xs text-[#00294C]">
                 <span class="badge badge-sm text-[#00294C]" class:badge-primary={reservation.res_type === 'pool'} class:badge-success={reservation.res_type === 'open_water'} class:badge-error={reservation.res_type === 'classroom'}>
@@ -117,7 +117,7 @@
               <div class="flex items-center gap-3">
                 <div class="flex flex-col gap-1">
                   <span class="font-semibold text-[#00294C] text-sm">
-                    {reservation.user_profiles?.name || 'Unknown User'}
+                    {reservation.user_profiles?.nickname || reservation.user_profiles?.name || 'Unknown User'}
                   </span>
                   <span class="badge badge-sm text-[#00294C]" class:badge-primary={reservation.res_type === 'pool'} class:badge-success={reservation.res_type === 'open_water'} class:badge-error={reservation.res_type === 'classroom'}>
                     {getTypeDisplay(reservation.res_type)}

@@ -30,29 +30,29 @@ values
 on conflict (id) do nothing;
 
 -- Profiles (admin + users)
-insert into public.user_profiles (uid, name, privileges)
+insert into public.user_profiles (uid, name, nickname, privileges)
 values
-  ('00000000-0000-0000-0000-000000000006', 'Admin', array['admin','user']),
-  ('11111111-1111-1111-1111-111111111111', 'Alice', array['user']),
-  ('22222222-2222-2222-2222-222222222222', 'Bob', array['user']),
-  ('33333333-3333-3333-3333-333333333333', 'Carol', array['user']),
-  ('44444444-4444-4444-4444-444444444444', 'Dave', array['user']),
-  ('55555555-5555-5555-5555-555555555555', 'Erin', array['user']),
-  ('66666666-6666-6666-6666-666666666666', 'Frank', array['user']),
-  ('77777777-7777-7777-7777-777777777777', 'Grace', array['user']),
-  ('88888888-8888-8888-8888-888888888888', 'Henry', array['user']),
-  ('99999999-9999-9999-9999-999999999999', 'Ivy', array['user']),
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Jack', array['user']),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Kate', array['user']),
-  ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'Leo', array['user']),
-  ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'Mia', array['user']),
-  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'Nick', array['user']),
-  ('ffffffff-ffff-ffff-ffff-ffffffffffff', 'Olivia', array['user']),
-  ('00000000-0000-0000-0000-000000000001', 'Peter', array['user']),
-  ('00000000-0000-0000-0000-000000000002', 'Quinn', array['user']),
-  ('00000000-0000-0000-0000-000000000003', 'Rachel', array['user']),
-  ('00000000-0000-0000-0000-000000000004', 'Sam', array['user']),
-  ('00000000-0000-0000-0000-000000000005', 'Tina', array['user'])
+  ('00000000-0000-0000-0000-000000000006', 'Admin', 'Admin', array['admin','user']),
+  ('11111111-1111-1111-1111-111111111111', 'Alice', 'Alice', array['user']),
+  ('22222222-2222-2222-2222-222222222222', 'Bob', 'Bob', array['user']),
+  ('33333333-3333-3333-3333-333333333333', 'Carol', 'Carol', array['user']),
+  ('44444444-4444-4444-4444-444444444444', 'Dave', 'Dave', array['user']),
+  ('55555555-5555-5555-5555-555555555555', 'Erin', 'Erin', array['user']),
+  ('66666666-6666-6666-6666-666666666666', 'Frank', 'Frank', array['user']),
+  ('77777777-7777-7777-7777-777777777777', 'Grace', 'Grace', array['user']),
+  ('88888888-8888-8888-8888-888888888888', 'Henry', 'Henry', array['user']),
+  ('99999999-9999-9999-9999-999999999999', 'Ivy', 'Ivy', array['user']),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Jack', 'Jack', array['user']),
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Kate', 'Kate', array['user']),
+  ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'Leo', 'Leo', array['user']),
+  ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'Mia', 'Mia', array['user']),
+  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'Nick', 'Nick', array['user']),
+  ('ffffffff-ffff-ffff-ffff-ffffffffffff', 'Olivia', 'Olivia', array['user']),
+  ('00000000-0000-0000-0000-000000000001', 'Peter', 'Peter', array['user']),
+  ('00000000-0000-0000-0000-000000000002', 'Quinn', 'Quinn', array['user']),
+  ('00000000-0000-0000-0000-000000000003', 'Rachel', 'Rachel', array['user']),
+  ('00000000-0000-0000-0000-000000000004', 'Sam', 'Sam', array['user']),
+  ('00000000-0000-0000-0000-000000000005', 'Tina', 'Tina', array['user'])
 on conflict (uid) do nothing;
 
 -- Open Water reservations parent rows - COMMENTED OUT

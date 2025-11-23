@@ -346,7 +346,7 @@
     const timeShort = `${h12}${suffix}`;
     const typeLabel = typeMap[reservation.res_type] || reservation.res_type;
     const statusLabel = getStatusDisplay(reservation.res_status);
-    const userName = reservation.user_profiles?.name || 'Unknown User';
+    const userName = reservation.user_profiles?.nickname || reservation.user_profiles?.name || 'Unknown User';
 
     return {
       id: `${reservation.uid}-${reservation.res_date}`,
