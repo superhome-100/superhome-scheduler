@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import dayjs from 'dayjs';
   import { getBuoyGroupsWithNames } from '../../utils/autoAssignBuoy';
   import { supabase } from '../../utils/supabase';
@@ -28,7 +29,7 @@
   export let selectedDate: string;
   export let reservations: any[] = [];
   export let isAdmin: boolean = false;
-  export let initialType: ReservationType = ReservationType.pool;
+  export let initialType: ReservationType = ReservationType.openwater;
 
   // Buoy group data
   type BuoyGroupLite = {
@@ -100,7 +101,7 @@
   let groupDetails: GroupReservationDetails | null = null;
 
   // Calendar type state
-  let selectedCalendarType: ReservationType = ReservationType.pool;
+  let selectedCalendarType: ReservationType = ReservationType.openwater;
   let initializedCalendarType = false;
   
   // Initialize from parent-provided intent first, then URL parameter
@@ -206,16 +207,8 @@
   const switchCalendarType = (type: ReservationType) => {
     selectedCalendarType = type;
     
-    // Update URL parameter
-    const url = new URL(window.location.href);
-    url.searchParams.set('type', type);
-    window.history.replaceState({}, '', url.toString());
-    
-    if (type === ReservationType.openwater) {
-      // Always load assignments on switch
-      loadOpenWaterAssignments();
-      if (isAdmin) loadAvailableBuoys();
-    }
+    // Navigate to the new route
+    goto(`/reservation/${type}/${selectedDate}`);
   };
 
   // ============================================ -->
@@ -409,6 +402,7 @@
   <!-- Calendar Type Buttons -->
   <CalendarTypeSwitcher
     value={selectedCalendarType}
+    date={selectedDate}
     on:change={(e) => switchCalendarType(e.detail)}
   />
 

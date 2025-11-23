@@ -1,5 +1,8 @@
 <script lang="ts">
-  import Reservation from '../../lib/components/Reservation/Reservation.svelte';
-</script>
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
 
-<Reservation />
+  onMount(() => {
+    goto('/reservation/openwater');
+  });
+</script>

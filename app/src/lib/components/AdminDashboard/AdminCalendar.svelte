@@ -10,7 +10,7 @@
   export let reservations: any[] = [];
   export let loading = false;
 
-  let selectedType: ReservationType = ReservationType.pool;
+  let selectedType: ReservationType = ReservationType.openwater;
 
   // Initialize from URL parameter synchronously (before first render) to avoid flicker
   if (typeof window !== 'undefined') {
@@ -245,10 +245,10 @@
     
     Object.entries(groupedReservations).forEach(([dateStr, dayReservations]) => {
       if (selectedType === ReservationType.openwater) {
-        // For Open Water, show AM/PM badges ONLY for approved/confirmed reservations
-        const confirmedReservations = dayReservations.filter((r) => r?.res_status === 'confirmed');
-        const amReservations = confirmedReservations.filter((r) => getTimePeriod(r) === 'AM');
-        const pmReservations = confirmedReservations.filter((r) => getTimePeriod(r) === 'PM');
+        // For Open Water, show AM/PM badges for both approved/confirmed and pending reservations
+        const relevantReservations = dayReservations.filter((r) => r?.res_status === 'confirmed' || r?.res_status === 'pending');
+        const amReservations = relevantReservations.filter((r) => getTimePeriod(r) === 'AM');
+        const pmReservations = relevantReservations.filter((r) => getTimePeriod(r) === 'PM');
         
         // Create AM event if there are AM reservations
         if (amReservations.length > 0) {

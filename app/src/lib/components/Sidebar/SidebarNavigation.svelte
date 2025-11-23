@@ -13,14 +13,7 @@
       Admin Dashboard
     </a>
   </li>
-  <li>
-    <a 
-      class="sidebar-nav-button btn btn-ghost w-full justify-start text-left {$page.url.pathname === '/admin/calendar' ? 'active' : ''}"
-      href="/admin/calendar"
-    >
-      Calendar
-    </a>
-  </li>
+
   <li>
     <a 
       class="sidebar-nav-button btn btn-ghost w-full justify-start text-left {$page.url.pathname === '/admin/users' ? 'active' : ''}"
@@ -57,8 +50,8 @@
   </li>
   <li>
     <a 
-      class="sidebar-nav-button btn btn-ghost w-full justify-start text-left {$page.url.pathname === '/reservation' ? 'active' : ''}"
-      href="/reservation"
+      class="sidebar-nav-button btn btn-ghost w-full justify-start text-left {$page.url.pathname.startsWith('/reservation') ? 'active' : ''}"
+      href="/reservation/openwater"
     >
       Reservations
     </a>
