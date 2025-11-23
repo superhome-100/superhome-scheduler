@@ -7,6 +7,7 @@
   const dispatch = createEventDispatcher();
 
   export let reservations: any[] = [];
+  export let stats: any[] = [];
   export let loading = false;
   export let selectedType: ReservationType = ReservationType.openwater;
 
@@ -154,7 +155,7 @@
   };
 
   // Re-initialize calendar when reservations or selected type change
-  $: if (reservations || selectedType) {
+  $: if (reservations || selectedType || stats) {
     setTimeout(initializeCalendar, 0);
   }
 
@@ -199,10 +200,93 @@
     return hour < 12 ? 'AM' : 'PM';
   };
 
-  // Convert grouped reservations to calendar events with participant counts
+  // Convert grouped reservations or stats to calendar events
   const createParticipantCountEvents = (groupedReservations: Record<string, any[]>) => {
     const events: any[] = [];
     
+    // If we have stats, use them directly
+    if (stats && stats.length > 0) {
+      console.log('Creating events from stats:', stats);
+      
+      // Group stats by date
+      const statsByDate: Record<string, any[]> = {};
+      stats.forEach(stat => {
+        const dateStr = stat.res_date; // RPC returns date string
+        if (!statsByDate[dateStr]) statsByDate[dateStr] = [];
+        statsByDate[dateStr].push(stat);
+      });
+
+      Object.entries(statsByDate).forEach(([dateStr, dayStats]) => {
+        if (selectedType === ReservationType.openwater) {
+          // Filter stats for Open Water
+          const owStats = dayStats.filter(s => s.res_type === 'open_water');
+          
+          const amStat = owStats.find(s => s.time_period === 'AM');
+          const pmStat = owStats.find(s => s.time_period === 'PM');
+          
+          if (amStat && amStat.participant_count > 0) {
+             events.push({
+              id: `am-${dateStr}`,
+              title: `AM ${amStat.participant_count}`,
+              start: `${dateStr}T08:00:00`,
+              backgroundColor: 'transparent',
+              borderColor: 'transparent',
+              textColor: '#ffffff',
+              extendedProps: {
+                type: 'participant-count',
+                timePeriod: 'AM',
+                count: amStat.participant_count
+              }
+            });
+          }
+          
+          if (pmStat && pmStat.participant_count > 0) {
+             events.push({
+              id: `pm-${dateStr}`,
+              title: `PM ${pmStat.participant_count}`,
+              start: `${dateStr}T14:00:00`,
+              backgroundColor: 'transparent',
+              borderColor: 'transparent',
+              textColor: '#ffffff',
+              extendedProps: {
+                type: 'participant-count',
+                timePeriod: 'PM',
+                count: pmStat.participant_count
+              }
+            });
+          }
+        } else {
+          // Pool or Classroom
+          const typeStats = dayStats.find(s => 
+            (selectedType === ReservationType.pool && s.res_type === 'pool') ||
+            (selectedType === ReservationType.classroom && s.res_type === 'classroom')
+          );
+          
+          if (typeStats && typeStats.participant_count > 0) {
+            const backgroundColor = selectedType === ReservationType.classroom ? '#ef4444' : '#3b82f6';
+            const borderColor = selectedType === ReservationType.classroom ? '#ef4444' : '#3b82f6';
+            
+            events.push({
+              id: `day-${dateStr}`,
+              title: `${typeStats.participant_count}`,
+              start: `${dateStr}T12:00:00`,
+              backgroundColor: 'transparent', // Handled by CSS
+              borderColor: 'transparent',
+              textColor: '#ffffff',
+              extendedProps: {
+                type: 'participant-count',
+                timePeriod: 'ALL',
+                count: typeStats.participant_count
+              }
+            });
+          }
+        }
+      });
+      
+      return events;
+    }
+
+    // Fallback to existing logic (calculating from reservations array)
     console.log('Creating participant count events for grouped reservations:', groupedReservations);
     
     Object.entries(groupedReservations).forEach(([dateStr, dayReservations]) => {
@@ -502,43 +586,49 @@
 
   /* Participant count badge styling */
   :global(.fc .fc-daygrid-event[data-participant-count="true"]) {
-    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+    background: transparent !important;
     border: none !important;
-    border-radius: 12px !important;
-    font-weight: 700 !important;
-    font-size: 0.75rem !important;
-    padding: 4px 8px !important;
+    box-shadow: none !important;
     margin: 2px !important;
-    display: inline-block !important;
-    min-width: 60px !important;
-    text-align: center !important;
-    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3) !important;
-    transition: all 0.2s ease !important;
-  }
-
-  :global(.fc .fc-daygrid-event[data-participant-count="true"]:hover) {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4) !important;
+    padding: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-width: auto !important;
   }
 
   :global(.fc .fc-daygrid-event[data-participant-count="true"] .fc-event-title) {
-    color: #ffffff !important;
+    background: #3b82f6;
+    color: white !important;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem !important;
     font-weight: 700 !important;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
   }
 
-  /* Open Water participant count styling */
+  /* Open Water specific styling */
   :global(.fc .fc-daygrid-event[data-participant-count="true"][data-type="openwater"]) {
-    background: linear-gradient(135deg, #10b981, #059669) !important;
-    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3) !important;
+    width: 100%;
+    justify-content: flex-start !important;
+    padding-left: 4px !important;
   }
 
-  :global(.fc .fc-daygrid-event[data-participant-count="true"][data-type="openwater"]:hover) {
-    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4) !important;
+  :global(.fc .fc-daygrid-event[data-participant-count="true"][data-type="openwater"] .fc-event-title) {
+    background: #10b981;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    width: auto;
+    height: auto;
+    border-radius: 12px;
+    padding: 2px 8px;
   }
 
   /* Mobile responsive */
   @media (max-width: 768px) {
-    /* Mobile: smaller date boxes */
     :global(.fc-daygrid-day) {
       min-height: 80px !important;
       height: 80px !important;
@@ -547,13 +637,6 @@
     :global(.fc-daygrid-more-link) {
       font-size: 0.625rem !important;
       padding: 1px 6px !important;
-    }
-
-    /* Mobile: smaller participant count badges */
-    :global(.fc .fc-daygrid-event[data-participant-count="true"]) {
-      font-size: 0.625rem !important;
-      padding: 2px 6px !important;
-      min-width: 50px !important;
     }
   }
 </style>

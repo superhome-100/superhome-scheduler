@@ -5,9 +5,7 @@
   import PullToRefresh from '../PullToRefresh.svelte';
   import PendingReservations from './PendingReservations.svelte';
   import UserManagement from './UserManagement.svelte';
-  import AdminCalendar from './AdminCalendar.svelte';
   import ReservationDetailsModal from './ReservationDetailsModal.svelte';
-  import SingleDayView from '../Calendar/SingleDayView.svelte';
   import { reservationApi } from '../../api/reservationApi';
   import { reservationService } from '../../services/reservationService';
   import { userAdminService } from '../../services/userAdminService';
@@ -89,7 +87,7 @@
   // Single day view state
   let showSingleDayView = false;
   let selectedDate: string = '';
-  let initialSingleDayType: ReservationType = ReservationType.pool;
+  let initialSingleDayType: ReservationType = ReservationType.openwater;
   let stats = {
     totalUsers: 0,
     activeUsers: 0,
@@ -342,9 +340,7 @@
   $: {
     if (typeof window !== 'undefined') {
       const urlPath = window.location.pathname;
-      if (urlPath.includes('/admin/calendar')) {
-        adminView = 'calendar';
-      } else if (urlPath.includes('/admin/users')) {
+      if (urlPath.includes('/admin/users')) {
         adminView = 'users';
       } else {
         adminView = 'dashboard';
@@ -419,28 +415,6 @@
             <PriceTemplateCard />
           {:else}
             <BlockReservationCard />
-          {/if}
-        {:else if adminView === 'calendar'}
-          {#if showSingleDayView}
-            <SingleDayView
-              {selectedDate}
-              {reservations}
-              isAdmin={true}
-              initialType={initialSingleDayType}
-              on:backToCalendar={handleBackToCalendar}
-              on:reservationClick={handleCalendarEventClick}
-            />
-          {:else}
-            <!-- Calendar Content Card -->
-            <div class="card bg-base-100 shadow-lg border border-base-300">
-              <div class="card-body p-6">
-                <AdminCalendar 
-                  {reservations}
-                  {loading}
-                  on:dateClick={handleCalendarDateClick}
-                />
-              </div>
-            </div>
           {/if}
         {:else if adminView === 'users'}
           <UserManagement 

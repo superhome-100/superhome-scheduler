@@ -3,7 +3,7 @@
   import { ReservationType } from '../../types/reservations';
   import ReservationTypeSwitcher from '../Reservation/ReservationTypeSwitcher.svelte';
 
-  export let selectedType: ReservationType = ReservationType.pool;
+  export let selectedType: ReservationType = ReservationType.openwater;
 
   const dispatch = createEventDispatcher<{ typeSelected: { type: ReservationType } }>();
 

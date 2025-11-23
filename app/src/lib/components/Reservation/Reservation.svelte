@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { authStore } from '../../stores/auth';
+  import { goto } from '$app/navigation';
+  import { authStore, auth } from '../../stores/auth';
   import { supabase } from '../../utils/supabase';
   import LoadingSpinner from '../LoadingSpinner.svelte';
   import PullToRefresh from '../PullToRefresh.svelte';
@@ -10,7 +11,6 @@
   import ReservationTypeButtons from './ReservationTypeButtons.svelte';
   import ReservationCalendar from './ReservationCalendar.svelte';
   import FloatingActionButton from './FloatingActionButton.svelte';
-  import SingleDayView from '../Calendar/SingleDayView.svelte';
   import { transformReservationForModal } from './reservationUtils';
   import { transformReservationToUnified } from '../../utils/reservationTransform';
   import { createEventDispatcher } from 'svelte';
@@ -18,7 +18,8 @@
 
   const dispatch = createEventDispatcher();
 
-  let selectedType: ReservationType = ReservationType.openwater;
+  export let initialType: ReservationType = ReservationType.openwater;
+  let selectedType: ReservationType = initialType;
   // Map selectedType to form modal initialType literal
   $: initialTypeForModal = (() => {
     switch (selectedType) {
@@ -31,17 +32,15 @@
         return 'openwater';
     }
   })();
+  
+  $: if (initialType) {
+    selectedType = initialType;
+  }
+
   let showReservationModal = false;
   let showDetailsModal = false;
   let refreshing = false;
   let selectedReservation: any = null;
-  
-  // Single day view state
-  let showSingleDayView = false;
-  let selectedDate: string = '';
-  let initialSingleDayType: ReservationType = ReservationType.openwater;
-  // Remember the last calendar-level type to restore after Single Day view
-  let lastCalendarType: ReservationType = selectedType;
   
   // Database data
   let reservations: any[] = [];
@@ -88,21 +87,17 @@
   // Handle calendar date click
   const handleCalendarDateClick = (event: CustomEvent) => {
     const detail: any = event.detail;
-    selectedDate = typeof detail === 'string' ? detail : detail?.date;
-    // Capture the current calendar selection before entering single-day
-    lastCalendarType = selectedType;
-    initialSingleDayType = typeof detail === 'string' ? selectedType : (detail?.type || selectedType);
-    console.log('Reservation: Date clicked - selectedType:', selectedType, 'initialSingleDayType:', initialSingleDayType, 'detail:', detail);
-    showSingleDayView = true;
+    const dateStr = typeof detail === 'string' ? detail : detail?.date;
+    const typeToUse = typeof detail === 'string' ? selectedType : (detail?.type || selectedType);
+    
+    console.log('Reservation: Date clicked - navigating to:', `/reservation/${typeToUse}/${dateStr}`);
+    goto(`/reservation/${typeToUse}/${dateStr}`);
   };
 
-  // Handle back to calendar
-  const handleBackToCalendar = (e: CustomEvent<{ type?: ReservationType }>) => {
-    showSingleDayView = false;
-    selectedDate = '';
-    // Use the last active selection within Single Day view when returning
-    selectedType = e?.detail?.type ?? lastCalendarType;
-  };
+
+
+  // Stats for calendar view
+  let calendarStats: any[] = [];
 
   // Load user's reservations from Supabase with detail tables
   const loadReservations = async () => {
@@ -195,6 +190,27 @@
       
       console.log('Loaded reservations with details:', reservations);
       console.log('Number of reservations loaded:', reservations.length);
+
+      // Fetch global stats for calendar view
+      // Get range: start of current month - 1 month to end of current month + 2 months (approx)
+      // For simplicity, just fetch +/- 3 months from now
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString();
+      const end = new Date(now.getFullYear(), now.getMonth() + 4, 0).toISOString();
+
+      const { data: statsData, error: statsError } = await supabase
+        .rpc('get_monthly_reservation_stats', {
+          start_date: start,
+          end_date: end
+        });
+
+      if (statsError) {
+        console.error('Error fetching calendar stats:', statsError);
+      } else {
+        console.log('Loaded calendar stats:', statsData);
+        calendarStats = statsData || [];
+      }
+
     } catch (err) {
       console.error('Error loading reservations:', err);
       error = err instanceof Error ? err.message : 'Failed to load reservations';
@@ -227,10 +243,16 @@
   };
 
 
-  onMount(() => {
+  let isAdmin = false;
+
+  onMount(async () => {
     console.log('Reservation: onMount called');
     // Ensure light mode only
     document.documentElement.classList.remove('dark-mode');
+    
+    // Check admin status
+    isAdmin = await auth.isAdmin();
+    console.log('Reservation: User is admin?', isAdmin);
     
     // Load reservations
     loadReservations();
@@ -273,16 +295,6 @@
           <button class="btn btn-sm btn-outline" on:click={loadReservations}>Retry</button>
         </div>
       {:else}
-        {#if showSingleDayView}
-          <SingleDayView
-            {selectedDate}
-            {reservations}
-            isAdmin={false}
-            initialType={initialSingleDayType}
-            on:backToCalendar={handleBackToCalendar}
-            on:reservationClick={handleReservationClick}
-          />
-        {:else}
           <!-- Calendar Content Card -->
           <div class="card bg-base-100 shadow-lg border border-base-300">
             <div class="card-body p-6">
@@ -297,19 +309,17 @@
                 {selectedType}
                 {reservations}
                 {loading}
+                stats={calendarStats}
                 on:reservationClick={handleReservationClick}
                 on:dateClick={handleCalendarDateClick}
               />
             </div>
           </div>
-        {/if}
       {/if}
     </div>
 
     <!-- Floating Action Button: New Reservation -->
-    {#if !showSingleDayView}
-      <FloatingActionButton on:newReservation={handleNewReservation} />
-    {/if}
+    <FloatingActionButton on:newReservation={handleNewReservation} />
   </PullToRefresh>
   {/if}
 </div>
