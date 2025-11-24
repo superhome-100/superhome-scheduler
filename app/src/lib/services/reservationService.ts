@@ -137,7 +137,8 @@ class ReservationService {
         res_status: reservationData.res_status,
         pool: reservationData.pool,
         classroom: reservationData.classroom,
-        openwater: reservationData.openwater
+        openwater: reservationData.openwater,
+        buddies: (reservationData as any).buddies // Pass through buddy UIDs
       };
 
       const { data, error } = await callFunction<typeof payload, any>('reservations-create', payload);
