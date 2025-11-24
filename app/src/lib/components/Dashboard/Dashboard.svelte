@@ -6,6 +6,7 @@
   import { showSignOutModal, sidebarActions, getUserInfo } from '../../stores/sidebar';
   import { supabase } from '../../utils/supabase';
   import LoadingSpinner from '../LoadingSpinner.svelte';
+  import ErrorModal from '../ErrorModal.svelte';
   import PullToRefresh from '../PullToRefresh.svelte';
   import Reservation from '../Reservation/Reservation.svelte';
   import AdminDashboard from '../AdminDashboard/AdminDashboard.svelte';
@@ -40,6 +41,10 @@
   let modalTitle = 'Reservations';
   let modalVariant: 'upcoming' | 'completed' | 'all' = 'all';
   let showReservationForm = false;
+  // Modal state for disabled/account messages
+  let statusModalOpen = false;
+  let statusModalTitle = 'Account Notice';
+  let statusModalMessage = '';
   // Mobile tabs state
   let activeMobileTab: 'upcoming' | 'completed' = 'upcoming';
   let showMobileViewAll = false;
@@ -138,8 +143,36 @@
 
 
 
-  const handleNewReservation = () => {
-    showReservationForm = true;
+  const handleNewReservation = async () => {
+    try {
+      if (!$authStore.user) return;
+      const uid = $authStore.user.id;
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('status')
+        .eq('uid', uid)
+        .single();
+      if (error) {
+        console.error('Failed to fetch user status:', error);
+        // Fail closed: show modal and do not open form if we cannot verify
+        statusModalTitle = 'Account Status';
+        statusModalMessage = 'Unable to verify account status. Please try again later.';
+        statusModalOpen = true;
+        return;
+      }
+      if (data && String((data as any).status).toLowerCase() === 'disabled') {
+        statusModalTitle = 'Account Disabled';
+        statusModalMessage = 'Your account is disabled at the moment. Please contact the admin for assistance.';
+        statusModalOpen = true;
+        return;
+      }
+      showReservationForm = true;
+    } catch (e) {
+      console.error('Status check error:', e);
+      statusModalTitle = 'Account Status';
+      statusModalMessage = 'Unable to verify account status. Please try again later.';
+      statusModalOpen = true;
+    }
   };
 
 
@@ -381,3 +414,11 @@
   on:cancel={sidebarActions.closeSignOutModal}
 />
 
+<!-- Centered Modal for Account Status -->
+<ErrorModal 
+  bind:open={statusModalOpen}
+  title={statusModalTitle}
+  message={statusModalMessage}
+  confirmText="Close"
+  on:close={() => (statusModalOpen = false)}
+/>

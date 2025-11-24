@@ -336,6 +336,18 @@
     }
   };
 
+  // Update user nickname via Edge Function
+  const updateUserNickname = async (uid: string, nickname: string) => {
+    try {
+      const res = await userAdminService.updateNickname(uid, nickname);
+      if (!res.success) throw new Error(res.error || 'Failed to update nickname');
+      await loadAdminData();
+    } catch (err) {
+      console.error('Error updating nickname:', err);
+      error = err instanceof Error ? err.message : 'Failed to update nickname';
+    }
+  };
+
   // Determine admin view based on current view
   $: {
     if (typeof window !== 'undefined') {
@@ -423,6 +435,7 @@
             on:refresh={handleRefresh}
             on:toggleUserStatus={(e: any) => toggleUserStatus(e.detail.uid, e.detail.currentStatus)}
             on:toggleUserPrivilege={(e: any) => toggleUserPrivilege(e.detail.uid, e.detail.currentPrivileges)}
+            on:updateNickname={(e: any) => updateUserNickname(e.detail.uid, e.detail.nickname)}
           />
         {/if}
       {/if}
