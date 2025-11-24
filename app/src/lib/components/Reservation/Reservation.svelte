@@ -15,6 +15,7 @@
   import { transformReservationToUnified } from '../../utils/reservationTransform';
   import { createEventDispatcher } from 'svelte';
   import { ReservationType } from '../../types/reservations';
+  import ErrorModal from '../ErrorModal.svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -41,7 +42,11 @@
   let showDetailsModal = false;
   let refreshing = false;
   let selectedReservation: any = null;
-  
+  // Modal state
+  let statusModalOpen = false;
+  let statusModalTitle = 'Account Notice';
+  let statusModalMessage = '';
+
   // Database data
   let reservations: any[] = [];
   let loading = false;
@@ -51,8 +56,35 @@
   // $: console.log('Reservation: selectedType changed to:', selectedType);
 
 
-  const handleNewReservation = () => {
-    showReservationModal = true;
+  const handleNewReservation = async () => {
+    try {
+      if (!$authStore.user) return;
+      const uid = $authStore.user.id;
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('status')
+        .eq('uid', uid)
+        .single();
+      if (error) {
+        console.error('Failed to fetch user status:', error);
+        statusModalTitle = 'Account Status';
+        statusModalMessage = 'Unable to verify account status. Please try again later.';
+        statusModalOpen = true;
+        return;
+      }
+      if (data && String((data as any).status).toLowerCase() === 'disabled') {
+        statusModalTitle = 'Account Disabled';
+        statusModalMessage = 'Your account is disabled at the moment. Please contact the admin for assistance.';
+        statusModalOpen = true;
+        return;
+      }
+      showReservationModal = true;
+    } catch (e) {
+      console.error('Status check error:', e);
+      statusModalTitle = 'Account Status';
+      statusModalMessage = 'Unable to verify account status. Please try again later.';
+      statusModalOpen = true;
+    }
   };
 
   const handleReservationSubmit = (event: CustomEvent) => {
@@ -339,3 +371,11 @@
   on:close={handleDetailsModalClose}
 />
 
+<!-- Centered Modal for Account Status -->
+<ErrorModal 
+  bind:open={statusModalOpen}
+  title={statusModalTitle}
+  message={statusModalMessage}
+  confirmText="Close"
+  on:close={() => (statusModalOpen = false)}
+/>

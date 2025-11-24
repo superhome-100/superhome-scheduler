@@ -34,6 +34,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      assignment_queue: {
+        Row: {
+          created_at: string | null
+          res_date: string
+          status: string
+          time_period: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          res_date: string
+          status?: string
+          time_period: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          res_date?: string
+          status?: string
+          time_period?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       availabilities: {
         Row: {
           available: boolean
@@ -404,6 +428,27 @@ export type Database = {
           },
         ]
       }
+      system_config: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           created_at: string
@@ -461,26 +506,31 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["openwater_activity_type"]
       }
+      _current_user_is_active: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       _owns_reservation: {
         Args: { _res_date: string; _uid: string }
         Returns: boolean
       }
       _process_buoy_group: {
-        Args:
-          | {
-              p_group_depths: number[]
-              p_group_uids: string[]
-              p_open_water_type: string
-              p_res_date: string
-              p_time_period: string
-            }
-          | {
-              p_group_depths: number[]
-              p_group_uids: string[]
-              p_res_date: string
-              p_time_period: string
-            }
+        Args: {
+          p_group_depths: number[]
+          p_group_uids: string[]
+          p_open_water_type: string
+          p_res_date: string
+          p_time_period: string
+        }
         Returns: Record<string, unknown>
+      }
+      _save_buoy_groups: {
+        Args: {
+          p_groups: Database["public"]["CompositeTypes"]["buoy_group_input"][]
+          p_res_date: string
+          p_time_period: string
+        }
+        Returns: undefined
       }
       _validate_openwater_depth: {
         Args: {
@@ -490,12 +540,6 @@ export type Database = {
         Returns: boolean
       }
       auto_assign_buoy: {
-        Args:
-          | { p_res_date: string; p_time_period: string }
-          | { p_res_date: string; p_time_period: string }
-        Returns: Json
-      }
-      auto_assign_buoy_edge_function: {
         Args: { p_res_date: string; p_time_period: string }
         Returns: Json
       }
@@ -506,6 +550,17 @@ export type Database = {
       check_group_capacity: {
         Args: { p_group_id: number }
         Returns: number
+      }
+      claim_assignment_job: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          res_date: string
+          time_period: string
+        }[]
+      }
+      complete_assignment_job: {
+        Args: { p_res_date: string; p_status?: string; p_time_period: string }
+        Returns: undefined
       }
       compute_boat_count: {
         Args: { p_group_id: number }
@@ -544,6 +599,10 @@ export type Database = {
       compute_reservation_total_for: {
         Args: { p_res_ts: string; p_uid: string }
         Returns: number
+      }
+      cron_process_assignment_queue: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       find_best_buoy_for_depth: {
         Args: { target_depth: number }
@@ -795,6 +854,15 @@ export type Database = {
           user_name: string
         }[]
       }
+      get_monthly_reservation_stats: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          participant_count: number
+          res_date: string
+          res_type: Database["public"]["Enums"]["reservation_type"]
+          time_period: string
+        }[]
+      }
       get_my_buoy_assignment: {
         Args: { p_res_date: string; p_time_period: string }
         Returns: {
@@ -841,7 +909,11 @@ export type Database = {
       user_status: "active" | "disabled"
     }
     CompositeTypes: {
-      [_ in never]: never
+      buoy_group_input: {
+        buoy_name: string | null
+        open_water_type: string | null
+        uids: string[] | null
+      }
     }
   }
 }

@@ -2,6 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import dayjs from 'dayjs';
   import LoadingSpinner from '../LoadingSpinner.svelte';
+  import NicknameCell from './NicknameCell.svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -18,6 +19,9 @@
 
   const toggleUserPrivilege = (uid: string, currentPrivileges: string[]) => {
     dispatch('toggleUserPrivilege', { uid, currentPrivileges });
+  };
+  const updateNickname = (uid: string, nickname: string) => {
+    dispatch('updateNickname', { uid, nickname });
   };
 
 </script>
@@ -44,6 +48,7 @@
       <thead>
         <tr>
           <th class="text-[#00294C] font-semibold border-b-2 border-base-300 text-left">Name</th>
+          <th class="text-[#00294C] font-semibold border-b-2 border-base-300 text-left">Nickname</th>
           <th class="text-[#00294C] font-semibold border-b-2 border-base-300 text-center">Status</th>
           <th class="text-[#00294C] font-semibold border-b-2 border-base-300 text-center">Privileges</th>
           <th class="text-[#00294C] font-semibold text-center border-b-2 border-base-300">Actions</th>
@@ -61,6 +66,9 @@
                 </div>
                 <span class="text-[#00294C] font-medium text-xs sm:text-sm truncate">{user.name || 'Unknown'}</span>
               </div>
+            </td>
+            <td class="text-left">
+              <NicknameCell uid={user.uid} value={user.nickname} on:save={(e) => updateNickname(e.detail.uid, e.detail.nickname)} />
             </td>
             <td class="text-center">
               <button 
@@ -113,22 +121,27 @@
   /* Column width distribution - Name longer, others equal and compact */
   .table th:nth-child(1),
   .table td:nth-child(1) {
-    width: 50%;
+    width: 40%;
   }
   
   .table th:nth-child(2),
   .table td:nth-child(2) {
-    width: 16.67%;
+    width: 20%;
   }
   
   .table th:nth-child(3),
   .table td:nth-child(3) {
-    width: 16.67%;
+    width: 13.33%;
   }
   
   .table th:nth-child(4),
   .table td:nth-child(4) {
-    width: 16.67%;
+    width: 13.33%;
+  }
+
+  .table th:nth-child(5),
+  .table td:nth-child(5) {
+    width: 13.33%;
   }
   
   .table thead th {

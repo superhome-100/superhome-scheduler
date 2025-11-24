@@ -20,6 +20,15 @@ export class UserAdminService {
     if (error) return { success: false, error };
     return { success: true };
   }
+
+  async updateNickname(uid: string, nickname: string): Promise<{ success: boolean; error?: string }> {
+    const { error } = await callFunction<{ uid: string; nickname: string }, { ok: boolean }>(
+      'user-update-nickname',
+      { uid, nickname }
+    );
+    if (error) return { success: false, error };
+    return { success: true };
+  }
 }
 
 export const userAdminService = new UserAdminService();

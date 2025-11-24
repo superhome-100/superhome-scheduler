@@ -601,6 +601,23 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Enforce user status: disabled users cannot create reservations
+    {
+      const { data: statusRow, error: statusErr } = await supabase
+        .from('user_profiles')
+        .select('status')
+        .eq('uid', body.uid)
+        .single()
+
+      if (statusErr) {
+        return json({ error: `Failed to verify user status: ${statusErr.message}` }, { status: 400 })
+      }
+
+      if (statusRow && String(statusRow.status).toLowerCase() === 'disabled') {
+        return json({ error: 'Your account is disabled at the moment. Please contact the admin for assistance.' }, { status: 403 })
+      }
+    }
+
     const res_date_iso = new Date(body.res_date).toISOString()
 
     const { data: parent, error: parentError } = await supabase
