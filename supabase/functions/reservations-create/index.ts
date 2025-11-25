@@ -220,6 +220,7 @@ interface Payload {
   pool?: PoolDetails
   classroom?: ClassroomDetails
   openwater?: OpenWaterDetails
+  buddies?: string[] // Array of buddy UIDs
 }
 
 function json(body: unknown, init: ResponseInit = {}) {
@@ -655,6 +656,143 @@ Deno.serve(async (req: Request) => {
     if (detailError) {
       await supabase.from('reservations').delete().eq('uid', body.uid).eq('res_date', res_date_iso)
       return json({ error: `Failed to create details: ${detailError.message}` }, { status: 400 })
+    }
+
+    // Handle buddy group creation if buddies are provided
+    if (body.buddies && body.buddies.length > 0) {
+      try {
+        // Determine time_period for buddy group
+        let timePeriod = '';
+        if (body.res_type === 'open_water') {
+          timePeriod = body.openwater?.time_period || 'AM';
+        } else if (body.res_type === 'pool') {
+          timePeriod = body.pool?.start_time || '';
+        } else if (body.res_type === 'classroom') {
+          timePeriod = body.classroom?.start_time || '';
+        }
+
+        // Create buddy group
+        const { data: buddyGroupId, error: buddyGroupError } = await supabase
+          .rpc('create_buddy_group_with_members', {
+            p_initiator_uid: body.uid,
+            p_res_date: res_date_iso.split('T')[0],
+            p_time_period: timePeriod,
+            p_res_type: body.res_type,
+            p_buddy_uids: body.buddies
+          });
+
+        if (buddyGroupError) {
+          console.error('Failed to create buddy group:', buddyGroupError);
+          // Don't fail the main reservation, just log the error
+        } else {
+          console.log('Created buddy group:', buddyGroupId);
+
+          // Update initiator's reservation with buddy_group_id
+          if (body.res_type === 'open_water') {
+            await supabase
+              .from('res_openwater')
+              .update({ buddy_group_id: buddyGroupId })
+              .eq('uid', body.uid)
+              .eq('res_date', res_date_iso);
+          } else if (body.res_type === 'pool') {
+            await supabase
+              .from('res_pool')
+              .update({ buddy_group_id: buddyGroupId })
+              .eq('uid', body.uid)
+              .eq('res_date', res_date_iso);
+          }
+
+          // Create reservations for buddies (if they don't already have one)
+          for (const buddyUid of body.buddies) {
+            if (buddyUid === body.uid) continue; // Skip initiator
+
+            // Check if buddy already has a reservation for this date/time
+            const { data: existingRes } = await supabase
+              .from('reservations')
+              .select('uid')
+              .eq('uid', buddyUid)
+              .eq('res_type', body.res_type)
+              .gte('res_date', res_date_iso.split('T')[0] + ' 00:00:00+00')
+              .lte('res_date', res_date_iso.split('T')[0] + ' 23:59:59+00')
+              .in('res_status', ['pending', 'confirmed'])
+              .maybeSingle();
+
+            if (existingRes) {
+              console.log(`Buddy ${buddyUid} already has a reservation, linking to group`);
+              // Just link their existing reservation to the group
+              if (body.res_type === 'open_water') {
+                await supabase
+                  .from('res_openwater')
+                  .update({ buddy_group_id: buddyGroupId })
+                  .eq('uid', buddyUid)
+                  .eq('res_date', res_date_iso);
+              } else if (body.res_type === 'pool') {
+                await supabase
+                  .from('res_pool')
+                  .update({ buddy_group_id: buddyGroupId })
+                  .eq('uid', buddyUid)
+                  .eq('res_date', res_date_iso);
+              }
+              continue;
+            }
+
+            // Create reservation for buddy
+            const { data: buddyParent, error: buddyParentError } = await supabase
+              .from('reservations')
+              .insert({
+                uid: buddyUid,
+                res_date: res_date_iso,
+                res_type: body.res_type,
+                res_status: 'pending' // Buddies need to confirm
+              })
+              .select('*')
+              .maybeSingle();
+
+            if (buddyParentError) {
+              console.error(`Failed to create reservation for buddy ${buddyUid}:`, buddyParentError);
+              continue; // Skip this buddy
+            }
+
+            // Create type-specific detail for buddy
+            let buddyDetailError: any = null;
+            switch (body.res_type) {
+              case 'pool':
+                if (body.pool) {
+                  const { error } = await supabase.from('res_pool').insert({
+                    uid: buddyUid,
+                    res_date: res_date_iso,
+                    ...body.pool,
+                    buddy_group_id: buddyGroupId
+                  });
+                  buddyDetailError = error;
+                }
+                break;
+              case 'open_water':
+                if (body.openwater) {
+                  const { error } = await supabase.from('res_openwater').insert({
+                    uid: buddyUid,
+                    res_date: res_date_iso,
+                    ...body.openwater,
+                    buddy_group_id: buddyGroupId
+                  });
+                  buddyDetailError = error;
+                }
+                break;
+            }
+
+            if (buddyDetailError) {
+              console.error(`Failed to create details for buddy ${buddyUid}:`, buddyDetailError);
+              // Rollback buddy reservation
+              await supabase.from('reservations').delete().eq('uid', buddyUid).eq('res_date', res_date_iso);
+            } else {
+              console.log(`Created reservation for buddy ${buddyUid}`);
+            }
+          }
+        }
+      } catch (buddyError) {
+        console.error('Error handling buddy group:', buddyError);
+        // Don't fail the main reservation
+      }
     }
 
     return json(parent, { status: 200 })

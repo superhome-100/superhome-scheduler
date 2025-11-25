@@ -26,8 +26,7 @@ values
   ('00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'rachel@example.com', '$2a$10$7Q0m5Gk1VYv3J4g1k3pJc.dummyhashhashhashhashhashhashhash', now(), now(), now()),
   ('00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'sam@example.com', '$2a$10$7Q0m5Gk1VYv3J4g1k3pJc.dummyhashhashhashhashhashhashhash', now(), now(), now()),
   ('00000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'tina@example.com', '$2a$10$7Q0m5Gk1VYv3J4g1k3pJc.dummyhashhashhashhashhashhashhash', now(), now(), now()),
-  ('00000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin@example.com', '$2a$10$7Q0m5Gk1VYv3J4g1k3pJc.dummyhashhashhashhashhashhashhash', now(), now(), now()),
-  ('8b7c6991-a4fe-4952-a079-e68d3de9f2b0', '8b7c6991-a4fe-4952-a079-e68d3de9f2b0', 'authenticated', 'authenticated', 'get.neilmolina@gmail.com', '$2a$10$7Q0m5Gk1VYv3J4g1k3pJc.dummyhashhashhashhashhashhashhash', now(), now(), now())
+  ('00000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin@example.com', '$2a$10$7Q0m5Gk1VYv3J4g1k3pJc.dummyhashhashhashhashhashhashhash', now(), now(), now())
 on conflict (id) do nothing;
 
 -- Profiles (admin + users)
@@ -53,8 +52,7 @@ values
   ('00000000-0000-0000-0000-000000000002', 'Quinn', 'Quinn', array['user']),
   ('00000000-0000-0000-0000-000000000003', 'Rachel', 'Rachel', array['user']),
   ('00000000-0000-0000-0000-000000000004', 'Sam', 'Sam', array['user']),
-  ('00000000-0000-0000-0000-000000000005', 'Tina', 'Tina', array['user']),
-  ('8b7c6991-a4fe-4952-a079-e68d3de9f2b0', 'Neil Molina', 'Neil Molina', array['admin'])
+  ('00000000-0000-0000-0000-000000000005', 'Tina', 'Tina', array['user'])
 on conflict (uid) do nothing;
 
 -- Open Water reservations parent rows - COMMENTED OUT

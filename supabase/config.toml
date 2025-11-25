@@ -79,9 +79,9 @@ enabled = true
 [studio]
 enabled = true
 # Port to use for Supabase Studio.
-port = 5432
+port = 54323
 # External URL of the API server that frontend connects to.
-api_url = "http://127.0.0.1"
+api_url = "http://localhost"
 # OpenAI API Key to use for Supabase AI in the Supabase Studio.
 openai_api_key = "env(OPENAI_API_KEY)"
 
@@ -283,7 +283,7 @@ skip_nonce_check = false
 enabled = true
 client_id = "env(SUPABASE_AUTH_GOOGLE_CLIENT_ID)"
 secret = "env(SUPABASE_AUTH_GOOGLE_SECRET_KEY)"
-redirect_uri = "http://127.0.0.1:54321/auth/v1/callback"
+redirect_uri = "http://localhost:54321/auth/v1/callback"
 skip_nonce_check = true
 
 # Allow Solana wallet holders to sign in to your project via the Sign in with Solana (SIWS, EIP-4361) standard.

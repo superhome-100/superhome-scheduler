@@ -131,13 +131,14 @@ Deno.serve(async (req: Request) => {
 async function processAssignment(supabase: any, res_date: string, time_period: string) {
   console.log(`Auto-assigning buoys for ${res_date} ${time_period}`);
 
-  // 1. Fetch Reservations
+  // 1. Fetch Reservations (now including buoy column)
   const { data: reservations, error: resErr } = await supabase
     .from('res_openwater')
     .select(`
       uid,
       depth_m,
       open_water_type,
+      buoy,
       reservations!inner (
         res_status,
         res_type
@@ -152,11 +153,16 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
   if (resErr) throw new Error(`Error fetching reservations: ${resErr.message}`);
 
   // Flatten data
-  const validReservations: Reservation[] = (reservations || [])
+  interface ReservationWithBuoy extends Reservation {
+    buoy: string | null;
+  }
+  
+  const validReservations: ReservationWithBuoy[] = (reservations || [])
     .map((r: any) => ({
       uid: r.uid,
       depth_m: r.depth_m,
       open_water_type: r.open_water_type,
+      buoy: r.buoy,
       res_status: r.reservations.res_status
     }))
     .filter(r => r.depth_m !== null && r.open_water_type !== null);
@@ -170,41 +176,129 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
   if (buoyErr) throw new Error(`Error fetching buoys: ${buoyErr.message}`);
   const availableBuoys = buoys as Buoy[];
 
+  // Track assigned buoys to avoid double-assignment
+  const assignedBuoyNames = new Set<string>();
+
+  // Helper to find best available buoy
+  const findBuoy = (depth: number): string | null => {
+    // Filter suitable buoys
+    const suitable = availableBuoys.filter(b => b.max_depth >= depth);
+    
+    // Try to find an unused one first
+    const unused = suitable.find(b => !assignedBuoyNames.has(b.buoy_name));
+    if (unused) {
+      return unused.buoy_name;
+    }
+    
+    // If all suitable buoys are used, we cannot assign a new group
+    // This prevents "assigning buoys multiple times"
+    return null;
+  };
+
   // 3. Grouping Logic
   const groups: GroupResult[] = [];
   const skipped: any[] = [];
+  const assigned = new Set<string>();
 
-  // Helper to find best buoy
-  const findBuoy = (depth: number): string | null => {
-    const buoy = availableBuoys.find(b => b.max_depth >= depth);
-    return buoy ? buoy.buoy_name : null;
-  };
-
-  // Separate course_coaching
+  // STEP 1: Process Course Coaching (1 per group, respect preferred buoy)
   const courseCoaching = validReservations.filter(r => r.open_water_type === 'course_coaching');
-  const others = validReservations.filter(r => r.open_water_type !== 'course_coaching');
-
-  // Process Course Coaching (1 per group)
   for (const res of courseCoaching) {
-    const buoyName = findBuoy(res.depth_m);
+    // If preferred buoy is set, use it (even if used). Otherwise find unused.
+    const buoyName = res.buoy || findBuoy(res.depth_m); 
+    
     if (buoyName) {
       groups.push({
         buoy_name: buoyName,
         open_water_type: res.open_water_type,
         uids: [res.uid]
       });
+      assigned.add(res.uid);
+      assignedBuoyNames.add(buoyName); // Mark as used
     } else {
       skipped.push({ reason: 'no_buoy_available', uids: [res.uid] });
     }
   }
 
-  // Process Others (Group by type & depth)
-  others.sort((a, b) => {
-    if (a.open_water_type !== b.open_water_type) return a.open_water_type.localeCompare(b.open_water_type);
+  // STEP 2: Process non-coaching reservations
+  const others = validReservations.filter(r => 
+    r.open_water_type !== 'course_coaching' && 
+    !assigned.has(r.uid)
+  );
+
+  // Separate anchored (have preferred buoy) and flexible (no preference)
+  const anchored = others.filter(r => r.buoy !== null);
+  const flexible = others.filter(r => r.buoy === null);
+
+  // STEP 3: Create anchor groups and fill with compatible flexible reservations
+  interface AnchorGroup {
+    buoy_name: string;
+    type: string;
+    members: ReservationWithBuoy[];
+  }
+  
+  const anchorGroups = new Map<string, AnchorGroup>();
+
+  // Group anchored reservations by buoy + type
+  for (const anchor of anchored) {
+    const key = `${anchor.buoy}_${anchor.open_water_type}`;
+    if (!anchorGroups.has(key)) {
+      anchorGroups.set(key, {
+        buoy_name: anchor.buoy!,
+        type: anchor.open_water_type,
+        members: []
+      });
+    }
+    anchorGroups.get(key)!.members.push(anchor);
+    assigned.add(anchor.uid);
+    assignedBuoyNames.add(anchor.buoy!); // Mark as used
+  }
+
+  // Fill anchor groups with compatible flexible reservations
+  for (const group of anchorGroups.values()) {
+    if (group.members.length >= 3) continue; // Already full
+
+    const maxDepth = Math.max(...group.members.map(m => m.depth_m));
+
+    // Find compatible flexible reservations (same type, not yet assigned)
+    const compatible = flexible
+      .filter(r => 
+        r.open_water_type === group.type &&
+        !assigned.has(r.uid)
+      )
+      .sort((a, b) => 
+        Math.abs(a.depth_m - maxDepth) - Math.abs(b.depth_m - maxDepth)
+      );
+
+    // Add closest matches (within 15m depth difference, or if group has only 1 member)
+    for (const candidate of compatible) {
+      if (group.members.length >= 3) break;
+
+      const depthDiff = Math.abs(candidate.depth_m - maxDepth);
+      if (depthDiff <= 15 || group.members.length === 1) {
+        group.members.push(candidate);
+        assigned.add(candidate.uid);
+      }
+    }
+
+    // Save the anchor group
+    groups.push({
+      buoy_name: group.buoy_name,
+      open_water_type: group.type,
+      uids: group.members.map(m => m.uid)
+    });
+  }
+
+  // STEP 4: Auto-group remaining flexible reservations (existing algorithm)
+  const remaining = flexible.filter(r => !assigned.has(r.uid));
+  
+  // Sort by type then depth
+  remaining.sort((a, b) => {
+    if (a.open_water_type !== b.open_water_type) 
+      return a.open_water_type.localeCompare(b.open_water_type);
     return a.depth_m - b.depth_m;
   });
 
-  let currentGroup: Reservation[] = [];
+  let currentGroup: ReservationWithBuoy[] = [];
   
   const flushGroup = () => {
     if (currentGroup.length === 0) return;
@@ -219,13 +313,14 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
         open_water_type: type,
         uids: currentGroup.map(r => r.uid)
       });
+      assignedBuoyNames.add(buoyName); // Mark as used
     } else {
       skipped.push({ reason: 'no_buoy_available', uids: currentGroup.map(r => r.uid) });
     }
     currentGroup = [];
   };
 
-  for (const res of others) {
+  for (const res of remaining) {
     if (currentGroup.length === 0) {
       currentGroup.push(res);
     } else {
@@ -247,7 +342,7 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
   }
   flushGroup();
 
-  // 4. Save Results (Atomic RPC)
+  // 5. Save Results (Atomic RPC)
   const { error: saveErr } = await supabase.rpc('_save_buoy_groups', {
     p_res_date: res_date,
     p_time_period: time_period,
@@ -263,3 +358,4 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
     skipped 
   };
 }
+

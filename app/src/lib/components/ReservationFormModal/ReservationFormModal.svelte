@@ -1,38 +1,53 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import { authStore } from '../../stores/auth';
-  import { reservationStore } from '../../stores/reservationStore';
-  import type { CreateReservationData } from '../../api/reservationApi';
-  import FormModalHeader from './FormModalHeader.svelte';
-  import FormBasicFields from './FormBasicFields.svelte';
-  import FormOpenWaterFields from './FormOpenWaterFields.svelte';
-  import FormPoolFields from './FormPoolFields.svelte';
-  import FormClassroomFields from './FormClassroomFields.svelte';
-  import FormTimeFields from './FormTimeFields.svelte';
-  import FormNotes from './FormNotes.svelte';
-  import FormActions from './FormActions.svelte';
-  import FormErrorAlert from './FormErrorAlert.svelte';
-  import EquipmentOptions from './EquipmentOptions.svelte';
-  import CutoffWarning from '../CutoffWarning.svelte';
-  import { validateForm, getDefaultFormData, getSubmissionData, getDefaultDateForType, getDefaultTimesFor } from './formUtils';
-  import { isBeforeCutoff } from '../../utils/cutoffRules';
-  import { checkBlockForForm, checkCapacityForForm } from '$lib/utils/availabilityClient';
-  import type { ReservationType } from '../../services/reservationService';
-  import Toast from '../Toast.svelte';
-  import { showLoading, hideLoading } from '../../stores/ui';
+  import { createEventDispatcher } from "svelte";
+  import { authStore } from "../../stores/auth";
+  import { reservationStore } from "../../stores/reservationStore";
+  import type { CreateReservationData } from "../../api/reservationApi";
+  import FormModalHeader from "./FormModalHeader.svelte";
+  import FormBasicFields from "./FormBasicFields.svelte";
+  import FormOpenWaterFields from "./FormOpenWaterFields.svelte";
+  import FormPoolFields from "./FormPoolFields.svelte";
+  import FormClassroomFields from "./FormClassroomFields.svelte";
+  import FormTimeFields from "./FormTimeFields.svelte";
+  import FormNotes from "./FormNotes.svelte";
+  import FormActions from "./FormActions.svelte";
+  import FormErrorAlert from "./FormErrorAlert.svelte";
+  import EquipmentOptions from "./EquipmentOptions.svelte";
+  import BuddySelection from "./BuddySelection.svelte";
+  import CutoffWarning from "../CutoffWarning.svelte";
+  import {
+    validateForm,
+    getDefaultFormData,
+    getSubmissionData,
+    getDefaultDateForType,
+    getDefaultTimesFor,
+  } from "./formUtils";
+  import { isBeforeCutoff } from "../../utils/cutoffRules";
+  import {
+    checkBlockForForm,
+    checkCapacityForForm,
+  } from "$lib/utils/availabilityClient";
+  import type { ReservationType } from "../../services/reservationService";
+  import Toast from "../Toast.svelte";
+  import { showLoading, hideLoading } from "../../stores/ui";
 
   const dispatch = createEventDispatcher();
 
   export let isOpen = false;
   // Optional initial type from caller (Reservation page calendar selection)
-  export let initialType: 'openwater' | 'pool' | 'classroom' | undefined;
+  export let initialType: "openwater" | "pool" | "classroom" | undefined;
 
   // Form data
   let formData = getDefaultFormData();
+  // Initialize buddies array
+  formData.buddies = [];
 
   // Set default pulley value for Course/Coaching
-  $: if (formData.openWaterType === 'course_coaching' && formData.pulley === false) {
-    formData.pulley = 'true';
+  $: if (
+    formData.openWaterType === "course_coaching" &&
+    formData.pulley === false
+  ) {
+    formData.pulley = "true";
   }
 
   // Trigger validation when form data changes
@@ -42,30 +57,38 @@
   }
 
   // Map UI form type to service ReservationType ('open_water' | 'pool' | 'classroom')
-  const toServiceReservationType = (t: 'openwater' | 'pool' | 'classroom'): ReservationType => {
-    return t === 'openwater' ? 'open_water' : t;
+  const toServiceReservationType = (
+    t: "openwater" | "pool" | "classroom",
+  ): ReservationType => {
+    return t === "openwater" ? "open_water" : t;
   };
 
   // Reactive values for CutoffWarning to ensure updates
   $: currentReservationDate = formData.date;
-  $: currentResType = formData.type ? toServiceReservationType(formData.type) : 'pool';
+  $: currentResType = formData.type
+    ? toServiceReservationType(formData.type)
+    : "pool";
 
   // Check if cutoff time has passed (used for warnings and disabling actions)
   $: isCutoffPassed = (() => {
     if (!formData.date || !formData.type) return false;
-    const resType: ReservationType = formData.type ? toServiceReservationType(formData.type) : 'pool';
+    const resType: ReservationType = formData.type
+      ? toServiceReservationType(formData.type)
+      : "pool";
 
     // Open Water: evaluate against fixed slot start
-    if (formData.type === 'openwater' && formData.timeOfDay) {
-      const time = formData.timeOfDay === 'AM' ? '08:00' : '13:00';
+    if (formData.type === "openwater" && formData.timeOfDay) {
+      const time = formData.timeOfDay === "AM" ? "08:00" : "13:00";
       const reservationDateTime = new Date(`${formData.date}T${time}`);
       return !isBeforeCutoff(reservationDateTime.toISOString(), resType);
     }
 
     // Pool/Classroom: only evaluate cutoff once a startTime is chosen
-    if ((formData.type === 'pool' || formData.type === 'classroom')) {
+    if (formData.type === "pool" || formData.type === "classroom") {
       if (!formData.startTime) return false;
-      const reservationDateTime = new Date(`${formData.date}T${formData.startTime}`);
+      const reservationDateTime = new Date(
+        `${formData.date}T${formData.startTime}`,
+      );
       return !isBeforeCutoff(reservationDateTime.toISOString(), resType);
     }
 
@@ -91,13 +114,21 @@
   }
 
   // Also trigger when subtype fields change
-  $: if (formData.type === 'pool' && formData.poolType && formData.date) {
+  $: if (formData.type === "pool" && formData.poolType && formData.date) {
     checkAvailabilityClient();
   }
-  $: if (formData.type === 'classroom' && formData.classroomType && formData.date) {
+  $: if (
+    formData.type === "classroom" &&
+    formData.classroomType &&
+    formData.date
+  ) {
     checkAvailabilityClient();
   }
-  $: if (formData.type === 'openwater' && formData.openWaterType && formData.date) {
+  $: if (
+    formData.type === "openwater" &&
+    formData.openWaterType &&
+    formData.date
+  ) {
     checkAvailabilityClient();
   }
 
@@ -109,7 +140,7 @@
       capacityKind = null;
       return;
     }
-    if (formData.type !== 'pool' && formData.type !== 'classroom') {
+    if (formData.type !== "pool" && formData.type !== "classroom") {
       capacityBlocked = false;
       capacityMessage = null;
       capacityKind = null;
@@ -118,15 +149,25 @@
     const res = await checkCapacityForForm(formData);
     capacityBlocked = !res.available;
     capacityKind = res.kind;
-    capacityMessage = res.available ? null : (res.reason || (res.kind === 'pool' ? 'No pool lanes available for the selected time' : 'No classrooms available for the selected time window'));
+    capacityMessage = res.available
+      ? null
+      : res.reason ||
+        (res.kind === "pool"
+          ? "No pool lanes available for the selected time"
+          : "No classrooms available for the selected time window");
   }
 
-  $: if ((formData.type === 'pool' || formData.type === 'classroom') && formData.date && formData.startTime && formData.endTime) {
+  $: if (
+    (formData.type === "pool" || formData.type === "classroom") &&
+    formData.date &&
+    formData.startTime &&
+    formData.endTime
+  ) {
     checkCapacityClient();
   }
 
   // When classroom capacity is blocked, surface a toast immediately
-  $: if (capacityBlocked && capacityKind === 'classroom' && capacityMessage) {
+  $: if (capacityBlocked && capacityKind === "classroom" && capacityMessage) {
     showErrorToast(capacityMessage);
   }
 
@@ -142,14 +183,14 @@
   // Client-side capacity check result for Pool/Classroom
   let capacityBlocked = false;
   let capacityMessage: string | null = null;
-  let capacityKind: 'pool' | 'classroom' | null = null;
+  let capacityKind: "pool" | "classroom" | null = null;
 
   // Scroll helpers for ensuring error visibility
   let modalEl: HTMLDivElement | null = null;
   const scrollToTop = () => {
     if (modalEl) {
       try {
-        modalEl.scrollTo({ top: 0, behavior: 'smooth' });
+        modalEl.scrollTo({ top: 0, behavior: "smooth" });
       } catch {
         modalEl.scrollTop = 0;
       }
@@ -158,7 +199,7 @@
 
   // Toast state for capacity errors
   let toastOpen = false;
-  let toastMessage = '';
+  let toastMessage = "";
   const showErrorToast = (msg: string) => {
     toastMessage = msg;
     toastOpen = true;
@@ -167,7 +208,7 @@
   };
 
   const closeModal = () => {
-    dispatch('close');
+    dispatch("close");
   };
 
   const handleOverlayClick = (event: MouseEvent) => {
@@ -193,10 +234,10 @@
       scrollToTop();
       return;
     }
-    
+
     if (!validateFormData()) return;
     if (!$authStore.user) {
-      submitError = 'You must be logged in to make a reservation';
+      submitError = "You must be logged in to make a reservation";
       return;
     }
 
@@ -208,94 +249,112 @@
       const submissionData = getSubmissionData(formData);
 
       // Create reservation date-time
-      const reservationDateTime = new Date(`${submissionData.date}T${submissionData.startTime}`);
-      
+      const reservationDateTime = new Date(
+        `${submissionData.date}T${submissionData.startTime}`,
+      );
+
       // Check if date is in the future
       if (reservationDateTime <= new Date()) {
-        submitError = 'Reservation date must be in the future';
+        submitError = "Reservation date must be in the future";
         return;
       }
 
       // Map form type to database enum
       // Prepare reservation data for CRUD API
       const reservationData: CreateReservationData = {
-        res_type: toServiceReservationType(submissionData.type as 'openwater' | 'pool' | 'classroom'),
+        res_type: toServiceReservationType(
+          submissionData.type as "openwater" | "pool" | "classroom",
+        ),
         res_date: reservationDateTime.toISOString(),
-        res_status: 'pending'
+        res_status: "pending",
       };
 
       // Add type-specific details
-      if (submissionData.type === 'pool') {
+      if (submissionData.type === "pool") {
         reservationData.pool = {
           start_time: submissionData.startTime,
           end_time: submissionData.endTime,
           note: submissionData.notes.trim() || undefined,
           pool_type: formData.poolType || undefined,
-          student_count: formData.poolType === 'course_coaching'
-            ? parseInt(formData.studentCount as unknown as string, 10)
-            : undefined
+          student_count:
+            formData.poolType === "course_coaching"
+              ? parseInt(formData.studentCount as unknown as string, 10)
+              : undefined,
         };
-      } else if (submissionData.type === 'classroom') {
+      } else if (submissionData.type === "classroom") {
         reservationData.classroom = {
           start_time: submissionData.startTime,
           end_time: submissionData.endTime,
           note: submissionData.notes.trim() || undefined,
           classroom_type: formData.classroomType || undefined,
-          student_count: formData.classroomType === 'course_coaching'
-            ? parseInt(formData.studentCount as unknown as string, 10)
-            : undefined
+          student_count:
+            formData.classroomType === "course_coaching"
+              ? parseInt(formData.studentCount as unknown as string, 10)
+              : undefined,
         };
-      } else if (submissionData.type === 'openwater') {
+      } else if (submissionData.type === "openwater") {
         reservationData.openwater = {
           time_period: submissionData.timeOfDay,
-          depth_m: formData.depth ? parseInt(formData.depth as unknown as string, 10) : undefined,
+          depth_m: formData.depth
+            ? parseInt(formData.depth as unknown as string, 10)
+            : undefined,
           open_water_type: formData.openWaterType || undefined,
-          student_count: formData.openWaterType === 'course_coaching' ? 
-            parseInt(formData.studentCount as unknown as string, 10) : undefined,
+          student_count:
+            formData.openWaterType === "course_coaching"
+              ? parseInt(formData.studentCount as unknown as string, 10)
+              : undefined,
           // Equipment fields for Open Water types (Autonomous and Course/Coaching)
-          pulley: formData.openWaterType === 'course_coaching' ? 
-            (formData.pulley === 'true' || formData.pulley === true) : !!formData.pulley,
+          pulley:
+            formData.openWaterType === "course_coaching"
+              ? formData.pulley === "true" || formData.pulley === true
+              : !!formData.pulley,
           deep_fim_training: !!formData.deepFimTraining,
           bottom_plate: !!formData.bottomPlate,
           large_buoy: !!formData.largeBuoy,
-          note: submissionData.notes.trim() || undefined
+          note: submissionData.notes.trim() || undefined,
         };
       }
 
       // Use CRUD system to create reservation
-      showLoading('Submitting reservation...');
-      const result = await reservationStore.createReservation($authStore.user.id, reservationData);
-      
+      showLoading("Submitting reservation...");
+      const result = await reservationStore.createReservation(
+        $authStore.user.id,
+        reservationData,
+      );
+
       if (result.success) {
         // Dispatch success event with the created reservation data
-        dispatch('submit', {
+        dispatch("submit", {
           ...submissionData,
-          reservation: result.data
+          reservation: result.data,
         });
         resetForm();
         closeModal();
       } else {
-        submitError = result.error || 'Failed to create reservation';
+        submitError = result.error || "Failed to create reservation";
         scrollToTop();
         // Detect no-lane availability error from edge function and disable submit
-        if (submitError && submitError.includes('No pool lanes available')) {
+        if (submitError && submitError.includes("No pool lanes available")) {
           noLaneError = true;
         }
         // Detect no-room availability error from edge function and disable submit
-        if (submitError && submitError.includes('No classrooms available')) {
+        if (submitError && submitError.includes("No classrooms available")) {
           noRoomError = true;
           // Also show a toast for classroom unavailability
           showErrorToast(submitError);
         }
         // Detect cross-type conflict message and show toast
-        if (submitError && submitError.startsWith('Already have a reservation for ')) {
+        if (
+          submitError &&
+          submitError.startsWith("Already have a reservation for ")
+        ) {
           showErrorToast(submitError);
         }
       }
-      
     } catch (err) {
-      console.error('Error creating reservation:', err);
-      submitError = err instanceof Error ? err.message : 'Failed to create reservation';
+      console.error("Error creating reservation:", err);
+      submitError =
+        err instanceof Error ? err.message : "Failed to create reservation";
     } finally {
       loading = false;
       hideLoading();
@@ -317,24 +376,25 @@
 
   // Handle type change to reset time fields for Open Water
   const handleTypeChange = () => {
-    if (formData.type === 'openwater') {
+    if (formData.type === "openwater") {
       // Clear time fields for Open Water
-      formData.startTime = '';
-      formData.endTime = '';
-    } else if (formData.type === 'pool') {
+      formData.startTime = "";
+      formData.endTime = "";
+    } else if (formData.type === "pool") {
       // Pool defaults with 30-min logic
-      formData.poolType = 'autonomous';
-      const t = getDefaultTimesFor('pool');
+      formData.poolType = "autonomous";
+      const t = getDefaultTimesFor("pool");
       formData.startTime = t.startTime;
       formData.endTime = t.endTime;
-    } else if (formData.type === 'classroom') {
+    } else if (formData.type === "classroom") {
       // Classroom defaults with 30-min logic
-      const t = getDefaultTimesFor('classroom');
+      const t = getDefaultTimesFor("classroom");
       formData.startTime = t.startTime;
       formData.endTime = t.endTime;
     }
     // Recompute default date based on type and current time cutoff
-    const mappedType: 'openwater' | 'pool' | 'classroom' = (formData.type as any) || 'pool';
+    const mappedType: "openwater" | "pool" | "classroom" =
+      (formData.type as any) || "pool";
     formData.date = getDefaultDateForType(mappedType);
   };
 
@@ -365,7 +425,7 @@
   };
 
   const handleKeydown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
+    if (event.key === "Escape") {
       closeModal();
     }
   };
@@ -374,10 +434,10 @@
 <svelte:window on:keydown={handleKeydown} />
 
 {#if isOpen}
-  <div 
-    class="modal-overlay" 
+  <div
+    class="modal-overlay"
     on:click={handleOverlayClick}
-    on:keydown={(e) => e.key === 'Escape' && closeModal()}
+    on:keydown={(e) => e.key === "Escape" && closeModal()}
     role="dialog"
     aria-modal="true"
     aria-label="Reservation Request"
@@ -398,27 +458,27 @@
             {/if}
           </div>
         {/if}
-        
+
         <!-- Cut-off Warning -->
         {#if currentReservationDate && currentResType}
-          <CutoffWarning 
+          <CutoffWarning
             reservationDate={currentReservationDate}
             resType={currentResType}
             startTime={formData.startTime}
           />
         {/if}
-        
+
         <div class="form-grid">
           <!-- Basic Fields: Date and Type -->
-          <FormBasicFields 
-            bind:formData 
-            {errors} 
+          <FormBasicFields
+            bind:formData
+            {errors}
             on:typeChange={handleTypeChange}
             on:validationChange={handleValidationChange}
           />
 
-          {#if formData.type === 'pool'}
-            <FormPoolFields 
+          {#if formData.type === "pool"}
+            <FormPoolFields
               bind:formData
               {errors}
               {submitAttempted}
@@ -427,17 +487,17 @@
           {/if}
 
           <!-- Open Water specific fields -->
-          {#if formData.type === 'openwater'}
-            <FormOpenWaterFields 
-              bind:formData 
+          {#if formData.type === "openwater"}
+            <FormOpenWaterFields
+              bind:formData
               {errors}
               {submitAttempted}
               on:validationChange={handleValidationChange}
             />
           {/if}
 
-          {#if formData.type === 'classroom'}
-            <FormClassroomFields 
+          {#if formData.type === "classroom"}
+            <FormClassroomFields
               bind:formData
               {errors}
               {submitAttempted}
@@ -446,11 +506,11 @@
           {/if}
 
           <!-- Time fields for Pool and Classroom -->
-          {#if formData.type !== 'openwater'}
+          {#if formData.type !== "openwater"}
             <div class="time-fields-wrapper">
-              <FormTimeFields 
-                bind:formData 
-                {errors} 
+              <FormTimeFields
+                bind:formData
+                {errors}
                 on:validationChange={handleValidationChange}
               />
             </div>
@@ -458,20 +518,39 @@
         </div>
 
         <!-- Equipment Options: Open Water only -->
-        {#if formData.type === 'openwater'}
+        {#if formData.type === "openwater"}
           <EquipmentOptions bind:formData />
         {/if}
+
+        <!-- Buddy Selection -->
+        <BuddySelection bind:formData />
 
         <!-- Notes -->
         <FormNotes bind:formData />
 
         {#if capacityBlocked && capacityMessage}
-          <div class="alert my-2 text-sm" class:alert-error={capacityKind === 'pool'} class:alert-warning={capacityKind !== 'pool'}>
-            <span class={(capacityKind === 'pool' || capacityKind === 'classroom') ? 'text-red-600 font-semibold' : ''}>{capacityMessage}</span>
+          <div
+            class="alert my-2 text-sm"
+            class:alert-error={capacityKind === "pool"}
+            class:alert-warning={capacityKind !== "pool"}
+          >
+            <span
+              class={capacityKind === "pool" || capacityKind === "classroom"
+                ? "text-red-600 font-semibold"
+                : ""}>{capacityMessage}</span
+            >
           </div>
         {/if}
         <!-- Actions -->
-        <FormActions {loading} isCutoffPassed={(isCutoffPassed || isBlocked || noLaneError || noRoomError || capacityBlocked)} on:close={closeModal} />
+        <FormActions
+          {loading}
+          isCutoffPassed={isCutoffPassed ||
+            isBlocked ||
+            noLaneError ||
+            noRoomError ||
+            capacityBlocked}
+          on:close={closeModal}
+        />
       </form>
     </div>
   </div>
@@ -506,7 +585,6 @@
     display: flex;
     flex-direction: column;
   }
-
 
   .modal-body {
     padding: 1.5rem;
