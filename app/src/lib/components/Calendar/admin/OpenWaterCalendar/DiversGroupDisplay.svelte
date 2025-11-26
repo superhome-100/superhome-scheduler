@@ -1,7 +1,10 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+  import type { AdminBuoyGroup } from "../../../../types/openWaterAdmin";
+  import type { OpenWaterReservationView } from "../../../../types/reservationViews";
 
-  export let buoyGroup: any;
+  export let buoyGroup: AdminBuoyGroup;
+  export let availableBuoys: { buoy_name: string; max_depth: number }[] = [];
 
   const dispatch = createEventDispatcher();
 
@@ -18,11 +21,81 @@
       handleGroupClick();
     }
   }
+
+  $: nonEmptyNames = (buoyGroup?.member_names ?? []).filter(
+    (x: string | null) => x && x.trim() !== ""
+  );
+
+  $: primaryName = nonEmptyNames[0] ?? "Unknown";
+
+  $: studentCount =
+    buoyGroup?.open_water_type === "course_coaching"
+      ? Math.max((buoyGroup.boat_count ?? 1) - 1, 0)
+      : 0;
+
+  $: memberDisplayNames =
+    buoyGroup?.open_water_type === "course_coaching"
+      ? [
+          `${primaryName} + ${studentCount}`,
+          ...nonEmptyNames.slice(1),
+        ]
+      : nonEmptyNames.length
+      ? nonEmptyNames
+      : [primaryName];
+
+  $: reservations = buoyGroup.reservations;
+
+  // Move-to-buoy dialog state
+  let showMoveDialog = false;
+  let selectedReservation: OpenWaterReservationView | null = null;
+  let targetBuoyName: string | null = null;
+
+  $: moveTargets = (availableBuoys || [])
+    .map((b) => b.buoy_name)
+    .filter((name) => name && name !== buoyGroup.buoy_name);
+
+  function getStatusColorClass(status: string | null | undefined): string {
+    const normalized = (status ?? "").toLowerCase();
+    if (normalized === "confirmed" || normalized === "approved") {
+      return "superhome-bg-success";
+    }
+    if (normalized === "pending") {
+      return "superhome-bg-warning";
+    }
+    if (normalized === "rejected" || normalized === "cancelled") {
+      return "superhome-bg-error";
+    }
+    // Neutral/unknown status
+    return "bg-base-300";
+  }
+
+  function openMoveDialog(reservation: OpenWaterReservationView) {
+    selectedReservation = reservation;
+    targetBuoyName = null;
+    showMoveDialog = true;
+  }
+
+  function closeMoveDialog() {
+    showMoveDialog = false;
+    selectedReservation = null;
+    targetBuoyName = null;
+  }
+
+  function confirmMove() {
+    if (!selectedReservation || !targetBuoyName) return;
+    dispatch("moveReservationToBuoy", {
+      reservation_id: selectedReservation.uid,
+      buoy_id: targetBuoyName,
+      res_date: selectedReservation.res_date,
+      time_period: buoyGroup.time_period,
+    });
+    closeMoveDialog();
+  }
 </script>
 
 {#if buoyGroup.member_names?.length}
   <div
-    class="bg-base-100 border border-gray-300 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 divers-group-box cursor-pointer"
+    class="relative hover:bg-base-200/50 transition-all duration-200 divers-group-box cursor-pointer"
     role="button"
     tabindex="0"
     aria-label="View group reservation details"
@@ -44,61 +117,73 @@
     })}
     <!-- Open Water Type Display Logic -->
     <div class="space-y-1 flex flex-col items-start w-full">
-      <!-- Debug: Log the open_water_type value -->
-      {console.log("🔍 DEBUG - open_water_type check:", {
-        openWaterType: buoyGroup.open_water_type,
-        type: typeof buoyGroup.open_water_type,
-        length: buoyGroup.open_water_type?.length,
-        isCourseCoaching: buoyGroup.open_water_type === "course_coaching",
-        isAutonomousBuoy:
-          buoyGroup.open_water_type?.trim() === "autonomous_buoy",
-        isAutonomousPlatform:
-          buoyGroup.open_water_type?.trim() === "autonomous_platform",
-        isAutonomousPlatformCbs:
-          buoyGroup.open_water_type?.trim() === "autonomous_platform_cbs",
-        conditionMatch:
-          buoyGroup.open_water_type?.trim() === "autonomous_buoy" ||
-          buoyGroup.open_water_type?.trim() === "autonomous_platform" ||
-          buoyGroup.open_water_type?.trim() === "autonomous_platform_cbs",
-      })}
-      {#if buoyGroup.open_water_type === "course_coaching"}
-        <!-- Course/Coaching: Show Instructor Name + Number of students -->
+      {#each reservations as reservation, index}
         <div class="flex items-center gap-2 text-sm w-full">
-          <div class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-          <span class="font-medium text-gray-800">
-            {buoyGroup.member_names?.find((x) => x && x.trim() !== "") ||
-              "Unknown"} + {// For Course/Coaching, boat_count = 1 (instructor) + student_count
-            // So student_count = boat_count - 1
-            Math.max((buoyGroup.boat_count ?? 1) - 1, 0)}
+          <div
+            class={`res-status-marker w-2 h-2 rounded-full flex-shrink-0 ${getStatusColorClass(
+              reservation?.res_status ?? null
+            )}`}
+          ></div>
+          <span class="font-medium text-gray-800 flex-1 truncate">
+            {memberDisplayNames[index] ?? primaryName}
           </span>
+          <button
+            type="button"
+            class="btn btn-ghost btn-xs p-1 min-h-0 h-6 w-6 flex items-center justify-center"
+            on:click|stopPropagation={() => openMoveDialog(reservation)}
+            aria-label="Move to buoy"
+          >
+            ⚑
+          </button>
         </div>
-      {:else if buoyGroup.open_water_type?.trim() === "autonomous_buoy" || buoyGroup.open_water_type?.trim() === "autonomous_platform" || buoyGroup.open_water_type?.trim() === "autonomous_platform_cbs"}
-        <!-- Autonomous types: Show group member names stacked (max 3 per group) -->
-        {#each buoyGroup.member_names.slice(0, 3) as n}
-          <div class="flex items-center gap-2 text-sm w-full">
-            <div class="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-            <span class="font-medium text-gray-800">{n || "Unknown"}</span>
-          </div>
-        {/each}
-        {#if buoyGroup.member_names && buoyGroup.member_names.length > 3}
-          <div class="flex items-center gap-2 text-sm w-full">
-            <div class="w-2 h-2 bg-gray-400 rounded-full flex-shrink-0"></div>
-            <span class="font-medium text-gray-600 text-xs"
-              >+{buoyGroup.member_names.length - 3} more</span
-            >
-          </div>
-        {/if}
-      {:else}
-        <!-- Fallback: Show all member names (legacy behavior) -->
-        {#each buoyGroup.member_names as n}
-          <div class="flex items-center gap-2 text-sm w-full">
-            <div class="w-2 h-2 bg-gray-500 rounded-full flex-shrink-0"></div>
-            <span class="font-medium text-gray-800">{n || "Unknown"}</span>
-          </div>
-        {/each}
-      {/if}
+      {/each}
     </div>
   </div>
+  {#if showMoveDialog}
+    <div
+      class="fixed inset-0 z-[80] flex items-center justify-center bg-base-300/80 backdrop-blur-sm"
+    >
+      <div class="bg-base-100 rounded-xl shadow-2xl w-full max-w-sm p-4 space-y-4">
+        <h3 class="text-lg font-semibold text-base-content">Move to buoy</h3>
+        <div class="space-y-2 max-h-60 overflow-y-auto">
+          {#if moveTargets.length}
+            {#each moveTargets as buoy}
+              <button
+                type="button"
+                class={`btn btn-sm btn-block justify-start ${
+                  targetBuoyName === buoy ? "btn-primary" : "btn-ghost"
+                }`}
+                on:click={() => (targetBuoyName = buoy)}
+              >
+                {buoy}
+              </button>
+            {/each}
+          {:else}
+            <p class="text-sm text-base-content/70">
+              No other buoys available.
+            </p>
+          {/if}
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            on:click={closeMoveDialog}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            disabled={!selectedReservation || !targetBuoyName}
+            on:click={confirmMove}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  {/if}
 {:else}
   <div class="flex justify-center">
     <span class="text-sm text-base-content/70">No members</span>

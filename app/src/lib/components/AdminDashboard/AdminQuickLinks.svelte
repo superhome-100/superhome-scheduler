@@ -1,21 +1,26 @@
+<script context="module" lang="ts">
+  export type AdminSection = "pending" | "price" | "block" | "user_res";
+</script>
+
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher, onMount } from "svelte";
 
-  export type AdminSection = 'pending' | 'price' | 'block' | 'user_res';
-  export let selected: AdminSection = 'pending';
+  export let selected: AdminSection = "pending";
 
-  const dispatch = createEventDispatcher<{ select: { section: AdminSection } }>();
+  const dispatch = createEventDispatcher<{
+    select: { section: AdminSection };
+  }>();
 
   const setSection = (section: AdminSection) => {
     if (selected === section) return;
     selected = section;
     // Update URL query param for deep-linking without navigation
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
-      url.searchParams.set('section', section);
-      window.history.replaceState({}, '', url.toString());
+      url.searchParams.set("section", section);
+      window.history.replaceState({}, "", url.toString());
     }
-    dispatch('select', { section });
+    dispatch("select", { section });
   };
 </script>
 
@@ -25,9 +30,11 @@
     <button
       type="button"
       title="Pending Reservation Requests"
-      class="btn btn-sm btn-neutral {selected === 'pending' ? 'btn-active' : ''}"
-      aria-pressed={selected === 'pending'}
-      on:click={() => setSection('pending')}
+      class="btn btn-sm btn-neutral {selected === 'pending'
+        ? 'btn-active'
+        : ''}"
+      aria-pressed={selected === "pending"}
+      on:click={() => setSection("pending")}
     >
       Pending Requests
     </button>
@@ -35,8 +42,8 @@
       type="button"
       title="Price Template"
       class="btn btn-sm btn-neutral {selected === 'price' ? 'btn-active' : ''}"
-      aria-pressed={selected === 'price'}
-      on:click={() => setSection('price')}
+      aria-pressed={selected === "price"}
+      on:click={() => setSection("price")}
     >
       Price Template
     </button>
@@ -44,17 +51,19 @@
       type="button"
       title="Block Reservation"
       class="btn btn-sm btn-neutral {selected === 'block' ? 'btn-active' : ''}"
-      aria-pressed={selected === 'block'}
-      on:click={() => setSection('block')}
+      aria-pressed={selected === "block"}
+      on:click={() => setSection("block")}
     >
       Block Reservation
     </button>
     <button
       type="button"
       title="User Reservations"
-      class="btn btn-sm btn-neutral {selected === 'user_res' ? 'btn-active' : ''}"
-      aria-pressed={selected === 'user_res'}
-      on:click={() => setSection('user_res')}
+      class="btn btn-sm btn-neutral {selected === 'user_res'
+        ? 'btn-active'
+        : ''}"
+      aria-pressed={selected === "user_res"}
+      on:click={() => setSection("user_res")}
     >
       User Reservations
     </button>

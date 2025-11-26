@@ -38,6 +38,26 @@ export type BuoyGroupWithNames = {
   member_names: (string | null)[] | null
 }
 
+export interface MoveReservationToBuoyPayload {
+  reservation_id: string;
+  buoy_id: string;
+  res_date: string;
+  time_period: TimePeriod;
+}
+
+export async function moveReservationToBuoy(
+  payload: MoveReservationToBuoyPayload
+): Promise<void> {
+  const res = await callFunction<MoveReservationToBuoyPayload, { ok: boolean }>(
+    "openwater-move-buoy",
+    payload
+  );
+
+  if (res.error) {
+    throw new Error(res.error);
+  }
+}
+
 export async function getCurrentUserId(): Promise<string | null> {
   try {
     const { data } = await supabase.auth.getUser();

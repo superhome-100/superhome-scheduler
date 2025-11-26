@@ -1,16 +1,8 @@
-/* Import TailwindCSS v4 */
 @import "tailwindcss";
+@import "./styles/reservation.css";
 
-/* Import custom reservation styles (must come before any other statements) */
-@import './styles/reservation.css';
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
