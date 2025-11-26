@@ -1,33 +1,40 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
-  import { goto } from '$app/navigation';
-  import dayjs from 'dayjs';
-  import { getBuoyGroupsWithNames } from '../../utils/autoAssignBuoy';
-  import { supabase } from '../../utils/supabase';
-  import { authStore } from '../../stores/auth';
+  import { createEventDispatcher, onMount } from "svelte";
+  import { goto } from "$app/navigation";
+  import dayjs from "dayjs";
+  import { getBuoyGroupsWithNames } from "../../utils/autoAssignBuoy";
+  import { supabase } from "../../utils/supabase";
+  import { authStore } from "../../stores/auth";
 
-  import SingleDayHeader from './SingleDayHeader.svelte';
-  import CalendarTypeSwitcher from './CalendarTypeSwitcher.svelte';
-  import PoolCalendar from './admin/PoolCalendar/PoolCalendar.svelte';
-  import OpenWaterAdminTables from './admin/OpenWaterCalendar/OpenWaterAdminTables.svelte';
-  import OpenWaterUserLists from './admin/OpenWaterCalendar/OpenWaterUserLists.svelte';
-  import ClassroomCalendar from './admin/ClassroomCalendar/ClassroomCalendar.svelte';
-  import { pullToRefresh } from '../../actions/pullToRefresh';
+  import SingleDayHeader from "./SingleDayHeader.svelte";
+  import CalendarTypeSwitcher from "./CalendarTypeSwitcher.svelte";
+  import PoolCalendar from "./admin/PoolCalendar/PoolCalendar.svelte";
+  import OpenWaterAdminTables from "./admin/OpenWaterCalendar/OpenWaterAdminTables.svelte";
+  import OpenWaterUserLists from "./admin/OpenWaterCalendar/OpenWaterUserLists.svelte";
+  import ClassroomCalendar from "./admin/ClassroomCalendar/ClassroomCalendar.svelte";
+  import { pullToRefresh } from "../../actions/pullToRefresh";
   import {
     loadAvailableBuoys as svcLoadAvailableBuoys,
     updateBoatAssignment as svcUpdateBoat,
     updateBuoyAssignment as svcUpdateBuoy,
     type Buoy,
-    type TimePeriod
-  } from '../../services/openWaterService';
-  import { getGroupReservationDetails, type GroupReservationDetails } from '../../services/openWaterService';
-  import GroupReservationDetailsModal from './admin/OpenWaterCalendar/GroupReservationDetailsModal.svelte';
-  import { ReservationType } from '../../types/reservations';
+    type TimePeriod,
+  } from "../../services/openWaterService";
+  import {
+    getGroupReservationDetails,
+    type GroupReservationDetails,
+  } from "../../services/openWaterService";
+  import GroupReservationDetailsModal from "./admin/OpenWaterCalendar/GroupReservationDetailsModal.svelte";
+  import { ReservationType } from "../../types/reservations";
+  import type {
+    FlattenedReservation,
+    OpenWaterReservationView,
+  } from "../../types/reservationViews";
 
   const dispatch = createEventDispatcher();
 
   export let selectedDate: string;
-  export let reservations: any[] = [];
+  export let reservations: FlattenedReservation[] = [];
   export let isAdmin: boolean = false;
   export let initialType: ReservationType = ReservationType.openwater;
 
@@ -45,6 +52,12 @@
     member_names?: (string | null)[] | null;
     boat_count?: number | null;
     open_water_type?: string | null;
+    // Optional per-reservation statuses parallel to member_names/member_uids
+    member_statuses?: (string | null)[] | null;
+  };
+
+  type BuoyGroupWithReservations = BuoyGroupLite & {
+    reservations: OpenWaterReservationView[];
   };
 
   // Combined loader with cancellation to avoid overlapping updates
@@ -69,58 +82,81 @@
   // ============================================ -->
   // 🔧 ADMIN-SPECIFIC: Group Management & Data -->
   // ============================================ -->
-  
+
   // Handle click on divers group box (admin view only)
-  async function handleGroupClick(e: CustomEvent<{ groupId: number; resDate: string; timePeriod: TimePeriod }>) {
+  async function handleGroupClick(
+    e: CustomEvent<{ groupId: number; resDate: string; timePeriod: TimePeriod }>
+  ) {
     try {
       const details = await getGroupReservationDetails(e.detail.groupId);
       groupDetails = details;
       showGroupModal = !!details;
     } catch (err) {
-      console.error('Failed to load group details:', err);
+      console.error("Failed to load group details:", err);
       showGroupModal = false;
     }
   }
-  
+
   // Admin-specific data for buoy/boat management
   let buoyGroups: BuoyGroupLite[] = [];
   let loadingBuoyGroups = false;
-  let availableBoats: string[] = ['Boat 1', 'Boat 2', 'Boat 3', 'Boat 4'];
+  let availableBoats: string[] = ["Boat 1", "Boat 2", "Boat 3", "Boat 4"];
   let availableBuoys: Buoy[] = [];
   // Fast lookup: uid -> period -> { buoy_name, boat }
-  let assignmentMap: Record<string, Partial<Record<TimePeriod, { buoy_name: string | null; boat: string | null }>>> = {};
+  let assignmentMap: Record<
+    string,
+    Partial<
+      Record<TimePeriod, { buoy_name: string | null; boat: string | null }>
+    >
+  > = {};
   // Version counter to trigger child re-render of assignment-dependent UI
   let assignmentVersion = 0;
   // Coordinated loading state for Open Water assignments
   let assignmentsLoading = false;
   // Cancellation token for overlapping assignment loads
   let assignmentsLoadSeq = 0;
-  
+
   // Admin-specific modal state for group reservation details
   let showGroupModal = false;
   let groupDetails: GroupReservationDetails | null = null;
 
+  // Enriched buoy groups including nested open water reservations
+  $: buoyGroupsWithReservations = (buoyGroups || []).map(
+    (bg) => ({
+      ...bg,
+      reservations: (openWaterReservations || []).filter(
+        (r) => r.group_id !== null && r.group_id === bg.id
+      ),
+    })
+  ) as BuoyGroupWithReservations[];
+
   // Calendar type state
   let selectedCalendarType: ReservationType = ReservationType.openwater;
   let initializedCalendarType = false;
-  
+
   // Initialize from parent-provided intent first, then URL parameter
   onMount(() => {
-    console.log('SingleDayView: onMount - initialType:', initialType);
+    console.log("SingleDayView: onMount - initialType:", initialType);
     if (initialType) {
       // Prioritize the initialType from parent component
       selectedCalendarType = initialType;
       initializedCalendarType = true;
-      console.log('SingleDayView: Set selectedCalendarType to initialType:', selectedCalendarType);
+      console.log(
+        "SingleDayView: Set selectedCalendarType to initialType:",
+        selectedCalendarType
+      );
     } else {
       // Fallback to URL parameter if no initialType provided
       const urlParams = new URLSearchParams(window.location.search);
-      const typeParam = urlParams.get('type');
+      const typeParam = urlParams.get("type");
       const validTypes = Object.values(ReservationType);
       if (typeParam && (validTypes as string[]).includes(typeParam)) {
         selectedCalendarType = typeParam as ReservationType;
         initializedCalendarType = true;
-        console.log('SingleDayView: Set selectedCalendarType from URL:', selectedCalendarType);
+        console.log(
+          "SingleDayView: Set selectedCalendarType from URL:",
+          selectedCalendarType
+        );
       }
     }
   });
@@ -132,18 +168,17 @@
 
   const handleBackToCalendar = () => {
     // Return the last active selection so parent pages can restore it
-    dispatch('backToCalendar', { type: selectedCalendarType });
+    dispatch("backToCalendar", { type: selectedCalendarType });
   };
 
   // Current user (for user account single day view) - no longer needed for data loading
 
   // (Display helpers removed; use findAssignment for user rows)
 
-
   // ============================================ -->
   // 🔧 ADMIN-SPECIFIC: Buoy/Boat Assignment Functions -->
   // ============================================ -->
-  
+
   // Update buoy assignment for a buoy group (admin only)
   const updateBuoyAssignment = async (groupId: number, buoyName: string) => {
     try {
@@ -153,51 +188,65 @@
         bg.id === groupId ? { ...bg, buoy_name: buoyName } : bg
       );
     } catch (error) {
-      console.error('Error updating buoy assignment:', error);
-      alert('Error updating buoy assignment: ' + (error as Error).message);
+      console.error("Error updating buoy assignment:", error);
+      alert("Error updating buoy assignment: " + (error as Error).message);
     }
   };
 
   // Filter reservations for the selected date and type
-  $: dayReservations = reservations.filter(reservation => {
-    const reservationDate = dayjs(reservation.res_date).format('YYYY-MM-DD');
+  $: dayReservations = reservations.filter((reservation) => {
+    const reservationDate = dayjs(reservation.res_date).format("YYYY-MM-DD");
     return reservationDate === selectedDate;
   });
 
-  $: filteredReservations = dayReservations.filter(reservation => {
-    if (selectedCalendarType === ReservationType.pool) return reservation.res_type === 'pool';
-    if (selectedCalendarType === ReservationType.openwater) return reservation.res_type === 'open_water';
+  $: filteredReservations = dayReservations.filter((reservation) => {
+    if (selectedCalendarType === ReservationType.pool)
+      return reservation.res_type === "pool";
+    if (selectedCalendarType === ReservationType.openwater)
+      return reservation.res_type === "open_water";
     if (selectedCalendarType === ReservationType.classroom) {
       // Accept either explicit classroom type or flat classroom rows (room/start_time present)
-      const isExplicit = reservation.res_type === 'classroom';
+      const isExplicit = reservation.res_type === "classroom";
       const isFlatClassroom = !!(
         reservation.room ||
         reservation.classroom_type ||
-        (reservation.res_classroom && (reservation.res_classroom.room || reservation.res_classroom.start_time))
+        (reservation.res_classroom &&
+          (reservation.res_classroom.room ||
+            reservation.res_classroom.start_time))
       );
       return isExplicit || isFlatClassroom;
     }
     return false;
   });
 
+  // Narrowed view: only open water reservations (used by OpenWaterUserLists)
+  $: openWaterReservations = filteredReservations.filter(
+    (r) => r.res_type === "open_water"
+  ) as OpenWaterReservationView[];
+
   // Only show approved and plotted Pool reservations (confirmed with start/end and assigned lane)
-  $: approvedPlottedPoolReservations = filteredReservations.filter(r => {
+  $: approvedPlottedPoolReservations = filteredReservations.filter((r) => {
     if (selectedCalendarType !== ReservationType.pool) return false;
-    if (r.res_type !== 'pool') return false;
-    const approved = r.res_status === 'confirmed';
+    if (r.res_type !== "pool") return false;
+    const approved = r.res_status === "confirmed";
     // Support both admin (joined res_pool) and user (flattened fields) data shapes
     const start = r?.res_pool?.start_time ?? r?.start_time ?? null;
     const end = r?.res_pool?.end_time ?? r?.end_time ?? null;
-    const lane = (r?.res_pool?.lane ?? r?.lane ?? null);
-    const hasTimetable = !!start && !!end && lane !== null && lane !== undefined && String(lane) !== '';
+    const lane = r?.res_pool?.lane ?? r?.lane ?? null;
+    const hasTimetable =
+      !!start &&
+      !!end &&
+      lane !== null &&
+      lane !== undefined &&
+      String(lane) !== "";
     return approved && hasTimetable;
   });
 
   // Only show approved Classroom reservations with defined times (mirrors pool approval filter)
-  $: approvedClassroomReservations = filteredReservations.filter(r => {
+  $: approvedClassroomReservations = filteredReservations.filter((r) => {
     if (selectedCalendarType !== ReservationType.classroom) return false;
     // Accept explicit classroom or flat classroom rows; type filtering already handled above
-    const approved = r.res_status === 'confirmed';
+    const approved = r.res_status === "confirmed";
     const start = r?.res_classroom?.start_time ?? r?.start_time ?? null;
     const end = r?.res_classroom?.end_time ?? r?.end_time ?? null;
     return approved && !!start && !!end;
@@ -206,7 +255,7 @@
   // Calendar type switching
   const switchCalendarType = (type: ReservationType) => {
     selectedCalendarType = type;
-    
+
     // Navigate to the new route
     goto(`/reservation/${type}/${selectedDate}`);
   };
@@ -214,40 +263,45 @@
   // ============================================ -->
   // 🔧 ADMIN-SPECIFIC: Data Loading Functions -->
   // ============================================ -->
-  
+
   // Load buoy groups for the selected date (admin only)
   const loadBuoyGroups = async () => {
     if (!selectedDate) return;
-    
+
     try {
       loadingBuoyGroups = true;
       const [am, pm] = await Promise.all([
-        getBuoyGroupsWithNames({ resDate: selectedDate, timePeriod: 'AM' }),
-        getBuoyGroupsWithNames({ resDate: selectedDate, timePeriod: 'PM' })
+        getBuoyGroupsWithNames({ resDate: selectedDate, timePeriod: "AM" }),
+        getBuoyGroupsWithNames({ resDate: selectedDate, timePeriod: "PM" }),
       ]);
       // Merge to one array and coerce time_period to typed TimePeriod
       buoyGroups = [...am, ...pm].map((g: any) => {
-        const member_uids: string[] | null = Array.isArray(g.member_uids) ? g.member_uids : null;
+        const member_uids: string[] | null = Array.isArray(g.member_uids)
+          ? g.member_uids
+          : null;
         // Provide res_openwater for compatibility with existing code paths
-        const res_openwater = member_uids ? member_uids.map((uid: string) => ({ uid })) : undefined;
-        const tp = String(g.time_period || '').toUpperCase();
+        const res_openwater = member_uids
+          ? member_uids.map((uid: string) => ({ uid }))
+          : undefined;
+        const tp = String(g.time_period || "").toUpperCase();
         return {
           id: g.id,
           res_date: g.res_date,
-          time_period: (tp === 'AM' ? 'AM' : 'PM') as TimePeriod,
+          time_period: (tp === "AM" ? "AM" : "PM") as TimePeriod,
           buoy_name: g.buoy_name ?? null,
           boat: g.boat ?? null,
           member_uids,
           res_openwater,
           member_names: g.member_names ?? [],
-          boat_count: typeof g.boat_count === 'number' ? g.boat_count : null,
+          boat_count: typeof g.boat_count === "number" ? g.boat_count : null,
           open_water_type: g.open_water_type ?? null,
+          member_statuses: g.member_statuses ?? null,
         } as BuoyGroupLite;
       });
       // bump version after successful load
       assignmentVersion++;
     } catch (error) {
-      console.error('Error loading buoy groups:', error);
+      console.error("Error loading buoy groups:", error);
       buoyGroups = [];
     } finally {
       loadingBuoyGroups = false;
@@ -259,19 +313,20 @@
     if (!selectedDate) return;
     try {
       // Direct READ is allowed by rules; strict RLS enforced server-side
-      const start = dayjs(selectedDate).startOf('day');
-      const end = start.add(1, 'day');
+      const start = dayjs(selectedDate).startOf("day");
+      const end = start.add(1, "day");
       const { data, error } = await supabase
-        .from('res_openwater')
-        .select('uid, time_period, buoy_group(buoy_name, boat), res_date')
-        .gte('res_date', start.toISOString())
-        .lt('res_date', end.toISOString())
-        .not('group_id', 'is', null);
+        .from("res_openwater")
+        .select("uid, time_period, buoy_group(buoy_name, boat), res_date")
+        .gte("res_date", start.toISOString())
+        .lt("res_date", end.toISOString())
+        .not("group_id", "is", null);
       if (error) throw error;
       const map: typeof assignmentMap = {};
       (data ?? []).forEach((row: any) => {
         const uid: string = row.uid;
-        const tp: TimePeriod = String(row.time_period || '').toUpperCase() === 'PM' ? 'PM' : 'AM';
+        const tp: TimePeriod =
+          String(row.time_period || "").toUpperCase() === "PM" ? "PM" : "AM";
         const g = row.buoy_group || {};
         if (!map[uid]) map[uid] = {};
         map[uid][tp] = { buoy_name: g.buoy_name ?? null, boat: g.boat ?? null };
@@ -280,7 +335,7 @@
       // bump version after successful load
       assignmentVersion++;
     } catch (err) {
-      console.error('Error loading assignment map:', err);
+      console.error("Error loading assignment map:", err);
       assignmentMap = {};
     }
   };
@@ -290,7 +345,7 @@
     try {
       availableBuoys = await svcLoadAvailableBuoys();
     } catch (error) {
-      console.error('Error loading buoys:', error);
+      console.error("Error loading buoys:", error);
       availableBuoys = [];
     }
   };
@@ -298,58 +353,77 @@
   // ============================================ -->
   // 👤 USER-SPECIFIC: Helper Functions -->
   // ============================================ -->
-  
+
   // Helpers for user-facing reservations table
   function findAssignment(uid: string, period: TimePeriod) {
     // 1) Prefer assignment from loaded buoyGroups (reflects admin boat assignment and auto buoy)
     const group = buoyGroups.find((g) => {
       if (g.time_period !== period) return false;
-      const uids = (g.member_uids && Array.isArray(g.member_uids))
-        ? g.member_uids
-        : (g.res_openwater || []).map((m) => m.uid);
+      const uids =
+        g.member_uids && Array.isArray(g.member_uids)
+          ? g.member_uids
+          : (g.res_openwater || []).map((m) => m.uid);
       return uids.includes(uid);
     });
 
     if (group) {
-      const buoy = group.buoy_name && String(group.buoy_name).trim() !== '' ? group.buoy_name : 'Not assigned';
-      const boat = group.boat && String(group.boat).trim() !== '' ? group.boat : 'Not assigned';
+      const buoy =
+        group.buoy_name && String(group.buoy_name).trim() !== ""
+          ? group.buoy_name
+          : "Not assigned";
+      const boat =
+        group.boat && String(group.boat).trim() !== ""
+          ? group.boat
+          : "Not assigned";
       return { buoy, boat };
     }
 
     // 2) Fallback to direct assignment map from res_openwater -> buoy_group
     const direct = assignmentMap[uid]?.[period];
     if (direct) {
-      const buoy = direct.buoy_name && String(direct.buoy_name).trim() !== '' ? direct.buoy_name : 'Not assigned';
-      const boat = direct.boat && String(direct.boat).trim() !== '' ? direct.boat : 'Not assigned';
+      const buoy =
+        direct.buoy_name && String(direct.buoy_name).trim() !== ""
+          ? direct.buoy_name
+          : "Not assigned";
+      const boat =
+        direct.boat && String(direct.boat).trim() !== ""
+          ? direct.boat
+          : "Not assigned";
       return { buoy, boat };
     }
 
     // 3) Final fallback to assignment data from the reservation itself
     const reservation = filteredReservations.find((r) => r.uid === uid);
     if (reservation) {
-      const buoy = reservation.buoy && String(reservation.buoy).trim() !== '' ? reservation.buoy : 'Not assigned';
-      const boat = reservation.boat && String(reservation.boat).trim() !== '' ? reservation.boat : 'Not assigned';
+      const buoy =
+        reservation.buoy && String(reservation.buoy).trim() !== ""
+          ? reservation.buoy
+          : "Not assigned";
+      const boat =
+        reservation.boat && String(reservation.boat).trim() !== ""
+          ? reservation.boat
+          : "Not assigned";
       return { buoy, boat };
     }
 
     // 4) Default if nothing found
-    return { buoy: 'Not assigned', boat: 'Not assigned' };
+    return { buoy: "Not assigned", boat: "Not assigned" };
   }
 
   // Assignment data is now included in the main reservations data
   // No need for separate loading functions
 
-  function showReservationDetails(res: any) {
+  function showReservationDetails(res: FlattenedReservation) {
     // Dispatch reservationClick event to parent component to show modal
-    dispatch('reservationClick', res);
+    dispatch("reservationClick", res);
   }
 
   // ============================================ -->
   // 🔧 ADMIN-SPECIFIC: Reactive Data Loading -->
   // ============================================ -->
-  
+
   // Load buoy assignments when date or type changes to Open Water
-  $: if (selectedDate && selectedCalendarType === 'openwater') {
+  $: if (selectedDate && selectedCalendarType === "openwater") {
     loadOpenWaterAssignments();
     if (isAdmin) loadAvailableBuoys();
   }
@@ -359,45 +433,51 @@
     try {
       await svcUpdateBoat(groupId, boatName);
       // Update local state
-      buoyGroups = buoyGroups.map(bg => 
+      buoyGroups = buoyGroups.map((bg) =>
         bg.id === groupId ? { ...bg, boat: boatName } : bg
       );
     } catch (error) {
-      console.error('Error updating boat assignment:', error);
-      alert('Error updating boat assignment: ' + (error as Error).message);
+      console.error("Error updating boat assignment:", error);
+      alert("Error updating boat assignment: " + (error as Error).message);
     }
   };
   // Generate time slots for 8:00 to 20:00 (13 hours)
   const timeSlots = Array.from({ length: 13 }, (_, i) => {
-    const hour = (i + 8).toString().padStart(2, '0');
+    const hour = (i + 8).toString().padStart(2, "0");
     return `${hour}:00`;
   });
 
   // Pull to refresh handler
   async function refreshCurrentView() {
-    if (selectedCalendarType === 'openwater') {
+    if (selectedCalendarType === "openwater") {
       // Use the same combined loader to ensure state consistency
       if (isAdmin) {
         await Promise.all([loadOpenWaterAssignments(), loadAvailableBuoys()]);
       } else {
         await loadOpenWaterAssignments();
       }
-      // For non-admin users, data is refreshed through the parent component
-      // No separate data loading needed
+      // Ask parent route to refresh root reservations data as well
+      dispatch("refreshReservations", { date: selectedDate, type: selectedCalendarType });
     }
   }
 
   // Normalize available buoys for admin table (ensure max_depth is number)
-  $: adminAvailableBuoys = (availableBuoys || []).map(b => ({
+  $: adminAvailableBuoys = (availableBuoys || []).map((b) => ({
     buoy_name: b.buoy_name,
-    max_depth: (b.max_depth ?? 0) as number
+    max_depth: (b.max_depth ?? 0) as number,
   }));
-
 </script>
 
-<div class="min-h-screen bg-base-200" use:pullToRefresh={{ onRefresh: refreshCurrentView }}>
+<div
+  class="min-h-screen bg-base-200"
+  use:pullToRefresh={{ onRefresh: refreshCurrentView }}
+>
   <!-- Header -->
-  <SingleDayHeader selectedDate={selectedDate} on:back={handleBackToCalendar} on:changeDate={(e) => (selectedDate = e.detail)} />
+  <SingleDayHeader
+    {selectedDate}
+    on:back={handleBackToCalendar}
+    on:changeDate={(e) => (selectedDate = e.detail)}
+  />
 
   <!-- Calendar Type Buttons -->
   <CalendarTypeSwitcher
@@ -407,15 +487,25 @@
   />
 
   <!-- Calendar Content -->
-  <div class="px-6 sm:px-4 md:px-8 lg:px-12 min-h-[60vh] max-w-screen-xl mx-auto" class:max-w-none={selectedCalendarType === 'openwater'}>
-    {#if selectedCalendarType === 'pool'}
+  <div
+    class="px-6 sm:px-4 md:px-8 lg:px-12 min-h-[60vh] max-w-screen-xl mx-auto"
+    class:max-w-none={selectedCalendarType === "openwater"}
+  >
+    {#if selectedCalendarType === "pool"}
       <!-- POOL CALENDAR: Only approved and plotted reservations -->
-      <PoolCalendar {timeSlots} reservations={approvedPlottedPoolReservations} currentUserId={$authStore.user?.id} {isAdmin} />
-    {:else if selectedCalendarType === 'openwater'}
+      <PoolCalendar
+        {timeSlots}
+        reservations={approvedPlottedPoolReservations}
+        currentUserId={$authStore.user?.id}
+        {isAdmin}
+      />
+    {:else if selectedCalendarType === "openwater"}
       <!-- OPEN WATER CALENDAR: Different views for Admin vs User -->
-      <div class="flex flex-col gap-8 lg:gap-8" class:grid={!isAdmin} class:grid-cols-2={!isAdmin}>
-        
-        {#if isAdmin}
+      <div
+        class="flex flex-col gap-8 lg:gap-8"
+        class:grid={!isAdmin}
+        class:grid-cols-2={!isAdmin}
+      >
           <!-- ============================================ -->
           <!-- 🔧 ADMIN VIEW: Open Water Admin Tables -->
           <!-- ============================================ -->
@@ -423,29 +513,23 @@
           <OpenWaterAdminTables
             {availableBoats}
             availableBuoys={adminAvailableBuoys}
-            buoyGroups={buoyGroups}
+            buoyGroups={buoyGroupsWithReservations}
             loading={assignmentsLoading || loadingBuoyGroups}
             onUpdateBuoy={updateBuoyAssignment}
             onUpdateBoat={updateBoatAssignment}
             on:groupClick={handleGroupClick}
+            onRefreshAssignments={refreshCurrentView}
           />
-          {:else}
-          <!-- ============================================ -->
-          <!-- 👤 USER VIEW: Open Water User Lists -->
-          <!-- ============================================ -->
-          <!-- Features: Read-only lists, user-friendly display, click to view details -->
-          <OpenWaterUserLists
-            {filteredReservations}
-            findAssignment={findAssignment}
-            assignmentVersion={assignmentVersion}
-            onShowReservationDetails={showReservationDetails}
-          />
-        {/if}
       </div>
-    {:else if selectedCalendarType === 'classroom'}
+    {:else if selectedCalendarType === "classroom"}
       <!-- CLASSROOM CALENDAR: Only approved classroom reservations -->
-      <ClassroomCalendar timeSlots={timeSlots} reservations={approvedClassroomReservations} currentUserId={$authStore.user?.id} {isAdmin} />
-                    {/if}
+      <ClassroomCalendar
+        {timeSlots}
+        reservations={approvedClassroomReservations}
+        currentUserId={$authStore.user?.id}
+        {isAdmin}
+      />
+    {/if}
   </div>
   {#if showGroupModal && groupDetails}
     <GroupReservationDetailsModal
@@ -454,7 +538,7 @@
       timePeriod={groupDetails.time_period}
       boat={groupDetails.boat}
       buoyName={groupDetails.buoy_name}
-      members={groupDetails.members}
+      members={groupDetails.members as any}
       on:close={() => (showGroupModal = false)}
     />
   {/if}

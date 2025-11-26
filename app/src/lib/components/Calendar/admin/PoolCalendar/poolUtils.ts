@@ -33,6 +33,12 @@ export interface PoolResLike {
     email?: string | null;
     nickname?: string | null;
   } | null;
+  // Flat properties for admin view or other contexts
+  username?: string | null;
+  email?: string | null;
+  nickname?: string | null;
+  name?: string | null;
+  title?: string | null;
   // Assigned by layout logic only (not persisted)
   __display_lane_idx?: number;
   __display_span?: number;

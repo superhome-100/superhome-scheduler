@@ -1,33 +1,36 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { availabilityService } from '../../services/availabilityService';
-  import type { ReservationType } from '../../services/reservationService';
-  import type { Database } from '../../database.types';
-  import { showLoading, hideLoading } from '../../stores/ui';
+  import { onMount } from "svelte";
+  import { availabilityService } from "../../services/availabilityService";
+  import type { ReservationType } from "../../services/reservationService";
+  import type { Database } from "../../database.types";
+  import { showLoading, hideLoading } from "../../stores/ui";
+  import { supabase } from "../../utils/supabase";
 
-  type Availability = Database['public']['Tables']['availabilities']['Row'];
+  type Availability = Database["public"]["Tables"]["availabilities"]["Row"] & {
+    res_type?: ReservationType;
+  };
 
   // State
   let availabilities: Availability[] = [];
   let loading = false;
-  let error = '';
+  let error = "";
   let showAddForm = false;
   let selectedAvailability: Availability | null = null;
 
   // Form data
   let formData = {
-    date: '',
-    res_type: 'pool' as ReservationType,
-    category: '',
+    date: "",
+    res_type: "pool" as ReservationType,
+    category: "",
     available: true,
-    reason: ''
+    reason: "",
   };
 
   // Reservation types
   const reservationTypes: { value: ReservationType; label: string }[] = [
-    { value: 'pool', label: 'Pool' },
-    { value: 'open_water', label: 'Open Water' },
-    { value: 'classroom', label: 'Classroom' }
+    { value: "pool", label: "Pool" },
+    { value: "open_water", label: "Open Water" },
+    { value: "classroom", label: "Classroom" },
   ];
 
   onMount(() => {
@@ -36,19 +39,20 @@
 
   async function loadAvailabilities() {
     loading = true;
-    error = '';
+    error = "";
     try {
       // For now, we'll get all availabilities
       // In a real implementation, you might want pagination
       const { data, error: fetchError } = await supabase
-        .from('availabilities')
-        .select('*')
-        .order('date', { ascending: true });
+        .from("availabilities")
+        .select("*")
+        .order("date", { ascending: true });
 
       if (fetchError) throw fetchError;
       availabilities = data || [];
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to load availabilities';
+      error =
+        err instanceof Error ? err.message : "Failed to load availabilities";
     } finally {
       loading = false;
     }
@@ -56,15 +60,19 @@
 
   async function handleSubmit() {
     if (!formData.date || !formData.res_type) {
-      error = 'Date and reservation type are required';
+      error = "Date and reservation type are required";
       return;
     }
 
     loading = true;
-    error = '';
+    error = "";
 
     try {
-      showLoading(selectedAvailability ? 'Updating availability...' : 'Creating availability...');
+      showLoading(
+        selectedAvailability
+          ? "Updating availability..."
+          : "Creating availability..."
+      );
       if (selectedAvailability) {
         // Update existing
         const result = await availabilityService.updateAvailabilityOverride(
@@ -72,9 +80,9 @@
           {
             date: formData.date,
             res_type: formData.res_type,
-            category: formData.category || null,
+            category: formData.category || undefined,
             available: formData.available,
-            reason: formData.reason || null
+            reason: formData.reason || undefined,
           }
         );
 
@@ -86,9 +94,9 @@
         const result = await availabilityService.createAvailabilityOverride({
           date: formData.date,
           res_type: formData.res_type,
-          category: formData.category || null,
+          category: formData.category || undefined,
           available: formData.available,
-          reason: formData.reason || null
+          reason: formData.reason || undefined,
         });
 
         if (!result.success) {
@@ -99,7 +107,8 @@
       await loadAvailabilities();
       resetForm();
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to save availability';
+      error =
+        err instanceof Error ? err.message : "Failed to save availability";
     } finally {
       hideLoading();
       loading = false;
@@ -107,23 +116,28 @@
   }
 
   async function handleDelete(availability: Availability) {
-    if (!confirm('Are you sure you want to delete this availability override?')) {
+    if (
+      !confirm("Are you sure you want to delete this availability override?")
+    ) {
       return;
     }
 
     loading = true;
-    error = '';
+    error = "";
 
     try {
-      showLoading('Deleting availability...');
-      const result = await availabilityService.deleteAvailabilityOverride(availability.id);
+      showLoading("Deleting availability...");
+      const result = await availabilityService.deleteAvailabilityOverride(
+        availability.id
+      );
       if (!result.success) {
         throw new Error(result.error);
       }
 
       await loadAvailabilities();
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to delete availability';
+      error =
+        err instanceof Error ? err.message : "Failed to delete availability";
     } finally {
       hideLoading();
       loading = false;
@@ -135,9 +149,9 @@
     formData = {
       date: availability.date,
       res_type: availability.res_type as ReservationType,
-      category: availability.category || '',
+      category: availability.category || "",
       available: availability.available,
-      reason: availability.reason || ''
+      reason: availability.reason || "",
     };
     showAddForm = true;
   }
@@ -145,38 +159,51 @@
   function resetForm() {
     selectedAvailability = null;
     formData = {
-      date: '',
-      res_type: 'pool',
-      category: '',
+      date: "",
+      res_type: "pool",
+      category: "",
       available: true,
-      reason: ''
+      reason: "",
     };
     showAddForm = false;
   }
 
   function formatDate(date: string) {
-    return new Date(date).toLocaleDateString('en-US', {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(date).toLocaleDateString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   }
 </script>
 
 <div class="container mx-auto p-6">
   <div class="mb-6">
-    <h1 class="text-3xl font-bold text-base-content mb-2">Availability Management</h1>
+    <h1 class="text-3xl font-bold text-base-content mb-2">
+      Availability Management
+    </h1>
     <p class="text-base-content/70">
       Manage availability overrides for specific dates, types, and categories.
-      By default, all dates are available unless specifically marked as unavailable.
+      By default, all dates are available unless specifically marked as
+      unavailable.
     </p>
   </div>
 
   {#if error}
     <div class="alert alert-error mb-4">
-      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="stroke-current shrink-0 h-6 w-6"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
       <span>{error}</span>
     </div>
@@ -184,12 +211,20 @@
 
   <div class="flex justify-between items-center mb-6">
     <h2 class="text-xl font-semibold">Availability Overrides</h2>
-    <button 
-      class="btn btn-primary"
-      on:click={() => showAddForm = true}
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+    <button class="btn btn-primary" on:click={() => (showAddForm = true)}>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 4v16m8-8H4"
+        />
       </svg>
       Add Override
     </button>
@@ -199,9 +234,9 @@
     <div class="card bg-base-100 shadow-xl mb-6">
       <div class="card-body">
         <h3 class="card-title">
-          {selectedAvailability ? 'Edit' : 'Add'} Availability Override
+          {selectedAvailability ? "Edit" : "Add"} Availability Override
         </h3>
-        
+
         <form on:submit|preventDefault={handleSubmit} class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="form-control">
@@ -221,7 +256,12 @@
               <label for="res-type-select" class="label">
                 <span class="label-text">Category Type</span>
               </label>
-              <select id="res-type-select" class="select select-bordered" bind:value={formData.res_type} required>
+              <select
+                id="res-type-select"
+                class="select select-bordered"
+                bind:value={formData.res_type}
+                required
+              >
                 {#each reservationTypes as type}
                   <option value={type.value}>{type.label}</option>
                 {/each}
@@ -245,7 +285,11 @@
               <label for="available-select" class="label">
                 <span class="label-text">Available</span>
               </label>
-              <select id="available-select" class="select select-bordered" bind:value={formData.available}>
+              <select
+                id="available-select"
+                class="select select-bordered"
+                bind:value={formData.available}
+              >
                 <option value={true}>Available</option>
                 <option value={false}>Unavailable</option>
               </select>
@@ -269,8 +313,13 @@
             <button type="button" class="btn btn-ghost" on:click={resetForm}>
               Cancel
             </button>
-            <button type="submit" class="btn btn-primary" disabled={loading} aria-busy={loading}>
-              {selectedAvailability ? 'Update' : 'Create'}
+            <button
+              type="submit"
+              class="btn btn-primary"
+              disabled={loading}
+              aria-busy={loading}
+            >
+              {selectedAvailability ? "Update" : "Create"}
             </button>
           </div>
         </form>
@@ -286,7 +335,8 @@
     <div class="text-center py-8">
       <p class="text-base-content/70">No availability overrides found.</p>
       <p class="text-sm text-base-content/50 mt-2">
-        All dates are available by default unless specifically marked as unavailable.
+        All dates are available by default unless specifically marked as
+        unavailable.
       </p>
     </div>
   {:else}
@@ -308,18 +358,24 @@
               <td>{formatDate(availability.date)}</td>
               <td>
                 <span class="badge badge-outline">
-                  {availability.res_type.replace('_', ' ').toUpperCase()}
+                  {(availability.res_type || "")
+                    .replace("_", " ")
+                    .toUpperCase()}
                 </span>
               </td>
               <td>
-                {availability.category || '-'}
+                {availability.category || "-"}
               </td>
               <td>
-                <span class="badge {availability.available ? 'badge-success' : 'badge-error'}">
-                  {availability.available ? 'Available' : 'Unavailable'}
+                <span
+                  class="badge {availability.available
+                    ? 'badge-success'
+                    : 'badge-error'}"
+                >
+                  {availability.available ? "Available" : "Unavailable"}
                 </span>
               </td>
-              <td>{availability.reason || '-'}</td>
+              <td>{availability.reason || "-"}</td>
               <td>
                 <div class="flex gap-2">
                   <button

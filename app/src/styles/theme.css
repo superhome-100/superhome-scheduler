@@ -902,15 +902,15 @@
 }
 
 .superhome-bg-success {
-  background-color: var(--success);
+  background-color: green;  
 }
 
 .superhome-bg-warning {
-  background-color: var(--warning);
+  background-color: orange;
 }
 
 .superhome-bg-error {
-  background-color: var(--error);
+  background-color: red;
 }
 
 .superhome-bg-neutral-light {

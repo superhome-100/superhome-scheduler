@@ -184,6 +184,8 @@ export type BuoyGroupWithNames = {
   open_water_type?: string | null
   member_uids: string[] | null
   member_names: (string | null)[] | null
+  // Optional per-reservation statuses, parallel to member_uids/member_names
+  member_statuses?: (string | null)[] | null
 }
 
 // Fetch groups with member names for display in Admin Single Day view
@@ -206,7 +208,8 @@ export async function getBuoyGroupsWithNames({ resDate, timePeriod }: AutoAssign
     boat_count: row.boat_count ?? null,
     open_water_type: row.open_water_type ?? null,
     member_uids: row.member_uids || null,
-    member_names: row.member_names || null
+    member_names: row.member_names || null,
+    member_statuses: row.member_statuses || null
   }))
 
   return result

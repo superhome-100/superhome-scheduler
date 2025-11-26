@@ -2,10 +2,11 @@
   import { formatDateForCalendar } from '../../../../utils/dateUtils';
   import { getOpenWaterTypeDisplay } from '../../../Reservation/reservationUtils';
   import OpenWaterUserTable from './OpenWaterUserTable.svelte';
+  import type { OpenWaterReservationView } from '../../../../types/reservationViews';
 
-  export let filteredReservations: any[];
+  export let filteredReservations: OpenWaterReservationView[];
   export let findAssignment: (uid: string, period: 'AM' | 'PM') => { buoy: string; boat: string };
-  export let onShowReservationDetails: (res: any) => void;
+  export let onShowReservationDetails: (res: OpenWaterReservationView) => void;
   // When 0, parent hasn't completed initial assignment loads yet
   export let assignmentVersion: number = 0;
 </script>
