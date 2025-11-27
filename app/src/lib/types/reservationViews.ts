@@ -1,6 +1,7 @@
 import type { CompleteReservation } from '$lib/services/reservationService';
 
 export type BaseReservationView = {
+  reservation_id: CompleteReservation['reservation_id'];
   uid: CompleteReservation['uid'];
   res_date: CompleteReservation['res_date'];
   res_type: CompleteReservation['res_type'];

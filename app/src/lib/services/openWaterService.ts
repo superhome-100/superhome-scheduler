@@ -39,7 +39,7 @@ export type BuoyGroupWithNames = {
 }
 
 export interface MoveReservationToBuoyPayload {
-  reservation_id: string;
+  reservation_id: number;
   buoy_id: string;
   res_date: string;
   time_period: TimePeriod;
@@ -119,17 +119,66 @@ export async function getBuoyGroupsWithNames({ resDate, timePeriod }: { resDate:
     member_names?: (string | null)[] | null;
   }>;
 
-  return rows.map((r) => ({
-    id: r.id,
-    res_date: r.res_date,
-    time_period: r.time_period,
-    buoy_name: r.buoy_name,
-    boat: r.boat,
-    boat_count: r.boat_count ?? null,
-    open_water_type: r.open_water_type ?? null,
-    member_uids: r.member_uids ?? null,
-    member_names: r.member_names ?? null,
-  }));
+  console.log('[getBuoyGroupsWithNames] raw rows from RPC', rows);
+
+  // Collect all unique member uids across groups
+  const allUids = Array.from(
+    new Set(
+      rows.flatMap((r) => (Array.isArray(r.member_uids) ? r.member_uids : [])),
+    ),
+  );
+
+  console.log('[getBuoyGroupsWithNames] all member UIDs', allUids);
+
+  let nameMap = new Map<string, { name: string | null; nickname: string | null }>();
+  if (allUids.length) {
+    const { data: profiles, error: profilesErr } = await withAuthRetry<
+      Array<{ uid: string; name: string | null; nickname: string | null }>
+    >(async () =>
+      await supabase
+        .from('user_profiles')
+        .select('uid, name, nickname')
+        .in('uid', allUids),
+    );
+
+    if (!profilesErr && profiles) {
+      console.log('[getBuoyGroupsWithNames] loaded profiles', profiles);
+      profiles.forEach((p: any) => {
+        nameMap.set(p.uid, {
+          name: p.name ?? null,
+          nickname: p.nickname ?? null,
+        });
+      });
+      console.log('[getBuoyGroupsWithNames] nameMap keys', Array.from(nameMap.keys()));
+    }
+  }
+
+  return rows.map((r) => {
+    const member_uids = r.member_uids ?? null;
+    let member_names: (string | null)[] | null = null;
+
+    if (member_uids && member_uids.length) {
+      member_names = member_uids.map((uid) => {
+        const entry = nameMap.get(uid);
+        if (!entry) return null;
+        const display = entry.nickname || entry.name;
+        return display && String(display).trim() !== '' ? display : null;
+      });
+      console.log('[getBuoyGroupsWithNames] group', r.id, 'member_uids', member_uids, 'member_names', member_names);
+    }
+
+    return {
+      id: r.id,
+      res_date: r.res_date,
+      time_period: r.time_period,
+      buoy_name: r.buoy_name,
+      boat: r.boat,
+      boat_count: r.boat_count ?? null,
+      open_water_type: r.open_water_type ?? null,
+      member_uids,
+      member_names,
+    } as BuoyGroupWithNames;
+  });
 }
 
 export async function getMyAssignmentsViaRpc(
@@ -228,14 +277,19 @@ export async function getGroupReservationDetails(groupId: number): Promise<Group
   const uids = Array.from(new Set(rows.map((r) => r.uid)));
   let nameMap = new Map<string, string | null>();
   if (uids.length) {
-    const { data: names, error: namesErr } = await withAuthRetry<Array<{ uid: string; name: string | null }>>(async () =>
+    const { data: names, error: namesErr } = await withAuthRetry<
+      Array<{ uid: string; name: string | null; nickname: string | null }>
+    >(async () =>
       await supabase
         .from("user_profiles")
-        .select("uid, name")
+        .select("uid, name, nickname")
         .in("uid", uids)
     );
     if (namesErr) throw new Error(namesErr.message);
-    (names ?? []).forEach((n: any) => nameMap.set(n.uid, n.name ?? null));
+    (names ?? []).forEach((n: any) => {
+      const display = (n.nickname ?? n.name) as string | null;
+      nameMap.set(n.uid, display);
+    });
   }
 
   const first = rows[0]!;
@@ -259,6 +313,106 @@ export async function getGroupReservationDetails(groupId: number): Promise<Group
   };
 
   return details;
+}
+
+// Helper to fetch buddy group member names for a given slot and current user
+export async function getBuddyGroupMembersForSlot(
+  resDate: string,
+  timePeriod: TimePeriod,
+  resType: 'open_water' | 'pool',
+  currentUid: string,
+): Promise<string[]> {
+  const dateOnly = resDate.split('T')[0];
+
+  const { data, error } = await supabase.rpc('get_buddy_group_with_members', {
+    p_res_date: dateOnly,
+    p_time_period: timePeriod,
+    p_res_type: resType,
+  });
+
+  if (error) {
+    console.error('Error loading buddy group members via RPC:', error.message);
+    return [];
+  }
+
+  type RpcRow = {
+    buddy_group_id: string;
+    member_uid: string;
+    member_status: string;
+  };
+
+  const rows = (data ?? []) as RpcRow[];
+  if (!rows.length) return [];
+
+  // Find the buddy_group that includes the current user
+  const myRow = rows.find((r) => r.member_uid === currentUid);
+  if (!myRow) return [];
+
+  const groupId = myRow.buddy_group_id;
+  const groupRows = rows.filter((r) => r.buddy_group_id === groupId);
+  const memberUids = Array.from(new Set(groupRows.map((r) => r.member_uid)));
+
+  if (!memberUids.length) return [];
+
+  // Fetch names from user_profiles using withAuthRetry to respect RLS
+  const { data: names, error: namesErr } = await withAuthRetry<
+    Array<{ uid: string; name: string | null; nickname: string | null }>
+  >(async () =>
+    await supabase
+      .from('user_profiles')
+      .select('uid, name, nickname')
+      .in('uid', memberUids),
+  );
+
+  if (namesErr) {
+    console.error('Error loading buddy member names:', namesErr.message);
+    return [];
+  }
+
+  const nameMap = new Map<string, { name: string | null; nickname: string | null }>();
+  (names ?? []).forEach((n: any) =>
+    nameMap.set(n.uid, { name: n.name ?? null, nickname: n.nickname ?? null }),
+  );
+
+  // Build a unique, ordered list of buddy UIDs excluding the current user
+  const buddyUids = Array.from(
+    new Set(
+      groupRows
+        .map((r) => r.member_uid)
+        .filter((uid) => uid !== currentUid),
+    ),
+  );
+
+  // Map to display names, preferring name then nickname
+  const buddyNames = buddyUids
+    .map((uid) => {
+      const entry = nameMap.get(uid);
+      if (!entry) return null;
+      const display = entry.nickname || entry.name;
+      return display && display.trim() !== '' ? display : null;
+    })
+    .filter((name): name is string => !!name);
+
+  return buddyNames;
+}
+
+// Helper to fetch all buddy nicknames (or names) for a specific reservation_id
+// Used by admin move-to-buoy dialog to display the full buddy group.
+export async function getBuddyNicknamesForReservation(
+  reservationId: number,
+): Promise<string[]> {
+  const res = await callFunction<{ reservation_id: number }, string[]>(
+    'get-buddy-nicknames',
+    { reservation_id: reservationId },
+  );
+
+  if (res.error) {
+    console.error('[getBuddyNicknamesForReservation] error', res.error);
+    return [];
+  }
+
+  if (!Array.isArray(res.data)) return [];
+  return res.data.filter((n): n is string => typeof n === 'string' && n.trim().length > 0);
 }
 
 export async function getMyAssignmentsDirect(

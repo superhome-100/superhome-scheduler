@@ -12,6 +12,9 @@ export type ReservationStatus = Database['public']['Enums']['reservation_status'
 
 // Base reservation interface
 interface BaseReservation {
+  // Surrogate primary key
+  reservation_id: number;
+  // Logical owner/time key (still unique per user+timestamp)
   uid: string;
   res_date: string;
   res_type: ReservationType;
@@ -74,6 +77,8 @@ interface CreateReservationData {
   classroom?: ClassroomReservationDetails;
   // Open water details
   openwater?: OpenWaterReservationDetails;
+  // Optional buddy UIDs to attach to this reservation
+  buddies?: string[];
 }
 
 // Update reservation data

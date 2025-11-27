@@ -246,11 +246,13 @@ Deno.serve(async (req: Request) => {
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return json({ error: 'Server not configured' }, { status: 500 });
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) return json({ error: 'Server not configured' }, { status: 500 });
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } }
     });
+    const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const { data: userRes } = await supabase.auth.getUser();
     const user = userRes?.user;
@@ -632,22 +634,37 @@ Deno.serve(async (req: Request) => {
     let detailError: any = null
     switch (body.res_type) {
       case 'pool':
-        if (body.pool) {
+        if (body.pool && parent?.reservation_id != null) {
           // Do not auto-assign lane on creation; handled on admin approval
-          const { error } = await supabase.from('res_pool').insert({ uid: body.uid, res_date: res_date_iso, ...body.pool })
+          const { error } = await supabase.from('res_pool').insert({
+            reservation_id: parent.reservation_id,
+            uid: body.uid,
+            res_date: res_date_iso,
+            ...body.pool,
+          })
           detailError = error
         }
         break
       case 'classroom':
-        if (body.classroom) {
+        if (body.classroom && parent?.reservation_id != null) {
           // Do not auto-assign room on creation; handled on admin approval
-          const { error } = await supabase.from('res_classroom').insert({ uid: body.uid, res_date: res_date_iso, ...body.classroom })
+          const { error } = await supabase.from('res_classroom').insert({
+            reservation_id: parent.reservation_id,
+            uid: body.uid,
+            res_date: res_date_iso,
+            ...body.classroom,
+          })
           detailError = error
         }
         break
       case 'open_water':
-        if (body.openwater) {
-          const { error } = await supabase.from('res_openwater').insert({ uid: body.uid, res_date: res_date_iso, ...body.openwater })
+        if (body.openwater && parent?.reservation_id != null) {
+          const { error } = await supabase.from('res_openwater').insert({
+            reservation_id: parent.reservation_id,
+            uid: body.uid,
+            res_date: res_date_iso,
+            ...body.openwater,
+          })
           detailError = error
         }
         break
@@ -707,7 +724,7 @@ Deno.serve(async (req: Request) => {
             if (buddyUid === body.uid) continue; // Skip initiator
 
             // Check if buddy already has a reservation for this date/time
-            const { data: existingRes } = await supabase
+            const { data: existingRes } = await serviceSupabase
               .from('reservations')
               .select('uid')
               .eq('uid', buddyUid)
@@ -721,14 +738,20 @@ Deno.serve(async (req: Request) => {
               console.log(`Buddy ${buddyUid} already has a reservation, linking to group`);
               // Just link their existing reservation to the group
               if (body.res_type === 'open_water') {
-                await supabase
+                await serviceSupabase
                   .from('res_openwater')
                   .update({ buddy_group_id: buddyGroupId })
                   .eq('uid', buddyUid)
                   .eq('res_date', res_date_iso);
               } else if (body.res_type === 'pool') {
-                await supabase
+                await serviceSupabase
                   .from('res_pool')
+                  .update({ buddy_group_id: buddyGroupId })
+                  .eq('uid', buddyUid)
+                  .eq('res_date', res_date_iso);
+              } else if (body.res_type === 'classroom') {
+                await serviceSupabase
+                  .from('res_classroom')
                   .update({ buddy_group_id: buddyGroupId })
                   .eq('uid', buddyUid)
                   .eq('res_date', res_date_iso);
@@ -737,7 +760,7 @@ Deno.serve(async (req: Request) => {
             }
 
             // Create reservation for buddy
-            const { data: buddyParent, error: buddyParentError } = await supabase
+            const { data: buddyParent, error: buddyParentError } = await serviceSupabase
               .from('reservations')
               .insert({
                 uid: buddyUid,
@@ -751,47 +774,79 @@ Deno.serve(async (req: Request) => {
             if (buddyParentError) {
               console.error(`Failed to create reservation for buddy ${buddyUid}:`, buddyParentError);
               continue; // Skip this buddy
-            }
-
-            // Create type-specific detail for buddy
-            let buddyDetailError: any = null;
-            switch (body.res_type) {
-              case 'pool':
-                if (body.pool) {
-                  const { error } = await supabase.from('res_pool').insert({
-                    uid: buddyUid,
-                    res_date: res_date_iso,
-                    ...body.pool,
-                    buddy_group_id: buddyGroupId
-                  });
-                  buddyDetailError = error;
-                }
-                break;
-              case 'open_water':
-                if (body.openwater) {
-                  const { error } = await supabase.from('res_openwater').insert({
-                    uid: buddyUid,
-                    res_date: res_date_iso,
-                    ...body.openwater,
-                    buddy_group_id: buddyGroupId
-                  });
-                  buddyDetailError = error;
-                }
-                break;
-            }
-
-            if (buddyDetailError) {
-              console.error(`Failed to create details for buddy ${buddyUid}:`, buddyDetailError);
-              // Rollback buddy reservation
-              await supabase.from('reservations').delete().eq('uid', buddyUid).eq('res_date', res_date_iso);
             } else {
               console.log(`Created reservation for buddy ${buddyUid}`);
+            }
+
+            // Create detail row for buddy reservation, mirroring main reservation logic
+            try {
+              if (body.res_type === 'open_water' && body.openwater && buddyParent?.reservation_id != null) {
+                const { error: buddyDetailErr } = await serviceSupabase
+                  .from('res_openwater')
+                  .insert({
+                    reservation_id: buddyParent.reservation_id,
+                    uid: buddyUid,
+                    res_date: res_date_iso,
+                    buddy_group_id: buddyGroupId,
+                    ...body.openwater,
+                  });
+                if (buddyDetailErr) {
+                  console.error(`Failed to create res_openwater for buddy ${buddyUid}:`, buddyDetailErr);
+                }
+              } else if (body.res_type === 'pool' && body.pool && buddyParent?.reservation_id != null) {
+                const { error: buddyDetailErr } = await serviceSupabase
+                  .from('res_pool')
+                  .insert({
+                    reservation_id: buddyParent.reservation_id,
+                    uid: buddyUid,
+                    res_date: res_date_iso,
+                    buddy_group_id: buddyGroupId,
+                    ...body.pool,
+                  });
+                if (buddyDetailErr) {
+                  console.error(`Failed to create res_pool for buddy ${buddyUid}:`, buddyDetailErr);
+                }
+              } else if (body.res_type === 'classroom' && body.classroom && buddyParent?.reservation_id != null) {
+                const { error: buddyDetailErr } = await serviceSupabase
+                  .from('res_classroom')
+                  .insert({
+                    reservation_id: buddyParent.reservation_id,
+                    uid: buddyUid,
+                    res_date: res_date_iso,
+                    buddy_group_id: buddyGroupId,
+                    ...body.classroom,
+                  });
+                if (buddyDetailErr) {
+                  console.error(`Failed to create res_classroom for buddy ${buddyUid}:`, buddyDetailErr);
+                }
+              }
+            } catch (detailErr) {
+              console.error(`Unexpected error creating detail for buddy ${buddyUid}:`, detailErr);
             }
           }
         }
       } catch (buddyError) {
         console.error('Error handling buddy group:', buddyError);
         // Don't fail the main reservation
+      }
+    }
+
+    // Enqueue assignment job for open water slot at the very end
+    if (body.res_type === 'open_water' && body.openwater?.time_period) {
+      const dateOnly = res_date_iso.split('T')[0]
+      const { error: queueErr } = await serviceSupabase
+        .from('assignment_queue')
+        .upsert(
+          {
+            res_date: dateOnly,
+            time_period: body.openwater.time_period,
+            status: 'pending',
+          },
+          { onConflict: 'res_date,time_period' },
+        )
+
+      if (queueErr) {
+        console.error('[reservations-create] Failed to enqueue assignment job', queueErr.message ?? queueErr)
       }
     }
 

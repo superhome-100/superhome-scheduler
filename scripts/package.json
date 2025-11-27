@@ -1,0 +1,17 @@
+{
+  "name": "superhome-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "make-admin": "tsx make-admin.ts",
+    "regroup": "tsx regroup.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "dotenv": "^16.4.5",
+    "dayjs": "^1.11.13",
+    "pg": "^8.13.1",
+    "tsx": "^4.7.0"
+  }
+}
