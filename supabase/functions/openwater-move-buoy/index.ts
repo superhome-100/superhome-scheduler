@@ -2,7 +2,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
 
 interface Payload {
-  reservation_id: string
+  // Numeric primary key from public.reservations / public.res_openwater
+  reservation_id: number
   buoy_id: string
   res_date: string // ISO timestamp or date string matching reservations/res_openwater res_date
   time_period: string
@@ -71,8 +72,8 @@ Deno.serve(async (req: Request) => {
     // Locate the existing open water reservation detail row
     const { data: owRow, error: owErr } = await serviceSupabase
       .from('res_openwater')
-      .select('uid, res_date, time_period, group_id, open_water_type')
-      .eq('uid', body.reservation_id)
+      .select('reservation_id, uid, res_date, time_period, group_id, open_water_type, buddy_group_id')
+      .eq('reservation_id', body.reservation_id)
       .maybeSingle()
 
     if (owErr) {
@@ -89,6 +90,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const currentGroupId = owRow.group_id as number | null
+    const buddyGroupId = (owRow as any).buddy_group_id as string | null
     const timePeriod = ((owRow.time_period || body.time_period) || 'AM').toUpperCase() === 'PM' ? 'PM' : 'AM'
     console.log('[openwater-move-buoy] Loaded res_openwater row', {
       uid: owRow.uid,
@@ -144,16 +146,37 @@ Deno.serve(async (req: Request) => {
       targetGroupId = inserted.id as number
     }
 
-    // Update the reservation to point at the new group and persist preferred buoy
+    // Determine which reservations to move: all members of the same buddy group (if any)
+    let affectedReservationIds: number[] = [body.reservation_id]
+
+    if (buddyGroupId) {
+      const { data: buddyRows, error: buddiesErr } = await serviceSupabase
+        .from('res_openwater')
+        .select('reservation_id')
+        .eq('buddy_group_id', buddyGroupId)
+
+      if (buddiesErr) {
+        console.error('[openwater-move-buoy] Error loading buddy group members', buddiesErr.message)
+      } else {
+        const extraIds = (buddyRows ?? [])
+          .map((r: any) => r.reservation_id as number)
+          .filter((id) => !!id && id !== body.reservation_id)
+        if (extraIds.length) {
+          affectedReservationIds = [body.reservation_id, ...extraIds]
+        }
+      }
+    }
+
+    // Update the reservation(s) to point at the new group and persist preferred buoy
     console.info('[openwater-move-buoy] Updating res_openwater group_id & buoy', {
-      reservation_id: body.reservation_id,
+      reservation_ids: affectedReservationIds,
       group_id: targetGroupId,
       buoy: body.buoy_id,
     })
     const { error: updateErr } = await serviceSupabase
       .from('res_openwater')
       .update({ group_id: targetGroupId, buoy: body.buoy_id })
-      .eq('uid', body.reservation_id);
+      .in('reservation_id', affectedReservationIds);
 
     if (updateErr) {
       console.error('[openwater-move-buoy] Error updating res_openwater group_id', updateErr.message)
@@ -163,8 +186,8 @@ Deno.serve(async (req: Request) => {
     // Verify the updated row
     const { data: verifyRow, error: verifyErr } = await serviceSupabase
       .from('res_openwater')
-      .select('uid, res_date, time_period, group_id, buoy')
-      .eq('uid', body.reservation_id)
+      .select('reservation_id, uid, res_date, time_period, group_id, buoy')
+      .eq('reservation_id', body.reservation_id)
       .maybeSingle()
 
     if (verifyErr) {

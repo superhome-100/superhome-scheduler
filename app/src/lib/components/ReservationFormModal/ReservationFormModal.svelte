@@ -50,6 +50,16 @@
     formData.pulley = "true";
   }
 
+  // When selecting Course/Coaching in Open Water, buddies are not applicable
+  $: if (
+    formData.type === "openwater" &&
+    formData.openWaterType === "course_coaching" &&
+    Array.isArray(formData.buddies) &&
+    formData.buddies.length > 0
+  ) {
+    formData.buddies = [];
+  }
+
   // Trigger validation when form data changes
   $: if (formData.date && formData.type) {
     const { errors: validationErrors } = validateForm(formData);
@@ -267,6 +277,10 @@
         ),
         res_date: reservationDateTime.toISOString(),
         res_status: "pending",
+        // Pass through buddy UIDs so the edge function can create buddy reservations
+        buddies: Array.isArray(formData.buddies) && formData.buddies.length
+          ? [...formData.buddies]
+          : undefined,
       };
 
       // Add type-specific details
@@ -522,8 +536,10 @@
           <EquipmentOptions bind:formData />
         {/if}
 
-        <!-- Buddy Selection -->
-        <BuddySelection bind:formData />
+        <!-- Buddy Selection (hidden for Open Water Course/Coaching) -->
+        {#if !(formData.type === "openwater" && formData.openWaterType === "course_coaching")}
+          <BuddySelection bind:formData />
+        {/if}
 
         <!-- Notes -->
         <FormNotes bind:formData />

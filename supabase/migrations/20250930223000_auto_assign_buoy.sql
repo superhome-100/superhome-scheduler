@@ -14,15 +14,19 @@ comment on column public.buoy.max_depth is 'Maximum supported depth (meters)';
 
 -- Seed default depth bands (idempotent upserts by name)
 insert into public.buoy (buoy_name, max_depth) values
-  ('Buoy 1', 15),
-  ('Buoy 2', 30),
-  ('Buoy 3', 45),
-  ('Buoy 4', 60),
-  ('Buoy 5', 75),
-  ('Buoy 6', 90),
-  ('Buoy 7', 105),
-  ('Buoy 8', 120),
-  ('Buoy 9', 135)
+  ('A', 15),
+  ('B', 30),
+  ('C', 45),
+  ('CC', 47),
+  ('D', 60),
+  ('DD', 62),
+  ('E', 75),
+  ('EE', 77),
+  ('F', 90),
+  ('FF', 92),
+  ('G', 105),
+  ('HH', 120),
+  ('I', 135)
 on conflict (buoy_name) do update set max_depth = excluded.max_depth;
 
 -- 2) buoy_group table

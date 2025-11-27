@@ -112,12 +112,31 @@ Deno.serve(async (req: Request) => {
       }, { status: 200 });
     }
     
-    // Direct invocation mode (legacy/manual)
-    if (!body?.res_date || !body?.time_period) {
+    // Direct invocation mode (manual): queue job then process immediately
+    if (!('res_date' in body) || !('time_period' in body) || !body.res_date || !body.time_period) {
       return json({ error: 'Invalid payload' }, { status: 400 });
     }
 
-    const result = await processAssignment(supabase, body.res_date, body.time_period);
+    const dateOnly = String(body.res_date).split('T')[0];
+
+    // Upsert into assignment_queue so manual triggers also populate the queue
+    const { error: queueErr } = await supabase
+      .from('assignment_queue')
+      .upsert(
+        {
+          res_date: dateOnly,
+          time_period: body.time_period,
+          status: 'pending',
+        },
+        { onConflict: 'res_date,time_period' },
+      );
+
+    if (queueErr) {
+      console.error('[auto-assign-buoy] Failed to enqueue assignment job', queueErr.message ?? queueErr);
+      // Continue with processing anyway so manual calls still work even if queue write fails
+    }
+
+    const result = await processAssignment(supabase, dateOnly, body.time_period);
     return json(result, { status: 200 });
 
   } catch (e) {
@@ -130,6 +149,12 @@ Deno.serve(async (req: Request) => {
 // Extract assignment logic into a separate function
 async function processAssignment(supabase: any, res_date: string, time_period: string) {
   console.log(`Auto-assigning buoys for ${res_date} ${time_period}`);
+
+  // Normalize to a UTC day window for res_date filtering
+  const dayStart = new Date(res_date);
+  dayStart.setUTCHours(0, 0, 0, 0);
+  const dayEnd = new Date(dayStart);
+  dayEnd.setUTCDate(dayStart.getUTCDate() + 1);
 
   // 1. Fetch Reservations (now including buoy column)
   const { data: reservations, error: resErr } = await supabase
@@ -144,8 +169,9 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
         res_type
       )
     `)
-    .eq('res_date', res_date)
     .eq('time_period', time_period)
+    .gte('res_date', dayStart.toISOString())
+    .lt('res_date', dayEnd.toISOString())
     .eq('reservations.res_type', 'open_water')
     .in('reservations.res_status', ['confirmed', 'pending'])
     .order('depth_m', { ascending: true });

@@ -123,6 +123,7 @@
         const base = reservation as CompleteReservation;
 
         const common: BaseReservationView = {
+          reservation_id: (base as any).reservation_id,
           uid: base.uid,
           res_date: base.res_date,
           res_type: base.res_type,
