@@ -2,12 +2,51 @@
   import { createEventDispatcher } from "svelte";
   import { getTypeDisplay } from "../../utils/reservationTransform";
   import dayjs from "dayjs";
+  import AdminPendingFilters from './AdminPendingFilters.svelte';
+  import type { Enums } from '$lib/database.types';
 
   const dispatch = createEventDispatcher();
 
   export let pendingReservations: any[] = [];
   export let stats: any = {};
   export let processingReservation: string | null = null;
+
+  // Filter state
+  type Category = 'all' | Enums<'reservation_type'>; // 'pool' | 'open_water' | 'classroom'
+  let category: Category = 'all';
+  let type: string = 'all';
+
+  // Map category to field name in flattened reservation object
+  const categoryFieldMap: Record<Exclude<Category,'all'>, string> = {
+    pool: 'pool_type',
+    open_water: 'open_water_type',
+    classroom: 'classroom_type'
+  } as const;
+
+  // Compute available types based on selected category and current data
+  $: availableTypes = (() => {
+    if (category === 'all') return [] as string[];
+    const field = categoryFieldMap[category];
+    const values = new Set<string>();
+    for (const r of pendingReservations) {
+      if (r.res_type === category && r[field]) {
+        values.add(String(r[field]));
+      }
+    }
+    return Array.from(values).sort();
+  })();
+
+  // Filtered list based on current filters
+  $: filteredReservations = (() => {
+    return (pendingReservations || []).filter((r) => {
+      if (category !== 'all' && r.res_type !== category) return false;
+      if (category !== 'all' && type !== 'all') {
+        const field = categoryFieldMap[category];
+        return String(r[field] || '') === type;
+      }
+      return true;
+    });
+  })();
 
   const handleRefresh = () => {
     dispatch("refresh");
@@ -34,42 +73,49 @@
 </script>
 
 <div
-  class="card bg-base-100 shadow-sm border border-base-300 rounded-xl p-6 mb-8"
+  class="card bg-base-100 shadow-sm border border-base-300 rounded-xl"
 >
-  <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-semibold text-[#00294C] flex items-center gap-2">
-      Pending Reservation Requests
+  <div class="flex flex-col gap-2 sm:flex-col">
+    <h2 class="text-xl font-semibold text-[#00294C] flex items-center gap-2 px-3 sm:px-4">
+      Pending
       <div
         class="badge badge-error font-bold text-sm md:text-base w-6 h-6 md:w-8 md:h-8 shadow ring-1 ring-white/90 border border-white/60 flex items-center justify-center rounded-full"
-        style="color:#ffffff !important; background-color:#dc3545 !important; border-color:rgba(255,255,255,0.6) !important;"
         aria-label="Pending reservations count"
         title="Pending reservations"
       >
         {stats.pendingReservations}
       </div>
     </h2>
-    <button
-      class="btn btn-ghost btn-sm gap-2 text-[#00294C] hover:text-[#00294C]"
-      on:click={handleRefresh}
-    >
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-        <path
-          d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"
-        />
-      </svg>
-      Refresh
-    </button>
+    <div class="flex items-center justify-center gap-2 w-full px-3 sm:px-4 overflow-hidden">
+      <!-- Filters inline before Refresh -->
+      <AdminPendingFilters
+        {category}
+        {type}
+        {availableTypes}
+        on:change={(e) => { category = e.detail.category; type = e.detail.type; }}
+      />
+      <button
+        class="btn btn-ghost btn-sm h-9 min-h-9 gap-1 text-[#00294C] hover:text-[#00294C] align-middle flex-shrink-0"
+        on:click={handleRefresh}
+        aria-label="Refresh"
+        title="Refresh"
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path
+            d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"
+          />
+        </svg>
+        <span class="hidden sm:inline">Refresh</span>
+      </button>
+    </div>
   </div>
 
-  {#if pendingReservations.length > 0}
+  {#if filteredReservations.length > 0}
     <!-- Mobile compact list -->
-    <div
-      class="pending-mobile"
-      class:scrollable={pendingReservations.length > 5}
-    >
-      {#each pendingReservations as reservation}
+    <div class="mt-3 space-y-2" class:max-h-80={filteredReservations.length > 5} class:overflow-y-auto={filteredReservations.length > 5}>
+      {#each filteredReservations as reservation}
         <div
-          class="flex items-center justify-between gap-3 min-h-[60px] rounded-xl m-2 p-4 md:p-3 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary bg-base-100"
+          class="flex items-center justify-between gap-3 min-h-[60px] rounded-xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary bg-base-100"
           role="button"
           tabindex="0"
           on:click={() => openReservationDetails(reservation)}
@@ -95,13 +141,12 @@
           </div>
           <!-- Action icon buttons; prevent propagation per button -->
           <div
-            class="flex-shrink-0 ml-2 flex items-center gap-2"
+            class="flex-shrink-0 flex items-center gap-2 md:gap-3"
             role="group"
             aria-label="Reservation actions"
           >
             <button
-              class="btn btn-circle btn-ghost btn-xs"
-              style="background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important;"
+              class="inline-flex items-center justify-center h-6 px-2 rounded-md bg-[#dc3545] text-white text-[10px] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#dc3545] md:h-8 md:px-3 md:text-[12px]"
               on:click|stopPropagation={() =>
                 handleReservationAction(reservation, "reject")}
               type="button"
@@ -116,17 +161,19 @@
                 viewBox="0 0 24 24"
                 width="12"
                 height="12"
-                fill="currentColor"
+                fill="#ffffff"
                 aria-hidden="true"
+                class="w-3 h-3 md:w-4 md:h-4 text-white pointer-events-none shrink-0 block"
+                style="color:#fff"
               >
                 <path
                   d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                  fill="#ffffff"
                 />
               </svg>
             </button>
             <button
-              class="btn btn-circle btn-ghost btn-xs"
-              style="background-color: #28a745 !important; border-color: #28a745 !important; color: white !important;"
+              class="inline-flex items-center justify-center h-6 px-2 rounded-md bg-[#28a745] text-white text-[10px] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#28a745] md:h-8 md:px-3 md:text-[12px]"
               on:click|stopPropagation={() =>
                 handleReservationAction(reservation, "approve")}
               type="button"
@@ -141,10 +188,12 @@
                 viewBox="0 0 24 24"
                 width="12"
                 height="12"
-                fill="currentColor"
+                fill="#ffffff"
                 aria-hidden="true"
+                class="w-3 h-3 text-white pointer-events-none shrink-0 block"
+                style="color:#fff"
               >
-                <path d="M9 16.17 4.83 12l-1.42 1.41L9 19l12-12-1.41-1.41z" />
+                <path d="M9 16.17 4.83 12l-1.42 1.41L9 19l12-12-1.41-1.41z" fill="#ffffff" />
               </svg>
             </button>
           </div>
@@ -152,117 +201,9 @@
       {/each}
     </div>
 
-    <!-- Desktop grid -->
-    <div class="reservations-grid p-4">
-      {#each pendingReservations as reservation}
-        <div
-          class="card bg-base-50 border border-base-300 rounded-xl p-6 hover:border-primary hover:shadow-lg transition-all duration-200 flex-shrink-0 m-1"
-        >
-          <div class="card-header flex justify-between items-start mb-4">
-            <div class="flex items-center gap-3">
-              <div class="flex flex-col gap-1">
-                <span class="font-semibold text-[#00294C] text-sm">
-                  {reservation.user_profiles?.nickname ||
-                    reservation.user_profiles?.name ||
-                    "Unknown User"}
-                </span>
-                <span
-                  class="badge badge-sm text-[#00294C]"
-                  class:badge-primary={reservation.res_type === "pool"}
-                  class:badge-success={reservation.res_type === "open_water"}
-                  class:badge-error={reservation.res_type === "classroom"}
-                >
-                  {getTypeDisplay(reservation.res_type)}
-                </span>
-              </div>
-            </div>
-            <div class="text-sm text-[#00294C] font-medium">
-              {dayjs(reservation.res_date).format("MMM D, YYYY")}
-            </div>
-          </div>
-
-          <div class="card-body p-0 mb-4 flex-1 flex flex-col">
-            {#if reservation.title}
-              <h4
-                class="text-sm font-semibold text-[#00294C] mb-2 line-clamp-2"
-              >
-                {reservation.title}
-              </h4>
-            {/if}
-            {#if reservation.description}
-              <p
-                class="text-xs text-[#00294C] leading-relaxed mb-3 line-clamp-3 flex-1"
-              >
-                {reservation.description}
-              </p>
-            {/if}
-            <div class="flex gap-4 flex-wrap mt-auto">
-              <span class="flex items-center gap-1 text-xs text-[#00294C]">
-                <svg
-                  viewBox="0 0 24 24"
-                  width="14"
-                  height="14"
-                  fill="currentColor"
-                >
-                  <path
-                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
-                  />
-                </svg>
-                Requested {dayjs(reservation.created_at).format("MMM D, YYYY")}
-              </span>
-            </div>
-          </div>
-
-          <div class="card-actions grid grid-cols-2 gap-2 mt-auto">
-            <button
-              class="btn btn-xs gap-1 w-full"
-              style="background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important;"
-              on:click={() => handleReservationAction(reservation, "reject")}
-              disabled={processingReservation ===
-                `${reservation.uid}-${reservation.res_date}`}
-              aria-busy={processingReservation ===
-                `${reservation.uid}-${reservation.res_date}`}
-              title="Reject reservation"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="14"
-                height="14"
-                fill="currentColor"
-              >
-                <path
-                  d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
-                />
-              </svg>
-              Reject
-            </button>
-            <button
-              class="btn btn-xs gap-1 w-full"
-              style="background-color: #28a745 !important; border-color: #28a745 !important; color: white !important;"
-              on:click={() => handleReservationAction(reservation, "approve")}
-              disabled={processingReservation ===
-                `${reservation.uid}-${reservation.res_date}`}
-              aria-busy={processingReservation ===
-                `${reservation.uid}-${reservation.res_date}`}
-              title="Approve reservation"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="14"
-                height="14"
-                fill="currentColor"
-              >
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-              </svg>
-              Approve
-            </button>
-          </div>
-        </div>
-      {/each}
-    </div>
   {:else}
     <div
-      class="flex flex-col items-center justify-center py-12 text-[#00294C] text-center"
+      class="flex flex-col items-center justify-center text-[#00294C] text-center"
     >
       <svg
         viewBox="0 0 24 24"
@@ -280,51 +221,3 @@
   {/if}
 </div>
 
-<style>
-  /* Mobile compact list - now shown on all screen sizes */
-  .pending-mobile {
-    display: block;
-    padding: 0.5rem;
-  }
-
-  .pending-mobile.scrollable {
-    max-height: 320px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 0.5rem;
-  }
-
-  /* Desktop grid - now hidden on all screen sizes */
-  .reservations-grid {
-    display: none;
-  }
-
-  /* Mobile item appearance: remove per-item border in mobile view */
-  .pending-mobile > div {
-    position: relative;
-    z-index: 1;
-    border: none;
-    border-radius: 0.75rem; /* rounded-xl */
-  }
-
-  .pending-mobile > div::before {
-    display: none;
-  }
-
-  /* Text truncation utilities */
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-</style>

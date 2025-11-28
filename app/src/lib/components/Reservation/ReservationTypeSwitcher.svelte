@@ -5,7 +5,6 @@
   import './reservation-type-switcher.css';
 
   export let value: ReservationType = ReservationType.openwater;
-  export let urlSync: boolean = false; // when true, keep ?type= in URL
   export let size: 'xs' | 'sm' | 'md' = 'sm';
   export let className: string = '';
   export let date: string | null = null;
@@ -15,7 +14,7 @@
   };
 </script>
 
-<div class={`flex justify-center mb-8 flex-wrap gap-6 button-container px-6 sm:px-4 ${className}`}>
+<div class={`flex justify-center mb-8 flex-wrap gap-6 button-container ${className}`}>
   <a
     href={getHref('openwater')}
     class={`btn btn-${size} btn-neutral`}

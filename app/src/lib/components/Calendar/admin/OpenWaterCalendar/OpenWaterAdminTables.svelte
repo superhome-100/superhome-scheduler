@@ -14,6 +14,8 @@
   export let onUpdateBoat: (groupId: number, boatName: string) => void;
   // Parent-provided callback to refresh assignments after server-side updates
   export let onRefreshAssignments: () => void;
+  // When true, render in view-only mode (no edits or moves)
+  export let readOnly: boolean = false;
 
   const dispatch = createEventDispatcher();
 
@@ -137,6 +139,7 @@
   async function handleMoveReservationToBuoy(
     event: CustomEvent<MoveReservationToBuoyPayload>
   ) {
+    if (readOnly) return; // Block moves in view-only mode
     if (movingReservation) return;
     movingReservation = true;
     try {
@@ -171,6 +174,7 @@
     {availableBuoys}
     {availableBoats}
     {loading}
+    {readOnly}
     {onUpdateBuoy}
     {onUpdateBoat}
     onMouseDown={handleMouseDown}
@@ -186,6 +190,7 @@
     {availableBuoys}
     {availableBoats}
     {loading}
+    {readOnly}
     {onUpdateBuoy}
     {onUpdateBoat}
     onMouseDown={handleMouseDown}

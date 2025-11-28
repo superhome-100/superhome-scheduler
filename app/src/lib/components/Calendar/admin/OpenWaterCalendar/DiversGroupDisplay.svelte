@@ -6,6 +6,8 @@
 
   export let buoyGroup: AdminBuoyGroup;
   export let availableBuoys: { buoy_name: string; max_depth: number }[] = [];
+  // When true, suppress any controls that would mutate state
+  export let readOnly: boolean = false;
 
   const dispatch = createEventDispatcher();
 
@@ -72,14 +74,7 @@
     return primaryName;
   }
 
-  $: console.log('[DiversGroupDisplay] buoyGroup', {
-    groupId: buoyGroup?.id,
-    member_uids: buoyGroup?.member_uids,
-    member_names: buoyGroup?.member_names,
-    nonEmptyNames,
-    memberDisplayNames,
-    memberNameByUid: Array.from(memberNameByUid.entries()),
-  });
+  // Debug logs removed to keep file compact and under 300 lines
 
   $: reservations = buoyGroup.reservations;
 
@@ -108,7 +103,7 @@
     return fallback ? [fallback] : [];
   })();
 
-  $: console.log('[DiversGroupDisplay] moveDialogNames', moveDialogNames);
+  // Debug log removed
 
   $: moveTargets = (availableBuoys || [])
     .map((b) => b.buoy_name)
@@ -195,19 +190,7 @@
     on:click={handleGroupClick}
     on:keydown={handleKeyDown}
   >
-    <!-- Debug Logging for Divers Group Box -->
-    {console.log("🔍 DEBUG - Divers Group Box:", {
-      groupId: buoyGroup.id,
-      displayNames: buoyGroup.member_names,
-      openWaterType: buoyGroup.open_water_type,
-      boatCount: buoyGroup.boat_count,
-      studentCount:
-        buoyGroup.open_water_type === "course_coaching"
-          ? Math.max((buoyGroup.boat_count ?? 1) - 1, 0)
-          : "N/A",
-      memberCount: buoyGroup.member_names?.length || 0,
-      timePeriod: buoyGroup.time_period,
-    })}
+    <!-- Debug removed -->
     <!-- Open Water Type Display Logic -->
     <div class="space-y-1 flex flex-col items-start w-full">
       {#each reservations as reservation, index}
@@ -220,24 +203,26 @@
           <span class="font-medium text-gray-800 flex-1 truncate">
             {getReservationDisplayName(reservation, index)}
           </span>
-          <button
-            type="button"
-            class="btn btn-ghost btn-xs p-1 min-h-0 h-6 w-6 flex items-center justify-center"
-            on:click|stopPropagation={() =>
-              openMoveDialog(
-                reservation,
-                getReservationDisplayName(reservation, index),
-              )
-            }
-            aria-label="Move to buoy"
-          >
-            ⚑
-          </button>
+          {#if !readOnly}
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs p-1 min-h-0 h-6 w-6 flex items-center justify-center"
+              on:click|stopPropagation={() =>
+                openMoveDialog(
+                  reservation,
+                  getReservationDisplayName(reservation, index),
+                )
+              }
+              aria-label="Move to buoy"
+            >
+              ⚑
+            </button>
+          {/if}
         </div>
       {/each}
     </div>
   </div>
-  {#if showMoveDialog}
+  {#if showMoveDialog && !readOnly}
     <div
       class="fixed inset-0 z-[80] flex items-center justify-center bg-base-300/80 backdrop-blur-sm"
     >

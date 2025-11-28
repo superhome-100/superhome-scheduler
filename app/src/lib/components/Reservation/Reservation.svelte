@@ -7,7 +7,6 @@
   import PullToRefresh from '../PullToRefresh.svelte';
   import ReservationFormModal from '../ReservationFormModal/ReservationFormModal.svelte';
   import ReservationDetailsModal from '../ReservationDetailsModal/ReservationDetailsModal.svelte';
-  import ReservationHeader from './ReservationHeader.svelte';
   import ReservationTypeButtons from './ReservationTypeButtons.svelte';
   import ReservationCalendar from './ReservationCalendar.svelte';
   import FloatingActionButton from './FloatingActionButton.svelte';
@@ -16,6 +15,7 @@
   import { createEventDispatcher } from 'svelte';
   import { ReservationType } from '../../types/reservations';
   import ErrorModal from '../ErrorModal.svelte';
+  import BodyContent from '../Layout/BodyContent.svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -306,12 +306,9 @@
     <button class="btn btn-primary" on:click={() => window.location.reload()}>Try Again</button>
   </div>
 {:else if $authStore.user}
-  <!-- Sticky Header -->
-  <ReservationHeader />
-
   <!-- Pull-to-Refresh Body -->
   <PullToRefresh onRefresh={handleRefresh} {refreshing}>
-    <div class="flex-1 px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-5 lg:px-8 lg:py-6 xl:px-10 xl:py-6 2xl:px-12 2xl:py-6 max-w-7xl mx-auto w-full">
+    <BodyContent padding={false}>
       {#if loading}
         <div class="flex flex-col items-center justify-center min-h-96 text-center">
           <LoadingSpinner size="md" />
@@ -329,7 +326,7 @@
       {:else}
           <!-- Calendar Content Card -->
           <div class="card bg-base-100 shadow-lg border border-base-300">
-            <div class="card-body p-6">
+            <div class="card-body p-0">
               <!-- Reservation Type Buttons -->
               <ReservationTypeButtons 
                 {selectedType}
@@ -348,7 +345,7 @@
             </div>
           </div>
       {/if}
-    </div>
+    </BodyContent>
 
     <!-- Floating Action Button: New Reservation -->
     <FloatingActionButton on:newReservation={handleNewReservation} />

@@ -7,6 +7,8 @@
   export let availableBoats: string[];
   export let onUpdateBuoy: (groupId: number, buoyName: string) => void;
   export let onUpdateBoat: (groupId: number, boatName: string) => void;
+  // When true, render controls as disabled
+  export let readOnly: boolean = false;
 
   // Find the max depth for the currently selected buoy
   $: selectedBuoy = availableBuoys.find(
@@ -31,6 +33,7 @@
         class="select select-bordered w-full bg-white rounded-lg border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 opacity-0 absolute inset-0"
         bind:value={buoyGroup.buoy_name}
         on:change={() => onUpdateBuoy(buoyGroup.id, buoyGroup.buoy_name)}
+        disabled={readOnly}
       >
         {#each availableBuoys as b}
           <option value={b.buoy_name}>{b.buoy_name} (≤{b.max_depth}m)</option>
@@ -47,16 +50,23 @@
     data-column="boat"
   >
     <div class="flex items-center justify-center w-full min-h-10">
-      <select
-        class="select select-bordered w-full bg-white rounded-lg border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20"
-        bind:value={buoyGroup.boat}
-        on:change={() => onUpdateBoat(buoyGroup.id, buoyGroup.boat)}
-      >
-        <option value="">Select</option>
-        {#each availableBoats as boat}
-          <option value={boat}>{boat.replace("Boat ", "")}</option>
-        {/each}
-      </select>
+      {#if readOnly}
+        <span class="text-sm font-medium">
+          {buoyGroup.boat && buoyGroup.boat.trim() !== "" ? buoyGroup.boat : "Not assigned"}
+        </span>
+      {:else}
+        <select
+          class="select select-bordered w-full bg-white rounded-lg border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20"
+          bind:value={buoyGroup.boat}
+          on:change={() => onUpdateBoat(buoyGroup.id, buoyGroup.boat)}
+          disabled={readOnly}
+        >
+          <option value="">Select</option>
+          {#each availableBoats as boat}
+            <option value={boat}>{boat.replace("Boat ", "")}</option>
+          {/each}
+        </select>
+      {/if}
     </div>
   </div>
   <div class="p-2 pl-3 flex-grow min-w-48" role="gridcell" data-column="divers">
@@ -64,6 +74,7 @@
       <DiversGroupDisplay
         {buoyGroup}
         {availableBuoys}
+        {readOnly}
         on:groupClick
         on:moveReservationToBuoy
       />

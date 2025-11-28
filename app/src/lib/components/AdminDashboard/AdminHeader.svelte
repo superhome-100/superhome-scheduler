@@ -6,7 +6,7 @@
   .admin-header {
     background: white;
     border-bottom: 1px solid #e2e8f0;
-    padding: 1rem;
+    padding: 0;
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -33,7 +33,7 @@
   }
   
   .header-content {
-    padding-left: 0.5rem; /* 8px for mobile - reduced since we'll add gap */
+    padding-left: 0; /* remove left padding for flush header */
   }
   
   .header-content .flex-1 {
@@ -42,7 +42,7 @@
   
   @media (min-width: 640px) {
     .header-content {
-      padding-left: 1.5rem; /* 24px for small tablets */
+      padding-left: 0; /* keep flush on small tablets */
     }
     
     .header-content .flex-1 {
@@ -62,7 +62,7 @@
     }
     
     .header-content {
-      padding-left: 2rem; /* 32px for desktop */
+      padding-left: 0; /* keep flush on desktop */
     }
     
     .header-content .flex-1 {
@@ -72,7 +72,7 @@
   
   @media (min-width: 1280px) {
     .header-content {
-      padding-left: 3rem; /* 48px for large desktop */
+      padding-left: 0; /* keep flush on large desktop */
     }
   }
 </style>

@@ -18,6 +18,7 @@
   import { showLoading, hideLoading } from '../../stores/ui';
   import AdminSectionSwitcher from './AdminSectionSwitcher.svelte';
   import AdminUserReservations from './AdminUserReservations.svelte';
+  import BodyContent from '../Layout/BodyContent.svelte';
 
   let users: any[] = [];
   let reservations: any[] = [];
@@ -391,7 +392,7 @@
 
 <div class="min-h-screen flex flex-col" style="background-color: #f8f9fa;">
   <PullToRefresh onRefresh={handleRefresh} {refreshing}>
-    <div class="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 2xl:p-12 max-w-7xl mx-auto w-full">
+    <BodyContent>
       {#if loading}
         <div class="flex flex-col items-center justify-center py-16 px-8 text-center">
           <LoadingSpinner />
@@ -439,7 +440,7 @@
           />
         {/if}
       {/if}
-    </div>
+    </BodyContent>
   </PullToRefresh>
 
   <ReservationDetailsModal 

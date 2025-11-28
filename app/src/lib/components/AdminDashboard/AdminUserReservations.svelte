@@ -161,10 +161,10 @@
 <!-- Header + Filters Row -->
 <div class="card bg-base-100 shadow-lg border border-base-300">
   <div class="card-body p-4 sm:p-6">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-      <h2 class="text-lg sm:text-xl font-semibold">User Reservations</h2>
+    <div class="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+      <h2 class="text-base sm:text-lg md:text-xl font-semibold">User Reservations</h2>
       <!-- Search + Filters -->
-      <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
         <!-- Search with autosuggest -->
         <div class="relative w-full sm:w-64">
           <label class="input input-sm input-bordered flex items-center gap-2 w-full">
@@ -205,28 +205,25 @@
           {/if}
         </div>
 
-        <!-- Month filter -->
-        <label class="form-control">
-          <div class="label py-0">
-            <span class="label-text text-xs">Month</span>
-          </div>
-          <input type="month" class="input input-sm input-bordered w-full sm:w-40" bind:value={monthValue} aria-label="Filter by month" />
-        </label>
+        <!-- Month filter (inline join: unified bordered rectangle) -->
+        <div class="join w-full sm:w-auto">
+          <span class="join-item btn btn-sm btn-ghost no-animation pointer-events-none text-xs text-base-content/70">Month</span>
+          <input type="month" class="join-item input input-sm input-bordered w-full sm:w-44" bind:value={monthValue} aria-label="Filter by month" />
+        </div>
 
-        <!-- Type filter -->
-        <label class="form-control">
-          <div class="label py-0">
-            <span class="label-text text-xs">Type</span>
+        <!-- Type + Clear row (mobile full-width single line) -->
+        <div class="flex w-full sm:w-auto items-center gap-2 sm:gap-3">
+          <div class="join flex-1 min-w-0 ml-0 sm:ml-3">
+            <span class="join-item btn btn-sm btn-ghost no-animation pointer-events-none text-xs text-base-content/70">Type</span>
+            <select class="join-item select select-sm select-bordered w-full sm:w-40" bind:value={typeValue} aria-label="Filter by reservation type">
+              <option value="all">All</option>
+              <option value="pool">Pool</option>
+              <option value="open_water">Open Water</option>
+              <option value="classroom">Classroom</option>
+            </select>
           </div>
-          <select class="select select-sm select-bordered w-full sm:w-44" bind:value={typeValue} aria-label="Filter by reservation type">
-            <option value="all">All</option>
-            <option value="pool">Pool</option>
-            <option value="open_water">Open Water</option>
-            <option value="classroom">Classroom</option>
-          </select>
-        </label>
-
-        <button class="btn btn-sm" on:click={clearFilters} title="Clear filters">Clear</button>
+          <button class="btn btn-sm btn-outline shrink-0" on:click={clearFilters} title="Clear filters">Clear</button>
+        </div>
       </div>
     </div>
 

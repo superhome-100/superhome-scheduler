@@ -55,7 +55,7 @@ export const OPEN_WATER_SUBTYPES = {
   course_coaching: 'Course/Coaching',
   autonomous_buoy: 'Autonomous on Buoy',
   autonomous_platform: 'Autonomous on Platform',
-  autonomous_platform_cbs: 'Autonomous on Platform + CBS',
+  autonomous_platform_cbs: 'Autonomous on Platform +CBS',
 } as const;
 export type OpenWaterSubtypeKey = keyof typeof OPEN_WATER_SUBTYPES;
 

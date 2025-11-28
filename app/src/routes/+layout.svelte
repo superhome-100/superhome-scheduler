@@ -9,6 +9,7 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import GlobalLoadingOverlay from '../lib/components/GlobalLoadingOverlay.svelte';
+  import MainContainer from '../lib/components/Layout/MainContainer.svelte';
 
   let isAdmin = false;
   let checked = false;
@@ -65,13 +66,13 @@
     <!-- Sidebar for desktop and mobile drawer -->
     <Sidebar {isAdmin} {userName} {userEmail} {userAvatarUrl} {userInitial} on:signOut={handleSignOut} />
     
-    <!-- Main content area with proper spacing -->
+    <!-- Main content area using shared MainContainer -->
     <div class="main-content-wrapper">
       <!-- Page content -->
-      <main class="main-scrollable p-6 sm:p-8 lg:p-10 xl:p-12">
-        <div class="max-w-7xl w-full mx-auto">
+      <main class="main-scrollable p-0">
+        <MainContainer constrain={true} padding={false}>
           <slot />
-        </div>
+        </MainContainer>
       </main>
     </div>
     <!-- Global loading overlay -->

@@ -10,7 +10,6 @@
   import CalendarTypeSwitcher from "./CalendarTypeSwitcher.svelte";
   import PoolCalendar from "./admin/PoolCalendar/PoolCalendar.svelte";
   import OpenWaterAdminTables from "./admin/OpenWaterCalendar/OpenWaterAdminTables.svelte";
-  import OpenWaterUserLists from "./admin/OpenWaterCalendar/OpenWaterUserLists.svelte";
   import ClassroomCalendar from "./admin/ClassroomCalendar/ClassroomCalendar.svelte";
   import { pullToRefresh } from "../../actions/pullToRefresh";
   import {
@@ -87,6 +86,7 @@
   async function handleGroupClick(
     e: CustomEvent<{ groupId: number; resDate: string; timePeriod: TimePeriod }>
   ) {
+    if (!isAdmin) return; // Users cannot open group details modal
     try {
       const details = await getGroupReservationDetails(e.detail.groupId);
       groupDetails = details;
@@ -120,7 +120,7 @@
   let showGroupModal = false;
   let groupDetails: GroupReservationDetails | null = null;
 
-  // Enriched buoy groups including nested open water reservations
+  // Enriched buoy groups including nested open water reservations (admin only)
   $: buoyGroupsWithReservations = (buoyGroups || []).map(
     (bg) => ({
       ...bg,
@@ -260,20 +260,52 @@
     goto(`/reservation/${type}/${selectedDate}`);
   };
 
+  // User-view header helpers (non-admin Open Water)
+  $: formattedDateTitle = dayjs(selectedDate).format("dddd, MMMM D, YYYY");
+  function prevDay() {
+    const d = dayjs(selectedDate).subtract(1, "day").format("YYYY-MM-DD");
+    selectedCalendarType = ReservationType.openwater;
+    goto(`/reservation/openwater/${d}`);
+  }
+  function nextDay() {
+    const d = dayjs(selectedDate).add(1, "day").format("YYYY-MM-DD");
+    selectedCalendarType = ReservationType.openwater;
+    goto(`/reservation/openwater/${d}`);
+  }
+
   // ============================================ -->
   // 🔧 ADMIN-SPECIFIC: Data Loading Functions -->
   // ============================================ -->
 
-  // Load buoy groups for the selected date (admin only)
+  // Load buoy groups for the selected date (admin uses admin RPC; users use public RPC)
   const loadBuoyGroups = async () => {
     if (!selectedDate) return;
 
     try {
       loadingBuoyGroups = true;
-      const [am, pm] = await Promise.all([
-        getBuoyGroupsWithNames({ resDate: selectedDate, timePeriod: "AM" }),
-        getBuoyGroupsWithNames({ resDate: selectedDate, timePeriod: "PM" }),
-      ]);
+      let am: any[] = [];
+      let pm: any[] = [];
+      if (isAdmin) {
+        [am, pm] = await Promise.all([
+          getBuoyGroupsWithNames({ resDate: selectedDate, timePeriod: "AM" }),
+          getBuoyGroupsWithNames({ resDate: selectedDate, timePeriod: "PM" }),
+        ]);
+      } else {
+        const [{ data: amData, error: amErr }, { data: pmData, error: pmErr }] = await Promise.all([
+          supabase.rpc("get_buoy_groups_public", {
+            p_res_date: selectedDate,
+            p_time_period: "AM",
+          }),
+          supabase.rpc("get_buoy_groups_public", {
+            p_res_date: selectedDate,
+            p_time_period: "PM",
+          }),
+        ]);
+        if (amErr) throw amErr;
+        if (pmErr) throw pmErr;
+        am = amData ?? [];
+        pm = pmData ?? [];
+      }
       // Merge to one array and coerce time_period to typed TimePeriod
       buoyGroups = [...am, ...pm].map((g: any) => {
         const member_uids: string[] | null = Array.isArray(g.member_uids)
@@ -312,25 +344,40 @@
   const loadAssignmentMap = async () => {
     if (!selectedDate) return;
     try {
-      // Direct READ is allowed by rules; strict RLS enforced server-side
-      const start = dayjs(selectedDate).startOf("day");
-      const end = start.add(1, "day");
-      const { data, error } = await supabase
-        .from("res_openwater")
-        .select("uid, time_period, buoy_group(buoy_name, boat), res_date")
-        .gte("res_date", start.toISOString())
-        .lt("res_date", end.toISOString())
-        .not("group_id", "is", null);
-      if (error) throw error;
       const map: typeof assignmentMap = {};
-      (data ?? []).forEach((row: any) => {
-        const uid: string = row.uid;
-        const tp: TimePeriod =
-          String(row.time_period || "").toUpperCase() === "PM" ? "PM" : "AM";
-        const g = row.buoy_group || {};
-        if (!map[uid]) map[uid] = {};
-        map[uid][tp] = { buoy_name: g.buoy_name ?? null, boat: g.boat ?? null };
-      });
+      if (isAdmin) {
+        // Admin can read directly with joins
+        const start = dayjs(selectedDate).startOf("day");
+        const end = start.add(1, "day");
+        const { data, error } = await supabase
+          .from("res_openwater")
+          .select("uid, time_period, buoy_group(buoy_name, boat), res_date")
+          .gte("res_date", start.toISOString())
+          .lt("res_date", end.toISOString())
+          .not("group_id", "is", null);
+        if (error) throw error;
+        (data ?? []).forEach((row: any) => {
+          const uid: string = row.uid;
+          const tp: TimePeriod =
+            String(row.time_period || "").toUpperCase() === "PM" ? "PM" : "AM";
+          const g = row.buoy_group || {};
+          if (!map[uid]) map[uid] = {};
+          map[uid][tp] = { buoy_name: g.buoy_name ?? null, boat: g.boat ?? null };
+        });
+      } else {
+        // Users call public RPC to avoid RLS issues
+        const { data, error } = await supabase.rpc("get_openwater_assignment_map", {
+          p_res_date: selectedDate,
+        });
+        if (error) throw error;
+        (data ?? []).forEach((row: any) => {
+          const uid: string = row.uid;
+          const tp: TimePeriod =
+            String(row.time_period || "").toUpperCase() === "PM" ? "PM" : "AM";
+          if (!map[uid]) map[uid] = {};
+          map[uid][tp] = { buoy_name: row.buoy_name ?? null, boat: row.boat ?? null };
+        });
+      }
       assignmentMap = map;
       // bump version after successful load
       assignmentVersion++;
@@ -422,10 +469,10 @@
   // 🔧 ADMIN-SPECIFIC: Reactive Data Loading -->
   // ============================================ -->
 
-  // Load buoy assignments when date or type changes to Open Water
+  // Load buoy assignments when date or type changes to Open Water (admin and users; users are read-only)
   $: if (selectedDate && selectedCalendarType === "openwater") {
     loadOpenWaterAssignments();
-    if (isAdmin) loadAvailableBuoys();
+    loadAvailableBuoys();
   }
 
   // Update boat assignment for a buoy group (admin only)
@@ -450,13 +497,8 @@
   // Pull to refresh handler
   async function refreshCurrentView() {
     if (selectedCalendarType === "openwater") {
-      // Use the same combined loader to ensure state consistency
-      if (isAdmin) {
-        await Promise.all([loadOpenWaterAssignments(), loadAvailableBuoys()]);
-      } else {
-        await loadOpenWaterAssignments();
-      }
-      // Ask parent route to refresh root reservations data as well
+      await Promise.all([loadOpenWaterAssignments(), loadAvailableBuoys()]);
+      // Ask parent to reload reservations list as well
       dispatch("refreshReservations", { date: selectedDate, type: selectedCalendarType });
     }
   }
@@ -473,22 +515,40 @@
   use:pullToRefresh={{ onRefresh: refreshCurrentView }}
 >
   <!-- Header -->
-  <SingleDayHeader
-    {selectedDate}
-    on:back={handleBackToCalendar}
-    on:changeDate={(e) => (selectedDate = e.detail)}
-  />
+  {#if selectedCalendarType === "openwater" && !isAdmin}
+    <div class="bg-white border-b border-slate-200 p-4 flex items-center gap-4 sticky top-0 z-10 s-q0MoLB9oUH9p">
+      <button class="btn btn-ghost btn-sm flex items-center gap-2 px-2 py-1 bg-slate-100 border border-slate-200 rounded-lg text-slate-600 text-sm font-medium hover:bg-slate-200 hover:text-slate-700 transition-all duration-200 s-q0MoLB9oUH9p" on:click={handleBackToCalendar}>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="s-q0MoLB9oUH9p"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" class="s-q0MoLB9oUH9p"></path></svg>
+        Back
+      </button>
+      <div class="flex items-center gap-3 ml-auto sm:flex-1 sm:min-w-0 s-q0MoLB9oUH9p">
+        <h1 class="date-title text-xl font-semibold text-slate-800 m-0 sm:whitespace-nowrap sm:overflow-hidden sm:text-ellipsis sm:flex-1 s-q0MoLB9oUH9p">{formattedDateTitle}</h1>
+        <div class="nav-buttons s-q0MoLB9oUH9p">
+          <button class="btn btn-outline btn-sm s-q0MoLB9oUH9p" aria-label="Previous Day" on:click={prevDay}>Prev</button>
+          <button class="btn btn-outline btn-sm s-q0MoLB9oUH9p" aria-label="Next Day" on:click={nextDay}>Next</button>
+        </div>
+      </div>
+    </div>
+  {:else}
+    <SingleDayHeader
+      {selectedDate}
+      on:back={handleBackToCalendar}
+      on:changeDate={(e) => (selectedDate = e.detail)}
+    />
+  {/if}
 
-  <!-- Calendar Type Buttons -->
-  <CalendarTypeSwitcher
-    value={selectedCalendarType}
-    date={selectedDate}
-    on:change={(e) => switchCalendarType(e.detail)}
-  />
+  <!-- Calendar Type Buttons (hidden for non-admin Open Water view) -->
+  {#if !(selectedCalendarType === "openwater" && !isAdmin)}
+    <CalendarTypeSwitcher
+      value={selectedCalendarType}
+      date={selectedDate}
+      on:change={(e) => switchCalendarType(e.detail)}
+    />
+  {/if}
 
   <!-- Calendar Content -->
   <div
-    class="px-6 sm:px-4 md:px-8 lg:px-12 min-h-[60vh] max-w-screen-xl mx-auto"
+    class="md:px-8 lg:px-12 min-h-[60vh] max-w-screen-xl mx-auto"
     class:max-w-none={selectedCalendarType === "openwater"}
   >
     {#if selectedCalendarType === "pool"}
@@ -500,26 +560,19 @@
         {isAdmin}
       />
     {:else if selectedCalendarType === "openwater"}
-      <!-- OPEN WATER CALENDAR: Different views for Admin vs User -->
-      <div
-        class="flex flex-col gap-8 lg:gap-8"
-        class:grid={!isAdmin}
-        class:grid-cols-2={!isAdmin}
-      >
-          <!-- ============================================ -->
-          <!-- 🔧 ADMIN VIEW: Open Water Admin Tables -->
-          <!-- ============================================ -->
-          <!-- Features: Editable buoy/boat assignments, admin controls, group management -->
-          <OpenWaterAdminTables
-            {availableBoats}
-            availableBuoys={adminAvailableBuoys}
-            buoyGroups={buoyGroupsWithReservations}
-            loading={assignmentsLoading || loadingBuoyGroups}
-            onUpdateBuoy={updateBuoyAssignment}
-            onUpdateBoat={updateBoatAssignment}
-            on:groupClick={handleGroupClick}
-            onRefreshAssignments={refreshCurrentView}
-          />
+      <!-- OPEN WATER CALENDAR: Admin sees editable tables; Users see read-only tables with Boat/Buoy/Divers group -->
+      <div class="flex flex-col gap-8 lg:gap-8">
+        <OpenWaterAdminTables
+          {availableBoats}
+          availableBuoys={adminAvailableBuoys}
+          buoyGroups={buoyGroupsWithReservations}
+          loading={assignmentsLoading || loadingBuoyGroups}
+          readOnly={!isAdmin}
+          onUpdateBuoy={updateBuoyAssignment}
+          onUpdateBoat={updateBoatAssignment}
+          on:groupClick={handleGroupClick}
+          onRefreshAssignments={refreshCurrentView}
+        />
       </div>
     {:else if selectedCalendarType === "classroom"}
       <!-- CLASSROOM CALENDAR: Only approved classroom reservations -->

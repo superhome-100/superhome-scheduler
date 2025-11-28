@@ -98,11 +98,9 @@
         .gte('res_date', startOfDay.toISOString())
         .lt('res_date', endOfDay.toISOString());
 
-      // For non-admin users, restrict to their own reservations.
-      // Admins see all reservations for the selected date and type (RLS still applies server-side).
-      if (!isAdmin) {
-        query = query.eq('uid', $authStore.user.id);
-      }
+      // For non-admin users, allow viewing other reservations across all types in Single Day View.
+      // RLS still applies server-side to enforce visibility rules.
+      // No client-side uid filter here.
 
       // Limit to reservations matching the current view type
       if (type === ReservationType.pool) {

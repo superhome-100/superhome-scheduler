@@ -253,6 +253,18 @@
     left: auto !important;
   }
 
+  /* Global active reservation button style to avoid scoped CSS issues */
+  .btn.active-res {
+    background-color: #00294C !important; /* prussian-blue */
+    border-color: #00294C !important;
+    color: #ffffff !important;
+  }
+
+  .btn.active-res:hover {
+    background-color: #001F3D !important; /* oxford-blue-2 */
+    border-color: #001F3D !important;
+  }
+
   @media (min-width: 1024px) {
     .main-content-wrapper {
       margin-left: 320px !important; /* 80 * 4 = 320px (w-80) */

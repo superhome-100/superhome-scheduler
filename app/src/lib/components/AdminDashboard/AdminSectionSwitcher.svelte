@@ -65,7 +65,7 @@
 <svelte:window on:keydown={onKeydown} on:click={onWindowClick} />
 
 <!-- Single active button with dropdown; mobile-first -->
-<div class="flex justify-center mb-4 sm:mb-6 px-4">
+<div class="flex justify-center px-4">
   <div class="relative inline-block" bind:this={rootEl}>
     <!-- Active button always visible; only one button shown -->
     <button
