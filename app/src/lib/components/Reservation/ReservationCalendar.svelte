@@ -450,21 +450,6 @@
   <div id="reservation-calendar" bind:this={calendarEl}></div>
 </div>
 
-<div class="flex flex-wrap gap-6 mt-4 pt-4 border-t border-slate-200 justify-center md:justify-start">
-  <div class="flex items-center gap-2 text-sm text-slate-500">
-    <div class="w-3 h-3 rounded-sm bg-amber-200"></div>
-    <span>Pending</span>
-  </div>
-  <div class="flex items-center gap-2 text-sm text-slate-500">
-    <div class="w-3 h-3 rounded-sm bg-green-200"></div>
-    <span>Confirmed</span>
-  </div>
-  <div class="flex items-center gap-2 text-sm text-slate-500">
-    <div class="w-3 h-3 rounded-sm bg-red-200"></div>
-    <span>Rejected</span>
-  </div>
-</div>
-
 <style>
   /* Fixed size date boxes */
   :global(.fc-daygrid-day) {

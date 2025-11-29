@@ -11,6 +11,9 @@
   const handleReservationClick = (event: CustomEvent) => {
     dispatch('reservationClick', event.detail);
   };
+  const handleDelete = (event: CustomEvent) => {
+    dispatch('delete', event.detail);
+  };
 </script>
 
 {#if reservations.length > 0}
@@ -20,6 +23,7 @@
         {reservation} 
         {showDetails}
         on:reservationClick={handleReservationClick}
+        on:delete={handleDelete}
       />
     {/each}
   </div>

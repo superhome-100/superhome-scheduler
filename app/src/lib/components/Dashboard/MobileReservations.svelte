@@ -33,6 +33,10 @@
   const handleNewReservation = () => {
     dispatch('newReservation');
   };
+
+  const handleDelete = (reservation: any) => {
+    dispatch('delete', reservation);
+  };
 </script>
 
 <!-- Mobile: Tabs container with Upcoming/Completed; View All appears at bottom only when list overflows -->
@@ -74,7 +78,23 @@
         {#if upcomingReservations.length > 0}
           <div class="reservation-list compact mobile-scroll" bind:this={upcomingListEl} on:scroll={() => dispatch('computeOverflow')}>
             {#each upcomingReservations as reservation}
-              <ReservationCard reservation={reservation} showPrice={false} on:click={() => handleReservationClick(reservation)} />
+              <div class="flex items-stretch justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                  <ReservationCard reservation={reservation} showPrice={false} on:click={() => handleReservationClick(reservation)} />
+                </div>
+                {#if reservation?.res_status === 'pending'}
+                  <button
+                    class="btn btn-error btn-square h-full rounded-lg"
+                    aria-label="Delete pending reservation"
+                    title="Delete pending reservation"
+                    on:click|stopPropagation={() => handleDelete(reservation)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                      <path d="M9 3a1 1 0 00-1 1v1H5.5a1 1 0 100 2H6v11a2 2 0 002 2h8a2 2 0 002-2V7h.5a1 1 0 100-2H16V4a1 1 0 00-1-1H9zm2 3h2V4h-2v2zm-2 4a1 1 0 112 0v7a1 1 0 11-2 0V10zm6 0a1 1 0 112 0v7a1 1 0 11-2 0V10z" />
+                    </svg>
+                  </button>
+                {/if}
+              </div>
             {/each}
           </div>
         {:else}

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import AdminHeader from '../../lib/components/AdminDashboard/AdminHeader.svelte';
+  import PageHeader from '../../lib/components/Layout/PageHeader.svelte';
+  import MainContainer from '../../lib/components/Layout/MainContainer.svelte';
   import { authStore, auth } from '../../lib/stores/auth';
   import { onMount } from 'svelte';
 
@@ -62,12 +63,10 @@
 {#if checked}
   {#if isAdmin}
     <!-- Admin content - Sidebar is handled by parent layout -->
-    <AdminHeader />
-    <div class="p-4 sm:p-6 lg:p-8">
-      <div class="max-w-7xl w-full mx-auto">
-        <slot />
-      </div>
-    </div>
+    <PageHeader title="Admin Dashboard" subtitle="Manage users and reservations" />
+    <MainContainer constrain={true} padding={false}>
+      <slot />
+    </MainContainer>
   {:else}
     <div class="min-h-screen flex items-center justify-center">
       <div class="alert alert-warning max-w-md">

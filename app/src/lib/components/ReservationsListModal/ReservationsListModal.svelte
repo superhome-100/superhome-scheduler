@@ -36,6 +36,10 @@
       dispatch('reservationClick', event.detail);
     }
   };
+
+  const handleDelete = (event: CustomEvent) => {
+    dispatch('delete', event.detail);
+  };
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -67,6 +71,7 @@
             {reservations} 
             {showDetails}
             on:reservationClick={handleReservationClick}
+            on:delete={handleDelete}
           />
         {/if}
       </div>

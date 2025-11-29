@@ -9,6 +9,8 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import GlobalLoadingOverlay from '../lib/components/GlobalLoadingOverlay.svelte';
+  import MainContainer from '../lib/components/Layout/MainContainer.svelte';
+  import { themeStore } from '../lib/stores/theme';
 
   let isAdmin = false;
   let checked = false;
@@ -55,6 +57,10 @@
     // Redirect is now handled by auth.signOut()
   }
 
+  onMount(() => {
+    themeStore.init();
+  });
+
   // Check if current route needs sidebar
   $: needsSidebar = $page.url.pathname !== '/login' && $page.url.pathname !== '/signup' && $page.url.pathname !== '/auth/callback';
 </script>
@@ -65,13 +71,13 @@
     <!-- Sidebar for desktop and mobile drawer -->
     <Sidebar {isAdmin} {userName} {userEmail} {userAvatarUrl} {userInitial} on:signOut={handleSignOut} />
     
-    <!-- Main content area with proper spacing -->
+    <!-- Main content area using shared MainContainer -->
     <div class="main-content-wrapper">
       <!-- Page content -->
-      <main class="main-scrollable p-6 sm:p-8 lg:p-10 xl:p-12">
-        <div class="max-w-7xl w-full mx-auto">
+      <main class="main-scrollable p-0">
+        <MainContainer constrain={true} padding={false}>
           <slot />
-        </div>
+        </MainContainer>
       </main>
     </div>
     <!-- Global loading overlay -->

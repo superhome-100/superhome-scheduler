@@ -52,6 +52,7 @@ Deno.serve(async (req: Request) => {
       .delete()
       .eq('uid', body.uid)
       .eq('res_date', body.res_date)
+      .eq('res_status', 'pending')
 
     if (error) return json({ error: error.message }, { status: 400 })
 

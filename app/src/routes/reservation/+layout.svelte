@@ -1,5 +1,7 @@
 <script lang="ts">
   import { authStore, auth } from '../../lib/stores/auth';
+  import PageHeader from '../../lib/components/Layout/PageHeader.svelte';
+  import MainContainer from '../../lib/components/Layout/MainContainer.svelte';
   import { onMount } from 'svelte';
 
   let isAdmin = false;
@@ -31,10 +33,11 @@
 
 {#if checked}
   {#if $authStore.user}
-    <!-- Reservation content - Sidebar is handled by parent layout -->
-    <div class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+    <!-- Reservation content - reuse shared header and container like admin pages -->
+    <PageHeader title="Reservations" subtitle="Manage your reservations" />
+    <MainContainer constrain={true} padding={false}>
       <slot />
-    </div>
+    </MainContainer>
   {:else}
     <div class="min-h-screen flex items-center justify-center">
       <div class="alert alert-warning max-w-md">

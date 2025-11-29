@@ -17,6 +17,8 @@
   export let onUpdateBuoy: (groupId: number, buoyName: string) => void;
   export let onUpdateBoat: (groupId: number, boatName: string) => void;
   export let onMouseDown: (event: MouseEvent, column: string) => void;
+  // When true, rows render in read-only mode
+  export let readOnly: boolean = false;
 
   $: filteredGroups = buoyGroups.filter((bg) => bg.time_period === timePeriod);
 </script>
@@ -29,7 +31,9 @@
       class="card-title text-lg font-semibold text-base-content p-4 bg-base-200 border-b border-base-300 m-0 flex justify-between items-center"
     >
       <span>{timePeriod} Reservations</span>
-      <BoatCapacityDisplay {boatCapacity} />
+      {#if !readOnly}
+        <BoatCapacityDisplay {boatCapacity} />
+      {/if}
     </h3>
     {#if loading}
       <div class="p-4 text-center text-base-content/70">
@@ -52,10 +56,12 @@
                 {buoyGroup}
                 {availableBuoys}
                 {availableBoats}
+                {readOnly}
                 {onUpdateBuoy}
                 {onUpdateBoat}
                 on:groupClick
                 on:moveReservationToBuoy
+                on:statusClick
               />
             {/each}
           </div>

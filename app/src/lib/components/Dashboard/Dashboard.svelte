@@ -18,11 +18,12 @@
   import ReservationsListModal from "../ReservationsListModal/ReservationsListModal.svelte";
   import ReservationDetailsModal from "../ReservationDetailsModal/ReservationDetailsModal.svelte";
   // Dashboard sub-components
-  import DashboardHeader from "./DashboardHeader.svelte";
+  import PageHeader from "../Layout/PageHeader.svelte";
   import DesktopReservations from "./DesktopReservations.svelte";
   import MobileReservations from "./MobileReservations.svelte";
   import FloatingActionButton from "./FloatingActionButton.svelte";
   import SignOutModal from "./SignOutModal.svelte";
+  import ConfirmModal from "../ConfirmModal.svelte";
 
   // Dashboard utilities
   import {
@@ -30,6 +31,8 @@
     getCompletedReservations,
     transformReservationsForModal,
   } from "./dashboardUtils";
+  import { isBeforeCutoff } from "../../utils/cutoffRules";
+  import type { ReservationType as DbReservationType } from "../../services/reservationService";
   import { reservationLastUpdated } from "$lib/stores/reservationSync";
   import { transformReservationToUnified } from "../../utils/reservationTransform";
 
@@ -49,6 +52,8 @@
   let modalTitle = "Reservations";
   let modalVariant: "upcoming" | "completed" | "all" = "all";
   let showReservationForm = false;
+  let reservationFormInitialType: "openwater" | "pool" | "classroom" = "pool";
+  let editingReservation: any = null;
   // Modal state for disabled/account messages
   let statusModalOpen = false;
   let statusModalTitle = "Account Notice";
@@ -60,6 +65,10 @@
   let completedListEl: HTMLDivElement | null = null;
   let isAdmin = false;
   let adminChecked = false;
+
+  // Delete confirmation state
+  let deleteModalOpen = false;
+  let reservationToDelete: any = null;
 
   // Derived user info
   $: ({ userEmail, userName, userAvatarUrl, userInitial } =
@@ -80,6 +89,48 @@
     }
     // Show when scrollable (list height exceeds container height)
     showMobileViewAll = (el.scrollHeight || 0) > (el.clientHeight || 0) + 2;
+  };
+
+  // Open confirmation modal
+  const handleDeleteReservation = (event: CustomEvent) => {
+    const reservation = event.detail || null;
+    if (!reservation) return;
+    reservationToDelete = reservation;
+    deleteModalOpen = true;
+  };
+
+  // Confirm delete and invoke Edge Function
+  const confirmDelete = async () => {
+    try {
+      const reservation = reservationToDelete;
+      deleteModalOpen = false;
+      if (!reservation) return;
+      const uid = reservation.uid || $authStore.user?.id;
+      const resDate = reservation.res_date || reservation.date;
+      if (!uid || !resDate) {
+        console.error('Missing uid or res_date on reservation for delete');
+        return;
+      }
+      const { error } = await supabase.functions.invoke('reservations-delete', {
+        body: { uid, res_date: resDate }
+      });
+      if (error) {
+        console.error('Delete reservation failed:', error);
+        return;
+      }
+      // Refresh data after deletion
+      await loadReservations();
+      await loadMonthlyTotals();
+    } catch (e) {
+      console.error('Delete reservation exception:', e);
+    } finally {
+      reservationToDelete = null;
+    }
+  };
+
+  const cancelDelete = () => {
+    deleteModalOpen = false;
+    reservationToDelete = null;
   };
 
   // Load user's reservations from Supabase with detail tables
@@ -184,6 +235,8 @@
         statusModalOpen = true;
         return;
       }
+      reservationFormInitialType = "pool";
+      editingReservation = null;
       showReservationForm = true;
     } catch (e) {
       console.error("Status check error:", e);
@@ -214,22 +267,47 @@
 
   const handleReservationCreated = () => {
     showReservationForm = false;
+    editingReservation = null;
     loadReservations();
   };
 
   const handleReservationClick = (event: CustomEvent) => {
     const reservation = event.detail;
+    if (!reservation) {
+      selectedReservation = null;
+      return;
+    }
 
-    // Use unified transformation for consistent data structure
-    if (reservation) {
-      try {
-        const transformed = transformReservationToUnified(reservation);
-        selectedReservation = transformed;
-      } catch (error) {
-        console.error("Dashboard: Error transforming reservation:", error);
-        selectedReservation = null;
+    // For upcoming reservations that are still before cutoff, open the
+    // reservation request dialog in edit mode instead of read-only details.
+    try {
+      const resType = (reservation.res_type || "") as DbReservationType;
+      const resDateIso: string | undefined = reservation.res_date;
+
+      if (resDateIso && resType) {
+        const beforeCutoff = isBeforeCutoff(resDateIso, resType);
+        if (beforeCutoff) {
+          reservationFormInitialType =
+            resType === "open_water"
+              ? "openwater"
+              : resType === "classroom"
+              ? "classroom"
+              : "pool";
+          editingReservation = reservation;
+          showReservationForm = true;
+          return;
+        }
       }
-    } else {
+    } catch (error) {
+      console.error("Dashboard: Cutoff check failed:", error);
+    }
+
+    // Fallback: show read-only reservation details
+    try {
+      const transformed = transformReservationToUnified(reservation);
+      selectedReservation = transformed;
+    } catch (error) {
+      console.error("Dashboard: Error transforming reservation:", error);
       selectedReservation = null;
     }
     showReservationDetails = true;
@@ -336,11 +414,11 @@
   {:else if $authStore.user}
     {#if currentView === "/"}
       <!-- Sticky Header -->
-      <DashboardHeader {userName} />
+      <PageHeader title="Dashboard" subtitle={`Welcome back, ${userName}!`} />
 
       <!-- Pull-to-Refresh Body -->
       <PullToRefresh onRefresh={handleRefresh} {refreshing}>
-        <div class="flex-1 p-6 max-w-7xl mx-auto w-full">
+        <div class="flex-1 p-6 w-full">
           <div class="flex flex-col gap-6">
             <!-- Desktop Reservations -->
             <DesktopReservations
@@ -354,6 +432,7 @@
               on:viewAllCompleted={openCompletedReservationsModal}
               on:newReservation={handleNewReservation}
               on:retry={loadReservations}
+              on:delete={handleDeleteReservation}
             />
 
             <!-- Mobile Reservations -->
@@ -373,6 +452,7 @@
               on:newReservation={handleNewReservation}
               on:computeOverflow={computeMobileOverflow}
               on:retry={loadReservations}
+              on:delete={handleDeleteReservation}
             />
           </div>
 
@@ -391,9 +471,14 @@
 <!-- Reservation Form Modal -->
 <ReservationFormModal
   isOpen={showReservationForm}
-  initialType="pool"
+  initialType={reservationFormInitialType}
+  editing={!!editingReservation}
+  initialReservation={editingReservation}
   on:submit={handleReservationCreated}
-  on:close={() => (showReservationForm = false)}
+  on:close={() => {
+    showReservationForm = false;
+    editingReservation = null;
+  }}
 />
 
 <!-- Reservations List Modal -->
@@ -406,6 +491,7 @@
   {monthlyTotals}
   on:close={closeReservationsModal}
   on:reservationClick={handleReservationClick}
+  on:delete={handleDeleteReservation}
 />
 
 <!-- Reservation Details Modal -->
@@ -429,6 +515,17 @@
   message={statusModalMessage}
   confirmText="Close"
   on:close={() => (statusModalOpen = false)}
+/>
+
+<!-- Delete Confirmation Modal -->
+<ConfirmModal
+  bind:open={deleteModalOpen}
+  title="Delete Reservation"
+  message="Are you sure you want to delete this pending reservation? This action cannot be undone."
+  confirmText="Delete"
+  cancelText="Cancel"
+  on:confirm={confirmDelete}
+  on:cancel={cancelDelete}
 />
 
 <style>

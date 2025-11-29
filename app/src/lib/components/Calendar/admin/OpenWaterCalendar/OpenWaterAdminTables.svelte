@@ -4,6 +4,7 @@
   import "../../../../../styles/reservation-table.css";
   import type { AdminBuoyGroup } from "../../../../types/openWaterAdmin";
   import type { MoveReservationToBuoyPayload } from "../../../../services/openWaterService";
+  import type { OpenWaterReservationView } from "../../../../types/reservationViews";
   import { moveReservationToBuoy } from "../../../../services/openWaterService";
 
   export let availableBoats: string[];
@@ -14,6 +15,8 @@
   export let onUpdateBoat: (groupId: number, boatName: string) => void;
   // Parent-provided callback to refresh assignments after server-side updates
   export let onRefreshAssignments: () => void;
+  // When true, render in view-only mode (no edits or moves)
+  export let readOnly: boolean = false;
 
   const dispatch = createEventDispatcher();
 
@@ -134,9 +137,19 @@
     dispatch("groupClick", event.detail);
   }
 
+  function handleStatusClick(
+    event: CustomEvent<{
+      reservation: OpenWaterReservationView;
+      displayName?: string | null;
+    }>,
+  ) {
+    dispatch("statusClick", event.detail);
+  }
+
   async function handleMoveReservationToBuoy(
     event: CustomEvent<MoveReservationToBuoyPayload>
   ) {
+    if (readOnly) return; // Block moves in view-only mode
     if (movingReservation) return;
     movingReservation = true;
     try {
@@ -162,7 +175,7 @@
 </script>
 
 <!-- Reservation Tables Section -->
-<div class="grid grid-cols-1 gap-4 lg:gap-6">
+<div class="grid grid-cols-1 gap-2">
   <!-- AM Reservations -->
   <ReservationTable
     timePeriod="AM"
@@ -171,11 +184,13 @@
     {availableBuoys}
     {availableBoats}
     {loading}
+    {readOnly}
     {onUpdateBuoy}
     {onUpdateBoat}
     onMouseDown={handleMouseDown}
     on:groupClick={handleGroupClick}
     on:moveReservationToBuoy={handleMoveReservationToBuoy}
+    on:statusClick={handleStatusClick}
   />
 
   <!-- PM Reservations -->
@@ -186,10 +201,12 @@
     {availableBuoys}
     {availableBoats}
     {loading}
+    {readOnly}
     {onUpdateBuoy}
     {onUpdateBoat}
     onMouseDown={handleMouseDown}
     on:groupClick={handleGroupClick}
+    on:statusClick={handleStatusClick}
   />
 </div>
 
