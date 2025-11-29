@@ -10,6 +10,7 @@
   import { goto } from '$app/navigation';
   import GlobalLoadingOverlay from '../lib/components/GlobalLoadingOverlay.svelte';
   import MainContainer from '../lib/components/Layout/MainContainer.svelte';
+  import { themeStore } from '../lib/stores/theme';
 
   let isAdmin = false;
   let checked = false;
@@ -55,6 +56,10 @@
     await auth.signOut();
     // Redirect is now handled by auth.signOut()
   }
+
+  onMount(() => {
+    themeStore.init();
+  });
 
   // Check if current route needs sidebar
   $: needsSidebar = $page.url.pathname !== '/login' && $page.url.pathname !== '/signup' && $page.url.pathname !== '/auth/callback';

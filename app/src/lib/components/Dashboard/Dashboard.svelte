@@ -31,6 +31,8 @@
     getCompletedReservations,
     transformReservationsForModal,
   } from "./dashboardUtils";
+  import { isBeforeCutoff } from "../../utils/cutoffRules";
+  import type { ReservationType as DbReservationType } from "../../services/reservationService";
   import { reservationLastUpdated } from "$lib/stores/reservationSync";
   import { transformReservationToUnified } from "../../utils/reservationTransform";
 
@@ -50,6 +52,8 @@
   let modalTitle = "Reservations";
   let modalVariant: "upcoming" | "completed" | "all" = "all";
   let showReservationForm = false;
+  let reservationFormInitialType: "openwater" | "pool" | "classroom" = "pool";
+  let editingReservation: any = null;
   // Modal state for disabled/account messages
   let statusModalOpen = false;
   let statusModalTitle = "Account Notice";
@@ -231,6 +235,8 @@
         statusModalOpen = true;
         return;
       }
+      reservationFormInitialType = "pool";
+      editingReservation = null;
       showReservationForm = true;
     } catch (e) {
       console.error("Status check error:", e);
@@ -261,22 +267,47 @@
 
   const handleReservationCreated = () => {
     showReservationForm = false;
+    editingReservation = null;
     loadReservations();
   };
 
   const handleReservationClick = (event: CustomEvent) => {
     const reservation = event.detail;
+    if (!reservation) {
+      selectedReservation = null;
+      return;
+    }
 
-    // Use unified transformation for consistent data structure
-    if (reservation) {
-      try {
-        const transformed = transformReservationToUnified(reservation);
-        selectedReservation = transformed;
-      } catch (error) {
-        console.error("Dashboard: Error transforming reservation:", error);
-        selectedReservation = null;
+    // For upcoming reservations that are still before cutoff, open the
+    // reservation request dialog in edit mode instead of read-only details.
+    try {
+      const resType = (reservation.res_type || "") as DbReservationType;
+      const resDateIso: string | undefined = reservation.res_date;
+
+      if (resDateIso && resType) {
+        const beforeCutoff = isBeforeCutoff(resDateIso, resType);
+        if (beforeCutoff) {
+          reservationFormInitialType =
+            resType === "open_water"
+              ? "openwater"
+              : resType === "classroom"
+              ? "classroom"
+              : "pool";
+          editingReservation = reservation;
+          showReservationForm = true;
+          return;
+        }
       }
-    } else {
+    } catch (error) {
+      console.error("Dashboard: Cutoff check failed:", error);
+    }
+
+    // Fallback: show read-only reservation details
+    try {
+      const transformed = transformReservationToUnified(reservation);
+      selectedReservation = transformed;
+    } catch (error) {
+      console.error("Dashboard: Error transforming reservation:", error);
       selectedReservation = null;
     }
     showReservationDetails = true;
@@ -440,9 +471,14 @@
 <!-- Reservation Form Modal -->
 <ReservationFormModal
   isOpen={showReservationForm}
-  initialType="pool"
+  initialType={reservationFormInitialType}
+  editing={!!editingReservation}
+  initialReservation={editingReservation}
   on:submit={handleReservationCreated}
-  on:close={() => (showReservationForm = false)}
+  on:close={() => {
+    showReservationForm = false;
+    editingReservation = null;
+  }}
 />
 
 <!-- Reservations List Modal -->

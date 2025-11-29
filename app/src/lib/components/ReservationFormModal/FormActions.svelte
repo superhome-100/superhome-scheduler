@@ -3,6 +3,7 @@
 
   export let loading = false;
   export let isCutoffPassed = false;
+  export let editing = false;
 
   const dispatch = createEventDispatcher();
 
@@ -25,7 +26,7 @@
     disabled={loading || isCutoffPassed}
     aria-busy={loading}
   >
-    Submit Reservation
+    {editing ? 'Update Reservation' : 'Submit Reservation'}
   </button>
 </div>
 

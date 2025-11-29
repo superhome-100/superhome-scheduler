@@ -390,7 +390,7 @@
 
 </script>
 
-<div class="min-h-screen flex flex-col" style="background-color: #f8f9fa;">
+<div class="min-h-screen flex flex-col bg-base-200">
   <PullToRefresh onRefresh={handleRefresh} {refreshing}>
     <BodyContent>
       {#if loading}

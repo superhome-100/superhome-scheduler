@@ -61,6 +61,7 @@
                 {onUpdateBoat}
                 on:groupClick
                 on:moveReservationToBuoy
+                on:statusClick
               />
             {/each}
           </div>

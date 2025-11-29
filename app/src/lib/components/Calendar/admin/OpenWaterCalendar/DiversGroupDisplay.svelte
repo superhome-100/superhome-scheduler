@@ -124,6 +124,37 @@
     return "bg-base-300";
   }
 
+  function handleStatusClickOnReservation(
+    reservation: OpenWaterReservationView,
+    displayName: string,
+  ) {
+    dispatch("statusClick", { reservation, displayName });
+  }
+
+  function formatReservationSummary(reservation: OpenWaterReservationView): string {
+    const typeLabel = reservation.open_water_type || "--";
+
+    const configs: string[] = [];
+    if (reservation.pulley) configs.push("Pulley");
+    if (reservation.deep_fim_training) configs.push("Deep FIM training");
+    if (reservation.bottom_plate) configs.push("Bottom plate");
+    if (reservation.large_buoy) configs.push("Large buoy");
+
+    const configsLabel = configs.length ? configs.join(", ") : "None";
+
+    if (readOnly) {
+      // Non-admin view: hide depth information entirely
+      return `Openwater Type: ${typeLabel}\nConfigs: ${configsLabel}`;
+    }
+
+    const depthLabel =
+      typeof reservation.depth_m === "number" && !Number.isNaN(reservation.depth_m)
+        ? `${reservation.depth_m} m`
+        : "--";
+
+    return `Openwater Type: ${typeLabel}\nDepth: ${depthLabel}\nConfigs: ${configsLabel}`;
+  }
+
   async function openMoveDialog(
     reservation: OpenWaterReservationView,
     displayName: string,
@@ -199,25 +230,52 @@
             class={`res-status-marker w-2 h-2 rounded-full flex-shrink-0 ${getStatusColorClass(
               reservation?.res_status ?? null
             )}`}
-          ></div>
-          <span class="font-medium text-gray-800 flex-1 truncate">
-            {getReservationDisplayName(reservation, index)}
-          </span>
-          {#if !readOnly}
-            <button
-              type="button"
-              class="btn btn-ghost btn-xs p-1 min-h-0 h-6 w-6 flex items-center justify-center"
-              on:click|stopPropagation={() =>
-                openMoveDialog(
+            on:click|stopPropagation={() => {
+              if (!readOnly)
+                handleStatusClickOnReservation(
                   reservation,
                   getReservationDisplayName(reservation, index),
-                )
-              }
-              aria-label="Move to buoy"
+                );
+            }}
+            role={readOnly ? undefined : "button"}
+            aria-label={readOnly ? undefined : "Update reservation status"}
+          ></div>
+          <span class="font-medium text-gray-800 flex-1 truncate">
+            {#if !readOnly && typeof reservation.depth_m === "number" && !Number.isNaN(reservation.depth_m)}
+              {reservation.depth_m} m -
+            {/if}
+            {getReservationDisplayName(reservation, index)}
+          </span>
+          <div class="flex items-center gap-1">
+            {#if !readOnly}
+              <button
+                type="button"
+                class="btn btn-ghost btn-xs p-1 min-h-0 h-6 w-6 flex items-center justify-center"
+                on:click|stopPropagation={() =>
+                  openMoveDialog(
+                    reservation,
+                    getReservationDisplayName(reservation, index),
+                  )
+                }
+                aria-label="Move to buoy"
+              >
+                ⚑
+              </button>
+            {/if}
+            <div
+              class="tooltip tooltip-left z-20"
+              data-tip={formatReservationSummary(reservation)}
             >
-              ⚑
-            </button>
-          {/if}
+              <button
+                type="button"
+                class="btn btn-ghost btn-xs p-1 min-h-0 h-6 w-6 flex items-center justify-center"
+                on:click|stopPropagation
+                aria-label="View reservation details"
+              >
+                i
+              </button>
+            </div>
+          </div>
         </div>
       {/each}
     </div>

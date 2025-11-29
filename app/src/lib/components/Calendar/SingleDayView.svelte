@@ -19,11 +19,7 @@
     type Buoy,
     type TimePeriod,
   } from "../../services/openWaterService";
-  import {
-    getGroupReservationDetails,
-    type GroupReservationDetails,
-  } from "../../services/openWaterService";
-  import GroupReservationDetailsModal from "./admin/OpenWaterCalendar/GroupReservationDetailsModal.svelte";
+  import { reservationApi } from "../../api/reservationApi";
   import { ReservationType } from "../../types/reservations";
   import type {
     FlattenedReservation,
@@ -82,21 +78,6 @@
   // 🔧 ADMIN-SPECIFIC: Group Management & Data -->
   // ============================================ -->
 
-  // Handle click on divers group box (admin view only)
-  async function handleGroupClick(
-    e: CustomEvent<{ groupId: number; resDate: string; timePeriod: TimePeriod }>
-  ) {
-    if (!isAdmin) return; // Users cannot open group details modal
-    try {
-      const details = await getGroupReservationDetails(e.detail.groupId);
-      groupDetails = details;
-      showGroupModal = !!details;
-    } catch (err) {
-      console.error("Failed to load group details:", err);
-      showGroupModal = false;
-    }
-  }
-
   // Admin-specific data for buoy/boat management
   let buoyGroups: BuoyGroupLite[] = [];
   let loadingBuoyGroups = false;
@@ -116,19 +97,111 @@
   // Cancellation token for overlapping assignment loads
   let assignmentsLoadSeq = 0;
 
-  // Admin-specific modal state for group reservation details
-  let showGroupModal = false;
-  let groupDetails: GroupReservationDetails | null = null;
+  // Admin-only dialog state for updating reservation status from calendar
+  let statusDialogOpen = false;
+  let statusDialogReservation: OpenWaterReservationView | null = null;
+  let statusDialogSubmitting = false;
+  let statusDialogError: string | null = null;
+  let statusDialogDisplayName: string | null = null;
 
-  // Enriched buoy groups including nested open water reservations (admin only)
-  $: buoyGroupsWithReservations = (buoyGroups || []).map(
-    (bg) => ({
+  // Enriched buoy groups including nested open water reservations
+  // Admins rely on full reservation join; non-admins fall back to buoy group member arrays
+  $: buoyGroupsWithReservations = (buoyGroups || []).map((bg) => {
+    const joinedReservations = (openWaterReservations || []).filter(
+      (r) => r.group_id !== null && r.group_id === bg.id
+    );
+
+    // For admins (and when we have joined reservations), use the full reservation rows
+    if (isAdmin || joinedReservations.length > 0) {
+      return {
+        ...bg,
+        reservations: joinedReservations,
+      } as BuoyGroupWithReservations;
+    }
+
+    // For non-admins, synthesize minimal reservation views from buoy group member data
+    const memberUids = Array.isArray(bg.member_uids) ? bg.member_uids : [];
+    const memberStatuses = Array.isArray(bg.member_statuses)
+      ? bg.member_statuses
+      : [];
+
+    const syntheticReservations: OpenWaterReservationView[] = memberUids.map(
+      (uid, index) => ({
+        reservation_id: -1,
+        uid,
+        res_date: bg.res_date,
+        res_type: "open_water",
+        res_status: (memberStatuses[index] as any) ?? ("pending" as any),
+        group_id: bg.id,
+        time_period: bg.time_period,
+        depth_m: null,
+        buoy: bg.buoy_name,
+        pulley: null,
+        deep_fim_training: null,
+        bottom_plate: null,
+        large_buoy: null,
+        open_water_type: bg.open_water_type ?? null,
+        student_count: null,
+        note: null,
+      })
+    );
+
+    return {
       ...bg,
-      reservations: (openWaterReservations || []).filter(
-        (r) => r.group_id !== null && r.group_id === bg.id
-      ),
-    })
-  ) as BuoyGroupWithReservations[];
+      reservations: syntheticReservations,
+    } as BuoyGroupWithReservations;
+  }) as BuoyGroupWithReservations[];
+
+  function handleStatusClickFromCalendar(
+    e: CustomEvent<{
+      reservation: OpenWaterReservationView;
+      displayName?: string | null;
+    }>,
+  ) {
+    if (!isAdmin) return;
+    const res = e.detail?.reservation;
+    if (!res || res.res_status !== "pending") return;
+    statusDialogReservation = res;
+    statusDialogError = null;
+    statusDialogDisplayName = (e.detail.displayName ?? "").trim() || null;
+    statusDialogOpen = true;
+  }
+
+  function closeStatusDialog() {
+    statusDialogOpen = false;
+    statusDialogReservation = null;
+    statusDialogSubmitting = false;
+    statusDialogError = null;
+    statusDialogDisplayName = null;
+  }
+
+  async function confirmStatusUpdate(newStatus: "confirmed" | "rejected") {
+    if (!statusDialogReservation || statusDialogSubmitting) return;
+    statusDialogSubmitting = true;
+    statusDialogError = null;
+    try {
+      const { uid, res_date } = statusDialogReservation;
+      const result = await reservationApi.updateReservationStatus(
+        uid,
+        res_date,
+        newStatus
+      );
+      if (!result.success) {
+        statusDialogError =
+          result.error ?? "Failed to update reservation status";
+        return;
+      }
+      await refreshCurrentView();
+      closeStatusDialog();
+    } catch (err) {
+      statusDialogError =
+        err instanceof Error
+          ? err.message
+          : "Failed to update reservation status";
+    } finally {
+      statusDialogSubmitting = false;
+    }
+  }
 
   // Calendar type state
   let selectedCalendarType: ReservationType = ReservationType.openwater;
@@ -548,7 +621,7 @@
 
   <!-- Calendar Content -->
   <div
-    class="md:px-8 lg:px-12 min-h-[60vh] max-w-screen-xl mx-auto"
+    class="px-2 min-h-[60vh] max-w-screen-xl mx-auto"
     class:max-w-none={selectedCalendarType === "openwater"}
   >
     {#if selectedCalendarType === "pool"}
@@ -561,7 +634,7 @@
       />
     {:else if selectedCalendarType === "openwater"}
       <!-- OPEN WATER CALENDAR: Admin sees editable tables; Users see read-only tables with Boat/Buoy/Divers group -->
-      <div class="flex flex-col gap-8 lg:gap-8">
+      <div class="flex flex-col gap-2">
         <OpenWaterAdminTables
           {availableBoats}
           availableBuoys={adminAvailableBuoys}
@@ -570,8 +643,8 @@
           readOnly={!isAdmin}
           onUpdateBuoy={updateBuoyAssignment}
           onUpdateBoat={updateBoatAssignment}
-          on:groupClick={handleGroupClick}
           onRefreshAssignments={refreshCurrentView}
+          on:statusClick={handleStatusClickFromCalendar}
         />
       </div>
     {:else if selectedCalendarType === "classroom"}
@@ -584,15 +657,50 @@
       />
     {/if}
   </div>
-  {#if showGroupModal && groupDetails}
-    <GroupReservationDetailsModal
-      open={showGroupModal}
-      resDate={groupDetails.res_date}
-      timePeriod={groupDetails.time_period}
-      boat={groupDetails.boat}
-      buoyName={groupDetails.buoy_name}
-      members={groupDetails.members as any}
-      on:close={() => (showGroupModal = false)}
-    />
+
+  {#if statusDialogOpen && statusDialogReservation}
+    <div class="fixed inset-0 z-[90] flex items-center justify-center bg-base-300/70 backdrop-blur-sm">
+      <div class="bg-base-100 rounded-xl shadow-xl w-full max-w-sm p-4 space-y-4">
+        <h3 class="text-lg font-semibold text-base-content">Update reservation</h3>
+        {#if statusDialogDisplayName}
+          <p class="text-sm font-semibold text-primary bg-primary/10 inline-flex px-2 py-1 rounded">
+            {statusDialogDisplayName}
+          </p>
+        {/if}
+        <p class="text-sm text-base-content/80">
+          Approve or reject this open water reservation for
+          {dayjs(statusDialogReservation.res_date).format("YYYY-MM-DD")}?
+        </p>
+        {#if statusDialogError}
+          <p class="text-sm text-error">{statusDialogError}</p>
+        {/if}
+        <div class="flex justify-end gap-2 pt-2">
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            on:click={closeStatusDialog}
+            disabled={statusDialogSubmitting}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn-error btn-sm"
+            on:click={() => confirmStatusUpdate("rejected")}
+            disabled={statusDialogSubmitting}
+          >
+            Reject
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            on:click={() => confirmStatusUpdate("confirmed")}
+            disabled={statusDialogSubmitting}
+          >
+            Approve
+          </button>
+        </div>
+      </div>
+    </div>
   {/if}
 </div>

@@ -15,7 +15,9 @@
     (b) => b.buoy_name === buoyGroup.buoy_name
   );
   $: displayText = selectedBuoy
-    ? `${selectedBuoy.buoy_name} (≤${selectedBuoy.max_depth}m)`
+    ? readOnly
+      ? selectedBuoy.buoy_name
+      : `${selectedBuoy.buoy_name} (≤${selectedBuoy.max_depth}m)`
     : "Select";
 </script>
 
@@ -77,6 +79,7 @@
         {readOnly}
         on:groupClick
         on:moveReservationToBuoy
+        on:statusClick
       />
     </section>
   </div>

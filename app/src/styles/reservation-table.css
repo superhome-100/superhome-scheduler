@@ -101,10 +101,16 @@
   }
 }
 
-/* Ensure rounded corners are properly displayed for divers group boxes */
+/* Ensure rounded corners are properly displayed for divers group boxes
+   while allowing tooltips and overlays to extend outside */
 .divers-group-box {
   border-radius: 0.5rem !important;
-  overflow: hidden;
+  overflow: visible;
+}
+
+/* Allow multiline tooltip content inside divers groups (used for Open Water summaries) */
+.divers-group-box .tooltip:before {
+  white-space: pre-line;
 }
 
 /* Add spacing between table columns */

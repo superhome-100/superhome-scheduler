@@ -2,7 +2,7 @@
   import { createEventDispatcher } from "svelte";
   import { authStore } from "../../stores/auth";
   import { reservationStore } from "../../stores/reservationStore";
-  import type { CreateReservationData } from "../../api/reservationApi";
+  import type { CreateReservationData, UpdateReservationData } from "../../api/reservationApi";
   import FormModalHeader from "./FormModalHeader.svelte";
   import FormBasicFields from "./FormBasicFields.svelte";
   import FormOpenWaterFields from "./FormOpenWaterFields.svelte";
@@ -36,6 +36,9 @@
   export let isOpen = false;
   // Optional initial type from caller (Reservation page calendar selection)
   export let initialType: "openwater" | "pool" | "classroom" | undefined;
+  // When true, the modal edits an existing reservation instead of creating a new one
+  export let editing: boolean = false;
+  export let initialReservation: any = null;
 
   // Form data
   let formData = getDefaultFormData();
@@ -269,106 +272,179 @@
         return;
       }
 
-      // Map form type to database enum
-      // Prepare reservation data for CRUD API
-      const reservationData: CreateReservationData = {
-        res_type: toServiceReservationType(
-          submissionData.type as "openwater" | "pool" | "classroom",
-        ),
-        res_date: reservationDateTime.toISOString(),
-        res_status: "pending",
-        // Pass through buddy UIDs so the edge function can create buddy reservations
-        buddies: Array.isArray(formData.buddies) && formData.buddies.length
-          ? [...formData.buddies]
-          : undefined,
-      };
-
-      // Add type-specific details
-      if (submissionData.type === "pool") {
-        reservationData.pool = {
-          start_time: submissionData.startTime,
-          end_time: submissionData.endTime,
-          note: submissionData.notes.trim() || undefined,
-          pool_type: formData.poolType || undefined,
-          student_count:
-            formData.poolType === "course_coaching"
-              ? parseInt(formData.studentCount as unknown as string, 10)
-              : undefined,
-        };
-      } else if (submissionData.type === "classroom") {
-        reservationData.classroom = {
-          start_time: submissionData.startTime,
-          end_time: submissionData.endTime,
-          note: submissionData.notes.trim() || undefined,
-          classroom_type: formData.classroomType || undefined,
-          student_count:
-            formData.classroomType === "course_coaching"
-              ? parseInt(formData.studentCount as unknown as string, 10)
-              : undefined,
-        };
-      } else if (submissionData.type === "openwater") {
-        reservationData.openwater = {
-          time_period: submissionData.timeOfDay,
-          depth_m: formData.depth
-            ? parseInt(formData.depth as unknown as string, 10)
-            : undefined,
-          open_water_type: formData.openWaterType || undefined,
-          student_count:
-            formData.openWaterType === "course_coaching"
-              ? parseInt(formData.studentCount as unknown as string, 10)
-              : undefined,
-          // Equipment fields for Open Water types (Autonomous and Course/Coaching)
-          pulley:
-            formData.openWaterType === "course_coaching"
-              ? formData.pulley === "true" || formData.pulley === true
-              : !!formData.pulley,
-          deep_fim_training: !!formData.deepFimTraining,
-          bottom_plate: !!formData.bottomPlate,
-          large_buoy: !!formData.largeBuoy,
-          note: submissionData.notes.trim() || undefined,
-        };
-      }
-
-      // Use CRUD system to create reservation
-      showLoading("Submitting reservation...");
-      const result = await reservationStore.createReservation(
-        $authStore.user.id,
-        reservationData,
+      const dbResType = toServiceReservationType(
+        submissionData.type as "openwater" | "pool" | "classroom",
       );
 
-      if (result.success) {
-        // Dispatch success event with the created reservation data
-        dispatch("submit", {
-          ...submissionData,
-          reservation: result.data,
-        });
-        resetForm();
-        closeModal();
+      if (editing && initialReservation) {
+        // UPDATE existing reservation
+        const updateData: UpdateReservationData = {
+          res_date: reservationDateTime.toISOString(),
+        };
+
+        if (submissionData.type === "pool") {
+          updateData.pool = {
+            start_time: submissionData.startTime,
+            end_time: submissionData.endTime,
+            note: submissionData.notes.trim() || undefined,
+            pool_type: formData.poolType || undefined,
+            student_count:
+              formData.poolType === "course_coaching"
+                ? parseInt(formData.studentCount as unknown as string, 10)
+                : undefined,
+          };
+        } else if (submissionData.type === "classroom") {
+          updateData.classroom = {
+            start_time: submissionData.startTime,
+            end_time: submissionData.endTime,
+            note: submissionData.notes.trim() || undefined,
+            classroom_type: formData.classroomType || undefined,
+            student_count:
+              formData.classroomType === "course_coaching"
+                ? parseInt(formData.studentCount as unknown as string, 10)
+                : undefined,
+          };
+        } else if (submissionData.type === "openwater") {
+          updateData.openwater = {
+            time_period: submissionData.timeOfDay,
+            depth_m: formData.depth
+              ? parseInt(formData.depth as unknown as string, 10)
+              : undefined,
+            open_water_type: formData.openWaterType || undefined,
+            student_count:
+              formData.openWaterType === "course_coaching"
+                ? parseInt(formData.studentCount as unknown as string, 10)
+                : undefined,
+            pulley:
+              formData.openWaterType === "course_coaching"
+                ? formData.pulley === "true" || formData.pulley === true
+                : !!formData.pulley,
+            deep_fim_training: !!formData.deepFimTraining,
+            bottom_plate: !!formData.bottomPlate,
+            large_buoy: !!formData.largeBuoy,
+            note: submissionData.notes.trim() || undefined,
+          };
+        }
+
+        showLoading("Updating reservation...");
+        const originalUid =
+          (initialReservation.uid as string | undefined) || $authStore.user?.id;
+        const originalResDate =
+          (initialReservation.res_date as string | undefined) ||
+          reservationDateTime.toISOString();
+
+        if (!originalUid || !originalResDate) {
+          submitError = "Missing reservation identifiers for update";
+          return;
+        }
+
+        const result = await reservationStore.updateReservation(
+          originalUid,
+          originalResDate,
+          updateData,
+        );
+
+        if (result.success) {
+          dispatch("submit", {
+            ...submissionData,
+            reservation: result.data,
+          });
+          resetForm();
+          closeModal();
+        } else {
+          submitError = result.error || "Failed to update reservation";
+          scrollToTop();
+        }
       } else {
-        submitError = result.error || "Failed to create reservation";
-        scrollToTop();
-        // Detect no-lane availability error from edge function and disable submit
-        if (submitError && submitError.includes("No pool lanes available")) {
-          noLaneError = true;
+        // CREATE new reservation
+        const reservationData: CreateReservationData = {
+          res_type: dbResType,
+          res_date: reservationDateTime.toISOString(),
+          res_status: "pending",
+          buddies: Array.isArray(formData.buddies) && formData.buddies.length
+            ? [...formData.buddies]
+            : undefined,
+        };
+
+        if (submissionData.type === "pool") {
+          reservationData.pool = {
+            start_time: submissionData.startTime,
+            end_time: submissionData.endTime,
+            note: submissionData.notes.trim() || undefined,
+            pool_type: formData.poolType || undefined,
+            student_count:
+              formData.poolType === "course_coaching"
+                ? parseInt(formData.studentCount as unknown as string, 10)
+                : undefined,
+          };
+        } else if (submissionData.type === "classroom") {
+          reservationData.classroom = {
+            start_time: submissionData.startTime,
+            end_time: submissionData.endTime,
+            note: submissionData.notes.trim() || undefined,
+            classroom_type: formData.classroomType || undefined,
+            student_count:
+              formData.classroomType === "course_coaching"
+                ? parseInt(formData.studentCount as unknown as string, 10)
+                : undefined,
+          };
+        } else if (submissionData.type === "openwater") {
+          reservationData.openwater = {
+            time_period: submissionData.timeOfDay,
+            depth_m: formData.depth
+              ? parseInt(formData.depth as unknown as string, 10)
+              : undefined,
+            open_water_type: formData.openWaterType || undefined,
+            student_count:
+              formData.openWaterType === "course_coaching"
+                ? parseInt(formData.studentCount as unknown as string, 10)
+                : undefined,
+            pulley:
+              formData.openWaterType === "course_coaching"
+                ? formData.pulley === "true" || formData.pulley === true
+                : !!formData.pulley,
+            deep_fim_training: !!formData.deepFimTraining,
+            bottom_plate: !!formData.bottomPlate,
+            large_buoy: !!formData.largeBuoy,
+            note: submissionData.notes.trim() || undefined,
+          };
         }
-        // Detect no-room availability error from edge function and disable submit
-        if (submitError && submitError.includes("No classrooms available")) {
-          noRoomError = true;
-          // Also show a toast for classroom unavailability
-          showErrorToast(submitError);
-        }
-        // Detect cross-type conflict message and show toast
-        if (
-          submitError &&
-          submitError.startsWith("Already have a reservation for ")
-        ) {
-          showErrorToast(submitError);
+
+        showLoading("Submitting reservation...");
+        const result = await reservationStore.createReservation(
+          $authStore.user.id,
+          reservationData,
+        );
+
+        if (result.success) {
+          dispatch("submit", {
+            ...submissionData,
+            reservation: result.data,
+          });
+          resetForm();
+          closeModal();
+        } else {
+          submitError = result.error || "Failed to create reservation";
+          scrollToTop();
+          if (submitError && submitError.includes("No pool lanes available")) {
+            noLaneError = true;
+          }
+          if (submitError && submitError.includes("No classrooms available")) {
+            noRoomError = true;
+            showErrorToast(submitError);
+          }
+          if (
+            submitError &&
+            submitError.startsWith("Already have a reservation for ")
+          ) {
+            showErrorToast(submitError);
+          }
         }
       }
     } catch (err) {
-      console.error("Error creating reservation:", err);
+      console.error("Error submitting reservation:", err);
       submitError =
-        err instanceof Error ? err.message : "Failed to create reservation";
+        err instanceof Error ? err.message : "Failed to submit reservation";
     } finally {
       loading = false;
       hideLoading();
@@ -416,7 +492,58 @@
   let wasOpen = false;
   $: if (isOpen && !wasOpen) {
     wasOpen = true;
-    if (initialType && formData.type !== initialType) {
+    if (editing && initialReservation) {
+      // Prefill form from existing reservation when editing
+      const base = getDefaultFormData();
+      base.buddies = [];
+      const raw = initialReservation || {};
+      const resType: string = raw.res_type || "pool";
+      const resDate: string = raw.res_date || raw.date || base.date;
+      base.date = (resDate || "").split("T")[0] || base.date;
+
+      if (resType === "open_water") {
+        base.type = "openwater";
+        const ow = raw.res_openwater || {};
+        const tp = (ow.time_period || raw.time_period || "AM").toUpperCase();
+        base.timeOfDay = tp === "PM" ? "PM" : "AM";
+        base.depth =
+          typeof ow.depth_m === "number" && !Number.isNaN(ow.depth_m)
+            ? String(ow.depth_m)
+            : "";
+        base.openWaterType = ow.open_water_type || "";
+        base.studentCount =
+          ow.student_count != null ? String(ow.student_count) : "";
+        base.notes = ow.note || raw.note || "";
+        base.pulley = !!ow.pulley;
+        base.deepFimTraining = !!ow.deep_fim_training;
+        base.bottomPlate = !!ow.bottom_plate;
+        base.largeBuoy = !!ow.large_buoy;
+        base.startTime = "";
+        base.endTime = "";
+      } else if (resType === "pool") {
+        base.type = "pool";
+        const pool = raw.res_pool || {};
+        base.startTime = pool.start_time || raw.start_time || base.startTime;
+        base.endTime = pool.end_time || raw.end_time || base.endTime;
+        base.poolType = pool.pool_type || "";
+        base.notes = pool.note || raw.note || "";
+        base.studentCount =
+          pool.student_count != null ? String(pool.student_count) : "";
+      } else if (resType === "classroom") {
+        base.type = "classroom";
+        const classroom = raw.res_classroom || {};
+        base.startTime =
+          classroom.start_time || raw.start_time || base.startTime;
+        base.endTime = classroom.end_time || raw.end_time || base.endTime;
+        base.classroomType = classroom.classroom_type || "";
+        base.notes = classroom.note || raw.note || "";
+        base.studentCount =
+          classroom.student_count != null ? String(classroom.student_count) :
+            "";
+      }
+
+      formData = base;
+    } else if (initialType && formData.type !== initialType) {
       formData.type = initialType;
       // Apply defaults for the selected type (times, date)
       handleTypeChange();
@@ -565,6 +692,7 @@
             noLaneError ||
             noRoomError ||
             capacityBlocked}
+          {editing}
           on:close={closeModal}
         />
       </form>

@@ -4,6 +4,7 @@
   import "../../../../../styles/reservation-table.css";
   import type { AdminBuoyGroup } from "../../../../types/openWaterAdmin";
   import type { MoveReservationToBuoyPayload } from "../../../../services/openWaterService";
+  import type { OpenWaterReservationView } from "../../../../types/reservationViews";
   import { moveReservationToBuoy } from "../../../../services/openWaterService";
 
   export let availableBoats: string[];
@@ -136,6 +137,15 @@
     dispatch("groupClick", event.detail);
   }
 
+  function handleStatusClick(
+    event: CustomEvent<{
+      reservation: OpenWaterReservationView;
+      displayName?: string | null;
+    }>,
+  ) {
+    dispatch("statusClick", event.detail);
+  }
+
   async function handleMoveReservationToBuoy(
     event: CustomEvent<MoveReservationToBuoyPayload>
   ) {
@@ -165,7 +175,7 @@
 </script>
 
 <!-- Reservation Tables Section -->
-<div class="grid grid-cols-1 gap-4 lg:gap-6">
+<div class="grid grid-cols-1 gap-2">
   <!-- AM Reservations -->
   <ReservationTable
     timePeriod="AM"
@@ -180,6 +190,7 @@
     onMouseDown={handleMouseDown}
     on:groupClick={handleGroupClick}
     on:moveReservationToBuoy={handleMoveReservationToBuoy}
+    on:statusClick={handleStatusClick}
   />
 
   <!-- PM Reservations -->
@@ -195,6 +206,7 @@
     {onUpdateBoat}
     onMouseDown={handleMouseDown}
     on:groupClick={handleGroupClick}
+    on:statusClick={handleStatusClick}
   />
 </div>
 
