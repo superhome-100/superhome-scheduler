@@ -2,7 +2,6 @@
   import { createEventDispatcher, onMount } from "svelte";
   import { goto } from "$app/navigation";
   import dayjs from "dayjs";
-  import { getBuoyGroupsWithNames } from "../../utils/autoAssignBuoy";
   import { supabase } from "../../utils/supabase";
   import { authStore } from "../../stores/auth";
 
@@ -16,6 +15,7 @@
     loadAvailableBuoys as svcLoadAvailableBuoys,
     updateBoatAssignment as svcUpdateBoat,
     updateBuoyAssignment as svcUpdateBuoy,
+    getBuoyGroupsWithNames as svcGetBuoyGroupsWithNames,
     type Buoy,
     type TimePeriod,
   } from "../../services/openWaterService";
@@ -44,7 +44,6 @@
     member_uids?: string[] | null;
     // Back-compat: some callers may still expect res_openwater with uid objects
     res_openwater?: Array<{ uid: string }>;
-    member_names?: (string | null)[] | null;
     boat_count?: number | null;
     open_water_type?: string | null;
     // Optional per-reservation statuses parallel to member_names/member_uids
@@ -96,6 +95,8 @@
   let assignmentsLoading = false;
   // Cancellation token for overlapping assignment loads
   let assignmentsLoadSeq = 0;
+  // Map of uid -> display name for open water reservations (admin + non-admin)
+  let openWaterDisplayNamesByUid: Map<string, string | null> = new Map();
 
   // Admin-only dialog state for updating reservation status from calendar
   let statusDialogOpen = false;
@@ -111,7 +112,7 @@
       (r) => r.group_id !== null && r.group_id === bg.id
     );
 
-    // For admins (and when we have joined reservations), use the full reservation rows
+    // For admins (and when we have joined reservations), use the full reservation rows as-is.
     if (isAdmin || joinedReservations.length > 0) {
       return {
         ...bg,
@@ -132,6 +133,8 @@
         res_date: bg.res_date,
         res_type: "open_water",
         res_status: (memberStatuses[index] as any) ?? ("pending" as any),
+        nickname: openWaterDisplayNamesByUid.get(uid) ?? "",
+        name: "",
         group_id: bg.id,
         time_period: bg.time_period,
         depth_m: null,
@@ -180,7 +183,7 @@
     statusDialogSubmitting = true;
     statusDialogError = null;
     try {
-      const { uid, res_date } = statusDialogReservation;
+      const { uid, res_date, reservation_id } = statusDialogReservation;
       const result = await reservationApi.updateReservationStatus(
         uid,
         res_date,
@@ -191,7 +194,13 @@
           result.error ?? "Failed to update reservation status";
         return;
       }
-      await refreshCurrentView();
+
+      // Update local reservations state instead of forcing a full reload.
+      // Rejected reservations will be hidden by the openWaterReservations filter.
+      reservations = reservations.map((r) =>
+        r.reservation_id === reservation_id ? { ...r, res_status: newStatus } : r
+      );
+
       closeStatusDialog();
     } catch (err) {
       statusDialogError =
@@ -293,8 +302,9 @@
   });
 
   // Narrowed view: only open water reservations (used by OpenWaterUserLists)
+  // Hide rejected reservations from the Open Water calendar UI.
   $: openWaterReservations = filteredReservations.filter(
-    (r) => r.res_type === "open_water"
+    (r) => r.res_type === "open_water" && r.res_status !== "rejected"
   ) as OpenWaterReservationView[];
 
   // Only show approved and plotted Pool reservations (confirmed with start/end and assigned lane)
@@ -360,8 +370,8 @@
       let pm: any[] = [];
       if (isAdmin) {
         [am, pm] = await Promise.all([
-          getBuoyGroupsWithNames({ resDate: selectedDate, timePeriod: "AM" }),
-          getBuoyGroupsWithNames({ resDate: selectedDate, timePeriod: "PM" }),
+          svcGetBuoyGroupsWithNames({ resDate: selectedDate, timePeriod: "AM" }),
+          svcGetBuoyGroupsWithNames({ resDate: selectedDate, timePeriod: "PM" }),
         ]);
       } else {
         const [{ data: amData, error: amErr }, { data: pmData, error: pmErr }] = await Promise.all([
@@ -379,6 +389,26 @@
         am = amData ?? [];
         pm = pmData ?? [];
       }
+
+      // Rebuild UID -> display name map from RPC payloads (admin + non-admin)
+      const displayNameMap = new Map<string, string | null>();
+      for (const g of [...am, ...pm]) {
+        const uids: string[] = Array.isArray(g.member_uids) ? g.member_uids : [];
+        const names: (string | null)[] = Array.isArray(g.member_names)
+          ? g.member_names
+          : [];
+        const len = Math.min(uids.length, names.length);
+        for (let i = 0; i < len; i += 1) {
+          const uid = uids[i];
+          const raw = names[i];
+          const name = (raw ?? "").trim();
+          if (uid && name) {
+            displayNameMap.set(uid, name);
+          }
+        }
+      }
+      openWaterDisplayNamesByUid = displayNameMap;
+
       // Merge to one array and coerce time_period to typed TimePeriod
       buoyGroups = [...am, ...pm].map((g: any) => {
         const member_uids: string[] | null = Array.isArray(g.member_uids)
@@ -397,7 +427,6 @@
           boat: g.boat ?? null,
           member_uids,
           res_openwater,
-          member_names: g.member_names ?? [],
           boat_count: typeof g.boat_count === "number" ? g.boat_count : null,
           open_water_type: g.open_water_type ?? null,
           member_statuses: g.member_statuses ?? null,
@@ -641,6 +670,7 @@
           buoyGroups={buoyGroupsWithReservations}
           loading={assignmentsLoading || loadingBuoyGroups}
           readOnly={!isAdmin}
+          {selectedDate}
           onUpdateBuoy={updateBuoyAssignment}
           onUpdateBoat={updateBoatAssignment}
           onRefreshAssignments={refreshCurrentView}

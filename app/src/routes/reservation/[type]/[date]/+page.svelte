@@ -52,7 +52,9 @@
       const endOfDay = startOfDay.add(1, 'day');
 
       // Limit nested selects to the current reservation type for efficiency
+      // and join user_profiles for display_name (nickname / name)
       let selectColumns = `*,
+          user_profiles!reservations_uid_fkey (nickname, name),
           res_pool!left(start_time, end_time, lane, pool_type, student_count, note),
           res_openwater!left(
             time_period, 
@@ -71,9 +73,11 @@
 
       if (type === ReservationType.pool) {
         selectColumns = `*,
+          user_profiles!reservations_uid_fkey (nickname, name),
           res_pool!left(start_time, end_time, lane, pool_type, student_count, note)`;
       } else if (type === ReservationType.openwater) {
         selectColumns = `*,
+          user_profiles!reservations_uid_fkey (nickname, name),
           res_openwater!left(
             time_period, 
             depth_m, 
@@ -89,6 +93,7 @@
           )`;
       } else if (type === ReservationType.classroom) {
         selectColumns = `*,
+          user_profiles!reservations_uid_fkey (nickname, name),
           res_classroom!left(start_time, end_time, room, classroom_type, student_count, note)`;
       }
 
@@ -119,6 +124,18 @@
 
       reservations = (data || []).map((reservation): FlattenedReservation => {
         const base = reservation as CompleteReservation;
+        const userProfile = (reservation as any).user_profiles as
+          | { nickname?: string | null; name?: string | null }
+          | undefined;
+
+        const nickname =
+          userProfile?.nickname && userProfile.nickname.trim() !== ""
+            ? userProfile.nickname.trim()
+            : "";
+        const fullName =
+          userProfile?.name && userProfile.name.trim() !== ""
+            ? userProfile.name.trim()
+            : "";
 
         const common: BaseReservationView = {
           reservation_id: (base as any).reservation_id,
@@ -128,6 +145,8 @@
           res_status: base.res_status,
           title: (base as any).title ?? null,
           description: (base as any).description ?? null,
+          nickname,
+          name: fullName,
         };
 
         if (base.res_type === 'pool' && base.res_pool) {

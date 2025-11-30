@@ -251,66 +251,38 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
     !assigned.has(r.uid)
   );
 
-  // Separate anchored (have preferred buoy) and flexible (no preference)
+  // Separate anchored (have an explicit buoy set) and flexible (no preference)
   const anchored = others.filter(r => r.buoy !== null);
   const flexible = others.filter(r => r.buoy === null);
 
-  // STEP 3: Create anchor groups and fill with compatible flexible reservations
-  interface AnchorGroup {
-    buoy_name: string;
-    type: string;
-    members: ReservationWithBuoy[];
-  }
-  
-  const anchorGroups = new Map<string, AnchorGroup>();
+  // STEP 3: For anchored reservations, create or reuse a group per (buoy_name, type)
+  // without adding additional flexible members. This ensures that once a buoy is
+  // explicitly set (via res_openwater.buoy or locking), auto-assign respects that
+  // choice and does not reshuffle those members.
 
-  // Group anchored reservations by buoy + type
-  for (const anchor of anchored) {
-    const key = `${anchor.buoy}_${anchor.open_water_type}`;
-    if (!anchorGroups.has(key)) {
-      anchorGroups.set(key, {
-        buoy_name: anchor.buoy!,
-        type: anchor.open_water_type,
-        members: []
-      });
-    }
-    anchorGroups.get(key)!.members.push(anchor);
-    assigned.add(anchor.uid);
-    assignedBuoyNames.add(anchor.buoy!); // Mark as used
+  const anchoredGroupsMap = new Map<string, ReservationWithBuoy[]>();
+
+  const makeAnchorKey = (buoyName: string, type: string) => `${buoyName}__${type}`;
+
+  for (const res of anchored) {
+    const buoyName = res.buoy!;
+    const key = makeAnchorKey(buoyName, res.open_water_type);
+    const list = anchoredGroupsMap.get(key) ?? [];
+    list.push(res);
+    anchoredGroupsMap.set(key, list);
+
+    assigned.add(res.uid);
+    assignedBuoyNames.add(buoyName); // Mark this buoy as already used for group creation
   }
 
-  // Fill anchor groups with compatible flexible reservations
-  for (const group of anchorGroups.values()) {
-    if (group.members.length >= 3) continue; // Already full
+  for (const [key, members] of anchoredGroupsMap.entries()) {
+    if (!members.length) continue;
+    const [buoyName, type] = key.split('__');
 
-    const maxDepth = Math.max(...group.members.map(m => m.depth_m));
-
-    // Find compatible flexible reservations (same type, not yet assigned)
-    const compatible = flexible
-      .filter(r => 
-        r.open_water_type === group.type &&
-        !assigned.has(r.uid)
-      )
-      .sort((a, b) => 
-        Math.abs(a.depth_m - maxDepth) - Math.abs(b.depth_m - maxDepth)
-      );
-
-    // Add closest matches (within 15m depth difference, or if group has only 1 member)
-    for (const candidate of compatible) {
-      if (group.members.length >= 3) break;
-
-      const depthDiff = Math.abs(candidate.depth_m - maxDepth);
-      if (depthDiff <= 15 || group.members.length === 1) {
-        group.members.push(candidate);
-        assigned.add(candidate.uid);
-      }
-    }
-
-    // Save the anchor group
     groups.push({
-      buoy_name: group.buoy_name,
-      open_water_type: group.type,
-      uids: group.members.map(m => m.uid)
+      buoy_name: buoyName,
+      open_water_type: type,
+      uids: members.map(m => m.uid)
     });
   }
 
@@ -376,6 +348,36 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
   });
 
   if (saveErr) throw new Error(`Error saving groups: ${saveErr.message}`);
+
+  // 6. Cleanup: remove any buoy_group rows for this slot that are no longer
+  // referenced by res_openwater. This prevents stale/empty groups from
+  // lingering after re-assignments.
+
+  const { data: groupRows, error: groupErr } = await supabase
+    .from('buoy_group')
+    .select('id, res_openwater ( reservation_id )')
+    .eq('time_period', time_period)
+    .gte('res_date', dayStart.toISOString())
+    .lt('res_date', dayEnd.toISOString());
+
+  if (groupErr) {
+    console.error('Error loading buoy_group rows for cleanup:', groupErr.message ?? groupErr);
+  } else {
+    const orphanIds = (groupRows || [])
+      .filter((g: any) => !g.res_openwater || (Array.isArray(g.res_openwater) && g.res_openwater.length === 0))
+      .map((g: any) => g.id as number);
+
+    if (orphanIds.length > 0) {
+      const { error: deleteErr } = await supabase
+        .from('buoy_group')
+        .delete()
+        .in('id', orphanIds);
+
+      if (deleteErr) {
+        console.error('Error deleting orphan buoy_group rows:', deleteErr.message ?? deleteErr);
+      }
+    }
+  }
 
   return { 
     success: true, 

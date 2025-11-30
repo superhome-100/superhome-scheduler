@@ -35,7 +35,6 @@ export type BuoyGroupWithNames = {
   boat_count?: number | null
   open_water_type?: string | null
   member_uids: string[] | null
-  member_names: (string | null)[] | null
 }
 
 export interface MoveReservationToBuoyPayload {
