@@ -1,13 +1,13 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import dayjs from 'dayjs';
-  import LoadingSpinner from '../LoadingSpinner.svelte';
   import NicknameCell from './NicknameCell.svelte';
+  import UserSubscriberTypeCell from './UserSubscriberTypeCell.svelte';
 
   const dispatch = createEventDispatcher();
 
   export let users: any[] = [];
   export let stats: any = {};
+  export let priceTemplates: Array<{ name: string; description: string | null; created_at: string }> = [];
 
   const handleRefresh = () => {
     dispatch('refresh');
@@ -22,6 +22,9 @@
   };
   const updateNickname = (uid: string, nickname: string) => {
     dispatch('updateNickname', { uid, nickname });
+  };
+  const updateSubscriberType = (uid: string, price_template_name: string) => {
+    dispatch('updateSubscriberType', { uid, price_template_name });
   };
 
 </script>
@@ -51,9 +54,10 @@
         <tr>
           <th class="text-[#00294C] font-semibold border-b-2 border-base-300 text-left">Name</th>
           <th class="text-[#00294C] font-semibold border-b-2 border-base-300 text-left">Nickname</th>
+          <th class="text-[#00294C] font-semibold border-b-2 border-base-300 text-left">Subscriber Type</th>
           <th class="text-[#00294C] font-semibold border-b-2 border-base-300 text-center">Status</th>
           <th class="text-[#00294C] font-semibold border-b-2 border-base-300 text-center">Privileges</th>
-          <th class="text-[#00294C] font-semibold text-center border-b-2 border-base-300">Actions</th>
+          <th class="text-[#00294C] font-semibold border-b-2 border-base-300 text-center">LogIn</th>
         </tr>
       </thead>
       <tbody>
@@ -71,6 +75,14 @@
             </td>
             <td class="text-left">
               <NicknameCell uid={user.uid} value={user.nickname} on:save={(e) => updateNickname(e.detail.uid, e.detail.nickname)} />
+            </td>
+            <td class="text-left">
+              <UserSubscriberTypeCell
+                uid={user.uid}
+                value={user.price_template_name}
+                templates={priceTemplates}
+                on:save={(e) => updateSubscriberType(e.detail.uid, e.detail.price_template_name)}
+              />
             </td>
             <td class="text-center">
               <button 
@@ -91,7 +103,13 @@
               </button>
             </td>
             <td class="text-center">
-              <!-- Actions column - no individual user actions needed -->
+              {#if user.auth_provider === 'google'}
+                <div class="badge badge-outline badge-primary">Google</div>
+              {:else if user.auth_provider === 'facebook'}
+                <div class="badge badge-outline badge-accent">Facebook</div>
+              {:else}
+                <div class="badge">-</div>
+              {/if}
             </td>
           </tr>
         {/each}
@@ -100,240 +118,4 @@
   </div>
 </div>
 
-<style>
-  /* Table container with proper scrolling */
-  .table-container {
-    border: 1px solid hsl(var(--b3));
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    background: hsl(var(--b1));
-    overflow-x: auto;
-    overflow-y: visible;
-    max-height: 70vh;
-  }
-
-  /* Enhanced table styling for better visibility */
-  .table {
-    border-collapse: separate;
-    border-spacing: 0;
-    table-layout: fixed;
-    width: 100%;
-  }
-  
-  /* Column width distribution - Name longer, others equal and compact */
-  .table th:nth-child(1),
-  .table td:nth-child(1) {
-    width: 40%;
-  }
-  
-  .table th:nth-child(2),
-  .table td:nth-child(2) {
-    width: 20%;
-  }
-  
-  .table th:nth-child(3),
-  .table td:nth-child(3) {
-    width: 13.33%;
-  }
-  
-  .table th:nth-child(4),
-  .table td:nth-child(4) {
-    width: 13.33%;
-  }
-
-  .table th:nth-child(5),
-  .table td:nth-child(5) {
-    width: 13.33%;
-  }
-  
-  .table thead th {
-    background: hsl(var(--b2));
-    border-bottom: 2px solid hsl(var(--b3));
-    color: #00294C !important;
-    font-size: 0.75rem;
-    letter-spacing: 0.025em;
-    padding: 0.75rem 0.75rem !important;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-  
-  .table tbody tr {
-    transition: all 0.2s ease;
-    background: transparent;
-  }
-  
-  .table tbody tr:hover {
-    background-color: hsl(var(--b2) / 0.3);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-  
-  .table tbody tr:last-child td {
-    border-bottom: none;
-  }
-  
-  .table tbody td {
-    vertical-align: middle;
-    font-size: 0.75rem;
-    padding: 0.75rem;
-    border-bottom: 1px solid hsl(var(--b2));
-  }
-  
-  /* Custom scrollbar for table container */
-  .table-container::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  
-  .table-container::-webkit-scrollbar-track {
-    background: hsl(var(--b2));
-    border-radius: 4px;
-  }
-  
-  .table-container::-webkit-scrollbar-thumb {
-    background: hsl(var(--b3));
-    border-radius: 4px;
-  }
-  
-  .table-container::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--bc) / 0.3);
-  }
-
-  /* Desktop spacing improvements */
-  @media (min-width: 769px) {
-    .card {
-      padding: 2rem;
-    }
-    
-    .header-row {
-      margin-bottom: 2rem;
-      padding: 0 0.5rem;
-    }
-    
-    .header-title {
-      gap: 2rem;
-    }
-    
-    .badge {
-      padding: 0.5rem 1rem;
-      font-size: 0.875rem;
-    }
-    
-    .table .btn {
-      padding: 0.5rem 1rem;
-      font-size: 0.875rem;
-    }
-  }
-
-  /* Mobile responsive adjustments */
-  @media (max-width: 768px) {
-    .table-container {
-      max-height: 60vh;
-    }
-    
-    .table {
-      min-width: 600px;
-    }
-    
-    .header-row {
-      flex-direction: row;
-      align-items: center;
-      gap: 0.5rem;
-      white-space: nowrap;
-      overflow: hidden;
-    }
-
-    .header-title {
-      flex-direction: row;
-      align-items: center;
-      gap: 0.5rem;
-      white-space: nowrap;
-    }
-    
-    /* More compact mobile table */
-    .table thead th {
-      font-size: 0.625rem;
-      padding: 0.5rem 0.5rem !important;
-    }
-    
-    .table tbody td {
-      font-size: 0.625rem;
-      padding: 0.5rem;
-    }
-    
-    /* Compact card padding on mobile */
-    .card {
-      padding: 1rem;
-    }
-    
-    /* Smaller buttons on mobile */
-    .table .btn-xs {
-      padding: 0.25rem 0.5rem;
-      font-size: 0.625rem;
-      min-height: 1.5rem;
-    }
-  }
-  
-  /* Extra small mobile adjustments */
-  @media (max-width: 480px) {
-    .table-container {
-      max-height: 50vh;
-    }
-    
-    .table {
-      min-width: 500px;
-    }
-    
-    .table thead th {
-      font-size: 0.5rem;
-      padding: 0.375rem 0.375rem !important;
-    }
-    
-    .table tbody td {
-      font-size: 0.5rem;
-      padding: 0.375rem;
-    }
-    
-    .table .btn-xs {
-      padding: 0.125rem 0.375rem;
-      font-size: 0.5rem;
-      min-height: 1.25rem;
-    }
-    
-    .avatar .w-8 {
-      width: 1.5rem;
-      height: 1.5rem;
-    }
-  }
-
-  /* Ensure button colors work properly with explicit colors */
-  .table .btn-success {
-    background-color: #10b981 !important;
-    border-color: #10b981 !important;
-    color: white !important;
-  }
-  
-  .table .btn-error {
-    background-color: #ef4444 !important;
-    border-color: #ef4444 !important;
-    color: white !important;
-  }
-  
-  .table .btn-primary {
-    background-color: #3b82f6 !important;
-    border-color: #3b82f6 !important;
-    color: white !important;
-  }
-  
-  .table .btn-secondary {
-    background-color: #6b7280 !important;
-    border-color: #6b7280 !important;
-    color: white !important;
-  }
-  
-  .table .btn-outline {
-    background-color: transparent !important;
-    border-color: #6b7280 !important;
-    color: #6b7280 !important;
-  }
-</style>
+<style src="./UserManagement.css"></style>

@@ -16,11 +16,12 @@ export async function ensureUserProfile(user: User | null): Promise<void> {
     if (!user) return;
     const uid = user.id;
     const displayName = (user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'User') as string;
+    const provider = deriveAuthProvider(user);
     
     // First check if profile already exists
     const { data: existingProfile } = await supabase
       .from('user_profiles')
-      .select('uid, nickname')
+      .select('uid, nickname, auth_provider')
       .eq('uid', uid)
       .single();
     
@@ -33,6 +34,8 @@ export async function ensureUserProfile(user: User | null): Promise<void> {
         .update({
           name: displayName,
           nickname: nextNick,
+          // Persist the latest auth provider if available
+          ...(provider ? { auth_provider: provider } : {}),
           updated_at: new Date().toISOString()
         })
         .eq('uid', uid);
@@ -44,6 +47,7 @@ export async function ensureUserProfile(user: User | null): Promise<void> {
           uid,
           name: displayName,
           nickname: displayName,
+          auth_provider: provider ?? null,
           // status and privileges use defaults from DB
           updated_at: new Date().toISOString()
         });
@@ -51,6 +55,21 @@ export async function ensureUserProfile(user: User | null): Promise<void> {
   } catch (err) {
     console.error('Error ensuring user profile:', err);
     // Don't throw - this is best effort
+  }
+}
+
+// Helper: derive known auth provider from Supabase user
+function deriveAuthProvider(user: User): 'google' | 'facebook' | null {
+  try {
+    const appProv = (user as any)?.app_metadata?.provider as string | undefined;
+    const identities = (user as any)?.identities as Array<{ provider?: string }> | undefined;
+    const idProv = identities && identities.length > 0 ? identities[0]?.provider : undefined;
+    const raw = (appProv || idProv || '').toString().toLowerCase();
+    if (raw.includes('google')) return 'google';
+    if (raw.includes('facebook')) return 'facebook';
+    return null;
+  } catch {
+    return null;
   }
 }
 
