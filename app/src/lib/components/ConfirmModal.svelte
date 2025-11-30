@@ -6,6 +6,9 @@
   export let message: string = 'Are you sure?';
   export let confirmText: string = 'Confirm';
   export let cancelText: string = 'Cancel';
+  // Control closing behaviors; default to previous behavior for backward compatibility
+  export let closeOnBackdrop: boolean = true;
+  export let closeOnEscape: boolean = true;
 
   const dispatch = createEventDispatcher();
 
@@ -20,17 +23,17 @@
   };
 </script>
 
-<svelte:window on:keydown={(e) => open && e.key === 'Escape' && close()} />
+<svelte:window on:keydown={(e) => open && closeOnEscape && e.key === 'Escape' && close()} />
 
 {#if open}
   <div
-    class="fixed inset-0 z-[1000] bg-black/50 flex items-center justify-center p-4"
+    class="fixed inset-0 z-[1100] bg-black/50 flex items-center justify-center p-4"
     role="dialog"
     aria-modal="true"
     aria-label={title}
     tabindex="0"
-    on:click|self={close}
-    on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && close()}
+    on:click|self={() => { if (closeOnBackdrop) close(); }}
+    on:keydown={(e) => { /* prevent backdrop keyboard close unless explicitly handled */ }}
   >
     <div class="w-full max-w-sm rounded-xl bg-white shadow-xl overflow-hidden">
       <div class="px-5 py-4 border-b border-slate-200">

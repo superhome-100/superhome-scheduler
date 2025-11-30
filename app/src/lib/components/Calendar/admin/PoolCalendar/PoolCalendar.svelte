@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
   import {
     hourSlotsFrom,
     computeGridMetrics,
@@ -24,6 +25,8 @@
   export let currentUserId: string | undefined = undefined;
   // Admin mode - shows full names instead of generic labels
   export let isAdmin: boolean = false;
+
+  const dispatch = createEventDispatcher();
 
   // Modal state and handlers (mirror ClassroomCalendar)
   let isModalOpen = false;
@@ -89,11 +92,15 @@
       if (nick) return nick;
       const fullName = res?.user_profiles?.name;
       if (fullName) return fullName;
-      const username = res?.user_profiles?.username || res?.username;
-      const email = res?.user_profiles?.email || res?.email;
-      if (username) return username;
-      if (email) return email.split("@")[0];
-      return "Unknown User";
+      const username = res?.username;
+      const email = res?.email;
+      if (username) return username as string;
+      if (email) return (email as string).split("@")[0];
+      // Fallback to any local fields if present
+      const local = res?.nickname || res?.name || res?.title || "";
+      if (local) return String(local);
+      // Final generic fallback to avoid "Unknown User" in admin view when RLS hides profile
+      return "Member";
     } else {
       let name =
         res?.user_profiles?.nickname ||
@@ -245,5 +252,12 @@
   bind:isOpen={isModalOpen}
   reservation={selectedReservation}
   {isAdmin}
+  {currentUserId}
   on:close={closeModal}
+  on:edit={() => {
+    if (selectedReservation) {
+      dispatch("editReservation", selectedReservation);
+    }
+    closeModal();
+  }}
 />

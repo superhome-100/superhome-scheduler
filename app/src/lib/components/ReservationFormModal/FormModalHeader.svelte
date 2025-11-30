@@ -3,13 +3,15 @@
 
   const dispatch = createEventDispatcher();
 
+  export let title: string = 'Reservation Request';
+
   const closeModal = () => {
     dispatch('close');
   };
 </script>
 
 <div class="modal-header">
-  <h2 class="modal-title">Reservation Request</h2>
+  <h2 class="modal-title">{title}</h2>
   <button 
     class="modal-close" 
     on:click={closeModal}

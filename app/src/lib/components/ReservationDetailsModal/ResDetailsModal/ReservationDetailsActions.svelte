@@ -3,15 +3,46 @@
 
   const dispatch = createEventDispatcher();
 
+  export let canEdit: boolean = false;
+  export let canCancel: boolean = false;
+
   const closeModal = () => {
     dispatch('close');
   };
+
+  const handleEdit = () => {
+    console.log('[ReservationDetailsActions] Edit clicked');
+    dispatch('edit');
+  };
+
+  const handleCancel = () => {
+    console.log('[ReservationDetailsActions] Cancel clicked');
+    dispatch('cancel');
+  };
 </script>
 
-<div class="modal-actions">
+<div class="modal-actions flex flex-row flex-nowrap items-center justify-end gap-2 p-3 border-t border-slate-200 sm:gap-3 sm:p-6">
+  {#if canEdit}
+    <button 
+      type="button" 
+      class="btn btn-secondary btn-sm sm:btn-md" 
+      on:click={handleEdit}
+    >
+      Edit
+    </button>
+  {/if}
+  {#if canCancel}
+    <button
+      type="button"
+      class="btn btn-error btn-sm sm:btn-md"
+      on:click={handleCancel}
+    >
+      Cancel
+    </button>
+  {/if}
   <button 
     type="button" 
-    class="btn btn-primary" 
+    class="btn btn-primary btn-sm sm:btn-md" 
     on:click={closeModal}
   >
     Close
@@ -19,44 +50,5 @@
 </div>
 
 <style>
-  .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    padding: 1.5rem;
-    border-top: 1px solid #e2e8f0;
-  }
-
-  .btn {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-width: 100px;
-  }
-
-  .btn-primary {
-    background: #3b82f6;
-    color: #ffffff; /* Ensure white text for primary button */
-  }
-
-  .btn-primary:hover {
-    background: #2563eb;
-    transform: translateY(-1px);
-  }
-
-  /* Mobile Responsive */
-  @media (max-width: 768px) {
-    .modal-actions {
-      padding: 0.5rem 0.75rem;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 0.5rem 0.75rem;
-      font-size: 0.75rem;
-    }
-  }
+  /* Keep the scope minimal; rely on Tailwind/DaisyUI utilities above. */
 </style>

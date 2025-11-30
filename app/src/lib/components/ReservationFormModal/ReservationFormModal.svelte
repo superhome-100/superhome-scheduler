@@ -31,6 +31,14 @@
   import Toast from "../Toast.svelte";
   import { showLoading, hideLoading } from "../../stores/ui";
 
+  // Normalize a time string to HH:MM (strip seconds if present)
+  const toHHMM = (t: string | undefined | null): string => {
+    if (!t) return "";
+    const m = String(t).match(/^(\d{1,2}):(\d{2})/);
+    if (m) return `${m[1].padStart(2, "0")}:${m[2]}`;
+    return String(t);
+  };
+
   const dispatch = createEventDispatcher();
 
   export let isOpen = false;
@@ -39,6 +47,9 @@
   // When true, the modal edits an existing reservation instead of creating a new one
   export let editing: boolean = false;
   export let initialReservation: any = null;
+  
+  // Modal title reflects whether we're creating or updating a reservation
+  $: modalTitle = editing ? "Update Reservation" : "Reservation Request";
 
   // Form data
   let formData = getDefaultFormData();
@@ -261,6 +272,12 @@
       // Set default times for Open Water reservations
       const submissionData = getSubmissionData(formData);
 
+      // Ensure HH:MM format for non-openwater times
+      if (submissionData.type !== "openwater") {
+        submissionData.startTime = toHHMM(submissionData.startTime);
+        submissionData.endTime = toHHMM(submissionData.endTime);
+      }
+
       // Create reservation date-time
       const reservationDateTime = new Date(
         `${submissionData.date}T${submissionData.startTime}`,
@@ -284,8 +301,8 @@
 
         if (submissionData.type === "pool") {
           updateData.pool = {
-            start_time: submissionData.startTime,
-            end_time: submissionData.endTime,
+            start_time: toHHMM(submissionData.startTime),
+            end_time: toHHMM(submissionData.endTime),
             note: submissionData.notes.trim() || undefined,
             pool_type: formData.poolType || undefined,
             student_count:
@@ -295,8 +312,8 @@
           };
         } else if (submissionData.type === "classroom") {
           updateData.classroom = {
-            start_time: submissionData.startTime,
-            end_time: submissionData.endTime,
+            start_time: toHHMM(submissionData.startTime),
+            end_time: toHHMM(submissionData.endTime),
             note: submissionData.notes.trim() || undefined,
             classroom_type: formData.classroomType || undefined,
             student_count:
@@ -368,8 +385,8 @@
 
         if (submissionData.type === "pool") {
           reservationData.pool = {
-            start_time: submissionData.startTime,
-            end_time: submissionData.endTime,
+            start_time: toHHMM(submissionData.startTime),
+            end_time: toHHMM(submissionData.endTime),
             note: submissionData.notes.trim() || undefined,
             pool_type: formData.poolType || undefined,
             student_count:
@@ -379,8 +396,8 @@
           };
         } else if (submissionData.type === "classroom") {
           reservationData.classroom = {
-            start_time: submissionData.startTime,
-            end_time: submissionData.endTime,
+            start_time: toHHMM(submissionData.startTime),
+            end_time: toHHMM(submissionData.endTime),
             note: submissionData.notes.trim() || undefined,
             classroom_type: formData.classroomType || undefined,
             student_count:
@@ -490,59 +507,62 @@
 
   // Apply initialType when modal opens (Reservation page)
   let wasOpen = false;
+  function prefillFromInitial(raw: any) {
+    console.log('[ReservationFormModal] Prefill called with', raw);
+    // Build default then apply values from raw
+    const base = getDefaultFormData();
+    base.buddies = [];
+    const resType: string = raw?.res_type || "pool";
+    const resDate: string = raw?.res_date || raw?.date || base.date;
+    base.date = (resDate || "").split("T")[0] || base.date;
+
+    if (resType === "open_water") {
+      base.type = "openwater";
+      const ow = raw?.res_openwater || {};
+      const tp = (ow.time_period || raw?.time_period || "AM").toUpperCase();
+      base.timeOfDay = tp === "PM" ? "PM" : "AM";
+      base.depth =
+        typeof ow.depth_m === "number" && !Number.isNaN(ow.depth_m)
+          ? String(ow.depth_m)
+          : "";
+      base.openWaterType = ow.open_water_type || "";
+      base.studentCount =
+        ow.student_count != null ? String(ow.student_count) : "";
+      base.notes = ow.note || raw?.note || "";
+      base.pulley = !!ow.pulley;
+      base.deepFimTraining = !!ow.deep_fim_training;
+      base.bottomPlate = !!ow.bottom_plate;
+      base.largeBuoy = !!ow.large_buoy;
+      base.startTime = "";
+      base.endTime = "";
+    } else if (resType === "pool") {
+      base.type = "pool";
+      const pool = raw?.res_pool || {};
+      base.startTime = toHHMM(pool.start_time || raw?.start_time || base.startTime);
+      base.endTime = toHHMM(pool.end_time || raw?.end_time || base.endTime);
+      base.poolType = pool.pool_type || "";
+      base.notes = pool.note || raw?.note || "";
+      base.studentCount =
+        pool.student_count != null ? String(pool.student_count) : "";
+    } else if (resType === "classroom") {
+      base.type = "classroom";
+      const classroom = raw?.res_classroom || {};
+      base.startTime = toHHMM(classroom.start_time || raw?.start_time || base.startTime);
+      base.endTime = toHHMM(classroom.end_time || raw?.end_time || base.endTime);
+      base.classroomType = classroom.classroom_type || "";
+      base.notes = classroom.note || raw?.note || "";
+      base.studentCount =
+        classroom.student_count != null ? String(classroom.student_count) : "";
+    }
+    return base;
+  }
   $: if (isOpen && !wasOpen) {
     wasOpen = true;
     if (editing && initialReservation) {
       // Prefill form from existing reservation when editing
-      const base = getDefaultFormData();
-      base.buddies = [];
-      const raw = initialReservation || {};
-      const resType: string = raw.res_type || "pool";
-      const resDate: string = raw.res_date || raw.date || base.date;
-      base.date = (resDate || "").split("T")[0] || base.date;
-
-      if (resType === "open_water") {
-        base.type = "openwater";
-        const ow = raw.res_openwater || {};
-        const tp = (ow.time_period || raw.time_period || "AM").toUpperCase();
-        base.timeOfDay = tp === "PM" ? "PM" : "AM";
-        base.depth =
-          typeof ow.depth_m === "number" && !Number.isNaN(ow.depth_m)
-            ? String(ow.depth_m)
-            : "";
-        base.openWaterType = ow.open_water_type || "";
-        base.studentCount =
-          ow.student_count != null ? String(ow.student_count) : "";
-        base.notes = ow.note || raw.note || "";
-        base.pulley = !!ow.pulley;
-        base.deepFimTraining = !!ow.deep_fim_training;
-        base.bottomPlate = !!ow.bottom_plate;
-        base.largeBuoy = !!ow.large_buoy;
-        base.startTime = "";
-        base.endTime = "";
-      } else if (resType === "pool") {
-        base.type = "pool";
-        const pool = raw.res_pool || {};
-        base.startTime = pool.start_time || raw.start_time || base.startTime;
-        base.endTime = pool.end_time || raw.end_time || base.endTime;
-        base.poolType = pool.pool_type || "";
-        base.notes = pool.note || raw.note || "";
-        base.studentCount =
-          pool.student_count != null ? String(pool.student_count) : "";
-      } else if (resType === "classroom") {
-        base.type = "classroom";
-        const classroom = raw.res_classroom || {};
-        base.startTime =
-          classroom.start_time || raw.start_time || base.startTime;
-        base.endTime = classroom.end_time || raw.end_time || base.endTime;
-        base.classroomType = classroom.classroom_type || "";
-        base.notes = classroom.note || raw.note || "";
-        base.studentCount =
-          classroom.student_count != null ? String(classroom.student_count) :
-            "";
-      }
-
+      const base = prefillFromInitial(initialReservation);
       formData = base;
+      console.log('[ReservationFormModal] Prefilled on open', formData);
     } else if (initialType && formData.type !== initialType) {
       formData.type = initialType;
       // Apply defaults for the selected type (times, date)
@@ -551,6 +571,20 @@
   }
   $: if (!isOpen && wasOpen) {
     wasOpen = false;
+  }
+
+  // Also prefill if editing payload changes while modal is already open
+  $: if (isOpen && editing && initialReservation) {
+    // If the current formData does not match the incoming identifiers, rehydrate
+    const wantsType = (initialReservation?.res_type === 'open_water') ? 'openwater'
+      : (initialReservation?.res_type === 'classroom') ? 'classroom' : 'pool';
+    const sameType = formData.type === wantsType;
+    const sameDate = !!formData.date && (formData.date === String((initialReservation?.res_date || '')).split('T')[0]);
+    if (!sameType || !sameDate) {
+      const base = prefillFromInitial(initialReservation);
+      formData = base;
+      console.log('[ReservationFormModal] Prefilled on change', formData);
+    }
   }
 
   // Handle validation changes from child components
@@ -581,11 +615,11 @@
     on:keydown={(e) => e.key === "Escape" && closeModal()}
     role="dialog"
     aria-modal="true"
-    aria-label="Reservation Request"
+    aria-label={modalTitle}
     tabindex="-1"
   >
     <div class="modal-content" bind:this={modalEl}>
-      <FormModalHeader on:close={closeModal} />
+      <FormModalHeader title={modalTitle} on:close={closeModal} />
 
       <form on:submit={handleSubmit} class="modal-body">
         <FormErrorAlert {submitError} />

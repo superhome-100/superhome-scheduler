@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
   import dayjs from "dayjs";
   import ReservationDetailsModal from "../../../ReservationDetailsModal/ReservationDetailsModal.svelte";
   import {
@@ -24,6 +25,8 @@
   export let currentUserId: string | undefined = undefined;
   // Admin mode - shows full names instead of generic labels
   export let isAdmin: boolean = false;
+
+  const dispatch = createEventDispatcher();
 
   // Modal state for reservation details
   let isModalOpen = false;
@@ -259,5 +262,12 @@
   bind:isOpen={isModalOpen}
   reservation={selectedReservation}
   {isAdmin}
+  {currentUserId}
   on:close={closeModal}
+  on:edit={() => {
+    if (selectedReservation) {
+      dispatch("editReservation", selectedReservation);
+    }
+    closeModal();
+  }}
 />
