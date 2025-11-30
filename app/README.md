@@ -60,7 +60,7 @@ supabase db reset
 
 ```bash
 # From app directory
-npm run dev
+pnpm dev
 ```
 
 The app will be available at `http://localhost:3000`
