@@ -24,59 +24,53 @@
       handleGroupClick();
     }
   }
-
-  $: nonEmptyNames = (buoyGroup?.member_names ?? []).filter(
-    (x: string | null) => x && x.trim() !== ""
-  );
-
-  $: primaryName = nonEmptyNames[0] ?? "Unknown";
-
-  $: studentCount =
-    buoyGroup?.open_water_type === "course_coaching"
-      ? Math.max((buoyGroup.boat_count ?? 1) - 1, 0)
-      : 0;
-
-  $: memberDisplayNames =
-    buoyGroup?.open_water_type === "course_coaching"
-      ? [
-          `${primaryName} + ${studentCount}`,
-          ...nonEmptyNames.slice(1),
-        ]
-      : nonEmptyNames.length
-      ? nonEmptyNames
-      : [primaryName];
-
-  // Map reservation owner uid -> display name, using member_uids/member_names to avoid index mismatch
-  $: memberNameByUid = (() => {
-    const map = new Map<string, string>();
-    const uids = buoyGroup?.member_uids ?? [];
-    const names = buoyGroup?.member_names ?? [];
-    const len = Math.min(uids.length, names.length);
-    for (let i = 0; i < len; i += 1) {
-      const uid = uids[i];
-      const raw = names[i];
-      const name = (raw ?? "").trim();
-      if (uid && name) {
-        map.set(uid, name);
-      }
-    }
-    return map;
-  })();
-
-  function getReservationDisplayName(
-    reservation: OpenWaterReservationView,
-    index: number,
-  ): string {
-    const byUid = memberNameByUid.get(reservation.uid);
-    if (byUid && byUid.trim() !== "") return byUid.trim();
-    const byIndex = memberDisplayNames[index];
-    if (byIndex && byIndex.trim() !== "") return byIndex.trim();
-    return primaryName;
-  }
-
   // Debug logs removed to keep file compact and under 300 lines
 
   $: reservations = buoyGroup.reservations;
+
+  function getReservationDisplayName(
+    reservation: OpenWaterReservationView,
+  ): string {
+    const typeFromGroup = buoyGroup?.open_water_type ?? null;
+    const typeFromReservation = reservation.open_water_type ?? null;
+    const isCourse =
+      (typeFromGroup && typeFromGroup.toLowerCase() === "course_coaching") ||
+      (typeFromReservation && typeFromReservation.toLowerCase() === "course_coaching");
+
+    const rawNick = (reservation.nickname ?? "").trim();
+    const rawName = (reservation.name ?? "").trim();
+    const baseName = rawNick || rawName || "Unknown";
+
+    // Real reservations (admin path): use per-reservation student_count for +N
+    const isSynthetic = reservation.reservation_id === -1;
+    if (!isSynthetic && isCourse) {
+      const n = reservation.student_count ?? 0;
+      return n > 0 ? `${baseName} + ${n}` : baseName;
+    }
+
+    // For synthetic/non-admin rows, any "+N" logic should already be encoded
+    // via nickname/name from the loader.
+    return baseName;
+  }
+
+  // Decide per-reservation if the lock icon should be shown, derived only from
+  // the reservation data itself (no reliance on array index ordering).
+  function shouldShowLockIcon(reservation: OpenWaterReservationView): boolean {
+    const hasBuoy = !!(reservation.buoy && String(reservation.buoy).trim() !== "");
+    if (!hasBuoy) return false;
+
+    const type = (reservation.open_water_type ?? "").toLowerCase();
+
+    // For course/coaching, show lock on rows that carry students (non-zero student_count)
+    // which we treat as the instructor/lead reservation.
+    if (type === "course_coaching") {
+      const n = reservation.student_count ?? 0;
+      return n > 0;
+    }
+
+    // For other types, any reservation with a non-empty buoy is considered locked.
+    return true;
+  }
 
   // Move-to-buoy dialog state
   let showMoveDialog = false;
@@ -212,7 +206,7 @@
   }
 </script>
 
-{#if buoyGroup.member_names?.length}
+{#if reservations && reservations.length}
   <div
     class="relative hover:bg-base-200/50 transition-all duration-200 divers-group-box cursor-pointer"
     role="button"
@@ -240,12 +234,34 @@
             role={readOnly ? undefined : "button"}
             aria-label={readOnly ? undefined : "Update reservation status"}
           ></div>
-          <span class="font-medium text-gray-800 flex-1 truncate">
-            {#if !readOnly && typeof reservation.depth_m === "number" && !Number.isNaN(reservation.depth_m)}
-              {reservation.depth_m} m -
+          <div class="flex items-center gap-1 flex-1 min-w-0">
+            {#if shouldShowLockIcon(reservation)}
+              <span
+                class="text-primary flex-shrink-0"
+                aria-label={reservation.buoy
+                  ? `Locked to buoy ${reservation.buoy}`
+                  : "Locked to buoy"}
+                title={reservation.buoy
+                  ? `Locked to buoy ${reservation.buoy}`
+                  : "Locked to buoy"}
+              >
+                🔒
+              </span>
             {/if}
-            {getReservationDisplayName(reservation, index)}
-          </span>
+            <div class="flex flex-col leading-tight min-w-0">
+              <span class="font-medium text-gray-800 truncate">
+                {#if !readOnly && typeof reservation.depth_m === "number" && !Number.isNaN(reservation.depth_m)}
+                  {reservation.depth_m} m -
+                {/if}
+                {getReservationDisplayName(reservation, index)}
+              </span>
+              {#if reservation.open_water_type}
+                <span class="text-[10px] text-gray-500 truncate">
+                  {reservation.open_water_type}
+                </span>
+              {/if}
+            </div>
+          </div>
           <div class="flex items-center gap-1">
             {#if !readOnly}
               <button

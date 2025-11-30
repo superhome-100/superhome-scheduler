@@ -6,11 +6,13 @@
   import type { MoveReservationToBuoyPayload } from "../../../../services/openWaterService";
   import type { OpenWaterReservationView } from "../../../../types/reservationViews";
   import { moveReservationToBuoy } from "../../../../services/openWaterService";
+  import { callFunction } from "../../../../utils/functions";
 
   export let availableBoats: string[];
   export let availableBuoys: { buoy_name: string; max_depth: number }[];
   export let buoyGroups: AdminBuoyGroup[];
   export let loading: boolean;
+  export let selectedDate: string = "";
   export let onUpdateBuoy: (groupId: number, buoyName: string) => void;
   export let onUpdateBoat: (groupId: number, boatName: string) => void;
   // Parent-provided callback to refresh assignments after server-side updates
@@ -25,11 +27,14 @@
   let startX = 0;
   let startWidth = 0;
   let movingReservation = false;
+  let lockInProgress = false;
 
   // Initialize boat capacity arrays
   type BoatStat = { name: string; totalDivers: number; isAssigned: boolean };
   let amBoatCapacity: BoatStat[] = [];
   let pmBoatCapacity: BoatStat[] = [];
+
+  $: effectiveLoading = loading || lockInProgress;
 
   // Calculate boat capacity and assignments for each time period
   $: if (buoyGroups && availableBoats) {
@@ -73,14 +78,27 @@
 
           if (boatIndex !== -1 && boatIndex < boatStats.length) {
             const boatStat = boatStats[boatIndex]!;
-            // Prefer server-computed boat_count if available (handles Course/Coaching = 1 + students)
-            const diverCount =
-              typeof group.boat_count === "number"
-                ? group.boat_count
-                : group.member_names?.filter(
-                    (name: string | null) => name && name.trim() !== ""
-                  ).length || 0;
-            boatStat.totalDivers += diverCount;
+
+            const reservations = Array.isArray(group.reservations)
+              ? group.reservations
+              : [];
+
+            let groupDivers = 0;
+            for (const reservation of reservations) {
+              const typeFromGroup = group.open_water_type ?? null;
+              const typeFromReservation = reservation.open_water_type ?? null;
+              const normalizedType =
+                (typeFromReservation || typeFromGroup || "").toLowerCase();
+
+              if (normalizedType === "course_coaching") {
+                const n = reservation.student_count ?? 0;
+                groupDivers += 1 + n;
+              } else {
+                groupDivers += 1;
+              }
+            }
+
+            boatStat.totalDivers += groupDivers;
             boatStat.isAssigned = true;
           }
         }
@@ -172,6 +190,99 @@
       movingReservation = false;
     }
   }
+
+  async function handleLock(timePeriod: "AM" | "PM") {
+    if (readOnly || !selectedDate || lockInProgress) return;
+    lockInProgress = true;
+    try {
+      const res = await callFunction<
+        { res_date: string; time_period: string },
+        unknown
+      >("lock-ow-reservations", {
+        res_date: selectedDate,
+        time_period: timePeriod,
+      });
+
+      if ((res as any)?.error) {
+        throw new Error(String((res as any).error));
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      if (onRefreshAssignments) {
+        await onRefreshAssignments();
+      }
+    } catch (error) {
+      console.error("Error locking open water reservations:", error);
+      alert(
+        "Error locking open water reservations: " +
+          ((error as Error)?.message ?? "Unknown error"),
+      );
+    } finally {
+      lockInProgress = false;
+    }
+  }
+
+  async function handleUnlock(timePeriod: "AM" | "PM") {
+    if (readOnly || !selectedDate || lockInProgress) return;
+    lockInProgress = true;
+    try {
+      const res = await callFunction<
+        { res_date: string; time_period: string },
+        unknown
+      >("unlock-ow-reservations", {
+        res_date: selectedDate,
+        time_period: timePeriod,
+      });
+
+      if ((res as any)?.error) {
+        throw new Error(String((res as any).error));
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      if (onRefreshAssignments) {
+        await onRefreshAssignments();
+      }
+    } catch (error) {
+      console.error("Error unlocking open water reservations:", error);
+      alert(
+        "Error unlocking open water reservations: " +
+          ((error as Error)?.message ?? "Unknown error"),
+      );
+    } finally {
+      lockInProgress = false;
+    }
+  }
+
+  async function handleAutoAssign(timePeriod: "AM" | "PM") {
+    if (readOnly || !selectedDate) return;
+    try {
+      const res = await callFunction<
+        { res_date: string; time_period: string },
+        unknown
+      >("auto-assign-buoy", {
+        res_date: selectedDate,
+        time_period: timePeriod,
+      });
+
+      if ((res as any)?.error) {
+        throw new Error(String((res as any).error));
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      if (onRefreshAssignments) {
+        await onRefreshAssignments();
+      }
+    } catch (error) {
+      console.error("Error auto-assigning buoys:", error);
+      alert(
+        "Error auto-assigning buoys: " +
+          ((error as Error)?.message ?? "Unknown error")
+      );
+    }
+  }
 </script>
 
 <!-- Reservation Tables Section -->
@@ -183,10 +294,13 @@
     {buoyGroups}
     {availableBuoys}
     {availableBoats}
-    {loading}
+    {effectiveLoading}
     {readOnly}
     {onUpdateBuoy}
     {onUpdateBoat}
+    onAutoAssign={handleAutoAssign}
+    onLock={handleLock}
+    onUnlock={handleUnlock}
     onMouseDown={handleMouseDown}
     on:groupClick={handleGroupClick}
     on:moveReservationToBuoy={handleMoveReservationToBuoy}
@@ -200,17 +314,20 @@
     {buoyGroups}
     {availableBuoys}
     {availableBoats}
-    {loading}
+    {effectiveLoading}
     {readOnly}
     {onUpdateBuoy}
     {onUpdateBoat}
+    onAutoAssign={handleAutoAssign}
+    onLock={handleLock}
+    onUnlock={handleUnlock}
     onMouseDown={handleMouseDown}
     on:groupClick={handleGroupClick}
     on:statusClick={handleStatusClick}
   />
 </div>
 
-{#if movingReservation}
+{#if movingReservation || lockInProgress}
   <div
     class="fixed inset-0 z-[70] flex items-center justify-center bg-base-300/60 backdrop-blur-sm"
   >

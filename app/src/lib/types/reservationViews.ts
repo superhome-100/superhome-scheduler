@@ -8,6 +8,8 @@ export type BaseReservationView = {
   res_status: CompleteReservation['res_status'];
   title?: string | null;
   description?: string | null;
+  nickname: string;
+  name: string;
 };
 
 export type PoolReservationView = BaseReservationView & {
