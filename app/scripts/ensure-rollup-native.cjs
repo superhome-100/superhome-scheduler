@@ -97,7 +97,7 @@ function getInstalledRollupVersion() {
   const version = detectedVersion || '4.52.4';
   const cwd = path.join(__dirname, '..');
   log(`Installing ${pkg}@${version}...`);
-  const res = spawnSync('npm', ['i', `${pkg}@${version}`, '--no-save'], {
+  const res = spawnSync('pnpm', ['add', `${pkg}@${version}`, '--no-save'], {
     cwd,
     stdio: 'inherit',
     env: process.env,

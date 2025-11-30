@@ -20,7 +20,7 @@ function install(pkg, version) {
   const cwd = path.join(__dirname, '..');
   const spec = version ? `${pkg}@${version}` : pkg;
   log(`Installing ${spec} --no-save`);
-  const res = spawnSync('npm', ['i', spec, '--no-save'], {
+  const res = spawnSync('pnpm', ['add', spec, '--no-save'], {
     cwd,
     stdio: 'inherit',
     env: process.env,
