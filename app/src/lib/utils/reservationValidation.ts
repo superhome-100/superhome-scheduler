@@ -99,8 +99,8 @@ export function validateUpdateReservation(data: UpdateReservationData): Validati
     }
   }
 
-  // Status validation
-  if (data.res_status && !['pending', 'confirmed', 'rejected'].includes(data.res_status)) {
+  // Status validation (includes 'cancelled')
+  if (data.res_status && !['pending', 'confirmed', 'rejected', 'cancelled'].includes(data.res_status as any)) {
     errors.push({ field: 'res_status', message: 'Invalid reservation status' });
   }
 

@@ -277,32 +277,7 @@
       selectedReservation = null;
       return;
     }
-
-    // For upcoming reservations that are still before cutoff, open the
-    // reservation request dialog in edit mode instead of read-only details.
-    try {
-      const resType = (reservation.res_type || "") as DbReservationType;
-      const resDateIso: string | undefined = reservation.res_date;
-
-      if (resDateIso && resType) {
-        const beforeCutoff = isBeforeCutoff(resDateIso, resType);
-        if (beforeCutoff) {
-          reservationFormInitialType =
-            resType === "open_water"
-              ? "openwater"
-              : resType === "classroom"
-              ? "classroom"
-              : "pool";
-          editingReservation = reservation;
-          showReservationForm = true;
-          return;
-        }
-      }
-    } catch (error) {
-      console.error("Dashboard: Cutoff check failed:", error);
-    }
-
-    // Fallback: show read-only reservation details
+    // Always show read-only reservation details on list click
     try {
       const transformed = transformReservationToUnified(reservation);
       selectedReservation = transformed;
@@ -498,7 +473,28 @@
 <ReservationDetailsModal
   isOpen={showReservationDetails}
   reservation={selectedReservation}
+  currentUserId={$authStore.user?.id}
   on:close={closeReservationDetails}
+  on:edit={() => {
+    try {
+      const raw = (selectedReservation && (selectedReservation as any).raw_reservation) || null;
+      if (!raw) {
+        // If raw is missing, fall back to transforming back minimal fields
+        console.warn('Dashboard: Missing raw_reservation on selectedReservation');
+        return;
+      }
+      const resType = (raw.res_type || 'pool') as DbReservationType;
+      reservationFormInitialType =
+        resType === 'open_water' ? 'openwater' : resType === 'classroom' ? 'classroom' : 'pool';
+      editingReservation = raw;
+      showReservationForm = true;
+    } catch (e) {
+      console.error('Dashboard: failed to open edit form from details modal', e);
+    } finally {
+      showReservationDetails = false;
+    }
+  }}
+  on:updated={async () => { await loadReservations(); await loadMonthlyTotals(); }}
 />
 
 <!-- Sign Out Modal -->

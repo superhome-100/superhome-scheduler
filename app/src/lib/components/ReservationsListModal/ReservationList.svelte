@@ -5,6 +5,7 @@
 
   export let reservations: any[] = [];
   export let showDetails: boolean = false;
+  export let showPrice: boolean = true;
 
   const dispatch = createEventDispatcher();
 
@@ -22,6 +23,7 @@
       <ReservationItem 
         {reservation} 
         {showDetails}
+        {showPrice}
         on:reservationClick={handleReservationClick}
         on:delete={handleDelete}
       />

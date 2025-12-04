@@ -29,6 +29,15 @@ export class UserAdminService {
     if (error) return { success: false, error };
     return { success: true };
   }
+
+  async updatePriceTemplate(uid: string, price_template_name: string): Promise<{ success: boolean; error?: string }> {
+    const { error } = await callFunction<{ uid: string; price_template_name: string }, { ok: boolean }>(
+      'user-update-price-template',
+      { uid, price_template_name }
+    );
+    if (error) return { success: false, error };
+    return { success: true };
+  }
 }
 
 export const userAdminService = new UserAdminService();

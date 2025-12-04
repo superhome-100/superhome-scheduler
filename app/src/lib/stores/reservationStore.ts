@@ -1,6 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
 import { reservationApi } from '../api/reservationApi';
 import type { CompleteReservation, CreateReservationData, UpdateReservationData } from '../api/reservationApi';
+import { isBeforeCancelCutoff } from '../utils/cutoffRules';
 
 // Store state interface
 interface ReservationStoreState {
@@ -93,6 +94,45 @@ function createReservationStore() {
       }
     },
 
+    // Cancel a reservation (user-triggered). Applies cancel cut-off validation.
+    cancelReservation: async (
+      uid: string,
+      res_date: string,
+      opts: { res_type: 'pool' | 'open_water' | 'classroom'; start_time?: string; time_period?: 'AM' | 'PM' }
+    ) => {
+      // Validate cut-off before attempting cancellation
+      const withinCancelWindow = isBeforeCancelCutoff(
+        opts.res_type,
+        res_date,
+        opts.start_time,
+        opts.time_period
+      );
+      if (!withinCancelWindow) {
+        const msg = 'Cancellation window has passed for this reservation.';
+        update(state => ({ ...state, error: msg }));
+        return { success: false, error: msg };
+      }
+
+      // Update status to 'cancelled'
+      update(state => ({ ...state, loading: true, error: null }));
+      const result = await reservationApi.updateReservation(uid, res_date, { res_status: 'cancelled' as any });
+      if (result.success && result.data) {
+        update(state => ({
+          ...state,
+          reservations: state.reservations.map(r =>
+            r.uid === uid && r.res_date === res_date ? result.data! : r
+          ),
+          loading: false,
+          error: null,
+          lastUpdated: new Date()
+        }));
+        return { success: true, data: result.data };
+      } else {
+        update(state => ({ ...state, loading: false, error: result.error || 'Failed to cancel reservation' }));
+        return { success: false, error: result.error };
+      }
+    },
+
     // Load upcoming reservations for a user
     loadUpcomingReservations: async (uid: string, limit: number = 10) => {
       update(state => ({ ...state, loading: true, error: null }));
@@ -140,7 +180,7 @@ function createReservationStore() {
     },
 
     // Load reservations by status
-    loadReservationsByStatus: async (status: 'pending' | 'confirmed' | 'rejected', limit: number = 50) => {
+    loadReservationsByStatus: async (status: 'pending' | 'confirmed' | 'rejected' | 'cancelled', limit: number = 50) => {
       update(state => ({ ...state, loading: true, error: null }));
       
       const result = await reservationApi.getReservationsByStatus(status, { limit });
@@ -245,7 +285,7 @@ function createReservationStore() {
     updateReservationStatus: async (
       uid: string, 
       res_date: string, 
-      status: 'pending' | 'confirmed' | 'rejected'
+      status: 'pending' | 'confirmed' | 'rejected' | 'cancelled'
     ) => {
       return store.updateReservation(uid, res_date, { res_status: status });
     },

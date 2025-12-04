@@ -91,6 +91,68 @@ export type Database = {
         }
         Relationships: []
       }
+      buddy_group_members: {
+        Row: {
+          buddy_group_id: string
+          invited_at: string | null
+          responded_at: string | null
+          status: string
+          uid: string
+        }
+        Insert: {
+          buddy_group_id: string
+          invited_at?: string | null
+          responded_at?: string | null
+          status?: string
+          uid: string
+        }
+        Update: {
+          buddy_group_id?: string
+          invited_at?: string | null
+          responded_at?: string | null
+          status?: string
+          uid?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buddy_group_members_buddy_group_id_fkey"
+            columns: ["buddy_group_id"]
+            isOneToOne: false
+            referencedRelation: "buddy_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buddy_groups: {
+        Row: {
+          created_at: string | null
+          id: string
+          initiator_uid: string
+          res_date: string
+          res_type: string
+          time_period: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          initiator_uid: string
+          res_date: string
+          res_type: string
+          time_period: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          initiator_uid?: string
+          res_date?: string
+          res_type?: string
+          time_period?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       buoy: {
         Row: {
           buoy_name: string
@@ -227,6 +289,7 @@ export type Database = {
           note: string | null
           res_date: string
           res_status: Database["public"]["Enums"]["reservation_status"]
+          reservation_id: number
           room: string | null
           start_time: string | null
           student_count: number | null
@@ -240,6 +303,7 @@ export type Database = {
           note?: string | null
           res_date: string
           res_status?: Database["public"]["Enums"]["reservation_status"]
+          reservation_id: number
           room?: string | null
           start_time?: string | null
           student_count?: number | null
@@ -253,6 +317,7 @@ export type Database = {
           note?: string | null
           res_date?: string
           res_status?: Database["public"]["Enums"]["reservation_status"]
+          reservation_id?: number
           room?: string | null
           start_time?: string | null
           student_count?: number | null
@@ -260,11 +325,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "res_classroom_uid_res_date_fkey"
-            columns: ["uid", "res_date"]
+            foreignKeyName: "res_classroom_reservation_fk"
+            columns: ["reservation_id"]
             isOneToOne: true
             referencedRelation: "reservations"
-            referencedColumns: ["uid", "res_date"]
+            referencedColumns: ["reservation_id"]
           },
         ]
       }
@@ -275,6 +340,7 @@ export type Database = {
             | null
           auto_adjust_closest: boolean
           bottom_plate: boolean
+          buddy_group_id: string | null
           buoy: string | null
           deep_fim_training: boolean
           depth_m: number | null
@@ -285,6 +351,7 @@ export type Database = {
           pulley: boolean
           res_date: string
           res_status: Database["public"]["Enums"]["reservation_status"]
+          reservation_id: number
           student_count: number | null
           time_period: string | null
           uid: string
@@ -295,6 +362,7 @@ export type Database = {
             | null
           auto_adjust_closest?: boolean
           bottom_plate?: boolean
+          buddy_group_id?: string | null
           buoy?: string | null
           deep_fim_training?: boolean
           depth_m?: number | null
@@ -305,6 +373,7 @@ export type Database = {
           pulley?: boolean
           res_date: string
           res_status?: Database["public"]["Enums"]["reservation_status"]
+          reservation_id: number
           student_count?: number | null
           time_period?: string | null
           uid: string
@@ -315,6 +384,7 @@ export type Database = {
             | null
           auto_adjust_closest?: boolean
           bottom_plate?: boolean
+          buddy_group_id?: string | null
           buoy?: string | null
           deep_fim_training?: boolean
           depth_m?: number | null
@@ -325,11 +395,19 @@ export type Database = {
           pulley?: boolean
           res_date?: string
           res_status?: Database["public"]["Enums"]["reservation_status"]
+          reservation_id?: number
           student_count?: number | null
           time_period?: string | null
           uid?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "res_openwater_buddy_group_id_fkey"
+            columns: ["buddy_group_id"]
+            isOneToOne: false
+            referencedRelation: "buddy_groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "res_openwater_group_id_fkey"
             columns: ["group_id"]
@@ -338,55 +416,68 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "res_openwater_uid_res_date_fkey"
-            columns: ["uid", "res_date"]
+            foreignKeyName: "res_openwater_reservation_fk"
+            columns: ["reservation_id"]
             isOneToOne: true
             referencedRelation: "reservations"
-            referencedColumns: ["uid", "res_date"]
+            referencedColumns: ["reservation_id"]
           },
         ]
       }
       res_pool: {
         Row: {
+          buddy_group_id: string | null
           end_time: string | null
           lane: string | null
           note: string | null
           pool_type: Database["public"]["Enums"]["pool_activity_type"] | null
           res_date: string
           res_status: Database["public"]["Enums"]["reservation_status"]
+          reservation_id: number
           start_time: string | null
           student_count: number | null
           uid: string
         }
         Insert: {
+          buddy_group_id?: string | null
           end_time?: string | null
           lane?: string | null
           note?: string | null
           pool_type?: Database["public"]["Enums"]["pool_activity_type"] | null
           res_date: string
           res_status?: Database["public"]["Enums"]["reservation_status"]
+          reservation_id: number
           start_time?: string | null
           student_count?: number | null
           uid: string
         }
         Update: {
+          buddy_group_id?: string | null
           end_time?: string | null
           lane?: string | null
           note?: string | null
           pool_type?: Database["public"]["Enums"]["pool_activity_type"] | null
           res_date?: string
           res_status?: Database["public"]["Enums"]["reservation_status"]
+          reservation_id?: number
           start_time?: string | null
           student_count?: number | null
           uid?: string
         }
         Relationships: [
           {
-            foreignKeyName: "res_pool_uid_res_date_fkey"
-            columns: ["uid", "res_date"]
+            foreignKeyName: "res_pool_buddy_group_id_fkey"
+            columns: ["buddy_group_id"]
+            isOneToOne: false
+            referencedRelation: "buddy_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "res_pool_reservation_fk"
+            columns: ["reservation_id"]
             isOneToOne: true
             referencedRelation: "reservations"
-            referencedColumns: ["uid", "res_date"]
+            referencedColumns: ["reservation_id"]
           },
         ]
       }
@@ -397,6 +488,7 @@ export type Database = {
           res_date: string
           res_status: Database["public"]["Enums"]["reservation_status"]
           res_type: Database["public"]["Enums"]["reservation_type"]
+          reservation_id: number
           uid: string
           updated_at: string
         }
@@ -406,6 +498,7 @@ export type Database = {
           res_date: string
           res_status?: Database["public"]["Enums"]["reservation_status"]
           res_type: Database["public"]["Enums"]["reservation_type"]
+          reservation_id?: number
           uid: string
           updated_at?: string
         }
@@ -415,6 +508,7 @@ export type Database = {
           res_date?: string
           res_status?: Database["public"]["Enums"]["reservation_status"]
           res_type?: Database["public"]["Enums"]["reservation_type"]
+          reservation_id?: number
           uid?: string
           updated_at?: string
         }
@@ -451,6 +545,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          auth_provider: string | null
           created_at: string
           name: string | null
           nickname: string | null
@@ -461,6 +556,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auth_provider?: string | null
           created_at?: string
           name?: string | null
           nickname?: string | null
@@ -471,6 +567,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auth_provider?: string | null
           created_at?: string
           name?: string | null
           nickname?: string | null
@@ -599,6 +696,16 @@ export type Database = {
       compute_reservation_total_for: {
         Args: { p_res_ts: string; p_uid: string }
         Returns: number
+      }
+      create_buddy_group_with_members: {
+        Args: {
+          p_buddy_uids: string[]
+          p_initiator_uid: string
+          p_res_date: string
+          p_res_type: string
+          p_time_period: string
+        }
+        Returns: string
       }
       cron_process_assignment_queue: {
         Args: Record<PropertyKey, never>
@@ -832,7 +939,21 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
-      get_buoy_groups_with_names: {
+      get_buddy_group_with_members: {
+        Args: { p_res_date: string; p_res_type: string; p_time_period: string }
+        Returns: {
+          buddy_group_id: string
+          buoy: string
+          depth_m: number
+          initiator_uid: string
+          lane: string
+          member_status: string
+          member_uid: string
+          open_water_type: string
+          res_type: string
+        }[]
+      }
+      get_buoy_groups_public: {
         Args: { p_res_date: string; p_time_period: string }
         Returns: {
           boat: string
@@ -840,8 +961,21 @@ export type Database = {
           buoy_name: string
           id: number
           member_names: string[]
+          member_statuses: string[]
           member_uids: string[]
           open_water_type: string
+          res_date: string
+          time_period: string
+        }[]
+      }
+      get_buoy_groups_with_names: {
+        Args: { p_res_date: string; p_time_period: string }
+        Returns: {
+          boat: string
+          buoy_name: string
+          id: number
+          member_names: string[]
+          member_uids: string[]
           res_date: string
           time_period: string
         }[]
@@ -868,6 +1002,16 @@ export type Database = {
         Returns: {
           boat: string
           buoy_name: string
+        }[]
+      }
+      get_openwater_assignment_map: {
+        Args: { p_res_date: string }
+        Returns: {
+          boat: string
+          buoy_name: string
+          res_date: string
+          time_period: string
+          uid: string
         }[]
       }
       get_openwater_pair_info: {
@@ -904,7 +1048,7 @@ export type Database = {
         | "autonomous_platform"
         | "autonomous_platform_cbs"
       pool_activity_type: "course_coaching" | "autonomous"
-      reservation_status: "pending" | "confirmed" | "rejected"
+      reservation_status: "pending" | "confirmed" | "rejected" | "cancelled"
       reservation_type: "pool" | "open_water" | "classroom"
       user_status: "active" | "disabled"
     }
@@ -1049,7 +1193,7 @@ export const Constants = {
         "autonomous_platform_cbs",
       ],
       pool_activity_type: ["course_coaching", "autonomous"],
-      reservation_status: ["pending", "confirmed", "rejected"],
+      reservation_status: ["pending", "confirmed", "rejected", "cancelled"],
       reservation_type: ["pool", "open_water", "classroom"],
       user_status: ["active", "disabled"],
     },

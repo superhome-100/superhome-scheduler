@@ -39,7 +39,31 @@
 
     const rawNick = (reservation.nickname ?? "").trim();
     const rawName = (reservation.name ?? "").trim();
-    const baseName = rawNick || rawName || "Unknown";
+    const profileNick = (reservation as any)?.user_profiles?.nickname ? String((reservation as any).user_profiles.nickname).trim() : "";
+    const profileName = (reservation as any)?.user_profiles?.name ? String((reservation as any).user_profiles.name).trim() : "";
+
+    // Try direct values first
+    let baseName = rawNick || rawName || profileNick || profileName || "";
+
+    // Last-resort fallback for non-admin user view: attempt to pair the reservation.uid with
+    // the buoyGroup's member_uids/member_names arrays (populated from public RPC) to resolve a name.
+    if (!baseName) {
+      const uids: string[] = Array.isArray((buoyGroup as any)?.member_uids)
+        ? ((buoyGroup as any).member_uids as string[])
+        : [];
+      const names: (string | null)[] = Array.isArray((buoyGroup as any)?.member_names)
+        ? ((buoyGroup as any).member_names as (string | null)[])
+        : [];
+      if (uids.length && names.length) {
+        const idx = uids.indexOf(reservation.uid);
+        if (idx >= 0) {
+          const n = (names[idx] ?? '').toString().trim();
+          if (n) baseName = n;
+        }
+      }
+    }
+
+    baseName = baseName || "Unknown";
 
     // Real reservations (admin path): use per-reservation student_count for +N
     const isSynthetic = reservation.reservation_id === -1;

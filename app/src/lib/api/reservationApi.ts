@@ -124,9 +124,10 @@ export class ReservationApi {
   async updateReservationStatus(
     uid: string,
     res_date: string,
-    status: 'pending' | 'confirmed' | 'rejected'
+    status: 'pending' | 'confirmed' | 'rejected' | 'cancelled'
   ): Promise<ServiceResponse<CompleteReservation>> {
-    return this.updateReservation(uid, res_date, { res_status: status });
+    // Cast to any temporarily until Supabase types are regenerated with 'cancelled'
+    return this.updateReservation(uid, res_date, { res_status: status as any });
   }
 
   /**
@@ -134,10 +135,10 @@ export class ReservationApi {
    */
   async bulkUpdateStatus(
     reservations: Array<{ uid: string; res_date: string }>,
-    status: 'pending' | 'confirmed' | 'rejected'
+    status: 'pending' | 'confirmed' | 'rejected' | 'cancelled'
   ): Promise<ServiceResponse<number>> {
     try {
-      return await reservationService.bulkUpdateStatus(reservations, status);
+      return await reservationService.bulkUpdateStatus(reservations, status as any);
     } catch (error) {
       return {
         success: false,
@@ -178,11 +179,11 @@ export class ReservationApi {
    * Get reservations by status
    */
   async getReservationsByStatus(
-    status: 'pending' | 'confirmed' | 'rejected',
+    status: 'pending' | 'confirmed' | 'rejected' | 'cancelled',
     options: Omit<ReservationQueryOptions, 'res_status'> = {}
   ): Promise<ServiceResponse<CompleteReservation[]>> {
     try {
-      return await reservationService.getReservationsByStatus(status, options);
+      return await reservationService.getReservationsByStatus(status as any, options);
     } catch (error) {
       return {
         success: false,

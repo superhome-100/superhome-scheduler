@@ -5,7 +5,7 @@ import { supabase } from '../utils/supabase';
 
 // Enforce strict typing using generated enums from Database
 export type ReservationType = Database['public']['Enums']['reservation_type'];
-export type ReservationStatus = Database['public']['Enums']['reservation_status'];
+export type ReservationStatus = Database['public']['Enums']['reservation_status'] | 'cancelled';
 
 // Use dependency injection for supabase client for better testability and reusability
 // Example: pass supabase client as a parameter to service functions
@@ -447,7 +447,7 @@ class ReservationService {
       const payload: any = { uid, res_date };
       if (updateData.res_status || updateData.res_date || typeof updateData.price === 'number') {
         payload.parent = {
-          ...(updateData.res_status ? { res_status: updateData.res_status } : {}),
+          ...(updateData.res_status ? { res_status: updateData.res_status as any } : {}),
           ...(updateData.res_date ? { res_date: updateData.res_date } : {}),
           ...(typeof updateData.price === 'number' ? { price: updateData.price } : {})
         };
@@ -496,11 +496,11 @@ class ReservationService {
    */
   async bulkUpdateStatus(
     reservations: Array<{ uid: string; res_date: string }>,
-    status: ReservationStatus
+    status: Exclude<ReservationStatus, 'cancelled'>
   ): Promise<ServiceResponse<number>> {
     try {
       const { data, error } = await callFunction<
-        { reservations: Array<{ uid: string; res_date: string }>; status: ReservationStatus },
+        { reservations: Array<{ uid: string; res_date: string }>; status: Exclude<ReservationStatus, 'cancelled'> },
         { updated: number; errors?: string[] }
       >('reservations-bulk-status', { reservations, status });
 

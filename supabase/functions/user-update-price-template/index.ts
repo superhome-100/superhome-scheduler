@@ -1,15 +1,13 @@
-// Supabase Edge Function: user-update-privileges
-// - Admin-only update of user_profiles.privileges
-// - Deno runtime (TypeScript)
+// Supabase Edge Function: user-update-price-template
+// - Admin-only update of user_profiles.price_template_name
+// - Uses service role for write per project Edge Functions rule
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
 
-type Privilege = string
-
 interface Payload {
   uid: string
-  privileges: Privilege[]
+  price_template_name: string
 }
 
 function json(body: unknown, init: ResponseInit = {}) {
@@ -21,7 +19,6 @@ function json(body: unknown, init: ResponseInit = {}) {
 
 Deno.serve(async (req: Request) => {
   try {
-    // Handle CORS preflight
     const pre = handlePreflight(req)
     if (pre) return pre
 
@@ -32,18 +29,25 @@ Deno.serve(async (req: Request) => {
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return json({ error: 'Server not configured' }, { status: 500 })
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
+      return json({ error: 'Server not configured' }, { status: 500 })
+    }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    // Caller-bound client for identity and admin checks
+    const supabaseUser = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } }
     })
 
-    const { data: userRes } = await supabase.auth.getUser()
+    // Service client for privileged write (bypass RLS for CUD as per rules)
+    const supabaseService = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+    const { data: userRes } = await supabaseUser.auth.getUser()
     const user = userRes?.user
     if (!user) return json({ error: 'Unauthorized' }, { status: 401 })
 
     // Admin check
-    const { data: profile, error: profileErr } = await supabase
+    const { data: profile, error: profileErr } = await supabaseUser
       .from('user_profiles')
       .select('privileges')
       .eq('uid', user.id)
@@ -53,14 +57,25 @@ Deno.serve(async (req: Request) => {
     if (!isAdmin) return json({ error: 'Forbidden' }, { status: 403 })
 
     const body = (await req.json()) as Payload
-    if (!body?.uid || !Array.isArray(body?.privileges)) return json({ error: 'Invalid payload' }, { status: 400 })
+    if (!body || typeof body.uid !== 'string' || typeof body.price_template_name !== 'string') {
+      return json({ error: 'Invalid payload' }, { status: 400 })
+    }
 
-    // Normalize privileges to strings and remove duplicates
-    const privileges = Array.from(new Set((body.privileges || []).map(String)))
+    const name = body.price_template_name.trim()
+    if (!name) return json({ error: 'price_template_name is required' }, { status: 400 })
 
-    const { error } = await supabase
+    // Validate template exists
+    const { data: tpl, error: tplErr } = await supabaseUser
+      .from('price_templates')
+      .select('name')
+      .eq('name', name)
+      .single()
+    if (tplErr || !tpl) return json({ error: 'Invalid price_template_name' }, { status: 400 })
+
+    // Perform the update using service role
+    const { error } = await supabaseService
       .from('user_profiles')
-      .update({ privileges, updated_at: new Date().toISOString() })
+      .update({ price_template_name: name, updated_at: new Date().toISOString() })
       .eq('uid', body.uid)
 
     if (error) return json({ error: error.message }, { status: 500 })

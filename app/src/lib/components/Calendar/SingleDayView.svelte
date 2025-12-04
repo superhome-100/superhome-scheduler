@@ -42,6 +42,8 @@
     boat: string | null;
     // Prefer normalized arrays of member UIDs from RPC
     member_uids?: string[] | null;
+    // Optional parallel array of member display names from RPC (public)
+    member_names?: (string | null)[] | null;
     // Back-compat: some callers may still expect res_openwater with uid objects
     res_openwater?: Array<{ uid: string }>;
     boat_count?: number | null;
@@ -113,11 +115,44 @@
     );
 
     // For admins (and when we have joined reservations), use the full reservation rows as-is.
-    if (isAdmin || joinedReservations.length > 0) {
+    if (isAdmin) {
       return {
         ...bg,
         reservations: joinedReservations,
       } as BuoyGroupWithReservations;
+    }
+
+    // For non-admins: if joined reservations are available, enrich each with a display nickname
+    // resolved from group.member_names or the prebuilt openWaterDisplayNamesByUid map. This avoids
+    // relying on user_profiles join which may be blocked by RLS for other users.
+    if (joinedReservations.length > 0) {
+      const uids: string[] = Array.isArray(bg.member_uids) ? bg.member_uids : [];
+      const names: (string | null)[] = Array.isArray(bg.member_names) ? bg.member_names : [];
+      const byUidName = new Map<string, string>();
+      // Prefer map from user_profiles
+      for (const u of uids) {
+        const nFromMap = (openWaterDisplayNamesByUid.get(u) ?? '').toString().trim();
+        if (u && nFromMap) byUidName.set(u, nFromMap);
+      }
+      // Fill gaps from RPC member_names if needed (best-effort index pairing)
+      for (let i = 0; i < Math.min(uids.length, names.length); i++) {
+        const u = uids[i];
+        if (byUidName.has(u)) continue;
+        const n = (names[i] ?? '').toString().trim();
+        if (u && n) byUidName.set(u, n);
+      }
+      const enriched = joinedReservations.map((r) => {
+        const currentNick = (r as any)?.nickname ? String((r as any).nickname).trim() : '';
+        const currentName = (r as any)?.name ? String((r as any).name).trim() : '';
+        if (currentNick || currentName) return r;
+        const fromGroup = byUidName.get(r.uid);
+        const fromRes = (reservationNamesByUid.get(r.uid) ?? '').toString().trim();
+        const fromMap = (openWaterDisplayNamesByUid.get(r.uid) ?? '').toString().trim();
+        const display = (fromGroup && fromGroup.trim()) || (fromRes && fromRes.trim()) || (fromMap && fromMap.trim()) || '';
+        if (!display) return r;
+        return { ...r, nickname: display } as OpenWaterReservationView;
+      });
+      return { ...bg, reservations: enriched } as BuoyGroupWithReservations;
     }
 
     // For non-admins, synthesize minimal reservation views from buoy group member data
@@ -125,6 +160,7 @@
     const memberStatuses = Array.isArray(bg.member_statuses)
       ? bg.member_statuses
       : [];
+    const memberNames = Array.isArray(bg.member_names) ? bg.member_names : [];
 
     const syntheticReservations: OpenWaterReservationView[] = memberUids.map(
       (uid, index) => ({
@@ -133,7 +169,11 @@
         res_date: bg.res_date,
         res_type: "open_water",
         res_status: (memberStatuses[index] as any) ?? ("pending" as any),
-        nickname: openWaterDisplayNamesByUid.get(uid) ?? "",
+        // Prefer map-based lookup (user_profiles), fallback to RPC member_names as last resort
+        nickname:
+          (openWaterDisplayNamesByUid.get(uid) ?? "").toString().trim() !== ""
+            ? (openWaterDisplayNamesByUid.get(uid) as string)
+            : (String(memberNames[index] ?? "")),
         name: "",
         group_id: bg.id,
         time_period: bg.time_period,
@@ -307,7 +347,26 @@
     (r) => r.res_type === "open_water" && r.res_status !== "rejected"
   ) as OpenWaterReservationView[];
 
-  // Only show approved and plotted Pool reservations (confirmed with start/end and assigned lane)
+  // Build a fast uid -> display name map from the loaded reservations themselves
+  // Prefer nickname, then name, then joined user_profiles nickname/name.
+  $: reservationNamesByUid = (() => {
+    const map = new Map<string, string>();
+    for (const r of openWaterReservations || []) {
+      const nick = (r as any)?.nickname ? String((r as any).nickname).trim() : "";
+      const nm = (r as any)?.name ? String((r as any).name).trim() : "";
+      const upNick = (r as any)?.user_profiles?.nickname
+        ? String((r as any).user_profiles.nickname).trim()
+        : "";
+      const upName = (r as any)?.user_profiles?.name
+        ? String((r as any).user_profiles.name).trim()
+        : "";
+      const display = nick || nm || upNick || upName || "";
+      if (display) map.set(r.uid, display);
+    }
+    return map;
+  })();
+
+  // Only show approved Pool reservations with defined times (lane may be provisional in UI)
   $: approvedPlottedPoolReservations = filteredReservations.filter((r) => {
     if (selectedCalendarType !== ReservationType.pool) return false;
     if (r.res_type !== "pool") return false;
@@ -315,13 +374,7 @@
     // Support both admin (joined res_pool) and user (flattened fields) data shapes
     const start = r?.res_pool?.start_time ?? r?.start_time ?? null;
     const end = r?.res_pool?.end_time ?? r?.end_time ?? null;
-    const lane = r?.res_pool?.lane ?? r?.lane ?? null;
-    const hasTimetable =
-      !!start &&
-      !!end &&
-      lane !== null &&
-      lane !== undefined &&
-      String(lane) !== "";
+    const hasTimetable = !!start && !!end;
     return approved && hasTimetable;
   });
 
@@ -390,8 +443,36 @@
         pm = pmData ?? [];
       }
 
-      // Rebuild UID -> display name map from RPC payloads (admin + non-admin)
+      // Build UID -> display name map using user_profiles for ALL member_uids
+      // to avoid any potential index misalignment between RPC member_uids/member_names arrays.
       const displayNameMap = new Map<string, string | null>();
+      const allUids: string[] = Array.from(
+        new Set(
+          [...am, ...pm].flatMap((g: any) =>
+            Array.isArray(g.member_uids) ? (g.member_uids as string[]) : []
+          )
+        )
+      );
+      if (allUids.length > 0) {
+        try {
+          const { data: profiles, error: profilesErr } = await supabase
+            .from("user_profiles")
+            .select("uid, name, nickname")
+            .in("uid", allUids);
+          if (!profilesErr && Array.isArray(profiles)) {
+            for (const p of profiles as Array<{ uid: string; name: string | null; nickname: string | null }>) {
+              const display = ((p.nickname ?? p.name) ?? "").trim();
+              if (p.uid && display) displayNameMap.set(p.uid, display);
+            }
+          }
+        } catch (e) {
+          // Non-fatal: keep whatever names we have
+          console.warn("Failed to backfill user names for Open Water groups", e);
+        }
+      }
+
+      // As a final fallback, use RPC member_names by attempting to pair indices only when
+      // there is no entry from user_profiles. This is best-effort and covers rare gaps.
       for (const g of [...am, ...pm]) {
         const uids: string[] = Array.isArray(g.member_uids) ? g.member_uids : [];
         const names: (string | null)[] = Array.isArray(g.member_names)
@@ -400,19 +481,22 @@
         const len = Math.min(uids.length, names.length);
         for (let i = 0; i < len; i += 1) {
           const uid = uids[i];
+          if (displayNameMap.has(uid)) continue;
           const raw = names[i];
           const name = (raw ?? "").trim();
-          if (uid && name) {
-            displayNameMap.set(uid, name);
-          }
+          if (uid && name) displayNameMap.set(uid, name);
         }
       }
+
       openWaterDisplayNamesByUid = displayNameMap;
 
       // Merge to one array and coerce time_period to typed TimePeriod
       buoyGroups = [...am, ...pm].map((g: any) => {
         const member_uids: string[] | null = Array.isArray(g.member_uids)
           ? g.member_uids
+          : null;
+        const member_names: (string | null)[] | null = Array.isArray(g.member_names)
+          ? g.member_names
           : null;
         // Provide res_openwater for compatibility with existing code paths
         const res_openwater = member_uids
@@ -426,6 +510,7 @@
           buoy_name: g.buoy_name ?? null,
           boat: g.boat ?? null,
           member_uids,
+          member_names,
           res_openwater,
           boat_count: typeof g.boat_count === "number" ? g.boat_count : null,
           open_water_type: g.open_water_type ?? null,
@@ -635,7 +720,12 @@
     <SingleDayHeader
       {selectedDate}
       on:back={handleBackToCalendar}
-      on:changeDate={(e) => (selectedDate = e.detail)}
+      on:changeDate={(e) => {
+        const d = String(e.detail);
+        // Keep current selection context and navigate so route reloads data
+        const type = selectedCalendarType || ReservationType.openwater;
+        goto(`/reservation/${type}/${d}`);
+      }}
     />
   {/if}
 
@@ -660,6 +750,7 @@
         reservations={approvedPlottedPoolReservations}
         currentUserId={$authStore.user?.id}
         {isAdmin}
+        on:editReservation={(e) => dispatch('editReservation', e.detail)}
       />
     {:else if selectedCalendarType === "openwater"}
       <!-- OPEN WATER CALENDAR: Admin sees editable tables; Users see read-only tables with Boat/Buoy/Divers group -->
@@ -684,6 +775,7 @@
         reservations={approvedClassroomReservations}
         currentUserId={$authStore.user?.id}
         {isAdmin}
+        on:editReservation={(e) => dispatch('editReservation', e.detail)}
       />
     {/if}
   </div>

@@ -130,3 +130,87 @@ export function getTimeUntilCutoff(
   
   return { hours, minutes, totalMinutes };
 }
+
+/**
+ * Helpers for modification vs cancellation cutoffs
+ * These mirror legacy behavior:
+ * - Modification cutoff:
+ *   - Pool/Classroom: any time before the reservation start time
+ *   - Open Water: 6 PM the day before
+ * - Cancellation cutoff:
+ *   - Pool/Classroom: at least 60 minutes before start
+ *   - Open Water: 6 PM the day before (approximation without per-day settings)
+ */
+export function isBeforeModificationCutoff(
+  res_type: ReservationType,
+  reservationDateISO: string,
+  startTime?: string,
+  timeOfDay?: 'AM' | 'PM'
+): boolean {
+  const now = new Date();
+  if (res_type === 'open_water') {
+    // Determine day/time using timeOfDay when provided
+    const base = new Date(reservationDateISO);
+    if (timeOfDay) {
+      const datePart = new Date(base);
+      const dayISO = `${datePart.toISOString().slice(0,10)}`;
+      const t = timeOfDay === 'PM' ? '13:00' : '08:00';
+      const dt = new Date(`${dayISO}T${t}:00.000Z`);
+      return now < getCutoffTime('open_water', dt.toISOString());
+    }
+    return now < getCutoffTime('open_water', reservationDateISO);
+  }
+  // Pool/Classroom: before actual start time
+  if (!startTime) return true; // if unknown, be permissive for UI
+  const dt = new Date(`${new Date(reservationDateISO).toISOString().slice(0,10)}T${startTime}`);
+  return now < dt;
+}
+
+export function isBeforeCancelCutoff(
+  res_type: ReservationType,
+  reservationDateISO: string,
+  startTime?: string,
+  timeOfDay?: 'AM' | 'PM'
+): boolean {
+  const now = new Date();
+  if (res_type === 'open_water') {
+    // Approximate to 6 PM the day before without settings manager
+    const baseISO = (() => {
+      if (timeOfDay) {
+        const day = new Date(reservationDateISO).toISOString().slice(0,10);
+        const t = timeOfDay === 'PM' ? '13:00' : '08:00';
+        return new Date(`${day}T${t}:00.000Z`).toISOString();
+      }
+      return reservationDateISO;
+    })();
+    return now < getCutoffTime('open_water', baseISO);
+  }
+  // Pool/Classroom: 60 minutes before start
+  if (!startTime) {
+    // If start time is unknown in the client context, allow the cancel action
+    // and let the server perform the authoritative cutoff validation.
+    return true;
+  }
+  const day = new Date(reservationDateISO).toISOString().slice(0,10);
+  const start = new Date(`${day}T${startTime}`);
+  const cancelCutoff = new Date(start);
+  cancelCutoff.setMinutes(cancelCutoff.getMinutes() - 60);
+  return now < cancelCutoff;
+}
+
+export type EditPhase = 'before_mod_cutoff' | 'between_mod_and_cancel' | 'after_cancel_cutoff';
+
+/**
+ * Compute the current edit phase relative to modification and cancel cutoffs.
+ */
+export function getEditPhase(
+  res_type: ReservationType,
+  reservationDateISO: string,
+  startTime?: string,
+  timeOfDay?: 'AM' | 'PM'
+): EditPhase {
+  const beforeMod = isBeforeModificationCutoff(res_type, reservationDateISO, startTime, timeOfDay);
+  if (beforeMod) return 'before_mod_cutoff';
+  const beforeCancel = isBeforeCancelCutoff(res_type, reservationDateISO, startTime, timeOfDay);
+  return beforeCancel ? 'between_mod_and_cancel' : 'after_cancel_cutoff';
+}

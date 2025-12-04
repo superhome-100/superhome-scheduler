@@ -5,6 +5,7 @@
 
   export let formData: any;
   export let errors: Record<string, string> = {};
+  export let disableType: boolean = false;
 
   const dispatch = createEventDispatcher();
 
@@ -77,6 +78,7 @@
     class:error={errors.type}
     bind:value={formData.type}
     on:change={handleTypeChange}
+    disabled={disableType}
     required
   >
     {#each reservationTypes as type}

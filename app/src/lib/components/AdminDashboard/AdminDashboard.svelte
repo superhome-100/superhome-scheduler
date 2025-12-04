@@ -19,6 +19,7 @@
   import AdminSectionSwitcher from './AdminSectionSwitcher.svelte';
   import AdminUserReservations from './AdminUserReservations.svelte';
   import BodyContent from '../Layout/BodyContent.svelte';
+  import { priceTemplatesApi } from '../../api/priceTemplatesApi';
 
   let users: any[] = [];
   let reservations: any[] = [];
@@ -31,6 +32,7 @@
   // Centered error modal for reservation action errors
   let errorModalOpen = false;
   let errorModalMessage = '';
+  let priceTemplates: Array<{ name: string; description: string | null; created_at: string }> = [];
 
   // Handle pull-to-refresh
   const handleRefresh = async () => {
@@ -162,6 +164,15 @@
       }
 
       console.log('AdminDashboard: Successfully loaded users:', usersData?.length || 0);
+
+      // Load price templates for dropdowns
+      try {
+        const tplRes = await priceTemplatesApi.listTemplates();
+        priceTemplates = tplRes.success ? tplRes.data : [];
+      } catch (tplErr) {
+        console.warn('AdminDashboard: Failed to load price templates', tplErr);
+        priceTemplates = [];
+      }
 
       // Load reservations with user info
       let reservationsData: any[] = [];
@@ -349,6 +360,18 @@
     }
   };
 
+  // Update user subscriber type via Edge Function
+  const updateUserSubscriberType = async (uid: string, price_template_name: string) => {
+    try {
+      const res = await userAdminService.updatePriceTemplate(uid, price_template_name);
+      if (!res.success) throw new Error(res.error || 'Failed to update subscriber type');
+      await loadAdminData();
+    } catch (err) {
+      console.error('Error updating subscriber type:', err);
+      error = err instanceof Error ? err.message : 'Failed to update subscriber type';
+    }
+  };
+
   // Determine admin view based on current view
   $: {
     if (typeof window !== 'undefined') {
@@ -433,10 +456,12 @@
           <UserManagement 
             {users}
             {stats}
+            {priceTemplates}
             on:refresh={handleRefresh}
             on:toggleUserStatus={(e: any) => toggleUserStatus(e.detail.uid, e.detail.currentStatus)}
             on:toggleUserPrivilege={(e: any) => toggleUserPrivilege(e.detail.uid, e.detail.currentPrivileges)}
             on:updateNickname={(e: any) => updateUserNickname(e.detail.uid, e.detail.nickname)}
+            on:updateSubscriberType={(e: any) => updateUserSubscriberType(e.detail.uid, e.detail.price_template_name)}
           />
         {/if}
       {/if}

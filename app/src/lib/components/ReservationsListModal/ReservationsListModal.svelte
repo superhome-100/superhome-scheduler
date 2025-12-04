@@ -70,6 +70,7 @@
           <ReservationList 
             {reservations} 
             {showDetails}
+            showPrice={variant === 'completed'}
             on:reservationClick={handleReservationClick}
             on:delete={handleDelete}
           />

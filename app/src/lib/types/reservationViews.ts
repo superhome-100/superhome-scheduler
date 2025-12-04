@@ -1,5 +1,12 @@
 import type { CompleteReservation } from '$lib/services/reservationService';
 
+// Minimal profile shape carried with reservations for display names
+export type MinimalUserProfile = {
+  id?: string;
+  nickname?: string | null;
+  name?: string | null;
+};
+
 export type BaseReservationView = {
   reservation_id: CompleteReservation['reservation_id'];
   uid: CompleteReservation['uid'];
@@ -8,8 +15,7 @@ export type BaseReservationView = {
   res_status: CompleteReservation['res_status'];
   title?: string | null;
   description?: string | null;
-  nickname: string;
-  name: string;
+  user_profiles?: MinimalUserProfile | null; // owner profile for display
 };
 
 export type PoolReservationView = BaseReservationView & {
