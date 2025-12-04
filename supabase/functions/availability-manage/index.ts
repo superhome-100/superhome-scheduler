@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders } from '../_shared/cors.ts';
+import { corsHeaders, handlePreflight } from '../_shared/cors.ts';
 
 interface AvailabilityRequest {
   action: 'create' | 'update' | 'delete' | 'get';
@@ -15,9 +15,8 @@ interface AvailabilityRequest {
 
 serve(async (req) => {
   // Handle CORS
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  const pre = handlePreflight(req);
+  if (pre) return pre;
 
   try {
     // Create Supabase client
