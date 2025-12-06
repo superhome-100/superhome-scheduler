@@ -4,6 +4,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
+import { findAvailablePoolLane } from '../_shared/poolLane.ts'
 
 // Cut-off rules (same as cutoffRules.ts)
 const CUTOFF_RULES = {
@@ -76,54 +77,7 @@ async function findAvailableRoom(
   return null;
 }
 
-// ---- Pool lane auto-assignment helpers ----
-function timeToMinutes(t: string | null): number {
-  if (!t) return -1;
-  const [h, m] = t.split(':').map(Number);
-  return h * 60 + m;
-}
-
-function overlaps(aStart: string | null, aEnd: string | null, bStart: string | null, bEnd: string | null): boolean {
-  const aS = timeToMinutes(aStart);
-  const aE = timeToMinutes(aEnd);
-  const bS = timeToMinutes(bStart);
-  const bE = timeToMinutes(bEnd);
-  if (aS < 0 || aE < 0 || bS < 0 || bE < 0) return false;
-  return aS < bE && aE > bS;
-}
-
-async function findAvailableLane(
-  supabase: any,
-  uid: string,
-  res_date_iso: string,
-  start_time: string | null,
-  end_time: string | null
-): Promise<string | null> {
-  // Fetch existing pool reservations for the same date
-  const { data, error } = await supabase
-    .from('res_pool')
-    .select('lane, start_time, end_time')
-    .eq('res_date', res_date_iso);
-
-  if (error) {
-    console.error('Error fetching existing pool reservations:', error);
-    return null;
-  }
-
-  const occupiedByLane: Record<string, boolean> = {};
-  for (const row of data || []) {
-    if (row.lane && overlaps(row.start_time, row.end_time, start_time, end_time)) {
-      occupiedByLane[row.lane] = true;
-    }
-  }
-
-  // Lanes 1..8
-  for (let lane = 1; lane <= 8; lane++) {
-    const key = String(lane);
-    if (!occupiedByLane[key]) return key;
-  }
-  return null;
-}
+// Pool lane auto-assignment helpers are shared in _shared/poolLane.ts
 
 function isBeforeCutoff(reservationDate: string, res_type: ReservationType): boolean {
   const resDate = new Date(reservationDate)
@@ -623,9 +577,15 @@ Deno.serve(async (req: Request) => {
 
     const res_date_iso = new Date(body.res_date).toISOString()
 
+    // Pool reservations are auto-approved on creation; others default to pending unless explicitly set
+    const initialStatus: 'pending' | 'confirmed' | 'rejected' =
+      body.res_type === 'pool' || body.res_type === 'classroom'
+        ? 'confirmed'
+        : (body.res_status || 'pending')
+
     const { data: parent, error: parentError } = await supabase
       .from('reservations')
-      .insert({ uid: body.uid, res_date: res_date_iso, res_type: body.res_type, res_status: body.res_status || 'pending' })
+      .insert({ uid: body.uid, res_date: res_date_iso, res_type: body.res_type, res_status: initialStatus })
       .select('*')
       .single()
 
@@ -635,14 +595,62 @@ Deno.serve(async (req: Request) => {
     switch (body.res_type) {
       case 'pool':
         if (body.pool && parent?.reservation_id != null) {
-          // Do not auto-assign lane on creation; handled on admin approval
-          const { error } = await supabase.from('res_pool').insert({
+          // Auto-assign lane on creation using shared helper (service role sees all pool reservations)
+          let lane: string | null =
+            (body.pool as any).lane != null ? String((body.pool as any).lane) : null;
+
+          const startTime = body.pool.start_time ?? null;
+          const endTime = body.pool.end_time ?? null;
+
+          if (!lane && startTime && endTime) {
+            try {
+              const autoLane = await findAvailablePoolLane(
+                { supabase: serviceSupabase },
+                {
+                  resDateIso: res_date_iso,
+                  startTime,
+                  endTime,
+                  excludeUid: body.uid,
+                  poolType: body.pool.pool_type ?? null,
+                  studentCount: body.pool.student_count ?? null,
+                  totalLanes: 8,
+                },
+              );
+              if (autoLane) {
+                lane = autoLane;
+                console.log('[reservations-create] Auto-assigned pool lane', {
+                  uid: body.uid,
+                  res_date: res_date_iso,
+                  start_time: startTime,
+                  end_time: endTime,
+                  lane: autoLane,
+                });
+              } else {
+                console.warn('[reservations-create] No pool lane available during auto-assign; inserting without lane', {
+                  uid: body.uid,
+                  res_date: res_date_iso,
+                  start_time: startTime,
+                  end_time: endTime,
+                });
+              }
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : String(err);
+              console.error('[reservations-create] Error while auto-assigning pool lane:', msg);
+            }
+          }
+
+          const insertPayload: any = {
             reservation_id: parent.reservation_id,
             uid: body.uid,
             res_date: res_date_iso,
             ...body.pool,
-          })
-          detailError = error
+          };
+          if (lane) {
+            insertPayload.lane = lane;
+          }
+
+          const { error } = await supabase.from('res_pool').insert(insertPayload);
+          detailError = error;
         }
         break
       case 'classroom':
