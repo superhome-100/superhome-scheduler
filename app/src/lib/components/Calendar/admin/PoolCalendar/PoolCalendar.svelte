@@ -228,14 +228,9 @@
                 tabindex="0"
                 aria-label="View pool reservation details"
               >
-                <div class="flex items-center gap-2 justify-between">
-                  <div class="font-medium truncate">
+                <div class="flex items-center justify-center">
+                  <div class="font-medium truncate text-center">
                     {getDisplayLabel(reservation)}
-                  </div>
-                  <div
-                    class="shrink-0 text-[10px] sm:text-xs text-base-content/70"
-                  >
-                    {getStartHHmm(reservation)}–{getEndHHmm(reservation)}
                   </div>
                 </div>
               </div>

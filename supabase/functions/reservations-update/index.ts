@@ -5,6 +5,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
 import { MSG_NO_POOL_LANES, MSG_NO_CLASSROOMS } from '../_shared/strings.ts'
+import { findAvailablePoolLane, poolSpanWidth } from '../_shared/poolLane.ts'
 
 // Cut-off rules (same as cutoffRules.ts)
 const CUTOFF_RULES = {
@@ -168,88 +169,7 @@ function getCutoffDescription(res_type: ReservationType): string {
   return CUTOFF_RULES[res_type].description
 }
 
-// ---- Pool lane auto-assignment helpers (mirror create) ----
-function timeToMinutes(t: string | null): number {
-  if (!t) return -1;
-  const [h, m] = t.split(':').map(Number);
-  return h * 60 + m;
-}
-
-function overlaps(aStart: string | null, aEnd: string | null, bStart: string | null, bEnd: string | null): boolean {
-  const aS = timeToMinutes(aStart);
-  const aE = timeToMinutes(aEnd);
-  const bS = timeToMinutes(bStart);
-  const bE = timeToMinutes(bEnd);
-  if (aS < 0 || aE < 0 || bS < 0 || bE < 0) return false;
-  return aS < bE && aE > bS;
-}
-
-// Compute how many contiguous lanes a reservation occupies
-function poolSpanWidth(pool_type: string | null | undefined, student_count: number | null | undefined, totalLanes: number): number {
-  if (pool_type === 'course_coaching') {
-    const sc = typeof student_count === 'number' && Number.isFinite(student_count) ? student_count : 0
-    const width = 1 + Math.max(0, sc)
-    return Math.max(1, Math.min(width, totalLanes))
-  }
-  return 1
-}
-
-async function findAvailableLane(
-  supabase: any,
-  res_date_iso: string,
-  start_time: string | null,
-  end_time: string | null,
-  excludeUid: string,
-  requiredSpan: number,
-  totalLanes: number = 8
-): Promise<string | null> {
-  // Fetch pool reservations for the day via parent to respect status
-  // IMPORTANT: compute day bounds using date-only to avoid timezone skew
-  const dateOnly = String(res_date_iso).split('T')[0]
-  const from = `${dateOnly} 00:00:00+00`
-  const to = `${dateOnly} 23:59:59+00`
-  const { data, error } = await supabase
-    .from('reservations')
-    .select('uid, res_status, res_pool(lane, start_time, end_time, pool_type, student_count)')
-    .eq('res_type', 'pool')
-    .in('res_status', ['pending', 'confirmed'])
-    .gte('res_date', from)
-    .lt('res_date', to)
-
-  if (error) {
-    console.error('Error fetching pool reservations for occupancy:', error)
-    return null
-  }
-
-  const occupied: Set<string> = new Set()
-  for (const row of data || []) {
-    if (!row || (row as any).uid === excludeUid) continue
-    const rp = (row as any).res_pool
-    if (!rp) continue
-    const lane = rp.lane as string | null
-    const s = rp.start_time as string | null
-    const e = rp.end_time as string | null
-    if (!lane) continue
-    if (!overlaps(s, e, start_time, end_time)) continue
-    const rowSpan = poolSpanWidth(rp.pool_type as string | null, rp.student_count as number | null, totalLanes)
-    const startLaneNum = parseInt(String(lane), 10)
-    if (!Number.isFinite(startLaneNum)) continue
-    for (let l = startLaneNum; l < startLaneNum + rowSpan && l <= totalLanes; l++) {
-      occupied.add(String(l))
-    }
-  }
-
-  // Find first contiguous block of requiredSpan free lanes
-  const span = Math.max(1, Math.min(requiredSpan, totalLanes));
-  for (let startLane = 1; startLane + span - 1 <= totalLanes; startLane++) {
-    let free = true;
-    for (let l = startLane; l < startLane + span; l++) {
-      if (occupied.has(String(l))) { free = false; break; }
-    }
-    if (free) return String(startLane);
-  }
-  return null;
-}
+// Pool lane auto-assignment helpers are shared in _shared/poolLane.ts
 
 async function checkAvailability(supabase: any, date: string, res_type: ReservationType, subtype?: string): Promise<{ isAvailable: boolean; reason?: string }> {
   try {
@@ -698,21 +618,29 @@ Deno.serve(async (req: Request) => {
         if (poolErr) return json({ error: poolErr.message }, { status: 400 });
         const hasLane = !!(poolRow?.lane && poolRow.lane !== '');
         if (!hasLane) {
-          const requiredSpan = poolSpanWidth(poolRow?.pool_type ?? null, poolRow?.student_count as number | null, 8)
+          const requiredSpan = poolSpanWidth(
+            poolRow?.pool_type ?? null,
+            poolRow?.student_count as number | null,
+            8,
+          );
           console.log('[reservations-update] Approve pool: seeking lane', {
             date: detailResDateKey,
             start: poolRow?.start_time,
             end: poolRow?.end_time,
-            requiredSpan
-          })
-          const lane = await findAvailableLane(
-            supabase,
-            detailResDateKey,
-            poolRow?.start_time ?? null,
-            poolRow?.end_time ?? null,
-            body.uid,
             requiredSpan,
-            8
+          });
+
+          const lane = await findAvailablePoolLane(
+            { supabase },
+            {
+              resDateIso: detailResDateKey,
+              startTime: poolRow?.start_time ?? null,
+              endTime: poolRow?.end_time ?? null,
+              excludeUid: body.uid,
+              poolType: poolRow?.pool_type ?? null,
+              studentCount: poolRow?.student_count as number | null,
+              totalLanes: 8,
+            },
           );
           if (lane) {
             const { error } = await (admin || supabase)
