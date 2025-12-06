@@ -74,6 +74,26 @@
     formData.buddies = [];
   }
 
+  // When selecting Course/Coaching in Pool, buddies are not applicable
+  $: if (
+    formData.type === "pool" &&
+    formData.poolType === "course_coaching" &&
+    Array.isArray(formData.buddies) &&
+    formData.buddies.length > 0
+  ) {
+    formData.buddies = [];
+  }
+
+  // When selecting Course/Coaching in Classroom, buddies are not applicable
+  $: if (
+    formData.type === "classroom" &&
+    formData.classroomType === "course_coaching" &&
+    Array.isArray(formData.buddies) &&
+    formData.buddies.length > 0
+  ) {
+    formData.buddies = [];
+  }
+
   // Trigger validation when form data changes
   $: if (formData.date && formData.type) {
     const { errors: validationErrors } = validateForm(formData);
@@ -190,9 +210,9 @@
     checkCapacityClient();
   }
 
-  // When classroom capacity is blocked, surface a toast immediately
-  $: if (capacityBlocked && capacityKind === "classroom" && capacityMessage) {
-    showErrorToast(capacityMessage);
+  // When capacity is blocked, surface a non-blocking toast to inform user it will go to manual approval
+  $: if (capacityBlocked && capacityMessage) {
+    showErrorToast(`${capacityMessage} — your request can still be submitted and will wait for admin approval.`);
   }
 
   // Form validation and loading state
@@ -252,12 +272,7 @@
     submitAttempted = true;
     noLaneError = false;
     noRoomError = false;
-    // Also surface capacity blocked error immediately
-    if (capacityBlocked && capacityMessage) {
-      submitError = capacityMessage;
-      scrollToTop();
-      return;
-    }
+    // Capacity blocked no longer prevents submission; it will create a pending request server-side
 
     if (!validateFormData()) return;
     if (!$authStore.user) {
@@ -378,9 +393,16 @@
           res_type: dbResType,
           res_date: reservationDateTime.toISOString(),
           res_status: "pending",
-          buddies: Array.isArray(formData.buddies) && formData.buddies.length
-            ? [...formData.buddies]
-            : undefined,
+          buddies: (() => {
+            const isCoaching =
+              (submissionData.type === "openwater" && formData.openWaterType === "course_coaching") ||
+              (submissionData.type === "pool" && formData.poolType === "course_coaching") ||
+              (submissionData.type === "classroom" && formData.classroomType === "course_coaching");
+            if (isCoaching) return undefined;
+            return Array.isArray(formData.buddies) && formData.buddies.length
+              ? [...formData.buddies]
+              : undefined;
+          })(),
         };
 
         if (submissionData.type === "pool") {
@@ -697,8 +719,12 @@
           <EquipmentOptions bind:formData />
         {/if}
 
-        <!-- Buddy Selection (hidden for Open Water Course/Coaching) -->
-        {#if !(formData.type === "openwater" && formData.openWaterType === "course_coaching")}
+        <!-- Buddy Selection (hidden for Course/Coaching across types) -->
+        {#if !(
+          (formData.type === "openwater" && formData.openWaterType === "course_coaching") ||
+          (formData.type === "pool" && formData.poolType === "course_coaching") ||
+          (formData.type === "classroom" && formData.classroomType === "course_coaching")
+        )}
           <BuddySelection bind:formData />
         {/if}
 
@@ -706,16 +732,8 @@
         <FormNotes bind:formData />
 
         {#if capacityBlocked && capacityMessage}
-          <div
-            class="alert my-2 text-sm"
-            class:alert-error={capacityKind === "pool"}
-            class:alert-warning={capacityKind !== "pool"}
-          >
-            <span
-              class={capacityKind === "pool" || capacityKind === "classroom"
-                ? "text-red-600 font-semibold"
-                : ""}>{capacityMessage}</span
-            >
+          <div class="alert alert-warning my-2 text-sm">
+            <span>{capacityMessage}. Your request can still be submitted and will require admin approval.</span>
           </div>
         {/if}
         <!-- Actions -->
@@ -724,8 +742,7 @@
           isCutoffPassed={isCutoffPassed ||
             isBlocked ||
             noLaneError ||
-            noRoomError ||
-            capacityBlocked}
+            noRoomError}
           {editing}
           on:close={closeModal}
         />
