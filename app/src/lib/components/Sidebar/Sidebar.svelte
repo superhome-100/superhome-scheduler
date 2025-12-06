@@ -57,51 +57,43 @@
   </div>
 </aside>
 
-<!-- Mobile Drawer - Only visible when open on mobile -->
-{#if $mobileDrawerOpen}
-  <aside class="mobile-sidebar w-80 bg-base-100 text-base-content lg:hidden fixed top-0 left-0 h-full z-50 border-r border-base-300">
-    <div class="sidebar-container">
-      <!-- Sidebar Header with Close Button -->
-      <div class="sidebar-header">
-        <div class="text-xl font-semibold">
-          <SidebarLogo showCloseButton={true} on:closeSidebar={sidebarActions.closeMobileDrawer} />
+<!-- Mobile Drawer (DaisyUI) - toggleable on mobile, hidden on lg+ where desktop aside is shown -->
+<div class="drawer lg:hidden z-50">
+  <input id="app-drawer" type="checkbox" class="drawer-toggle" bind:checked={$mobileDrawerOpen} />
+  <div class="drawer-side">
+    <!-- Overlay closes the drawer on click -->
+    <label for="app-drawer" class="drawer-overlay" aria-label="close sidebar"></label>
+    <!-- Sidebar panel -->
+    <aside class="w-80 min-h-full bg-base-100 text-base-content border-r border-base-300 shadow-lg">
+      <div class="sidebar-container">
+        <!-- Sidebar Header with Close Button -->
+        <div class="sidebar-header bg-base-100">
+          <div class="text-xl font-semibold">
+            <SidebarLogo showCloseButton={true} on:closeSidebar={sidebarActions.closeMobileDrawer} />
+          </div>
+        </div>
+
+        <!-- Sidebar Content -->
+        <div class="sidebar-content bg-base-100">
+          <ul class="menu w-full">
+            <!-- Navigation Links -->
+            <SidebarNavigation {isAdmin} />
+          </ul>
+        </div>
+
+        <!-- Sidebar Footer -->
+        <div class="sidebar-footer bg-base-100">
+          <SidebarUserProfile 
+            {userName} 
+            {userEmail} 
+            {userAvatarUrl} 
+            {userInitial}
+          />
         </div>
       </div>
-      
-      <!-- Sidebar Content -->
-      <div class="sidebar-content">
-        <ul class="menu w-full">
-          <!-- Navigation Links -->
-          <SidebarNavigation 
-            {isAdmin}
-          />
-        </ul>
-      </div>
-
-      <!-- Sidebar Footer -->
-      <div class="sidebar-footer">
-        <SidebarUserProfile 
-          {userName} 
-          {userEmail} 
-          {userAvatarUrl} 
-          {userInitial}
-        />
-      </div>
-    </div>
-  </aside>
-{/if}
-
-<!-- Mobile Overlay - Only visible when mobile drawer is open -->
-{#if $mobileDrawerOpen}
-  <div 
-    class="mobile-overlay" 
-    role="button"
-    tabindex="0"
-    on:click={handleOverlayClick}
-    on:keydown={(e) => e.key === 'Enter' && handleOverlayClick()}
-    aria-label="Close sidebar"
-  ></div>
-{/if}
+    </aside>
+  </div>
+</div>
 
 <!-- Sign Out Modal -->
 <SignOutModal 
@@ -138,43 +130,6 @@
     margin-top: auto;
   }
 
-  /* Mobile Sidebar Specific Styles */
-  .mobile-sidebar {
-    background-color: hsl(var(--b1)) !important;
-    border-right: 1px solid hsl(var(--b3));
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-    opacity: 1 !important; /* Ensure it's not transparent */
-  }
-
-  /* Ensure mobile sidebar content has proper background */
-  .mobile-sidebar .sidebar-container {
-    background-color: hsl(var(--b1)) !important;
-    opacity: 1 !important;
-  }
-
-  /* Ensure all mobile sidebar elements have proper background */
-  .mobile-sidebar .sidebar-header,
-  .mobile-sidebar .sidebar-content,
-  .mobile-sidebar .sidebar-footer {
-    background-color: transparent !important;
-  }
-
-  /* Mobile Overlay */
-  .mobile-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 45;
-  }
-
-  /* Hide mobile overlay on desktop */
-  @media (min-width: 1024px) {
-    .mobile-overlay {
-      display: none;
-    }
-  }
+  /* Drawer styling is handled by DaisyUI + Tailwind utilities above */
 </style>
 
