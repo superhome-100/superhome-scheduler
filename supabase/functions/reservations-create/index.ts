@@ -847,6 +847,40 @@ Deno.serve(async (req: Request) => {
 
       if (queueErr) {
         console.error('[reservations-create] Failed to enqueue assignment job', queueErr.message ?? queueErr)
+      } else {
+        console.log('[reservations-create] Enqueued assignment job', {
+          res_date: dateOnly,
+          time_period: body.openwater.time_period,
+        })
+      }
+
+      // Trigger auto-assign-buoy edge function as the final step
+      try {
+        const autoAssignResponse = await fetch(`${SUPABASE_URL}/functions/v1/auto-assign-buoy`, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            apikey: SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({
+            res_date: dateOnly,
+            time_period: body.openwater.time_period,
+          }),
+        })
+
+        const autoAssignBody = await autoAssignResponse.json().catch(() => null)
+        if (!autoAssignResponse.ok) {
+          console.error('[reservations-create] auto-assign-buoy failed', autoAssignResponse.status, autoAssignBody)
+        } else {
+          console.log('[reservations-create] auto-assign-buoy triggered', {
+            res_date: dateOnly,
+            time_period: body.openwater.time_period,
+          })
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error('[reservations-create] Error calling auto-assign-buoy:', msg)
       }
     }
 
