@@ -3,6 +3,8 @@
   import { onMount } from 'svelte';
   import ReservationTypeDetails from './ReservationTypeDetails.svelte';
   import OpenWaterDetailsLoader from './OpenWaterDetailsLoader.svelte';
+  import BuddiesList from './BuddiesList.svelte';
+  import { getBuddyGroupMembersForSlot } from '$lib/services/openWaterService';
 
   export let reservation: any;
   export let displayType: string;
@@ -10,6 +12,30 @@
   export let displayNotes: string;
   export let owDepth: number | null = null;
   export let isAdmin: boolean = false;
+
+  // Buddy names (max 2 displayed)
+  let buddyNames: string[] = [];
+  // Only show buddies section when at least one name is present
+  $: hasBuddyInput = buddyNames.some((n) => (n ?? '').trim().length > 0);
+
+  // Load buddies only for Open Water reservations (non-course/coaching)
+  onMount(async () => {
+    try {
+      const isOW = (displayType === 'Open Water') || (reservation?.res_type === 'open_water');
+      const owType = reservation?.open_water_type || reservation?.res_openwater?.open_water_type || null;
+      if (!isOW) return;
+      if (owType === 'course_coaching') return;
+      const uid: string | undefined = reservation?.uid;
+      const dateStr: string | undefined = reservation?.res_date || reservation?.date;
+      const timePeriod: 'AM' | 'PM' | undefined = (reservation?.time_period || reservation?.timeOfDay || reservation?.res_openwater?.time_period);
+      if (!uid || !dateStr || (timePeriod !== 'AM' && timePeriod !== 'PM')) return;
+      const names = await getBuddyGroupMembersForSlot(String(dateStr), timePeriod, 'open_water', uid);
+      buddyNames = Array.isArray(names) ? names.slice(0, 2) : [];
+    } catch (e) {
+      // Silent fail; keep buddies blank
+      buddyNames = [];
+    }
+  });
 
   // Format time values gracefully (supports HH:mm and HH:mm:ss)
   const formatTime = (t?: string | null) => {
@@ -216,6 +242,11 @@
         <ReservationTypeDetails {reservation} {displayType} {owDepth} />
       {/if}
     </div>
+
+    <!-- Buddies: show only when there is input in Add Buddies field -->
+    {#if hasBuddyInput}
+      <BuddiesList names={buddyNames} />
+    {/if}
 
     <!-- Equipment Grid (2x2) -->
     {#if (

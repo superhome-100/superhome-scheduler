@@ -334,24 +334,33 @@ Deno.serve(async (req: Request) => {
     // Handle cancellation early: enforce cutoff, clear lane/room, set status=cancelled
     if (isCancellingRequest) {
       // Load current detail to evaluate cutoff and know which table to clear
-      let currentPool: { start_time: string | null } | null = null
-      let currentClass: { start_time: string | null } | null = null
+      let currentPool: { start_time: string | null; end_time?: string | null; lane?: string | null } | null = null
+      let currentClass: { start_time: string | null; end_time?: string | null; room?: string | null } | null = null
+      let currentOw: { time_period?: string | null } | null = null
       if (res_type === 'pool') {
         const { data } = await supabase
           .from('res_pool')
-          .select('start_time')
+          .select('start_time, end_time, lane')
+          .eq('reservation_id', reservationId)
           .eq('uid', body.uid)
-          .eq('res_date', detailResDateKey)
           .limit(1)
         currentPool = (data && data[0]) || null
       } else if (res_type === 'classroom') {
         const { data } = await supabase
           .from('res_classroom')
-          .select('start_time')
+          .select('start_time, end_time, room')
+          .eq('reservation_id', reservationId)
           .eq('uid', body.uid)
-          .eq('res_date', detailResDateKey)
           .limit(1)
         currentClass = (data && data[0]) || null
+      } else if (res_type === 'open_water') {
+        const { data } = await supabase
+          .from('res_openwater')
+          .select('time_period')
+          .eq('reservation_id', reservationId)
+          .eq('uid', body.uid)
+          .limit(1)
+        currentOw = (data && data[0]) || null
       }
 
       const startTimeForCutoff = res_type === 'pool' ? currentPool?.start_time : res_type === 'classroom' ? currentClass?.start_time : null
@@ -359,29 +368,172 @@ Deno.serve(async (req: Request) => {
         return json({ error: 'The cancellation window for this reservation has expired.' }, { status: 400 })
       }
 
-      // Clear assignment on details so capacity frees up
+      // Clear assignment on details so capacity frees up (target by reservation_id to avoid res_date equality issues)
       if (res_type === 'pool') {
         await (admin || supabase)
           .from('res_pool')
           .update({ lane: null })
+          .eq('reservation_id', reservationId)
           .eq('uid', body.uid)
-          .eq('res_date', detailResDateKey)
       } else if (res_type === 'classroom') {
         await (admin || supabase)
           .from('res_classroom')
           .update({ room: null })
+          .eq('reservation_id', reservationId)
           .eq('uid', body.uid)
-          .eq('res_date', detailResDateKey)
+      } else if (res_type === 'open_water') {
+        // Release any assigned buoy or pairing metadata if present
+        try {
+          await (admin || supabase)
+            .from('res_openwater')
+            .update({ buoy: null, group_id: null })
+            .eq('reservation_id', reservationId)
+            .eq('uid', body.uid)
+        } catch (e) {
+          console.warn('[reservations-update] Open water release (buoy/group) skipped or failed:', e)
+        }
       }
 
-      // Set parent to cancelled
+      // Set parent to cancelled (by reservation_id)
       const { error: cancelErr } = await (admin || supabase)
         .from('reservations')
         .update({ res_status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('reservation_id', reservationId)
         .eq('uid', body.uid)
-        .eq('res_date', detailResDateKey)
       if (cancelErr) return json({ error: cancelErr.message }, { status: 400 })
-      return json({ ok: true, res_status: 'cancelled' }, { status: 200 })
+
+      // Cascade cancellation to buddy group members (pool/open_water only)
+      try {
+        let buddyGroupId: string | null = null
+        if (res_type === 'pool') {
+          const { data: poolRow } = await (admin || supabase)
+            .from('res_pool')
+            .select('buddy_group_id')
+            .eq('reservation_id', reservationId)
+            .eq('uid', body.uid)
+            .limit(1)
+          buddyGroupId = (poolRow && poolRow[0]?.buddy_group_id) || null
+        } else if (res_type === 'open_water') {
+          const { data: owRow } = await (admin || supabase)
+            .from('res_openwater')
+            .select('buddy_group_id')
+            .eq('reservation_id', reservationId)
+            .eq('uid', body.uid)
+            .limit(1)
+          buddyGroupId = (owRow && owRow[0]?.buddy_group_id) || null
+        }
+
+        if (buddyGroupId) {
+          // Fetch accepted buddies in the same group
+          const { data: members, error: mErr } = await (admin || supabase)
+            .from('buddy_group_members')
+            .select('uid')
+            .eq('buddy_group_id', buddyGroupId)
+            .eq('status', 'accepted')
+          if (!mErr && Array.isArray(members)) {
+            for (const m of members) {
+              const memberUid = (m as any)?.uid as string
+              if (!memberUid || memberUid === body.uid) continue
+              try {
+                // Locate member's reservation for the same date and type
+                const { data: mr, error: mrErr } = await (admin || supabase)
+                  .from('reservations')
+                  .select('reservation_id')
+                  .eq('uid', memberUid)
+                  .eq('res_type', res_type)
+                  .eq('res_date', detailResDateKey)
+                  .limit(1)
+                if (mrErr || !mr || mr.length === 0) continue
+                const memberResId = (mr[0] as any).reservation_id as number | null
+                if (memberResId == null) continue
+
+                // For pool, clear lane assignment for buddy as well
+                if (res_type === 'pool') {
+                  await (admin || supabase)
+                    .from('res_pool')
+                    .update({ lane: null })
+                    .eq('reservation_id', memberResId)
+                    .eq('uid', memberUid)
+                }
+                // Mark member reservation cancelled
+                await (admin || supabase)
+                  .from('reservations')
+                  .update({ res_status: 'cancelled', updated_at: new Date().toISOString() })
+                  .eq('reservation_id', memberResId)
+                  .eq('uid', memberUid)
+              } catch (e) {
+                console.warn('[reservations-update] Buddy cascade cancel failed for member:', memberUid, e)
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[reservations-update] Buddy cascade cancel encountered an error:', e)
+      }
+
+      // After cancellation, validate that the slot is free for new bookings for this user
+      // Build comparable time key used by reservations-create duplicate checks
+      const normalizeTime = (raw: string | null | undefined): string | null => {
+        if (!raw) return null
+        const m = String(raw).match(/^(\d{1,2}):(\d{2})/)
+        if (!m) return null
+        const hh = m[1].padStart(2, '0')
+        const mm = m[2]
+        return `${hh}:${mm}`
+      }
+      let cancelledTimeKey: string | null = null
+      if (res_type === 'open_water') {
+        const tp = (currentOw?.time_period || 'AM').toString().toUpperCase()
+        cancelledTimeKey = tp === 'PM' ? '13:00' : '08:00'
+      } else if (res_type === 'pool') {
+        cancelledTimeKey = normalizeTime(currentPool?.start_time || null)
+      } else if (res_type === 'classroom') {
+        cancelledTimeKey = normalizeTime(currentClass?.start_time || null)
+      }
+
+      let available = true
+      try {
+        if (cancelledTimeKey) {
+          const dateOnly = String(detailResDateKey).split('T')[0]
+          const from = `${dateOnly} 00:00:00+00`
+          const to = `${dateOnly} 23:59:59+00`
+          const { data: sameDay, error: sameErr } = await (admin || supabase)
+            .from('reservations')
+            .select(`
+              res_status,
+              res_type,
+              res_openwater(time_period),
+              res_pool(start_time),
+              res_classroom(start_time)
+            `)
+            .eq('uid', body.uid)
+            .in('res_status', ['pending', 'confirmed'])
+            .gte('res_date', from)
+            .lte('res_date', to)
+
+          if (!sameErr) {
+            const timeOf = (r: any): string | null => {
+              if (r.res_type === 'open_water') {
+                const tp = (r?.res_openwater?.time_period || 'AM').toString().toUpperCase()
+                return tp === 'PM' ? '13:00' : '08:00'
+              }
+              if (r.res_type === 'pool') return normalizeTime(r?.res_pool?.start_time ?? null)
+              if (r.res_type === 'classroom') return normalizeTime(r?.res_classroom?.start_time ?? null)
+              return null
+            }
+            const conflict = (sameDay || []).some((r: any) => {
+              const t = timeOf(r)
+              return !!t && t === cancelledTimeKey
+            })
+            available = !conflict
+          }
+        }
+      } catch (e) {
+        console.warn('[reservations-update] Availability validation after cancel failed:', e)
+        available = true // be permissive on error
+      }
+
+      return json({ success: true, cleared_slots: true, available, message: 'Reservation cancelled and slots cleared for new bookings' }, { status: 200 })
     }
 
     // Validate cut-off time if date is being changed (general creation/submit rule)
@@ -871,6 +1023,147 @@ Deno.serve(async (req: Request) => {
 
     // Note: Auto-assign buoy is now handled by the assignment queue + database trigger
     // No need to explicitly call it here
+
+    // Cascade updates for Open Water buddy groups
+    // - If a pending reservation is updated and there's a buddy group, propagate changes to buddies
+    // - If a confirmed reservation is updated, propagate and set entire group back to pending
+    try {
+      if (res_type === 'open_water') {
+        // Determine if an update occurred that should be cascaded
+        const hasOwDetailUpdate = !!body.openwater && Object.keys(body.openwater).length > 0
+        const dateChanged = !!(body.parent && body.parent.res_date)
+        if (hasOwDetailUpdate || dateChanged) {
+          // Find the initiating user's OW row to get the buddy_group_id (by reservation_id preferred)
+          let buddyGroupId: string | null = null
+          try {
+            if (reservationId != null) {
+              const { data: owSelf } = await (admin || supabase)
+                .from('res_openwater')
+                .select('buddy_group_id')
+                .eq('reservation_id', reservationId)
+                .limit(1)
+              buddyGroupId = (owSelf && owSelf[0]?.buddy_group_id) || null
+            } else {
+              const { data: owSelf2 } = await (admin || supabase)
+                .from('res_openwater')
+                .select('buddy_group_id')
+                .eq('uid', body.uid)
+                .eq('res_date', detailResDateKey)
+                .limit(1)
+              buddyGroupId = (owSelf2 && owSelf2[0]?.buddy_group_id) || null
+            }
+          } catch {}
+
+          if (buddyGroupId) {
+            // Get accepted buddies in the same group
+            const { data: members, error: memErr } = await (admin || supabase)
+              .from('buddy_group_members')
+              .select('uid')
+              .eq('buddy_group_id', buddyGroupId)
+              .eq('status', 'accepted')
+            if (!memErr && Array.isArray(members)) {
+              // Build normalized detail values to apply to buddies (only provided fields)
+              const owRaw: any = body.openwater || {}
+              const owNorm: Record<string, any> = {}
+              if (owRaw.time_period != null) {
+                const v = String(owRaw.time_period).toUpperCase()
+                owNorm.time_period = v === 'MORNING' ? 'AM' : (v === 'AFTERNOON' || v === 'EVENING' ? 'PM' : v)
+              }
+              if (owRaw.depth_m != null) owNorm.depth_m = Number(owRaw.depth_m)
+              if (owRaw.open_water_type != null) owNorm.open_water_type = owRaw.open_water_type
+              if (owRaw.pulley != null) owNorm.pulley = Boolean(owRaw.pulley)
+              if (owRaw.deep_fim_training != null) owNorm.deep_fim_training = Boolean(owRaw.deep_fim_training)
+              if (owRaw.bottom_plate != null) owNorm.bottom_plate = Boolean(owRaw.bottom_plate)
+              if (owRaw.large_buoy != null) owNorm.large_buoy = Boolean(owRaw.large_buoy)
+              if (owRaw.note !== undefined) owNorm.note = typeof owRaw.note === 'string' ? (owRaw.note || null) : null
+
+              // For each member, update their reservation
+              for (const m of members) {
+                const memberUid = (m as any)?.uid as string
+                if (!memberUid || memberUid === body.uid) continue
+                try {
+                  // Locate member's reservation for same date and open_water
+                  const { data: mr } = await (admin || supabase)
+                    .from('reservations')
+                    .select('reservation_id, res_status')
+                    .eq('uid', memberUid)
+                    .eq('res_type', 'open_water')
+                    .eq('res_date', detailResDateKey)
+                    .limit(1)
+                  const memberResId = mr && mr[0]?.reservation_id
+                  const memberStatus = (mr && mr[0]?.res_status) as ReservationStatus | undefined
+
+                  if (!memberResId) {
+                    // No matching reservation for buddy at this date; skip
+                    continue
+                  }
+
+                  // Apply detail updates if any
+                  if (Object.keys(owNorm).length > 0) {
+                    await (admin || supabase)
+                      .from('res_openwater')
+                      .update(owNorm)
+                      .eq('reservation_id', memberResId)
+                      .eq('uid', memberUid)
+                  }
+
+                  // If date changed, move buddy parent + detail to the new date
+                  if (dateChanged && body.parent?.res_date) {
+                    const newDate = body.parent.res_date
+                    // Update parent date first
+                    await (admin || supabase)
+                      .from('reservations')
+                      .update({ res_date: newDate, updated_at: new Date().toISOString() })
+                      .eq('reservation_id', memberResId)
+                      .eq('uid', memberUid)
+                    // Sync child date
+                    await (admin || supabase)
+                      .from('res_openwater')
+                      .update({ res_date: newDate })
+                      .eq('reservation_id', memberResId)
+                      .eq('uid', memberUid)
+                  }
+                } catch (e) {
+                  console.warn('[reservations-update] Failed to cascade OW update to buddy', memberUid, e)
+                }
+              }
+
+              // If initiator was confirmed and updated, revert ENTIRE group to pending for re-approval
+              if (current_status === 'confirmed') {
+                try {
+                  // Include initiator + all accepted buddies at the effective date
+                  const uids = [body.uid, ...members.map((x: any) => x.uid).filter((x: string) => x && x !== body.uid)]
+                  for (const uid of uids) {
+                    try {
+                      const { data: r } = await (admin || supabase)
+                        .from('reservations')
+                        .select('reservation_id')
+                        .eq('uid', uid)
+                        .eq('res_type', 'open_water')
+                        .eq('res_date', detailResDateKey)
+                        .limit(1)
+                      const rid = r && r[0]?.reservation_id
+                      if (!rid) continue
+                      await (admin || supabase)
+                        .from('reservations')
+                        .update({ res_status: 'pending', updated_at: new Date().toISOString() })
+                        .eq('reservation_id', rid)
+                        .eq('uid', uid)
+                    } catch (e) {
+                      console.warn('[reservations-update] Failed to revert buddy to pending', uid, e)
+                    }
+                  }
+                } catch (e) {
+                  console.warn('[reservations-update] Group revert-to-pending encountered an error:', e)
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[reservations-update] Buddy cascade block error:', e)
+    }
 
     // Build response with effective key and (optional) updated child snapshot
     const response: any = { ok: true, effective_res_date: detailResDateKey }

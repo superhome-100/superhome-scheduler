@@ -354,7 +354,7 @@ Deno.serve(async (req: Request) => {
       }
 
       // Fetch same-type reservations by the same user on the same day
-      const { data: sameType, error: sameErr } = await supabase
+      const { data: sameType, error: sameErr } = await serviceSupabase
         .from('reservations')
         .select(`
           res_type,
@@ -432,14 +432,22 @@ Deno.serve(async (req: Request) => {
       const to = `${dateOnly} 23:59:59+00`;
 
       // Determine the candidate "start time" string for the new reservation
+      const normalizeTime = (raw: string | null | undefined): string | null => {
+        if (!raw) return null;
+        const m = String(raw).match(/^(\d{1,2}):(\d{2})/);
+        if (!m) return null;
+        const hh = m[1].padStart(2, '0');
+        const mm = m[2];
+        return `${hh}:${mm}`;
+      };
       let candidateTime: string | null = null;
       if (body.res_type === 'open_water') {
         const tp = (body.openwater?.time_period || 'AM').toUpperCase();
         candidateTime = tp === 'PM' ? '13:00' : '08:00';
       } else if (body.res_type === 'pool') {
-        candidateTime = body.pool?.start_time ?? null;
+        candidateTime = normalizeTime(body.pool?.start_time);
       } else if (body.res_type === 'classroom') {
-        candidateTime = body.classroom?.start_time ?? null;
+        candidateTime = normalizeTime(body.classroom?.start_time);
       }
 
       if (!candidateTime) {
@@ -447,7 +455,7 @@ Deno.serve(async (req: Request) => {
       }
 
       // Fetch reservations of other types for same user and same day
-      const { data: existing, error: existErr } = await supabase
+      const { data: existing, error: existErr } = await serviceSupabase
         .from('reservations')
         .select(`
           res_type,
@@ -471,8 +479,8 @@ Deno.serve(async (req: Request) => {
           const tp = (r?.res_openwater?.time_period || 'AM').toUpperCase();
           return tp === 'PM' ? '13:00' : '08:00';
         }
-        if (r.res_type === 'pool') return r?.res_pool?.start_time ?? null;
-        if (r.res_type === 'classroom') return r?.res_classroom?.start_time ?? null;
+        if (r.res_type === 'pool') return normalizeTime(r?.res_pool?.start_time ?? null);
+        if (r.res_type === 'classroom') return normalizeTime(r?.res_classroom?.start_time ?? null);
         return null;
       };
 
@@ -583,18 +591,209 @@ Deno.serve(async (req: Request) => {
         ? 'confirmed'
         : (body.res_status || 'pending')
 
-    const { data: parent, error: parentError } = await supabase
+    // Proactive cleanup: remove cancelled/rejected reservations for same user, same day, same time slot (any type)
+    // This ensures availability after cancellations truly frees the slot before creation.
+    {
+      const dateOnly = String(res_date_iso).split('T')[0]
+      const from = `${dateOnly} 00:00:00+00`
+      const to = `${dateOnly} 23:59:59+00`
+      // Determine the comparable time key for this request
+      const normalizeTime = (raw: string | null | undefined): string | null => {
+        if (!raw) return null
+        const m = String(raw).match(/^(\d{1,2}):(\d{2})/)
+        if (!m) return null
+        const hh = m[1].padStart(2, '0')
+        const mm = m[2]
+        return `${hh}:${mm}`
+      }
+      const candidateTime = (() => {
+        if (body.res_type === 'open_water') {
+          const tp = (body.openwater?.time_period || 'AM').toUpperCase()
+          return tp === 'PM' ? '13:00' : '08:00'
+        }
+        if (body.res_type === 'pool') return normalizeTime(body.pool?.start_time)
+        if (body.res_type === 'classroom') return normalizeTime(body.classroom?.start_time)
+        return null
+      })()
+      if (candidateTime) {
+        const { data: sameDay, error: sameDayErr } = await serviceSupabase
+          .from('reservations')
+          .select(`
+            reservation_id,
+            res_status,
+            res_type,
+            res_openwater(time_period),
+            res_pool(start_time),
+            res_classroom(start_time)
+          `)
+          .eq('uid', body.uid)
+          .gte('res_date', from)
+          .lte('res_date', to)
+        if (!sameDayErr) {
+          const timeOf = (r: any): string | null => {
+            if (r.res_type === 'open_water') {
+              const tp = (r?.res_openwater?.time_period || 'AM').toUpperCase()
+              return tp === 'PM' ? '13:00' : '08:00'
+            }
+            if (r.res_type === 'pool') return normalizeTime(r?.res_pool?.start_time ?? null)
+            if (r.res_type === 'classroom') return normalizeTime(r?.res_classroom?.start_time ?? null)
+            return null
+          }
+          // Delete only cancelled/rejected at the same time key
+          for (const r of sameDay || []) {
+            const status = String(r.res_status || '').toLowerCase()
+            if (status === 'cancelled' || status === 'rejected') {
+              const t = timeOf(r)
+              if (t && t === candidateTime) {
+                if (r.res_type === 'open_water') {
+                  await serviceSupabase.from('res_openwater').delete().eq('reservation_id', r.reservation_id)
+                } else if (r.res_type === 'pool') {
+                  await serviceSupabase.from('res_pool').delete().eq('reservation_id', r.reservation_id)
+                } else if (r.res_type === 'classroom') {
+                  await serviceSupabase.from('res_classroom').delete().eq('reservation_id', r.reservation_id)
+                }
+                await serviceSupabase.from('reservations').delete().eq('reservation_id', r.reservation_id)
+              }
+            }
+          }
+        }
+      }
+    }
+
+    const insertParent = await supabase
       .from('reservations')
       .insert({ uid: body.uid, res_date: res_date_iso, res_type: body.res_type, res_status: initialStatus })
       .select('*')
       .single()
+    let parent = insertParent.data
+    const parentError = insertParent.error
 
-    if (parentError) return json({ error: parentError.message }, { status: 400 })
+    if (parentError) {
+      const msg = String((parentError as any)?.message || '')
+      // Handle unique key violation gracefully with a friendly duplicate message
+      if (/duplicate key value/i.test(msg) && /reservations_uid_res_date_key/i.test(msg)) {
+        // Attempt to fetch the existing reservation at the exact same res_date
+        const { data: existing } = await supabase
+          .from('reservations')
+          .select(`
+            res_status,
+            res_type,
+            res_openwater(time_period, open_water_type),
+            res_pool(start_time, pool_type),
+            res_classroom(start_time, classroom_type)
+          `)
+          .eq('uid', body.uid)
+          .eq('res_date', res_date_iso)
+          .maybeSingle()
+
+        // If existing is cancelled or rejected, clear it to free the slot, then retry insert
+        const status = (existing as any)?.res_status as string | undefined
+        const isCleared = !!(status && (status.toLowerCase() === 'cancelled' || status.toLowerCase() === 'rejected'))
+        if (isCleared) {
+          try {
+            // Delete detail rows first (use service role to bypass RLS safely)
+            await serviceSupabase.from('res_pool').delete().eq('uid', body.uid).eq('res_date', res_date_iso)
+            await serviceSupabase.from('res_classroom').delete().eq('uid', body.uid).eq('res_date', res_date_iso)
+            await serviceSupabase.from('res_openwater').delete().eq('uid', body.uid).eq('res_date', res_date_iso)
+            // Delete parent row
+            await serviceSupabase.from('reservations').delete().eq('uid', body.uid).eq('res_date', res_date_iso)
+            // Retry insert
+            const retry = await supabase
+              .from('reservations')
+              .insert({ uid: body.uid, res_date: res_date_iso, res_type: body.res_type, res_status: initialStatus })
+              .select('*')
+              .single()
+            if (retry.error) {
+              // If still failing, fall back to error propagation
+              return json({ error: retry.error.message || 'Failed to create reservation' }, { status: 400 })
+            }
+          } catch (cleanupErr) {
+            const cm = cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr)
+            return json({ error: `Failed to clear previous cancelled reservation: ${cm}` }, { status: 400 })
+          }
+          // If we reach here, parent insert after cleanup succeeded; continue to detail insertion below
+          // Note: variable `parent` remains previous failed value, but we only use its reservation_id later.
+          // To maintain flow, fetch the newly inserted parent row to get reservation_id.
+          const { data: parentAfter, error: parentAfterErr } = await supabase
+            .from('reservations')
+            .select('*')
+            .eq('uid', body.uid)
+            .eq('res_date', res_date_iso)
+            .single()
+          if (parentAfterErr) {
+            return json({ error: parentAfterErr.message || 'Failed to verify reservation after cleanup' }, { status: 400 })
+          }
+          // Shadow parent variable for the rest of the flow
+          // @ts-ignore shadow runtime variable used below
+          parent = parentAfter
+        }
+
+        // If we performed cleanup and reinsertion, skip returning duplicate and proceed
+        if (!isCleared) {
+          const pretty = (s: string | null | undefined) => {
+            if (!s) return null
+            const x = String(s).toLowerCase()
+            if (x === 'course_coaching') return 'Course/Coaching'
+            return x.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())
+          }
+          // Build type label and time label based on existing reservation, fallback to requested
+          const category = existing?.res_type === 'open_water' ? 'Open Water' : (existing?.res_type === 'pool' ? 'Pool' : (existing?.res_type === 'classroom' ? 'Classroom' : 'Reservation'))
+          const subtype = existing?.res_type === 'open_water' ? pretty((existing as any)?.res_openwater?.open_water_type)
+            : (existing?.res_type === 'pool' ? pretty((existing as any)?.res_pool?.pool_type)
+            : (existing?.res_type === 'classroom' ? pretty((existing as any)?.res_classroom?.classroom_type) : null))
+          const typeLabel = subtype ? `${category} ${subtype}` : category
+
+          const dateObj = new Date(body.res_date)
+          const datePart = dateObj.toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+
+          // Determine time label: Open Water uses AM/PM period; others use 12-hour hh:mm
+          let timeLabel: string
+          if (existing?.res_type === 'open_water' || body.res_type === 'open_water') {
+            const tp = (existing as any)?.res_openwater?.time_period || body.openwater?.time_period || 'AM'
+            timeLabel = String(tp).toUpperCase() === 'PM' ? 'PM' : 'AM'
+          } else {
+            // Use the precise HH:mm from existing if present; otherwise derive from body
+            const hhmm = existing?.res_type === 'pool' ? (existing as any)?.res_pool?.start_time
+              : (existing?.res_type === 'classroom' ? (existing as any)?.res_classroom?.start_time
+              : (body.res_type === 'pool' ? body.pool?.start_time : body.classroom?.start_time))
+            const match = hhmm ? String(hhmm).match(/^(\d{1,2}):(\d{2})/) : null
+            if (match) {
+              const h = parseInt(match[1], 10)
+              const m = parseInt(match[2], 10)
+              const h12 = ((h + 11) % 12) + 1
+              const ampm = h >= 12 ? 'PM' : 'AM'
+              const mm = String(m).padStart(2, '0')
+              timeLabel = `${h12}:${mm} ${ampm}`
+            } else {
+              timeLabel = 'the selected time'
+            }
+          }
+
+          return json({
+            error: 'duplicate',
+            message: `Already have a reservation for ${typeLabel} on ${datePart} at ${timeLabel}.`
+          }, { status: 400 })
+        }
+      }
+      return json({ error: msg || 'Failed to create reservation' }, { status: 400 })
+    }
 
     let detailError: any = null
     switch (body.res_type) {
       case 'pool':
         if (body.pool && parent?.reservation_id != null) {
+          // Targeted cleanup: remove any lingering pool detail rows for same uid/date/start_time
+          try {
+            const st = body.pool.start_time ?? null
+            if (st) {
+              await serviceSupabase
+                .from('res_pool')
+                .delete()
+                .eq('uid', body.uid)
+                .eq('res_date', res_date_iso)
+                .eq('start_time', st)
+            }
+          } catch {}
           // Auto-assign lane on creation using shared helper (service role sees all pool reservations)
           let lane: string | null =
             (body.pool as any).lane != null ? String((body.pool as any).lane) : null;
@@ -649,30 +848,175 @@ Deno.serve(async (req: Request) => {
             insertPayload.lane = lane;
           }
 
-          const { error } = await supabase.from('res_pool').insert(insertPayload);
-          detailError = error;
+          let ins = await supabase.from('res_pool').insert(insertPayload)
+          let error = ins.error
+          if (error && /active reservation at this time slot/i.test(String(error.message))) {
+            // One more cleanup pass (cancelled/rejected) for same day/time, then retry once
+            try {
+              const dateOnly = String(res_date_iso).split('T')[0]
+              const from = `${dateOnly} 00:00:00+00`
+              const to = `${dateOnly} 23:59:59+00`
+              const normalizeTime = (raw: string | null | undefined): string | null => {
+                if (!raw) return null
+                const m = String(raw).match(/^(\d{1,2}):(\d{2})/)
+                if (!m) return null
+                const hh = m[1].padStart(2, '0')
+                const mm = m[2]
+                return `${hh}:${mm}`
+              }
+              const candidateTime = normalizeTime(body.pool?.start_time)
+              if (candidateTime) {
+                const { data: sameDay } = await serviceSupabase
+                  .from('reservations')
+                  .select('reservation_id, res_status, res_type, res_openwater(time_period), res_pool(start_time), res_classroom(start_time)')
+                  .eq('uid', body.uid)
+                  .gte('res_date', from)
+                  .lte('res_date', to)
+                const timeOf = (r: any): string | null => r.res_type === 'open_water' ? ((r?.res_openwater?.time_period || 'AM').toUpperCase() === 'PM' ? '13:00' : '08:00') : (r.res_type === 'pool' ? normalizeTime(r?.res_pool?.start_time ?? null) : (r.res_type === 'classroom' ? normalizeTime(r?.res_classroom?.start_time ?? null) : null))
+                for (const r of sameDay || []) {
+                  const status = String(r.res_status || '').toLowerCase()
+                  if (status === 'cancelled' || status === 'rejected') {
+                    const t = timeOf(r)
+                    if (t && t === candidateTime) {
+                      if (r.res_type === 'open_water') await serviceSupabase.from('res_openwater').delete().eq('reservation_id', r.reservation_id)
+                      if (r.res_type === 'pool') await serviceSupabase.from('res_pool').delete().eq('reservation_id', r.reservation_id)
+                      if (r.res_type === 'classroom') await serviceSupabase.from('res_classroom').delete().eq('reservation_id', r.reservation_id)
+                      await serviceSupabase.from('reservations').delete().eq('reservation_id', r.reservation_id)
+                    }
+                  }
+                }
+              }
+              // retry once
+              ins = await supabase.from('res_pool').insert(insertPayload)
+              error = ins.error
+            } catch {}
+          }
+          detailError = error
         }
         break
       case 'classroom':
         if (body.classroom && parent?.reservation_id != null) {
+          // Targeted cleanup: remove any lingering classroom detail rows for same uid/date/start_time
+          try {
+            const st = body.classroom.start_time ?? null
+            if (st) {
+              await serviceSupabase
+                .from('res_classroom')
+                .delete()
+                .eq('uid', body.uid)
+                .eq('res_date', res_date_iso)
+                .eq('start_time', st)
+            }
+          } catch {}
           // Do not auto-assign room on creation; handled on admin approval
-          const { error } = await supabase.from('res_classroom').insert({
+          let ins = await supabase.from('res_classroom').insert({
             reservation_id: parent.reservation_id,
             uid: body.uid,
             res_date: res_date_iso,
             ...body.classroom,
           })
+          let error = ins.error
+          if (error && /active reservation at this time slot/i.test(String(error.message))) {
+            try {
+              const dateOnly = String(res_date_iso).split('T')[0]
+              const from = `${dateOnly} 00:00:00+00`
+              const to = `${dateOnly} 23:59:59+00`
+              const normalizeTime = (raw: string | null | undefined): string | null => {
+                if (!raw) return null
+                const m = String(raw).match(/^(\d{1,2}):(\d{2})/)
+                if (!m) return null
+                const hh = m[1].padStart(2, '0')
+                const mm = m[2]
+                return `${hh}:${mm}`
+              }
+              const candidateTime = normalizeTime(body.classroom?.start_time)
+              if (candidateTime) {
+                const { data: sameDay } = await serviceSupabase
+                  .from('reservations')
+                  .select('reservation_id, res_status, res_type, res_openwater(time_period), res_pool(start_time), res_classroom(start_time)')
+                  .eq('uid', body.uid)
+                  .gte('res_date', from)
+                  .lte('res_date', to)
+                const timeOf = (r: any): string | null => r.res_type === 'open_water' ? ((r?.res_openwater?.time_period || 'AM').toUpperCase() === 'PM' ? '13:00' : '08:00') : (r.res_type === 'pool' ? normalizeTime(r?.res_pool?.start_time ?? null) : (r.res_type === 'classroom' ? normalizeTime(r?.res_classroom?.start_time ?? null) : null))
+                for (const r of sameDay || []) {
+                  const status = String(r.res_status || '').toLowerCase()
+                  if (status === 'cancelled' || status === 'rejected') {
+                    const t = timeOf(r)
+                    if (t && t === candidateTime) {
+                      if (r.res_type === 'open_water') await serviceSupabase.from('res_openwater').delete().eq('reservation_id', r.reservation_id)
+                      if (r.res_type === 'pool') await serviceSupabase.from('res_pool').delete().eq('reservation_id', r.reservation_id)
+                      if (r.res_type === 'classroom') await serviceSupabase.from('res_classroom').delete().eq('reservation_id', r.reservation_id)
+                      await serviceSupabase.from('reservations').delete().eq('reservation_id', r.reservation_id)
+                    }
+                  }
+                }
+              }
+              ins = await supabase.from('res_classroom').insert({
+                reservation_id: parent.reservation_id,
+                uid: body.uid,
+                res_date: res_date_iso,
+                ...body.classroom,
+              })
+              error = ins.error
+            } catch {}
+          }
           detailError = error
         }
         break
       case 'open_water':
         if (body.openwater && parent?.reservation_id != null) {
-          const { error } = await supabase.from('res_openwater').insert({
+          // Targeted cleanup: remove any lingering open water detail rows for same uid/date/time_period
+          try {
+            const tp = (body.openwater?.time_period || 'AM').toUpperCase()
+            await serviceSupabase
+              .from('res_openwater')
+              .delete()
+              .eq('uid', body.uid)
+              .eq('res_date', res_date_iso)
+              .eq('time_period', tp)
+          } catch {}
+          let ins = await supabase.from('res_openwater').insert({
             reservation_id: parent.reservation_id,
             uid: body.uid,
             res_date: res_date_iso,
             ...body.openwater,
           })
+          let error = ins.error
+          if (error && /active reservation at this time slot/i.test(String(error.message))) {
+            try {
+              const dateOnly = String(res_date_iso).split('T')[0]
+              const from = `${dateOnly} 00:00:00+00`
+              const to = `${dateOnly} 23:59:59+00`
+              const tp = (body.openwater?.time_period || 'AM').toUpperCase()
+              const candidateTime = tp === 'PM' ? '13:00' : '08:00'
+              const { data: sameDay } = await serviceSupabase
+                .from('reservations')
+                .select('reservation_id, res_status, res_type, res_openwater(time_period), res_pool(start_time), res_classroom(start_time)')
+                .eq('uid', body.uid)
+                .gte('res_date', from)
+                .lte('res_date', to)
+              const timeOf = (r: any): string | null => r.res_type === 'open_water' ? ((r?.res_openwater?.time_period || 'AM').toUpperCase() === 'PM' ? '13:00' : '08:00') : (r.res_type === 'pool' ? (r?.res_pool?.start_time || null) : (r.res_type === 'classroom' ? (r?.res_classroom?.start_time || null) : null))
+              for (const r of sameDay || []) {
+                const status = String(r.res_status || '').toLowerCase()
+                if (status === 'cancelled' || status === 'rejected') {
+                  const t = timeOf(r)
+                  if (t && t === candidateTime) {
+                    if (r.res_type === 'open_water') await serviceSupabase.from('res_openwater').delete().eq('reservation_id', r.reservation_id)
+                    if (r.res_type === 'pool') await serviceSupabase.from('res_pool').delete().eq('reservation_id', r.reservation_id)
+                    if (r.res_type === 'classroom') await serviceSupabase.from('res_classroom').delete().eq('reservation_id', r.reservation_id)
+                    await serviceSupabase.from('reservations').delete().eq('reservation_id', r.reservation_id)
+                  }
+                }
+              }
+              ins = await supabase.from('res_openwater').insert({
+                reservation_id: parent.reservation_id,
+                uid: body.uid,
+                res_date: res_date_iso,
+                ...body.openwater,
+              })
+              error = ins.error
+            } catch {}
+          }
           detailError = error
         }
         break
@@ -701,8 +1045,28 @@ Deno.serve(async (req: Request) => {
           timePeriod = body.classroom?.start_time || '';
         }
 
+        // Pre-clean any leftover buddy_group for the same initiator/date/slot/type
+        // Use service client to ensure cleanup regardless of RLS context
+        try {
+          const dateOnly = res_date_iso.split('T')[0];
+          const { data: existingGroup } = await serviceSupabase
+            .from('buddy_groups')
+            .select('id')
+            .eq('initiator_uid', body.uid)
+            .eq('res_date', dateOnly)
+            .eq('time_period', timePeriod)
+            .eq('res_type', body.res_type)
+            .maybeSingle();
+          if (existingGroup?.id) {
+            await serviceSupabase.from('buddy_groups').delete().eq('id', existingGroup.id);
+          }
+        } catch (err) {
+          console.warn('[reservations-create] buddy_groups pre-clean warning:', err);
+        }
+
         // Create buddy group
-        const { data: buddyGroupId, error: buddyGroupError } = await supabase
+        let buddyGroupId: string | null = null;
+        const { data: createdBuddyGroupId, error: buddyGroupError } = await supabase
           .rpc('create_buddy_group_with_members', {
             p_initiator_uid: body.uid,
             p_res_date: res_date_iso.split('T')[0],
@@ -712,11 +1076,35 @@ Deno.serve(async (req: Request) => {
           });
 
         if (buddyGroupError) {
-          console.error('Failed to create buddy group:', buddyGroupError);
-          // Don't fail the main reservation, just log the error
+          const code = (buddyGroupError as any)?.code || '';
+          const message = (buddyGroupError as any)?.message || '';
+          if (code === '23505' || /duplicate key value/i.test(String(message))) {
+            // Reuse existing group if present
+            const dateOnly = res_date_iso.split('T')[0];
+            const { data: reuse } = await serviceSupabase
+              .from('buddy_groups')
+              .select('id')
+              .eq('initiator_uid', body.uid)
+              .eq('res_date', dateOnly)
+              .eq('time_period', timePeriod)
+              .eq('res_type', body.res_type)
+              .maybeSingle();
+            if (reuse?.id) {
+              buddyGroupId = reuse.id as unknown as string;
+              console.log('Reusing existing buddy group:', buddyGroupId);
+            } else {
+              console.error('Failed to create buddy group and no reusable group found:', buddyGroupError);
+            }
+          } else {
+            console.error('Failed to create buddy group:', buddyGroupError);
+          }
         } else {
+          buddyGroupId = createdBuddyGroupId as unknown as string;
           console.log('Created buddy group:', buddyGroupId);
+        }
 
+        // If we have a buddyGroupId (created or reused), proceed to link initiator and buddies
+        if (buddyGroupId) {
           // Update initiator's reservation with buddy_group_id
           if (body.res_type === 'open_water') {
             await supabase
@@ -742,57 +1130,228 @@ Deno.serve(async (req: Request) => {
           for (const buddyUid of body.buddies) {
             if (buddyUid === body.uid) continue; // Skip initiator
 
-            // Check if buddy already has a reservation for this date/time
-            const { data: existingRes } = await serviceSupabase
-              .from('reservations')
-              .select('uid')
-              .eq('uid', buddyUid)
-              .eq('res_type', body.res_type)
-              .gte('res_date', res_date_iso.split('T')[0] + ' 00:00:00+00')
-              .lte('res_date', res_date_iso.split('T')[0] + ' 23:59:59+00')
-              .in('res_status', ['pending', 'confirmed'])
-              .maybeSingle();
-
-            if (existingRes) {
-              console.log(`Buddy ${buddyUid} already has a reservation, linking to group`);
-              // Just link their existing reservation to the group
-              if (body.res_type === 'open_water') {
-                await serviceSupabase
-                  .from('res_openwater')
-                  .update({ buddy_group_id: buddyGroupId })
-                  .eq('uid', buddyUid)
-                  .eq('res_date', res_date_iso);
-              } else if (body.res_type === 'pool') {
-                await serviceSupabase
-                  .from('res_pool')
-                  .update({ buddy_group_id: buddyGroupId })
-                  .eq('uid', buddyUid)
-                  .eq('res_date', res_date_iso);
-              } else if (body.res_type === 'classroom') {
-                await serviceSupabase
-                  .from('res_classroom')
-                  .update({ buddy_group_id: buddyGroupId })
-                  .eq('uid', buddyUid)
-                  .eq('res_date', res_date_iso);
+            // Check if buddy already has a reservation for this date AND same slot (time key)
+            let reuseExisting = false
+            let existingResId: number | null = null
+            if (body.res_type === 'open_water') {
+              const { data: existingOw } = await serviceSupabase
+                .from('reservations')
+                .select('reservation_id, res_openwater(time_period)')
+                .eq('uid', buddyUid)
+                .eq('res_type', 'open_water')
+                .gte('res_date', res_date_iso.split('T')[0] + ' 00:00:00+00')
+                .lte('res_date', res_date_iso.split('T')[0] + ' 23:59:59+00')
+                .in('res_status', ['pending', 'confirmed'])
+                .maybeSingle()
+              if (existingOw && body.openwater?.time_period) {
+                const tp = (existingOw as any)?.res_openwater?.time_period || null
+                if (tp && String(tp).toUpperCase() === String(body.openwater.time_period).toUpperCase()) {
+                  reuseExisting = true
+                  existingResId = (existingOw as any).reservation_id || null
+                }
               }
-              continue;
+            } else if (body.res_type === 'pool') {
+              const { data: existingPl } = await serviceSupabase
+                .from('reservations')
+                .select('reservation_id, res_pool(start_time)')
+                .eq('uid', buddyUid)
+                .eq('res_type', 'pool')
+                .gte('res_date', res_date_iso.split('T')[0] + ' 00:00:00+00')
+                .lte('res_date', res_date_iso.split('T')[0] + ' 23:59:59+00')
+                .in('res_status', ['pending', 'confirmed'])
+                .maybeSingle()
+              if (existingPl && body.pool?.start_time) {
+                const st = (existingPl as any)?.res_pool?.start_time || null
+                if (st && String(st).slice(0,5) === String(body.pool.start_time).slice(0,5)) {
+                  reuseExisting = true
+                  existingResId = (existingPl as any).reservation_id || null
+                }
+              }
+            } else if (body.res_type === 'classroom') {
+              const { data: existingCl } = await serviceSupabase
+                .from('reservations')
+                .select('reservation_id, res_classroom(start_time)')
+                .eq('uid', buddyUid)
+                .eq('res_type', 'classroom')
+                .gte('res_date', res_date_iso.split('T')[0] + ' 00:00:00+00')
+                .lte('res_date', res_date_iso.split('T')[0] + ' 23:59:59+00')
+                .in('res_status', ['pending', 'confirmed'])
+                .maybeSingle()
+              if (existingCl && body.classroom?.start_time) {
+                const st = (existingCl as any)?.res_classroom?.start_time || null
+                if (st && String(st).slice(0,5) === String(body.classroom.start_time).slice(0,5)) {
+                  reuseExisting = true
+                  existingResId = (existingCl as any).reservation_id || null
+                }
+              }
             }
 
-            // Create reservation for buddy
-            const { data: buddyParent, error: buddyParentError } = await serviceSupabase
+            if (reuseExisting && existingResId) {
+              console.log(`Buddy ${buddyUid} already has same-slot reservation, linking to group`)
+              if (body.res_type === 'open_water') {
+                const { data: updOw } = await serviceSupabase
+                  .from('res_openwater')
+                  .update({ buddy_group_id: buddyGroupId })
+                  .eq('reservation_id', existingResId)
+                  .eq('uid', buddyUid)
+                  .select('uid')
+                if (!updOw || updOw.length === 0) {
+                  // No detail existed; create it
+                  if (body.openwater) {
+                    await serviceSupabase
+                      .from('res_openwater')
+                      .insert({
+                        reservation_id: existingResId,
+                        uid: buddyUid,
+                        res_date: res_date_iso,
+                        buddy_group_id: buddyGroupId,
+                        ...body.openwater,
+                      })
+                  }
+                }
+              } else if (body.res_type === 'pool') {
+                const { data: updPl } = await serviceSupabase
+                  .from('res_pool')
+                  .update({ buddy_group_id: buddyGroupId })
+                  .eq('reservation_id', existingResId)
+                  .eq('uid', buddyUid)
+                  .select('uid')
+                if (!updPl || updPl.length === 0) {
+                  if (body.pool) {
+                    await serviceSupabase
+                      .from('res_pool')
+                      .insert({
+                        reservation_id: existingResId,
+                        uid: buddyUid,
+                        res_date: res_date_iso,
+                        buddy_group_id: buddyGroupId,
+                        ...body.pool,
+                      })
+                  }
+                }
+                // Ensure buddy parent is confirmed for pool
+                await serviceSupabase
+                  .from('reservations')
+                  .update({ res_status: 'confirmed', updated_at: new Date().toISOString() })
+                  .eq('reservation_id', existingResId)
+                  .eq('uid', buddyUid)
+              } else if (body.res_type === 'classroom') {
+                const { data: updCl } = await serviceSupabase
+                  .from('res_classroom')
+                  .update({ buddy_group_id: buddyGroupId })
+                  .eq('reservation_id', existingResId)
+                  .eq('uid', buddyUid)
+                  .select('uid')
+                if (!updCl || updCl.length === 0) {
+                  if (body.classroom) {
+                    await serviceSupabase
+                      .from('res_classroom')
+                      .insert({
+                        reservation_id: existingResId,
+                        uid: buddyUid,
+                        res_date: res_date_iso,
+                        buddy_group_id: buddyGroupId,
+                        ...body.classroom,
+                      })
+                  }
+                }
+                await serviceSupabase
+                  .from('reservations')
+                  .update({ res_status: 'confirmed', updated_at: new Date().toISOString() })
+                  .eq('reservation_id', existingResId)
+                  .eq('uid', buddyUid)
+              }
+              continue
+            }
+
+            // Create reservation for buddy (pool/classroom buddies are auto-confirmed; OW buddies pending)
+            const buddyInitialStatus: 'pending' | 'confirmed' =
+              body.res_type === 'pool' || body.res_type === 'classroom' ? 'confirmed' : 'pending'
+            let { data: buddyParent, error: buddyParentError } = await serviceSupabase
               .from('reservations')
               .insert({
                 uid: buddyUid,
                 res_date: res_date_iso,
                 res_type: body.res_type,
-                res_status: 'pending' // Buddies need to confirm
+                res_status: buddyInitialStatus,
               })
               .select('*')
               .maybeSingle();
 
             if (buddyParentError) {
-              console.error(`Failed to create reservation for buddy ${buddyUid}:`, buddyParentError);
-              continue; // Skip this buddy
+              // If duplicate due to cancelled/rejected prior reservation, sweep at same slot and retry
+              const errMsg = (buddyParentError as any)?.message || '';
+              if (/duplicate key value/i.test(String(errMsg))) {
+                try {
+                  const dateOnly = res_date_iso.split('T')[0];
+                  const from = `${dateOnly} 00:00:00+00`;
+                  const to = `${dateOnly} 23:59:59+00`;
+                  const normalizeTime = (raw: string | null | undefined): string | null => {
+                    if (!raw) return null;
+                    const m = String(raw).match(/^(\d{1,2}):(\d{2})/);
+                    if (!m) return null;
+                    const hh = m[1].padStart(2, '0');
+                    const mm = m[2];
+                    return `${hh}:${mm}`;
+                  };
+                  const candidateTime = (() => {
+                    if (body.res_type === 'open_water') {
+                      const tp = (body.openwater?.time_period || 'AM').toUpperCase();
+                      return tp === 'PM' ? '13:00' : '08:00';
+                    }
+                    if (body.res_type === 'pool') return normalizeTime(body.pool?.start_time);
+                    if (body.res_type === 'classroom') return normalizeTime(body.classroom?.start_time);
+                    return null;
+                  })();
+                  if (candidateTime) {
+                    const { data: sameDay } = await serviceSupabase
+                      .from('reservations')
+                      .select('reservation_id, res_status, res_type, res_openwater(time_period), res_pool(start_time), res_classroom(start_time)')
+                      .eq('uid', buddyUid)
+                      .gte('res_date', from)
+                      .lte('res_date', to);
+                    const timeOf = (r: any): string | null => {
+                      if (r.res_type === 'open_water') {
+                        const tp = (r?.res_openwater?.time_period || 'AM').toUpperCase();
+                        return tp === 'PM' ? '13:00' : '08:00';
+                      }
+                      if (r.res_type === 'pool') return normalizeTime(r?.res_pool?.start_time ?? null);
+                      if (r.res_type === 'classroom') return normalizeTime(r?.res_classroom?.start_time ?? null);
+                      return null;
+                    };
+                    for (const r of sameDay || []) {
+                      const status = String(r.res_status || '').toLowerCase();
+                      if (status === 'cancelled' || status === 'rejected') {
+                        const t = timeOf(r);
+                        if (t && t === candidateTime) {
+                          if (r.res_type === 'open_water') await serviceSupabase.from('res_openwater').delete().eq('reservation_id', r.reservation_id);
+                          if (r.res_type === 'pool') await serviceSupabase.from('res_pool').delete().eq('reservation_id', r.reservation_id);
+                          if (r.res_type === 'classroom') await serviceSupabase.from('res_classroom').delete().eq('reservation_id', r.reservation_id);
+                          await serviceSupabase.from('reservations').delete().eq('reservation_id', r.reservation_id);
+                        }
+                      }
+                    }
+                  }
+                  const retry = await serviceSupabase
+                    .from('reservations')
+                    .insert({
+                      uid: buddyUid,
+                      res_date: res_date_iso,
+                      res_type: body.res_type,
+                      res_status: buddyInitialStatus,
+                    })
+                    .select('*')
+                    .maybeSingle();
+                  buddyParent = retry.data;
+                  buddyParentError = retry.error as any;
+                } catch (sweepErr) {
+                  console.error(`[reservations-create] Failed to sweep cancelled for buddy ${buddyUid}:`, sweepErr);
+                }
+              }
+              if (buddyParentError) {
+                console.error(`Failed to create reservation for buddy ${buddyUid}:`, buddyParentError);
+                continue; // Skip this buddy
+              }
             } else {
               console.log(`Created reservation for buddy ${buddyUid}`);
             }
