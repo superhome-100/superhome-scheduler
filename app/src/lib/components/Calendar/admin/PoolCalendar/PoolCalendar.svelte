@@ -165,13 +165,13 @@
     >
       <!-- Header row -->
       <div
-        class="box-border p-2 text-center font-semibold text-base-content border-r border-base-300 bg-base-200 border-b-2 border-base-300"
+        class="box-border p-2 text-center font-semibold text-base-content border-r border-base-300 bg-base-200 border-b-2"
       >
         Time
       </div>
       {#each lanes as lane}
         <div
-          class="box-border p-2 text-center font-semibold text-base-content border-r border-base-300 last:border-r-0 bg-base-200 border-b-2 border-base-300"
+          class="box-border p-2 text-center font-semibold text-base-content border-r border-base-300 last:border-r-0 bg-base-200 border-b-2"
         >
           Lane {lane}
         </div>
@@ -180,14 +180,14 @@
       <!-- Hour rows -->
       {#each hourSlots as hourLabel}
         <div
-          class="box-border text-center text-sm text-base-content/70 bg-base-200 border-r border-base-300 flex items-center justify-center border-b border-base-300"
+          class="box-border text-center text-sm text-base-content/70 bg-base-200 border-r border-base-300 flex items-center justify-center border-b"
           style={`height: ${HOUR_ROW_PX}px;`}
         >
           {hourLabel}
         </div>
         {#each lanes as _lane}
           <div
-            class="relative box-border border-r border-base-300 last:border-r-0 border-b-2 border-base-300"
+            class="relative box-border border-r border-base-300 last:border-r-0 border-b-2"
             style={`height: ${HOUR_ROW_PX}px;`}
           >
             <div
