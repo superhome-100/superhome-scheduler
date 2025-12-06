@@ -683,8 +683,13 @@ Deno.serve(async (req: Request) => {
       return json({ error: `Failed to create details: ${detailError.message}` }, { status: 400 })
     }
 
-    // Handle buddy group creation if buddies are provided
-    if (body.buddies && body.buddies.length > 0) {
+    // Handle buddy group creation if buddies are provided (skip for coaching subtypes)
+    const isCoachingSubtype = (
+      (body.res_type === 'open_water' && body.openwater?.open_water_type === 'course_coaching') ||
+      (body.res_type === 'pool' && body.pool?.pool_type === 'course_coaching') ||
+      (body.res_type === 'classroom' && body.classroom?.classroom_type === 'course_coaching')
+    );
+    if (body.buddies && body.buddies.length > 0 && !isCoachingSubtype) {
       try {
         // Determine time_period for buddy group
         let timePeriod = '';
@@ -722,6 +727,12 @@ Deno.serve(async (req: Request) => {
           } else if (body.res_type === 'pool') {
             await supabase
               .from('res_pool')
+              .update({ buddy_group_id: buddyGroupId })
+              .eq('uid', body.uid)
+              .eq('res_date', res_date_iso);
+          } else if (body.res_type === 'classroom') {
+            await supabase
+              .from('res_classroom')
               .update({ buddy_group_id: buddyGroupId })
               .eq('uid', body.uid)
               .eq('res_date', res_date_iso);
