@@ -221,7 +221,7 @@
     statusDialogDisplayName = null;
   }
 
-  async function confirmStatusUpdate(newStatus: "confirmed" | "rejected") {
+  async function confirmStatusUpdate(newStatus: "pending" | "confirmed" | "rejected") {
     if (!statusDialogReservation || statusDialogSubmitting) return;
     statusDialogSubmitting = true;
     statusDialogError = null;
@@ -257,7 +257,7 @@
 
   async function quickUpdateStatus(
     res: FlattenedReservation,
-    newStatus: "confirmed" | "rejected"
+    newStatus: "pending" | "confirmed" | "rejected"
   ) {
     if (!isAdmin) return;
     statusDialogReservation = res;
@@ -994,6 +994,14 @@
                 <div class="flex items-center gap-1">
                   <button
                     type="button"
+                    class="btn btn-xs btn-outline"
+                    on:click={() => quickUpdateStatus(res, 'pending')}
+                    disabled={statusDialogSubmitting}
+                  >
+                    Mark Pending
+                  </button>
+                  <button
+                    type="button"
                     class="btn btn-xs btn-error"
                     on:click={() => quickUpdateStatus(res, 'rejected')}
                     disabled={statusDialogSubmitting}
@@ -1013,6 +1021,14 @@
                   <p class="text-xs text-base-content/80 truncate">{getReservationSubtitle(res)}</p>
                 </div>
                 <div class="flex items-center gap-1">
+                  <button
+                    type="button"
+                    class="btn btn-xs btn-outline"
+                    on:click={() => quickUpdateStatus(res, 'pending')}
+                    disabled={statusDialogSubmitting}
+                  >
+                    Mark Pending
+                  </button>
                   <button
                     type="button"
                     class="btn btn-xs btn-success"
