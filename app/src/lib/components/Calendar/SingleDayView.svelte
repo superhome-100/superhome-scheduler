@@ -101,7 +101,7 @@
 
   // Admin-only dialog state for updating reservation status from calendar
   let statusDialogOpen = false;
-  let statusDialogReservation: OpenWaterReservationView | null = null;
+  let statusDialogReservation: FlattenedReservation | null = null;
   let statusDialogSubmitting = false;
   let statusDialogError: string | null = null;
   let statusDialogDisplayName: string | null = null;
@@ -256,7 +256,7 @@
   }
 
   async function quickUpdateStatus(
-    res: OpenWaterReservationView,
+    res: FlattenedReservation,
     newStatus: "confirmed" | "rejected"
   ) {
     if (!isAdmin) return;
@@ -378,18 +378,21 @@
     return map;
   })();
 
-  // All open water reservations for the selected day (independent of current calendar type)
-  $: dayOpenWaterReservations = dayReservations.filter(
-    (r) => r.res_type === 'open_water'
-  ) as OpenWaterReservationView[];
+  // All reservations for the selected day, filtered by currently selected calendar type
+  $: dayTypeReservations = dayReservations.filter((r) => {
+    if (selectedCalendarType === ReservationType.openwater) return r.res_type === 'open_water';
+    if (selectedCalendarType === ReservationType.pool) return r.res_type === 'pool';
+    if (selectedCalendarType === ReservationType.classroom) return r.res_type === 'classroom';
+    return false;
+  }) as FlattenedReservation[];
 
-  $: dayPendingOpenWater = dayOpenWaterReservations.filter(
+  $: dayPendingReservations = dayTypeReservations.filter(
     (r) => r.res_status === 'pending'
   );
-  $: dayApprovedOpenWater = dayOpenWaterReservations.filter(
+  $: dayApprovedReservations = dayTypeReservations.filter(
     (r) => r.res_status === 'confirmed'
   );
-  $: dayDeniedOpenWater = dayOpenWaterReservations.filter(
+  $: dayDeniedReservations = dayTypeReservations.filter(
     (r) => r.res_status === 'rejected'
   );
 
@@ -403,7 +406,7 @@
     dayListOpen = false;
   }
 
-  function getOpenWaterDisplayName(res: OpenWaterReservationView): string {
+  function getReservationDisplayName(res: FlattenedReservation): string {
     const fromMap = (reservationNamesByUid.get(res.uid) ?? '').toString().trim();
     if (fromMap) return fromMap;
     const up = ((res as any).user_profiles ?? {}) as {
@@ -413,6 +416,47 @@
     const nick = (up.nickname ?? '').toString().trim();
     const name = (up.name ?? '').toString().trim();
     return nick || name || 'Unknown';
+  }
+
+  function getReservationSubtitle(res: FlattenedReservation): string {
+    const type = String(res.res_type || '').toLowerCase();
+
+    if (type === 'open_water') {
+      const owType = (res as any).open_water_type || 'Open Water';
+      const depthVal = (res as any).depth_m;
+      const depth = depthVal != null ? `${depthVal} m` : 'Depth N/A';
+      const buoy = (res as any).buoy || 'N/A';
+      return `${owType} · ${depth} · Buoy: ${buoy}`;
+    }
+
+    if (type === 'pool') {
+      const poolType = (res as any).pool_type || 'Pool';
+      const start =
+        (res as any)?.res_pool?.start_time ?? (res as any)?.start_time ?? null;
+      const end =
+        (res as any)?.res_pool?.end_time ?? (res as any)?.end_time ?? null;
+      const timeLabel = start && end ? `${start}–${end}` : 'Time N/A';
+      const lane =
+        (res as any)?.res_pool?.lane ?? (res as any)?.lane ?? null;
+      const laneLabel = lane ? `Lane: ${lane}` : 'Lane: N/A';
+      return `${poolType} · ${timeLabel} · ${laneLabel}`;
+    }
+
+    if (type === 'classroom') {
+      const classType = (res as any).classroom_type || 'Classroom';
+      const start =
+        (res as any)?.res_classroom?.start_time ?? (res as any)?.start_time ?? null;
+      const end =
+        (res as any)?.res_classroom?.end_time ?? (res as any)?.end_time ?? null;
+      const timeLabel = start && end ? `${start}–${end}` : 'Time N/A';
+      const room =
+        (res as any)?.res_classroom?.room ?? (res as any)?.room ?? null;
+      const roomLabel = room ? `Room: ${room}` : 'Room: N/A';
+      return `${classType} · ${timeLabel} · ${roomLabel}`;
+    }
+
+    // Fallback for any other type
+    return String(res.res_type || 'Reservation');
   }
 
   // Only show approved Pool reservations with defined times (lane may be provisional in UI)
@@ -912,17 +956,11 @@
 
         <div class="px-4 py-3 space-y-2 overflow-y-auto">
           {#if dayListTab === 'pending'}
-            {#each dayPendingOpenWater as res (res.reservation_id)}
+            {#each dayPendingReservations as res (res.reservation_id)}
               <div class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2">
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm font-semibold truncate">{getOpenWaterDisplayName(res)}</p>
-                  <p class="text-xs text-base-content/80 truncate">
-                    {(res.open_water_type || 'Open Water')}
-                     b7
-                    {res.depth_m != null ? `${res.depth_m} m` : 'Depth N/A'}
-                     b7
-                    Buoy: {res.buoy || 'N/A'}
-                  </p>
+                  <p class="text-sm font-semibold truncate">{getReservationDisplayName(res)}</p>
+                  <p class="text-xs text-base-content/80 truncate">{getReservationSubtitle(res)}</p>
                 </div>
                 <div class="flex items-center gap-1">
                   <button
@@ -947,17 +985,11 @@
               <p class="text-xs text-base-content/60">No pending reservations for this day.</p>
             {/each}
           {:else if dayListTab === 'approved'}
-            {#each dayApprovedOpenWater as res (res.reservation_id)}
+            {#each dayApprovedReservations as res (res.reservation_id)}
               <div class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2">
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm font-semibold truncate">{getOpenWaterDisplayName(res)}</p>
-                  <p class="text-xs text-base-content/80 truncate">
-                    {(res.open_water_type || 'Open Water')}
-                     b7
-                    {res.depth_m != null ? `${res.depth_m} m` : 'Depth N/A'}
-                     b7
-                    Buoy: {res.buoy || 'N/A'}
-                  </p>
+                  <p class="text-sm font-semibold truncate">{getReservationDisplayName(res)}</p>
+                  <p class="text-xs text-base-content/80 truncate">{getReservationSubtitle(res)}</p>
                 </div>
                 <div class="flex items-center gap-1">
                   <button
@@ -974,17 +1006,11 @@
               <p class="text-xs text-base-content/60">No approved reservations for this day.</p>
             {/each}
           {:else}
-            {#each dayDeniedOpenWater as res (res.reservation_id)}
+            {#each dayDeniedReservations as res (res.reservation_id)}
               <div class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2">
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm font-semibold truncate">{getOpenWaterDisplayName(res)}</p>
-                  <p class="text-xs text-base-content/80 truncate">
-                    {(res.open_water_type || 'Open Water')}
-                     b7
-                    {res.depth_m != null ? `${res.depth_m} m` : 'Depth N/A'}
-                     b7
-                    Buoy: {res.buoy || 'N/A'}
-                  </p>
+                  <p class="text-sm font-semibold truncate">{getReservationDisplayName(res)}</p>
+                  <p class="text-xs text-base-content/80 truncate">{getReservationSubtitle(res)}</p>
                 </div>
                 <div class="flex items-center gap-1">
                   <button
