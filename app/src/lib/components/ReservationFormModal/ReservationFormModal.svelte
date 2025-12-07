@@ -725,7 +725,7 @@
           (formData.type === "pool" && formData.poolType === "course_coaching") ||
           (formData.type === "classroom" && formData.classroomType === "course_coaching")
         )}
-          <BuddySelection bind:formData />
+          <BuddySelection bind:formData {editing} {initialReservation} />
         {/if}
 
         <!-- Notes -->

@@ -3,12 +3,15 @@
     import { authStore } from "$lib/stores/auth";
 
     export let formData: any;
+    export let editing: boolean = false;
+    export let initialReservation: any = null;
 
     let searchQuery = "";
     let searchResults: any[] = [];
     let selectedBuddies: any[] = [];
     let searching = false;
     let showResults = false;
+    let prefilling = false;
 
     // Debounce search
     let searchTimeout: NodeJS.Timeout;
@@ -77,6 +80,92 @@
         if (!target.closest(".buddy-search-container")) {
             showResults = false;
         }
+    }
+
+    async function prefillExistingBuddies() {
+        // Only for edit mode and open water reservations
+        if (prefilling) return;
+        if (!editing) return;
+        try {
+            const isOpenWater = formData?.type === "openwater";
+            if (!isOpenWater) return;
+            // Determine date and time period
+            const resDateRaw =
+                (initialReservation?.res_date as string | undefined) ||
+                (initialReservation?.date as string | undefined) ||
+                (formData?.date as string | undefined);
+            const timePeriod =
+                (initialReservation?.res_openwater?.time_period as string | undefined) ||
+                (initialReservation?.time_period as string | undefined) ||
+                (formData?.timeOfDay as string | undefined) ||
+                undefined;
+            const me = $authStore.user?.id;
+            if (!resDateRaw || (timePeriod !== "AM" && timePeriod !== "PM") || !me) return;
+            // Avoid overwriting if user already changed selection
+            if (Array.isArray(formData?.buddies) && formData.buddies.length > 0) return;
+            if (selectedBuddies.length > 0) return;
+
+            prefilling = true;
+            const dateOnly = String(resDateRaw).split("T")[0];
+            // Load group members via RPC (read-only)
+            const { data, error } = await supabase.rpc(
+                "get_buddy_group_with_members",
+                {
+                    p_res_date: dateOnly,
+                    p_time_period: timePeriod,
+                    p_res_type: "open_water",
+                },
+            );
+            if (error) {
+                console.warn("[BuddySelection] prefill RPC error:", error.message);
+                return;
+            }
+            type RpcRow = {
+                buddy_group_id: string;
+                member_uid: string;
+                member_status: string;
+            };
+            const rows = (data || []) as RpcRow[];
+            if (!rows.length) return;
+            const myRow = rows.find((r) => r.member_uid === me);
+            if (!myRow) return;
+            const groupId = myRow.buddy_group_id;
+            const memberUids = Array.from(
+                new Set(
+                    rows
+                        .filter((r) => r.buddy_group_id === groupId)
+                        .map((r) => r.member_uid)
+                        .filter((uid) => uid !== me),
+                ),
+            );
+            if (!memberUids.length) return;
+            // Cap to 2 buddies as per UI rule
+            const limited = memberUids.slice(0, 2);
+            // Fetch profiles to display names
+            const { data: profiles, error: pErr } = await supabase
+                .from("user_profiles")
+                .select("uid, name, nickname")
+                .in("uid", limited);
+            if (pErr) {
+                console.warn("[BuddySelection] profile fetch error:", pErr.message);
+                return;
+            }
+            const buddies = (profiles || []).map((u: any) => ({
+                uid: u.uid,
+                name: u.name ?? null,
+                nickname: u.nickname ?? null,
+            }));
+            selectedBuddies = buddies;
+            formData.buddies = buddies.map((b) => b.uid);
+        } finally {
+            prefilling = false;
+        }
+    }
+
+    // Attempt prefill when modal opens with edit data or when edit fields change
+    $: if (editing && initialReservation) {
+        // React when inputs relevant to prefill are available
+        prefillExistingBuddies();
     }
 </script>
 
