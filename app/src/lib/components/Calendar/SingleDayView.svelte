@@ -6,7 +6,6 @@
   import { authStore } from "../../stores/auth";
 
   import SingleDayHeader from "./SingleDayHeader.svelte";
-  import CalendarTypeSwitcher from "./CalendarTypeSwitcher.svelte";
   import PoolCalendar from "./admin/PoolCalendar/PoolCalendar.svelte";
   import OpenWaterAdminTables from "./admin/OpenWaterCalendar/OpenWaterAdminTables.svelte";
   import ClassroomCalendar from "./admin/ClassroomCalendar/ClassroomCalendar.svelte";
@@ -106,6 +105,10 @@
   let statusDialogSubmitting = false;
   let statusDialogError: string | null = null;
   let statusDialogDisplayName: string | null = null;
+
+  // Admin-only day list modal state
+  let dayListOpen = false;
+  let dayListTab: 'pending' | 'approved' | 'denied' = 'pending';
 
   // Enriched buoy groups including nested open water reservations
   // Admins rely on full reservation join; non-admins fall back to buoy group member arrays
@@ -252,6 +255,15 @@
     }
   }
 
+  async function quickUpdateStatus(
+    res: OpenWaterReservationView,
+    newStatus: "confirmed" | "rejected"
+  ) {
+    if (!isAdmin) return;
+    statusDialogReservation = res;
+    await confirmStatusUpdate(newStatus);
+  }
+
   // Calendar type state
   let selectedCalendarType: ReservationType = ReservationType.openwater;
   let initializedCalendarType = false;
@@ -365,6 +377,43 @@
     }
     return map;
   })();
+
+  // All open water reservations for the selected day (independent of current calendar type)
+  $: dayOpenWaterReservations = dayReservations.filter(
+    (r) => r.res_type === 'open_water'
+  ) as OpenWaterReservationView[];
+
+  $: dayPendingOpenWater = dayOpenWaterReservations.filter(
+    (r) => r.res_status === 'pending'
+  );
+  $: dayApprovedOpenWater = dayOpenWaterReservations.filter(
+    (r) => r.res_status === 'confirmed'
+  );
+  $: dayDeniedOpenWater = dayOpenWaterReservations.filter(
+    (r) => r.res_status === 'rejected'
+  );
+
+  function openDayList() {
+    if (!isAdmin) return;
+    dayListTab = 'pending';
+    dayListOpen = true;
+  }
+
+  function closeDayList() {
+    dayListOpen = false;
+  }
+
+  function getOpenWaterDisplayName(res: OpenWaterReservationView): string {
+    const fromMap = (reservationNamesByUid.get(res.uid) ?? '').toString().trim();
+    if (fromMap) return fromMap;
+    const up = ((res as any).user_profiles ?? {}) as {
+      nickname?: string | null;
+      name?: string | null;
+    };
+    const nick = (up.nickname ?? '').toString().trim();
+    const name = (up.name ?? '').toString().trim();
+    return nick || name || 'Unknown';
+  }
 
   // Only show approved Pool reservations with defined times (lane may be provisional in UI)
   $: approvedPlottedPoolReservations = filteredReservations.filter((r) => {
@@ -719,6 +768,7 @@
   {:else}
     <SingleDayHeader
       {selectedDate}
+      showListButton={isAdmin}
       on:back={handleBackToCalendar}
       on:changeDate={(e) => {
         const d = String(e.detail);
@@ -726,15 +776,7 @@
         const type = selectedCalendarType || ReservationType.openwater;
         goto(`/reservation/${type}/${d}`);
       }}
-    />
-  {/if}
-
-  <!-- Calendar Type Buttons (hidden for non-admin Open Water view) -->
-  {#if !(selectedCalendarType === "openwater" && !isAdmin)}
-    <CalendarTypeSwitcher
-      value={selectedCalendarType}
-      date={selectedDate}
-      on:change={(e) => switchCalendarType(e.detail)}
+      on:openList={openDayList}
     />
   {/if}
 
@@ -821,6 +863,144 @@
           >
             Approve
           </button>
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  {#if isAdmin && dayListOpen}
+    <div class="fixed inset-0 z-[85] flex items-center justify-center bg-base-300/70 backdrop-blur-sm">
+      <div class="bg-base-100 rounded-xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-base-300">
+          <h3 class="text-base font-semibold text-base-content">
+            Reservations for {dayjs(selectedDate).format('YYYY-MM-DD')}
+          </h3>
+          <button
+            type="button"
+            class="btn btn-ghost btn-xs"
+            on:click={closeDayList}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="px-4 pt-3">
+          <div class="tabs tabs-boxed w-full">
+            <button
+              type="button"
+              class={`tab tab-sm flex-1 ${dayListTab === 'pending' ? 'tab-active' : ''}`}
+              on:click={() => (dayListTab = 'pending')}
+            >
+              Pending
+            </button>
+            <button
+              type="button"
+              class={`tab tab-sm flex-1 ${dayListTab === 'approved' ? 'tab-active' : ''}`}
+              on:click={() => (dayListTab = 'approved')}
+            >
+              Approved
+            </button>
+            <button
+              type="button"
+              class={`tab tab-sm flex-1 ${dayListTab === 'denied' ? 'tab-active' : ''}`}
+              on:click={() => (dayListTab = 'denied')}
+            >
+              Denied
+            </button>
+          </div>
+        </div>
+
+        <div class="px-4 py-3 space-y-2 overflow-y-auto">
+          {#if dayListTab === 'pending'}
+            {#each dayPendingOpenWater as res (res.reservation_id)}
+              <div class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2">
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-semibold truncate">{getOpenWaterDisplayName(res)}</p>
+                  <p class="text-xs text-base-content/80 truncate">
+                    {(res.open_water_type || 'Open Water')}
+                     b7
+                    {res.depth_m != null ? `${res.depth_m} m` : 'Depth N/A'}
+                     b7
+                    Buoy: {res.buoy || 'N/A'}
+                  </p>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button
+                    type="button"
+                    class="btn btn-xs btn-success"
+                    on:click={() => quickUpdateStatus(res, 'confirmed')}
+                    disabled={statusDialogSubmitting}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-xs btn-error"
+                    on:click={() => quickUpdateStatus(res, 'rejected')}
+                    disabled={statusDialogSubmitting}
+                  >
+                    Deny
+                  </button>
+                </div>
+              </div>
+            {:else}
+              <p class="text-xs text-base-content/60">No pending reservations for this day.</p>
+            {/each}
+          {:else if dayListTab === 'approved'}
+            {#each dayApprovedOpenWater as res (res.reservation_id)}
+              <div class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2">
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-semibold truncate">{getOpenWaterDisplayName(res)}</p>
+                  <p class="text-xs text-base-content/80 truncate">
+                    {(res.open_water_type || 'Open Water')}
+                     b7
+                    {res.depth_m != null ? `${res.depth_m} m` : 'Depth N/A'}
+                     b7
+                    Buoy: {res.buoy || 'N/A'}
+                  </p>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button
+                    type="button"
+                    class="btn btn-xs btn-error"
+                    on:click={() => quickUpdateStatus(res, 'rejected')}
+                    disabled={statusDialogSubmitting}
+                  >
+                    Deny
+                  </button>
+                </div>
+              </div>
+            {:else}
+              <p class="text-xs text-base-content/60">No approved reservations for this day.</p>
+            {/each}
+          {:else}
+            {#each dayDeniedOpenWater as res (res.reservation_id)}
+              <div class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2">
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-semibold truncate">{getOpenWaterDisplayName(res)}</p>
+                  <p class="text-xs text-base-content/80 truncate">
+                    {(res.open_water_type || 'Open Water')}
+                     b7
+                    {res.depth_m != null ? `${res.depth_m} m` : 'Depth N/A'}
+                     b7
+                    Buoy: {res.buoy || 'N/A'}
+                  </p>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button
+                    type="button"
+                    class="btn btn-xs btn-success"
+                    on:click={() => quickUpdateStatus(res, 'confirmed')}
+                    disabled={statusDialogSubmitting}
+                  >
+                    Approve
+                  </button>
+                </div>
+              </div>
+            {:else}
+              <p class="text-xs text-base-content/60">No denied reservations for this day.</p>
+            {/each}
+          {/if}
         </div>
       </div>
     </div>

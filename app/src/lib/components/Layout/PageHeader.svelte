@@ -75,7 +75,8 @@
           <p class="text-sm sm:text-base text-base-content/80">{subtitle}</p>
         {/if}
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap justify-end">
+        <slot name="right" />
         <button
           type="button"
           class="btn btn-ghost btn-sm normal-case"
