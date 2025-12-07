@@ -3,6 +3,7 @@
   import dayjs from 'dayjs';
 
   export let selectedDate: string;
+  export let showListButton: boolean = false;
 
   const dispatch = createEventDispatcher();
 
@@ -20,6 +21,10 @@
     dispatch('changeDate', next);
   }
 
+  function handleOpenList() {
+    dispatch('openList');
+  }
+
   function formatSelectedDate(date: string) {
     return dayjs(date).format('dddd, MMMM D, YYYY');
   }
@@ -34,6 +39,18 @@
   </button>
   <div class="flex items-center gap-3 ml-auto sm:flex-1 sm:min-w-0">
     <h1 class="date-title text-xl font-semibold text-slate-800 m-0 sm:whitespace-nowrap sm:overflow-hidden sm:text-ellipsis sm:flex-1">{formatSelectedDate(selectedDate)}</h1>
+    {#if showListButton}
+      <button
+        class="btn btn-ghost btn-sm px-2 py-1 bg-slate-100 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-200 hover:text-slate-700 transition-all duration-200"
+        type="button"
+        on:click={handleOpenList}
+        aria-label="Show reservations list"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+          <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z" />
+        </svg>
+      </button>
+    {/if}
     <div class="nav-buttons">
       <button class="btn btn-outline btn-sm" on:click={handlePrevDay} aria-label="Previous Day">Prev</button>
       <button class="btn btn-outline btn-sm" on:click={handleNextDay} aria-label="Next Day">Next</button>

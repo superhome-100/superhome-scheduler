@@ -17,8 +17,7 @@
 <div class={`flex justify-center mb-8 flex-wrap gap-6 button-container ${className}`}>
   <a
     href={getHref('openwater')}
-    class={`btn btn-${size} btn-neutral`}
-    class:btn-active={value === ReservationType.openwater}
+    class={`btn btn-${size} bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 hover:text-slate-800`}
     class:active-res={value === ReservationType.openwater}
     title="Open Water Reservations"
     role="button"
@@ -28,8 +27,7 @@
 
   <a
     href={getHref('pool')}
-    class={`btn btn-${size} btn-neutral`}
-    class:btn-active={value === ReservationType.pool}
+    class={`btn btn-${size} bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 hover:text-slate-800`}
     class:active-res={value === ReservationType.pool}
     title="Pool Reservations"
     role="button"
@@ -39,8 +37,7 @@
 
   <a
     href={getHref('classroom')}
-    class={`btn btn-${size} btn-neutral`}
-    class:btn-active={value === ReservationType.classroom}
+    class={`btn btn-${size} bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 hover:text-slate-800`}
     class:active-res={value === ReservationType.classroom}
     title="Classroom Reservations"
     role="button"
