@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import dayjs, { formatCompactTime, getOpenWaterDepth } from '../../utils/dateUtils';
+  import autoFit from '../../utils/autoFit';
   import { transformReservationToUnified } from '../../utils/reservationTransform';
   import ReservationPriceBreakdown from './ReservationPriceBreakdown.svelte';
+  import './ReservationCard.css';
 
   export let reservation: any;
   export let clickable: boolean = true;
@@ -10,46 +12,22 @@
   export let showPrice: boolean = true;
   // When true, on small screens move the price cell to a second row (mobile-first requirement for Admin User Reservations)
   export let priceBelowOnMobile: boolean = false;
+  // Allow parent to explicitly control visibility of the Cancel button (e.g., hide on Completed lists)
+  export let showCancel: boolean = true;
 
   // Computed classes
-  $: gridColsClass = priceBelowOnMobile ? 'grid-cols-4 sm:grid-cols-5' : 'grid-cols-5';
+  // Grid columns base: Date | Type | StudentCount | Time | Status
+  // + Cancel (if showCancel)
+  // + Price (always on sm+; on mobile only when priceBelowOnMobile is false)
+  $: mobileCols = 5 + (showCancel ? 1 : 0) + ((showPrice && !priceBelowOnMobile) ? 1 : 0);
+  $: desktopCols = 5 + (showCancel ? 1 : 0) + (showPrice ? 1 : 0);
+  $: gridColsClass = `${mobileCols === 5 ? 'grid-cols-5' : mobileCols === 6 ? 'grid-cols-6' : 'grid-cols-7'} ${desktopCols === 5 ? 'sm:grid-cols-5' : desktopCols === 6 ? 'sm:grid-cols-6' : 'sm:grid-cols-7'}`;
 
-  // Auto-fit font size action for price text: shrink only when overflowing
-  function autoFit(node: HTMLElement, params: { min?: number; max?: number; step?: number } = {}) {
-    const { min = 10, max = 16, step = 0.5 } = params;
-    let current = Math.min(parseFloat(getComputedStyle(node).fontSize || '14'), max);
-
-    const fit = () => {
-      // Reset to max to retry fitting after container grows
-      current = Math.min(current, max);
-      node.style.fontSize = current + 'px';
-      let guard = 0;
-      // If the content overflows, reduce gradually
-      while (node.scrollWidth > node.clientWidth && current > min && guard < 100) {
-        current -= step;
-        node.style.fontSize = current + 'px';
-        guard++;
-      }
-    };
-
-    const ro = new ResizeObserver(() => fit());
-    ro.observe(node);
-    const mo = new MutationObserver(() => fit());
-    mo.observe(node, { childList: true, characterData: true, subtree: true });
-    // Initial fit after mount
-    queueMicrotask(fit);
-
-    return {
-      destroy() {
-        ro.disconnect();
-        mo.disconnect();
-      }
-    };
-  }
+  // autoFit action imported from utils
 
   const dispatch = createEventDispatcher();
 
-  // Normalize to a unified shape for consistent rendering across raw rows and modal items
+  // Normalize to a unified shape
   $: unified = (() => {
     try {
       // Heuristic: if it already has unified fields, skip transform
@@ -61,8 +39,18 @@
       return reservation;
     }
   })();
+  
+  // Viewport gate so desktop text status is not rendered at all on mobile
+  let isDesktop = false;
+  onMount(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const update = () => { isDesktop = mq.matches; };
+    update();
+    if (mq.addEventListener) mq.addEventListener('change', update); else mq.addListener(update);
+    return () => { if (mq.removeEventListener) mq.removeEventListener('change', update); else mq.removeListener(update); };
+  });
 
-  // Derive start/end labels for Pool/Classroom mobile two-line display
+  // Derive start/end labels
   $: resType = unified?.res_type || unified?.type;
   $: isOpenWater = resType === 'open_water' || resType === 'Open Water';
   const fmt = (t: any) => {
@@ -93,7 +81,7 @@
   $: startLabel = fmt(startRaw);
   $: endLabel = fmt(endRaw);
 
-  // Date columns: Day and Month (force UTC to avoid timezone shifts)
+  // Date columns (UTC to avoid TZ shifts)
   $: dayNum = (() => {
     const d = dayjs.utc(unified?.res_date || unified?.date);
     return d.isValid() ? d.format('D') : '';
@@ -103,16 +91,16 @@
     return d.isValid() ? d.format('MMM') : '';
   })();
 
-  // Combined compact date label (e.g., "4 Nov") for a single date cell
+  // Compact date label (e.g., "4 Nov")
   $: dateLabel = [dayNum, monthShort].filter(Boolean).join(' ');
 
-  // Price display (no hardcoded placeholder; hide when not available)
+  // Price display
   const pickPrice = (r: any): number | string | undefined => {
     if (!r) return undefined;
     const candidates = [r.price, r.total_price, r.totalPrice, r.amount, r.fee, r.cost];
     return candidates.find((v) => v !== undefined && v !== null);
   };
-  // Prefer price from unified; if not present (because transform may omit it), fall back to original reservation
+  // Prefer price from unified; fallback to raw
   $: rawPrice = (() => {
     const u = pickPrice(unified);
     if (u !== undefined && u !== null && u !== '') return u;
@@ -125,7 +113,7 @@
     return String(rawPrice);
   })();
 
-  // Values for price RPC when not persisted: use uid and res_date from unified/reservation
+  // Values for price RPC when not persisted
   $: priceUid = unified?.uid || reservation?.uid;
   $: priceResDate = (() => {
     const raw = unified?.res_date || unified?.date;
@@ -134,7 +122,7 @@
     const d = dayjs.utc(raw);
     return d.isValid() ? d.toISOString() : String(raw);
   })();
-  // Derive category/typeKey for precise price breakdown filtering
+  // Derive category/typeKey
   $: priceCategory = (() => {
     const t = (unified?.res_type || unified?.type || '').toString().toLowerCase();
     if (t === 'open water') return 'open_water';
@@ -155,7 +143,75 @@
   const handleClick = () => {
     if (clickable) dispatch('click', reservation);
   };
-</script>
+
+  // Student count for Course/Coaching types
+  const lower = (v: any) => (v ? String(v).toLowerCase() : '');
+  $: typeKey = (() => {
+    const ow = unified?.res_openwater || unified?.open_water || reservation?.res_openwater || reservation?.open_water;
+    const pool = unified?.res_pool || unified?.pool || reservation?.res_pool || reservation?.pool;
+    const classroom = unified?.res_classroom || unified?.classroom || reservation?.res_classroom || reservation?.classroom;
+    return lower(ow?.open_water_type || pool?.pool_type || classroom?.classroom_type || unified?.open_water_type || unified?.pool_type || unified?.classroom_type || unified?.type || reservation?.type || unified?.res_type);
+  })();
+  $: studentCount = (() => {
+    const ow = unified?.res_openwater || unified?.open_water || reservation?.res_openwater || reservation?.open_water;
+    const pool = unified?.res_pool || unified?.pool || reservation?.res_pool || reservation?.pool;
+    const classroom = unified?.res_classroom || unified?.classroom || reservation?.res_classroom || reservation?.classroom;
+    return ow?.student_count ?? pool?.student_count ?? classroom?.student_count ?? unified?.student_count ?? reservation?.student_count;
+  })();
+  $: showStudent = (() => {
+    const t = typeKey;
+    return t.includes('course') || t.includes('coaching');
+  })();
+
+  const handleCancelClick = (e: MouseEvent) => {
+    e.stopPropagation();
+    dispatch('cancel', reservation);
+  };
+  
+  // Status helpers for compact mobile rendering
+  $: statusRaw = (unified?.res_status || unified?.status || 'pending');
+  $: statusLower = statusRaw?.toString().toLowerCase();
+  $: statusColorClass = (() => {
+    switch (statusLower) {
+      case 'confirmed':
+        return 'text-green-600';
+      case 'pending':
+        return 'text-yellow-500';
+      case 'rejected':
+        return 'text-red-600';
+      case 'approved':
+        return 'text-blue-600';
+      case 'completed':
+        return 'text-slate-600';
+      case 'ongoing':
+        return 'text-indigo-600';
+      default:
+        return 'text-slate-400';
+    }
+  })();
+  
+  // Determine if reservation is upcoming (future). Prefer combining date + start time, else date-only.
+  $: isUpcoming = (() => {
+    try {
+      const dateRaw = unified?.res_date || unified?.date;
+      if (!dateRaw) return false;
+      const dateUtc = dayjs.utc(dateRaw);
+      if (!dateUtc.isValid()) return false;
+      const start = startRaw ? dayjs.utc(`${dateUtc.format('YYYY-MM-DD')}T${startRaw}`) : dateUtc.endOf('day');
+      return start.isAfter(dayjs());
+    } catch {
+      return false;
+    }
+  })();
+
+  // Desktop status label: for upcoming reservations, show "Confirmed" (unless explicitly rejected/cancelled/completed)
+  const toTitle = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '');
+  $: desktopStatusLabel = (() => {
+    const hardStatuses = ['rejected', 'cancelled', 'completed'];
+    if (isUpcoming && !hardStatuses.includes(statusLower)) return 'Confirmed';
+    return toTitle(statusRaw?.toString() || '');
+  })();
+ </script>
 
 <div
   class="reservation-item {compact ? 'compact' : ''}"
@@ -169,18 +225,17 @@
   <div
     class="compact-content grid items-start gap-2 sm:gap-3 md:gap-4 w-full min-w-0 overflow-hidden"
   >
-    <!-- First row grid: on mobile optionally reduce to 4 cols (date, type, time, status) and push price below -->
     <div class={`grid ${gridColsClass} gap-2 sm:gap-3 md:gap-4 w-full text-[11px] sm:text-[12px] md:text-[14px] overflow-hidden`}
       use:autoFit={{ min: 9, max: 14, step: 0.25 }}
     >
-      <!-- Date cell (e.g., 4 Nov) -->
+      <!-- Date -->
       <div class="flex items-center justify-start text-slate-900 font-semibold min-w-0 overflow-hidden">
         <span class="whitespace-nowrap">{dateLabel}</span>
       </div>
 
-      <!-- Type cell -->
+      <!-- Type -->
       <div class="flex items-center justify-start text-slate-700 font-semibold min-w-0 overflow-hidden">
-        <span class="type-badge {compact ? 'compact' : ''} whitespace-nowrap"
+        <span class="type-badge {compact ? 'compact' : ''} whitespace-normal md:whitespace-nowrap break-words md:truncate"
           class:pool={unified.res_type === 'pool' || unified.type === 'Pool'}
           class:openwater={unified.res_type === 'open_water' || unified.type === 'Open Water'}
           class:classroom={unified.res_type === 'classroom' || unified.type === 'Classroom'}
@@ -189,8 +244,15 @@
         </span>
       </div>
 
-      <!-- Time/Depth cell -->
-      <div class="flex items-center justify-start text-slate-600 min-w-0 overflow-hidden">
+      <!-- Student Count (course/coaching) -->
+      <div class="flex items-center justify-start text-slate-600 min-w-0 overflow-hidden shrink-0">
+        {#if showStudent && studentCount}
+          <span class="whitespace-nowrap">{studentCount} SC</span>
+        {/if}
+      </div>
+
+      <!-- Time/Depth -->
+      <div class="flex items-center justify-start text-slate-600 min-w-0 overflow-visible flex-1">
         {#if isOpenWater}
           {#if (getOpenWaterDepth(unified) || getOpenWaterDepth(reservation))}
             <span class="whitespace-nowrap">{formatCompactTime(unified)} {getOpenWaterDepth(unified) || getOpenWaterDepth(reservation)}</span>
@@ -211,21 +273,60 @@
         {/if}
       </div>
 
-      <!-- Status cell -->
-      <div class="flex items-center justify-start min-w-0 overflow-hidden">
-        <span class="status-badge {compact ? 'compact' : ''} whitespace-nowrap"
-          class:confirmed={unified.res_status === 'confirmed'}
-          class:pending={unified.res_status === 'pending'}
-          class:rejected={unified.res_status === 'rejected'}
-          class:approved={unified.status === 'approved'}
-          class:completed={unified.status === 'completed' || unified.res_status === 'completed'}
-          class:ongoing={unified.status === 'ongoing'}
-        >
-          {(unified.res_status || unified.status || 'pending').toString().charAt(0).toUpperCase() + (unified.res_status || unified.status || 'pending').toString().slice(1).toLowerCase()}
+      <!-- Status -->
+      <div class="flex items-center justify-center md:justify-start min-w-0 overflow-hidden shrink-0">
+        <!-- Mobile: icons only -->
+        <span class="inline-flex md:hidden items-center mr-0">
+          {#if statusLower === 'confirmed'}
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" class="text-green-600" fill="currentColor" aria-label="Confirmed">
+              <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.1 13.2-3.6-3.6 1.4-1.4 2.2 2.2 4.5-4.5 1.4 1.4-5.9 5.9Z"/>
+            </svg>
+          {:else if statusLower === 'pending'}
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" class="text-yellow-500" fill="currentColor" aria-label="Pending">
+              <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 14h-2v-2h2v2Zm0-4h-2V6h2v6Z"/>
+            </svg>
+          {:else if statusLower === 'rejected'}
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" class="text-red-600" fill="currentColor" aria-label="Rejected">
+              <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-3.5 6.5 7 7-1.4 1.4-7-7 1.4-1.4Zm7 0-7 7-1.4-1.4 7-7 1.4 1.4Z"/>
+            </svg>
+          {:else if statusLower === 'cancelled'}
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" class="text-red-500" fill="currentColor" aria-label="Cancelled">
+              <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm5 10a5 5 0 1 1-10 0 5 5 0 0 1 10 0Zm-8.5 0h7"/>
+            </svg>
+          {:else}
+            <!-- Generic status dot for mobile (no text) -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" class={statusColorClass} fill="currentColor" aria-hidden="true">
+              <circle cx="12" cy="12" r="6" />
+            </svg>
+          {/if}
         </span>
+        <!-- Desktop/tablet: show text status -->
+        {#if isDesktop}
+          <span class="status-badge {compact ? 'compact' : ''} whitespace-nowrap"
+            class:confirmed={unified.res_status === 'confirmed'}
+            class:pending={unified.res_status === 'pending'}
+            class:rejected={unified.res_status === 'rejected'}
+            class:approved={unified.status === 'approved'}
+            class:completed={unified.status === 'completed' || unified.res_status === 'completed'}
+            class:ongoing={unified.status === 'ongoing'}
+          >
+            {desktopStatusLabel}
+          </span>
+        {/if}
       </div>
 
-      <!-- Price cell -->
+      <!-- Cancel -->
+      {#if showCancel}
+        <div class="flex items-center justify-end w-full min-w-0 overflow-hidden">
+          {#if statusLower === 'pending' || statusLower === 'confirmed'}
+            <button class="btn btn-xs btn-error btn-outline btn-circle" title="Cancel reservation" aria-label="Cancel reservation" on:click={handleCancelClick}>
+              ✕
+            </button>
+          {/if}
+        </div>
+      {/if}
+
+      <!-- Price -->
       {#if showPrice}
         <!-- Price in-grid: hide on mobile when priceBelowOnMobile -->
         <div
@@ -233,7 +334,9 @@
           use:autoFit={{ min: 9, max: 16, step: 0.5 }}
         >
           <slot name="price">
-            {#if rawPrice !== undefined && rawPrice !== null && rawPrice !== ''}
+            {#if statusLower === 'cancelled'}
+              P0.00
+            {:else if rawPrice !== undefined && rawPrice !== null && rawPrice !== ''}
               {priceLabel}
             {:else if priceUid && priceResDate}
               <ReservationPriceBreakdown
@@ -249,57 +352,8 @@
         </div>
       {/if}
     </div>
-    {#if showPrice && priceBelowOnMobile}
-      <!-- Mobile-only second row for price/edit, aligned bottom-right -->
-      <div class="flex sm:hidden justify-end items-end mt-1 text-right">
-        <div class="flex items-center gap-2 font-semibold text-slate-700 tabular-nums whitespace-nowrap">
-          <slot name="price">
-            {#if rawPrice !== undefined && rawPrice !== null && rawPrice !== ''}
-              {priceLabel}
-            {:else if priceUid && priceResDate}
-              <ReservationPriceBreakdown
-                uid={priceUid}
-                resDate={priceResDate}
-                category={priceCategory}
-                typeKey={priceTypeKey}
-              />
-            {:else}
-              {priceLabel}
-            {/if}
-          </slot>
-        </div>
-      </div>
-    {/if}
+    
   </div>
 </div>
 
-<style>
-  .reservation-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; transition: all 0.2s ease; }
-  .reservation-item.compact { padding: 0.75rem; }
-
-  .reservation-item.clickable { cursor: pointer; }
-  .reservation-item.clickable:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
-  }
-  .reservation-item.clickable:focus { outline: 2px solid #3b82f6; outline-offset: 2px; }
-
-  /* Type: plain colored text, no badge visuals */
-  .type-badge { padding: 0; border-radius: 0; font-size: 1em; font-weight: 600; text-transform: none; letter-spacing: 0; background: transparent; border: 0; outline: 0; box-shadow: none; }
-  .type-badge.compact { padding: 0; font-size: inherit; }
-  .type-badge.pool { color: #1d4ed8; }
-  .type-badge.openwater { color: #059669; }
-  .type-badge.classroom { color: #dc2626; }
-
-  /* Status: plain colored text, no badge visuals */
-  .status-badge { padding: 0; border-radius: 0; font-size: 1em; font-weight: 600; text-transform: none; letter-spacing: 0; background: transparent; border: 0; outline: 0; box-shadow: none; }
-  .status-badge.compact { padding: 0; font-size: inherit; }
-  .status-badge.confirmed, .status-badge.approved { color: #059669; }
-  .status-badge.pending { color: #d97706; }
-  .status-badge.rejected { color: #dc2626; }
-  .status-badge.completed { color: #1d4ed8; }
-  .status-badge.ongoing { color: #7c3aed; }
-
-  /* Keep font sizing responsive but minimal; rely on Tailwind utilities in markup */
-  @media (min-width: 769px) { .type-badge, .status-badge { font-size: inherit; } }
-</style>
+ 

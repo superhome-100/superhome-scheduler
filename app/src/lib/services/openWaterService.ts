@@ -314,13 +314,28 @@ export async function getGroupReservationDetails(groupId: number): Promise<Group
   return details;
 }
 
-// Helper to fetch buddy group member names for a given slot and current user
-export async function getBuddyGroupMembersForSlot(
+export interface BuddyWithId {
+  uid: string;
+  name: string;
+}
+
+type BuddyRpcRow = {
+  buddy_group_id: string;
+  member_uid: string;
+  member_status: string;
+};
+
+interface BuddyGroupCoreResult {
+  buddyNames: string[];
+  buddies: BuddyWithId[];
+}
+
+async function loadBuddyGroupMembersCore(
   resDate: string,
   timePeriod: TimePeriod,
   resType: 'open_water' | 'pool',
   currentUid: string,
-): Promise<string[]> {
+): Promise<BuddyGroupCoreResult> {
   const dateOnly = resDate.split('T')[0];
 
   const { data, error } = await supabase.rpc('get_buddy_group_with_members', {
@@ -331,27 +346,21 @@ export async function getBuddyGroupMembersForSlot(
 
   if (error) {
     console.error('Error loading buddy group members via RPC:', error.message);
-    return [];
+    return { buddyNames: [], buddies: [] };
   }
 
-  type RpcRow = {
-    buddy_group_id: string;
-    member_uid: string;
-    member_status: string;
-  };
-
-  const rows = (data ?? []) as RpcRow[];
-  if (!rows.length) return [];
+  const rows = (data ?? []) as BuddyRpcRow[];
+  if (!rows.length) return { buddyNames: [], buddies: [] };
 
   // Find the buddy_group that includes the current user
   const myRow = rows.find((r) => r.member_uid === currentUid);
-  if (!myRow) return [];
+  if (!myRow) return { buddyNames: [], buddies: [] };
 
   const groupId = myRow.buddy_group_id;
   const groupRows = rows.filter((r) => r.buddy_group_id === groupId);
   const memberUids = Array.from(new Set(groupRows.map((r) => r.member_uid)));
 
-  if (!memberUids.length) return [];
+  if (!memberUids.length) return { buddyNames: [], buddies: [] };
 
   // Fetch names from user_profiles using withAuthRetry to respect RLS
   const { data: names, error: namesErr } = await withAuthRetry<
@@ -365,7 +374,7 @@ export async function getBuddyGroupMembersForSlot(
 
   if (namesErr) {
     console.error('Error loading buddy member names:', namesErr.message);
-    return [];
+    return { buddyNames: [], buddies: [] };
   }
 
   const nameMap = new Map<string, { name: string | null; nickname: string | null }>();
@@ -382,21 +391,43 @@ export async function getBuddyGroupMembersForSlot(
     ),
   );
 
-  // Map to display names, preferring name then nickname
-  const buddyNames = buddyUids
-    .map((uid) => {
-      const entry = nameMap.get(uid);
-      if (!entry) return null;
-      const display = entry.nickname || entry.name;
-      return display && display.trim() !== '' ? display : null;
-    })
-    .filter((name): name is string => !!name);
+  const buddies: BuddyWithId[] = [];
+  const buddyNames: string[] = [];
 
+  buddyUids.forEach((uid) => {
+    const entry = nameMap.get(uid);
+    if (!entry) return;
+    const display = (entry.nickname || entry.name || '').trim();
+    if (!display) return;
+    buddyNames.push(display);
+    buddies.push({ uid, name: display });
+  });
+
+  return { buddyNames, buddies };
+}
+
+// Helper to fetch buddy group member names for a given slot and current user
+export async function getBuddyGroupMembersForSlot(
+  resDate: string,
+  timePeriod: TimePeriod,
+  resType: 'open_water' | 'pool',
+  currentUid: string,
+): Promise<string[]> {
+  const { buddyNames } = await loadBuddyGroupMembersCore(resDate, timePeriod, resType, currentUid);
   return buddyNames;
 }
 
-// Helper to fetch all buddy nicknames (or names) for a specific reservation_id
-// Used by admin move-to-buoy dialog to display the full buddy group.
+// Variant that returns both uid and name for each buddy (excluding the current user)
+export async function getBuddyGroupMembersForSlotWithIds(
+  resDate: string,
+  timePeriod: TimePeriod,
+  resType: 'open_water' | 'pool',
+  currentUid: string,
+): Promise<BuddyWithId[]> {
+  const { buddies } = await loadBuddyGroupMembersCore(resDate, timePeriod, resType, currentUid);
+  return buddies;
+}
+
 export async function getBuddyNicknamesForReservation(
   reservationId: number,
 ): Promise<string[]> {

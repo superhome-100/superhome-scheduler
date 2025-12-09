@@ -220,6 +220,7 @@ type UpdatePayload = {
   pool?: Record<string, unknown>
   classroom?: Record<string, unknown>
   openwater?: Record<string, unknown>
+  buddies_to_cancel?: string[]
 }
 
 function json(body: unknown, init: ResponseInit = {}) {
@@ -331,6 +332,10 @@ Deno.serve(async (req: Request) => {
     const isApprovingRequest = body.parent?.res_status === 'confirmed'
     const isCancellingRequest = body.parent?.res_status === 'cancelled'
 
+    const buddiesToCancel = Array.isArray(body.buddies_to_cancel)
+      ? body.buddies_to_cancel.filter((id) => typeof id === 'string' && id.trim().length > 0)
+      : []
+
     // Handle cancellation early: enforce cutoff, clear lane/room, set status=cancelled
     if (isCancellingRequest) {
       // Load current detail to evaluate cutoff and know which table to clear
@@ -394,15 +399,15 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      // Set parent to cancelled (by reservation_id)
+      // Set parent to cancelled (by reservation_id) and zero-out price
       const { error: cancelErr } = await (admin || supabase)
         .from('reservations')
-        .update({ res_status: 'cancelled', updated_at: new Date().toISOString() })
+        .update({ res_status: 'cancelled', price: 0, updated_at: new Date().toISOString() })
         .eq('reservation_id', reservationId)
         .eq('uid', body.uid)
       if (cancelErr) return json({ error: cancelErr.message }, { status: 400 })
 
-      // Cascade cancellation to buddy group members (pool/open_water only)
+      // Cascade cancellation to buddy group members (pool/open_water only) based on explicit selection
       try {
         let buddyGroupId: string | null = null
         if (res_type === 'pool') {
@@ -423,7 +428,9 @@ Deno.serve(async (req: Request) => {
           buddyGroupId = (owRow && owRow[0]?.buddy_group_id) || null
         }
 
-        if (buddyGroupId) {
+        if (buddyGroupId && buddiesToCancel.length > 0) {
+          const selected = new Set(buddiesToCancel.map((id) => id.toString()))
+
           // Fetch accepted buddies in the same group
           const { data: members, error: mErr } = await (admin || supabase)
             .from('buddy_group_members')
@@ -432,8 +439,9 @@ Deno.serve(async (req: Request) => {
             .eq('status', 'accepted')
           if (!mErr && Array.isArray(members)) {
             for (const m of members) {
-              const memberUid = (m as any)?.uid as string
+              const memberUid = ((m as any)?.uid as string | null) || null
               if (!memberUid || memberUid === body.uid) continue
+              if (!selected.has(memberUid.toString())) continue
               try {
                 // Locate member's reservation for the same date and type
                 const { data: mr, error: mrErr } = await (admin || supabase)
@@ -455,10 +463,10 @@ Deno.serve(async (req: Request) => {
                     .eq('reservation_id', memberResId)
                     .eq('uid', memberUid)
                 }
-                // Mark member reservation cancelled
+                // Mark member reservation cancelled and zero-out price
                 await (admin || supabase)
                   .from('reservations')
-                  .update({ res_status: 'cancelled', updated_at: new Date().toISOString() })
+                  .update({ res_status: 'cancelled', price: 0, updated_at: new Date().toISOString() })
                   .eq('reservation_id', memberResId)
                   .eq('uid', memberUid)
               } catch (e) {

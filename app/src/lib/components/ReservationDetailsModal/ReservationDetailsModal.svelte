@@ -10,6 +10,8 @@
   import { getEditPhase, type EditPhase } from '../../utils/cutoffRules';
   import { reservationStore } from '../../stores/reservationStore';
   import ConfirmModal from '../ConfirmModal.svelte';
+  import type { BuddyWithId } from '$lib/services/openWaterService';
+  import { getBuddyGroupMembersForSlotWithIds } from '$lib/services/openWaterService';
 
   const dispatch = createEventDispatcher();
 
@@ -44,6 +46,11 @@
   let owDepth: number | null = null;
   // Edit handled by parent via 'edit' event
   let confirmOpen = false;
+
+  // Optional buddy cancellation options (for open water buddy groups)
+  let buddyCancelOptions: BuddyWithId[] = [];
+  let selectedBuddyIds: string[] = [];
+  let loadingBuddyOptions = false;
 
   // Get display values for the reservation (unified structure)
   $: displayType = reservation?.type || (reservation?.res_type === 'pool' ? 'Pool' : 
@@ -119,8 +126,90 @@
     return editPhase !== 'after_cancel_cutoff';
   })();
 
-  function handleCancel() {
+  const toggleBuddySelection = (uid: string, checked: boolean) => {
+    if (!uid) return;
+    if (checked) {
+      if (!selectedBuddyIds.includes(uid)) {
+        selectedBuddyIds = [...selectedBuddyIds, uid];
+      }
+    } else {
+      selectedBuddyIds = selectedBuddyIds.filter((id) => id !== uid);
+    }
+  };
+
+  async function loadBuddyCancelOptions() {
+    buddyCancelOptions = [];
+    selectedBuddyIds = [];
     if (!reservation) return;
+
+    console.log('[CancelBuddyDebug] Starting loadBuddyCancelOptions for reservation:', {
+      uid: reservation?.uid,
+      res_type: reservation?.res_type,
+      res_date: reservation?.res_date || reservation?.date,
+      displayType,
+      time_period: (reservation as any)?.time_period,
+      timeOfDay: (reservation as any)?.timeOfDay,
+      ow_time_period: (reservation as any)?.res_openwater?.time_period,
+      ow_type: (reservation as any)?.open_water_type || (reservation as any)?.res_openwater?.open_water_type,
+    });
+
+    // Mirror the same conditions used in ReservationDetailsBody for buddy display
+    const isOW = displayType === 'Open Water' || reservation?.res_type === 'open_water';
+    if (!isOW) {
+      console.log('[CancelBuddyDebug] Not open water, skipping buddy cancel options');
+      return;
+    }
+
+    const owType =
+      (reservation as any)?.open_water_type ||
+      (reservation as any)?.res_openwater?.open_water_type ||
+      null;
+
+    // For now, skip buddies for course/coaching, same as the details body
+    if (owType === 'course_coaching') {
+      console.log('[CancelBuddyDebug] open_water_type is course_coaching, skipping buddies');
+      return;
+    }
+
+    const uid: string | undefined = reservation?.uid ? String(reservation.uid) : undefined;
+    const dateStr: string | undefined = reservation?.res_date || reservation?.date;
+
+    const timePeriod: 'AM' | 'PM' | undefined =
+      (reservation as any)?.time_period ||
+      (reservation as any)?.timeOfDay ||
+      (reservation as any)?.res_openwater?.time_period;
+
+    if (!uid || !dateStr || (timePeriod !== 'AM' && timePeriod !== 'PM')) {
+      console.log('[CancelBuddyDebug] Missing required slot keys for buddy lookup', {
+        uid,
+        dateStr,
+        timePeriod,
+      });
+      return;
+    }
+
+    loadingBuddyOptions = true;
+    try {
+      const buddies = await getBuddyGroupMembersForSlotWithIds(
+        String(dateStr),
+        timePeriod,
+        'open_water',
+        uid,
+      );
+      console.log('[CancelBuddyDebug] Buddy lookup result:', buddies);
+      buddyCancelOptions = Array.isArray(buddies) ? buddies : [];
+    } catch (e) {
+      console.warn('[ReservationDetailsModal] Failed to load buddy cancel options', e);
+      buddyCancelOptions = [];
+
+    } finally {
+      loadingBuddyOptions = false;
+    }
+  }
+
+  async function handleCancel() {
+    if (!reservation) return;
+    await loadBuddyCancelOptions();
     confirmOpen = true;
   }
 
@@ -129,11 +218,22 @@
     const t = reservation.res_type as 'open_water' | 'pool' | 'classroom';
     const start = reservation?.res_pool?.start_time || reservation?.res_classroom?.start_time || reservation?.start_time || undefined;
     const period = (reservation?.res_openwater?.time_period || reservation?.time_period) as 'AM' | 'PM' | undefined;
-    const { success, error } = await reservationStore.cancelReservation(reservation.uid, reservation.res_date, {
-      res_type: t,
-      start_time: start,
-      time_period: t === 'open_water' ? (period || 'AM') : undefined
-    });
+
+    const buddiesToCancel = buddyCancelOptions.length
+      ? selectedBuddyIds.filter((id) => buddyCancelOptions.some((b) => b.uid === id))
+      : [];
+
+    const { success, error } = await reservationStore.cancelReservation(
+      reservation.uid,
+      reservation.res_date,
+      {
+        res_type: t,
+        start_time: start,
+        time_period: t === 'open_water' ? (period || 'AM') : undefined,
+      },
+      buddiesToCancel,
+    );
+
     if (success) {
       emitUpdated();
       closeModal();
@@ -214,4 +314,29 @@
   cancelText="No, keep it"
   on:confirm={confirmCancel}
   on:cancel={() => { /* noop, just close */ }}
-/>
+>
+  {#if loadingBuddyOptions}
+    <div class="flex items-center gap-2 pt-2">
+      <span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+      <span class="text-xs text-slate-500">Loading buddies</span>
+    </div>
+  {:else if buddyCancelOptions.length > 0}
+    <div class="pt-2">
+      <div class="flex flex-col gap-1">
+        {#each buddyCancelOptions as buddy}
+          <label class="flex items-center gap-2 text-xs sm:text-sm">
+            <input
+              type="checkbox"
+              class="checkbox checkbox-xs sm:checkbox-sm"
+              checked={selectedBuddyIds.includes(buddy.uid)}
+              on:change={(e) =>
+                toggleBuddySelection(buddy.uid, (e.currentTarget as HTMLInputElement).checked)
+              }
+            />
+            <span>Also cancel {buddy.name}'s reservation.</span>
+          </label>
+        {/each}
+      </div>
+    </div>
+  {/if}
+</ConfirmModal>

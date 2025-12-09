@@ -1035,6 +1035,15 @@ export type Database = {
         Args: { p_group_id: number }
         Returns: undefined
       }
+      sweep_cancelled_for_slot: {
+        Args: {
+          p_res_date: string
+          p_res_type: string
+          p_time_key: string
+          p_uid: string
+        }
+        Returns: undefined
+      }
       validate_depth_assignment: {
         Args: { buoy_max_depth: number; diver_depth: number }
         Returns: boolean

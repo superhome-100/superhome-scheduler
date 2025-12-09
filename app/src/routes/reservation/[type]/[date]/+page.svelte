@@ -25,6 +25,8 @@
   let reservations: FlattenedReservation[] = [];
   let isAdmin = false;
   let lastLoadedKey = '';
+  // Reference to child SingleDayView instance
+  let singleDayRef: any = null;
 
   // Modal state for reservation details and edit form
   let showReservationDetails = false;
@@ -35,6 +37,19 @@
 
   $: type = $page.params.type as ReservationType;
   $: date = $page.params.date;
+
+  const handleNewReservation = async () => {
+    editingReservation = null;
+    const rt = type as ReservationType;
+    reservationFormInitialType =
+      rt === ReservationType.openwater
+        ? 'openwater'
+        : rt === ReservationType.classroom
+        ? 'classroom'
+        : 'pool';
+    await tick();
+    showReservationForm = true;
+  };
 
   const handleBackToCalendar = () => {
     goto(`/reservation/${type}`);
@@ -259,6 +274,7 @@
     {reservations}
     {isAdmin}
     initialType={type}
+    bind:this={singleDayRef}
     on:backToCalendar={handleBackToCalendar}
     on:reservationClick={handleReservationClick}
     on:refreshReservations={handleRefreshReservations}
@@ -278,6 +294,31 @@
       }
     }}
   />
+
+  <div class="fab-container s--N6BxoB9_jwI" aria-hidden="false">
+    <button
+      class="fab-btn s--N6BxoB9_jwI"
+      type="button"
+      aria-label="Add new reservation"
+      title="Add new reservation"
+      on:click={handleNewReservation}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        fill="currentColor"
+        aria-hidden="true"
+        class="s--N6BxoB9_jwI"
+      >
+        <path
+          d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
+          class="s--N6BxoB9_jwI"
+        ></path>
+      </svg>
+      <span class="fab-text s--N6BxoB9_jwI">New Reservation</span>
+    </button>
+  </div>
 {/if}
 
 <!-- Reservation Details Modal (owner-only actions) -->
@@ -322,13 +363,24 @@
       console.error('[Reservation Page] Failed to open edit form:', e);
     }
   }}
-  on:updated={async () => { await loadReservations(); }}
+  on:updated={async () => {
+    await loadReservations();
+    // Also refresh open water assignments so buddy lists update immediately
+    try {
+      if (singleDayRef && typeof singleDayRef.refreshAssignments === 'function') {
+        await singleDayRef.refreshAssignments();
+      }
+    } catch (e) {
+      console.warn('Failed to refresh assignments after cancel:', e);
+    }
+  }}
 />
 
 <!-- Update Reservation Modal (prefilled when editing) -->
 <ReservationFormModal
   isOpen={showReservationForm}
   initialType={reservationFormInitialType}
+  initialDate={date}
   editing={!!editingReservation}
   initialReservation={editingReservation}
   on:submit={async () => { showReservationForm = false; editingReservation = null; await loadReservations(); }}

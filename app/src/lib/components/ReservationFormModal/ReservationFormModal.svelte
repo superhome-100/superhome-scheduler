@@ -44,6 +44,8 @@
   export let isOpen = false;
   // Optional initial type from caller (Reservation page calendar selection)
   export let initialType: "openwater" | "pool" | "classroom" | undefined;
+  // Optional initial date from caller (e.g. current Single Day View date, YYYY-MM-DD)
+  export let initialDate: string | undefined;
   // When true, the modal edits an existing reservation instead of creating a new one
   export let editing: boolean = false;
   export let initialReservation: any = null;
@@ -589,6 +591,13 @@
       formData.type = initialType;
       // Apply defaults for the selected type (times, date)
       handleTypeChange();
+      // Override default date with caller-provided date when creating a new reservation
+      if (initialDate) {
+        formData.date = initialDate;
+      }
+    } else if (!editing && initialDate) {
+      // When opening in create mode without changing type, still honor initialDate
+      formData.date = initialDate;
     }
   }
   $: if (!isOpen && wasOpen) {

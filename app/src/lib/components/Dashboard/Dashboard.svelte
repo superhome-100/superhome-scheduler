@@ -35,6 +35,7 @@
   import type { ReservationType as DbReservationType } from "../../services/reservationService";
   import { reservationLastUpdated } from "$lib/stores/reservationSync";
   import { transformReservationToUnified } from "../../utils/reservationTransform";
+  import { normalizeCancelledPrices } from "$lib/services/maintenanceService";
 
   let showReservationDetails = false;
   let selectedReservation: any = null;
@@ -158,13 +159,32 @@
       if (fetchError) throw fetchError;
 
       // Store raw rows; downstream code uses unified transform when needed
-      reservations = data || [];
+      reservations = (data || []);
     } catch (err) {
       console.error("Error loading reservations:", err);
       error =
         err instanceof Error ? err.message : "Failed to load reservations";
     } finally {
       loading = false;
+    }
+  };
+
+  // Normalize cancelled reservations that still have non-zero price
+  const normalizeCancelledIfNeeded = async () => {
+    try {
+      if (!reservations || reservations.length === 0) return;
+      const badIds = (reservations as any[])
+        .filter(r => String(r?.res_status || '').toLowerCase() === 'cancelled' && Number(r?.price || 0) !== 0)
+        .map(r => r.reservation_id)
+        .filter((id) => typeof id === 'number');
+      if (badIds.length === 0) return;
+      const { success } = await normalizeCancelledPrices({ mode: 'by_ids', reservation_ids: badIds });
+      if (success) {
+        await loadReservations();
+        await loadMonthlyTotals();
+      }
+    } catch (e) {
+      console.warn('normalizeCancelledIfNeeded failed:', e);
     }
   };
 
@@ -331,6 +351,7 @@
       // Load reservations
       try {
         await loadReservations();
+        await normalizeCancelledIfNeeded();
         await loadMonthlyTotals();
       } catch (error) {
         console.error("Error loading dashboard data:", error);
@@ -347,6 +368,7 @@
       // Refresh reservations and monthly totals so per-card price and totals update
       loadReservations();
       loadMonthlyTotals();
+      normalizeCancelledIfNeeded();
     });
   });
 
