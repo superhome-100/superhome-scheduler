@@ -1,0 +1,29 @@
+/* Reservation card styles extracted for reuse and to keep Svelte file size small */
+.reservation-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; transition: all 0.2s ease; }
+.reservation-item.compact { padding: 0.75rem; }
+
+.reservation-item.clickable { cursor: pointer; }
+.reservation-item.clickable:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}
+.reservation-item.clickable:focus { outline: 2px solid #3b82f6; outline-offset: 2px; }
+
+/* Type: plain colored text, no badge visuals */
+.type-badge { padding: 0; border-radius: 0; font-size: 1em; font-weight: 600; text-transform: none; letter-spacing: 0; background: transparent; border: 0; outline: 0; box-shadow: none; }
+.type-badge.compact { padding: 0; font-size: inherit; }
+.type-badge.pool { color: #1d4ed8; }
+.type-badge.openwater { color: #059669; }
+.type-badge.classroom { color: #dc2626; }
+
+/* Status: plain colored text, no badge visuals */
+.status-badge { padding: 0; border-radius: 0; font-size: 1em; font-weight: 600; text-transform: none; letter-spacing: 0; background: transparent; border: 0; outline: 0; box-shadow: none; }
+.status-badge.compact { padding: 0; font-size: inherit; }
+.status-badge.confirmed, .status-badge.approved { color: #059669; }
+.status-badge.pending { color: #d97706; }
+.status-badge.rejected { color: #dc2626; }
+.status-badge.completed { color: #1d4ed8; }
+.status-badge.ongoing { color: #7c3aed; }
+
+/* Keep font sizing responsive but minimal; rely on Tailwind utilities in markup */
+@media (min-width: 769px) { .type-badge, .status-badge { font-size: inherit; } }

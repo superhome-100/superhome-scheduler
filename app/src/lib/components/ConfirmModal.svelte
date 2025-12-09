@@ -39,8 +39,9 @@
       <div class="px-5 py-4 border-b border-slate-200">
         <h2 class="text-[1.05rem] font-semibold text-slate-800 m-0">{title}</h2>
       </div>
-      <div class="px-5 py-4">
+      <div class="px-5 py-4 space-y-3">
         <p class="text-sm text-slate-700 whitespace-pre-line">{message}</p>
+        <slot />
       </div>
       <div class="px-5 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2">
         <button class="btn btn-sm" on:click={close} aria-label={cancelText}>{cancelText}</button>

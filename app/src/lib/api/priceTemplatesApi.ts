@@ -33,12 +33,33 @@ export type CreateUpdatePayload = Omit<PriceTemplateUpdate, 'id' | 'created_at'>
 
 class PriceTemplatesApi {
   async listTemplates(): Promise<{ success: boolean; data: PriceTemplate[]; error?: string }> {
-    const { data, error } = await supabase
-      .from('price_templates')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) return { success: false, data: [], error: error.message };
-    return { success: true, data: (data ?? []) as PriceTemplate[] };
+    const [templatesResult, updatesResult] = await Promise.all([
+      supabase
+        .from('price_templates')
+        .select('*')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('price_template_updates')
+        .select('price_template_name')
+    ]);
+
+    if (templatesResult.error) {
+      return { success: false, data: [], error: templatesResult.error.message };
+    }
+
+    if (updatesResult.error) {
+      return { success: false, data: [], error: updatesResult.error.message };
+    }
+
+    const activeNames = new Set(
+      (updatesResult.data ?? []).map((u) => u.price_template_name as string)
+    );
+
+    const filtered = (templatesResult.data ?? []).filter((t) =>
+      activeNames.has((t as PriceTemplate).name)
+    ) as PriceTemplate[];
+
+    return { success: true, data: filtered };
   }
 
   async listUpdates(): Promise<{ success: boolean; data: PriceTemplateUpdate[]; error?: string }> {

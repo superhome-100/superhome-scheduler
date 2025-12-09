@@ -8,6 +8,7 @@
     formatPeso,
     getResDate,
   } from "../../utils/reservationTotals";
+  import dayjs from "../../utils/dateUtils";
 
   const dispatch = createEventDispatcher();
 
@@ -32,13 +33,32 @@
       monthTotal: number;
     }[] = [];
 
+    const isPast = (r: any) => {
+      const d = getResDate(r);
+      if (!d) return false;
+      return dayjs(d).endOf("day").isBefore(dayjs());
+    };
+
+    const statusLower = (r: any) => String(r?.res_status || r?.status || '').toLowerCase();
+    const effectiveStatus = (r: any) => {
+      const s = statusLower(r);
+      return s === 'pending' && isPast(r) ? 'cancelled' : s;
+    };
+
+    const adjustReservation = (r: any) => {
+      const eff = effectiveStatus(r);
+      const orig = statusLower(r);
+      return eff !== orig ? { ...r, res_status: eff, status: eff } : r;
+    };
+
     for (const g of groups) {
       if (remaining <= 0) break;
-      const slice = g.items.slice(0, remaining);
-      const subtotalRendered = slice.reduce(
-        (s, r) => s + pickNumericPrice(r),
-        0
-      );
+      const slice = g.items.slice(0, remaining).map(adjustReservation);
+      const subtotalRendered = slice.reduce((s, r) => {
+        const eff = effectiveStatus(r);
+        if (eff === 'cancelled') return s;
+        return s + pickNumericPrice(r);
+      }, 0);
       const overrideTotal = monthlyTotals[g.ym];
       rendered.push({
         month: g.ym,
@@ -81,6 +101,7 @@
           <ReservationCard
             {reservation}
             showPrice={true}
+            showCancel={false}
             on:click={() => handleClick(reservation)}
           />
         {/each}

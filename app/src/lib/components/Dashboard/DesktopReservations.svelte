@@ -4,6 +4,10 @@
   import ReservationCard from '../ReservationCard/ReservationCard.svelte';
   import LoadingSpinner from '../LoadingSpinner.svelte';
   import GroupedCompletedList from '../ReservationTotals/GroupedCompletedList.svelte';
+  import ConfirmModal from '../ConfirmModal.svelte';
+  import { reservationStore } from '../../stores/reservationStore';
+  import type { BuddyWithId } from '$lib/services/openWaterService';
+  import { getBuddyGroupMembersForSlotWithIds } from '$lib/services/openWaterService';
 
   export let upcomingReservations: any[] = [];
   export let completedReservations: any[] = [];
@@ -15,6 +19,100 @@
 
   const handleViewAllUpcoming = () => {
     dispatch('viewAllUpcoming');
+  };
+
+  // Cancel confirmation state
+  let confirmOpen = false;
+  let reservationToCancel: any = null;
+
+  // Buddy cancellation options for upcoming list cancel
+  let buddyCancelOptions: BuddyWithId[] = [];
+  let selectedBuddyIds: string[] = [];
+  let loadingBuddyOptions = false;
+
+  const toggleBuddySelection = (uid: string, checked: boolean) => {
+    if (!uid) return;
+    if (checked) {
+      if (!selectedBuddyIds.includes(uid)) selectedBuddyIds = [...selectedBuddyIds, uid];
+    } else {
+      selectedBuddyIds = selectedBuddyIds.filter((id) => id !== uid);
+    }
+  };
+
+  async function loadBuddyCancelOptionsFor(reservation: any) {
+    buddyCancelOptions = [];
+    selectedBuddyIds = [];
+    if (!reservation) return;
+
+    const displayType = reservation.type || (reservation.res_type === 'open_water' ? 'Open Water' : reservation.res_type);
+    const isOW = displayType === 'Open Water' || reservation?.res_type === 'open_water';
+    if (!isOW) return;
+
+    const owType =
+      (reservation as any)?.open_water_type ||
+      (reservation as any)?.res_openwater?.open_water_type ||
+      null;
+    if (owType === 'course_coaching') return;
+
+    const uid: string | undefined = reservation?.uid ? String(reservation.uid) : undefined;
+    const dateStr: string | undefined = reservation?.res_date || reservation?.date;
+    const timePeriod: 'AM' | 'PM' | undefined =
+      (reservation as any)?.time_period ||
+      (reservation as any)?.timeOfDay ||
+      (reservation as any)?.res_openwater?.time_period;
+
+    if (!uid || !dateStr || (timePeriod !== 'AM' && timePeriod !== 'PM')) return;
+
+    loadingBuddyOptions = true;
+    try {
+      const buddies = await getBuddyGroupMembersForSlotWithIds(
+        String(dateStr),
+        timePeriod,
+        'open_water',
+        uid,
+      );
+      buddyCancelOptions = Array.isArray(buddies) ? buddies : [];
+    } catch (e) {
+      console.warn('[DesktopReservations] Failed to load buddy cancel options', e);
+      buddyCancelOptions = [];
+    } finally {
+      loadingBuddyOptions = false;
+    }
+  }
+
+  const handleCancelRequest = async (reservation: any) => {
+    reservationToCancel = reservation;
+    await loadBuddyCancelOptionsFor(reservation);
+    confirmOpen = true;
+  };
+
+  const confirmCancel = async () => {
+    try {
+      const r = reservationToCancel;
+      confirmOpen = false;
+      if (!r) return;
+      const t = (r.res_type || (r.type === 'Open Water' ? 'open_water' : r.type === 'Pool' ? 'pool' : r.type === 'Classroom' ? 'classroom' : r.res_type)) as 'open_water' | 'pool' | 'classroom';
+      const start = r?.res_pool?.start_time || r?.res_classroom?.start_time || r?.start_time || undefined;
+      const period = (r?.res_openwater?.time_period || r?.time_period) as 'AM' | 'PM' | undefined;
+
+      const buddiesToCancel = buddyCancelOptions.length
+        ? selectedBuddyIds.filter((id) => buddyCancelOptions.some((b) => b.uid === id))
+        : [];
+
+      const { success } = await reservationStore.cancelReservation(r.uid, r.res_date, {
+        res_type: t,
+        start_time: start,
+        time_period: t === 'open_water' ? (period || 'AM') : undefined
+      }, buddiesToCancel);
+      if (success) {
+        // Ask parent to reload data
+        dispatch('retry');
+      }
+    } catch (e) {
+      console.error('DesktopReservations: cancel failed', e);
+    } finally {
+      reservationToCancel = null;
+    }
   };
 
   const handleViewAllCompleted = () => {
@@ -46,6 +144,42 @@
         View All
       </button>
     </div>
+
+  <!-- Cancel Confirmation Modal -->
+  <ConfirmModal
+    bind:open={confirmOpen}
+    title="Cancel reservation?"
+    message="Are you sure you want to cancel this reservation? This action cannot be undone."
+    confirmText="Yes, cancel"
+    cancelText="No, keep it"
+    on:confirm={confirmCancel}
+    on:cancel={() => { /* noop */ }}
+  >
+    {#if loadingBuddyOptions}
+      <div class="flex items-center gap-2 pt-2">
+        <span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+        <span class="text-xs text-slate-500">Loading buddies</span>
+      </div>
+    {:else if buddyCancelOptions.length > 0}
+      <div class="pt-2">
+        <div class="flex flex-col gap-1">
+          {#each buddyCancelOptions as buddy}
+            <label class="flex items-center gap-2 text-xs sm:text-sm">
+              <input
+                type="checkbox"
+                class="checkbox checkbox-xs sm:checkbox-sm"
+                checked={selectedBuddyIds.includes(buddy.uid)}
+                on:change={(e) =>
+                  toggleBuddySelection(buddy.uid, (e.currentTarget as HTMLInputElement).checked)
+                }
+              />
+              <span>Also cancel {buddy.name}'s reservation.</span>
+            </label>
+          {/each}
+        </div>
+      </div>
+    {/if}
+  </ConfirmModal>
     <div class="reservation-content">
       {#if loading}
         <div class="loading-state">
@@ -59,10 +193,10 @@
         </div>
       {:else if upcomingReservations.length > 0}
         <div class="reservation-list compact">
-          {#each upcomingReservations.slice(0, 3) as reservation}
+          {#each upcomingReservations.slice(0, 8) as reservation}
             <div class="flex items-stretch justify-between gap-2">
               <div class="flex-1 min-w-0">
-                <ReservationCard reservation={reservation} showPrice={false} on:click={() => handleReservationClick(reservation)} />
+                <ReservationCard reservation={reservation} showPrice={false} on:click={() => handleReservationClick(reservation)} on:cancel={() => handleCancelRequest(reservation)} />
               </div>
               <!-- Pending reservation delete button removed per requirements -->
             </div>
@@ -102,7 +236,7 @@
           <GroupedCompletedList
             reservations={completedReservations}
             monthlyTotals={monthlyTotals}
-            limit={2}
+            limit={6}
             on:reservationClick={(e) => handleReservationClick(e.detail)}
           />
         </div>
@@ -236,7 +370,8 @@
   /* Compact reservation styles */
   .reservation-list.compact {
     gap: 0.75rem;
-    max-height: 240px; /* Approximately 3 items * 80px height */
+    /* Show more items by default on desktop while keeping list scrollable */
+    max-height: min(60vh, 560px); /* Responsive: up to 60% viewport height, capped */
     overflow-y: auto;
   }
 

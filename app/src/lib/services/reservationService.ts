@@ -92,6 +92,8 @@ interface UpdateReservationData {
   classroom?: Partial<ClassroomReservationDetails>;
   // Open water details
   openwater?: Partial<OpenWaterReservationDetails>;
+  // Optional list of buddy UIDs to cancel with this reservation
+  buddies_to_cancel?: string[];
 }
 
 // Query options
@@ -455,6 +457,9 @@ class ReservationService {
       if (updateData.pool) payload.pool = updateData.pool;
       if (updateData.classroom) payload.classroom = updateData.classroom;
       if (updateData.openwater) payload.openwater = updateData.openwater;
+      if (Array.isArray(updateData.buddies_to_cancel)) {
+        payload.buddies_to_cancel = updateData.buddies_to_cancel;
+      }
 
       const { error } = await callFunction<typeof payload, { ok: boolean }>('reservations-update', payload);
       if (error) {

@@ -74,6 +74,11 @@
     }
   }
 
+  // Expose a method for parent to trigger a refresh of open water assignments
+  export function refreshAssignments() {
+    return loadOpenWaterAssignments();
+  }
+
   // ============================================ -->
   // 🔧 ADMIN-SPECIFIC: Group Management & Data -->
   // ============================================ -->
@@ -356,7 +361,10 @@
   // Narrowed view: only open water reservations (used by OpenWaterUserLists)
   // Hide rejected reservations from the Open Water calendar UI.
   $: openWaterReservations = filteredReservations.filter(
-    (r) => r.res_type === "open_water" && r.res_status !== "rejected"
+    (r) =>
+      r.res_type === "open_water" &&
+      r.res_status !== "rejected" &&
+      r.res_status !== "cancelled"
   ) as OpenWaterReservationView[];
 
   // Build a fast uid -> display name map from the loaded reservations themselves

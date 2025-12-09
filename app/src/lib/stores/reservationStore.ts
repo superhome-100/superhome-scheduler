@@ -98,7 +98,8 @@ function createReservationStore() {
     cancelReservation: async (
       uid: string,
       res_date: string,
-      opts: { res_type: 'pool' | 'open_water' | 'classroom'; start_time?: string; time_period?: 'AM' | 'PM' }
+      opts: { res_type: 'pool' | 'open_water' | 'classroom'; start_time?: string; time_period?: 'AM' | 'PM' },
+      buddiesToCancel?: string[]
     ) => {
       // Validate cut-off before attempting cancellation
       const withinCancelWindow = isBeforeCancelCutoff(
@@ -115,7 +116,14 @@ function createReservationStore() {
 
       // Update status to 'cancelled'
       update(state => ({ ...state, loading: true, error: null }));
-      const result = await reservationApi.updateReservation(uid, res_date, { res_status: 'cancelled' as any });
+      const updatePayload: UpdateReservationData = {
+        res_status: 'cancelled' as any,
+        ...(Array.isArray(buddiesToCancel) && buddiesToCancel.length
+          ? { buddies_to_cancel: buddiesToCancel }
+          : {}),
+      };
+
+      const result = await reservationApi.updateReservation(uid, res_date, updatePayload);
       if (result.success && result.data) {
         update(state => ({
           ...state,

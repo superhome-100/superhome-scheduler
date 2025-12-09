@@ -17,6 +17,36 @@ export const getResDate = (r: any): string => {
   return d.isValid() ? d.format('YYYY-MM-DD') : '';
 };
 
+// Determine if reservation date/time is in the past (end-of-day threshold)
+const isPastReservation = (r: any): boolean => {
+  const d = getResDate(r);
+  if (!d) return false;
+  const endOfDay = dayjs(d).endOf('day');
+  return endOfDay.isBefore(dayjs());
+};
+
+const getStatusLower = (r: any): string => {
+  return String(r?.res_status || r?.status || '').toLowerCase();
+};
+
+// Compute effective status for aggregation/display inside completed lists
+// Rule: pending + past => cancelled; else keep as-is
+const getEffectiveStatus = (r: any): string => {
+  const status = getStatusLower(r);
+  if (status === 'pending' && isPastReservation(r)) return 'cancelled';
+  return status;
+};
+
+// Return an adjusted copy that reflects effective status for UI without mutating the input
+const withEffectiveStatus = (r: any): any => {
+  const effective = getEffectiveStatus(r);
+  const original = getStatusLower(r);
+  if (effective && effective !== original) {
+    return { ...r, res_status: effective, status: effective };
+  }
+  return r;
+};
+
 export interface MonthlyGroup {
   ym: string;          // e.g., '2025-11'
   label: string;       // e.g., 'November 2025'
@@ -29,7 +59,9 @@ export const groupCompletedByMonth = (reservations: any[]): MonthlyGroup[] => {
   const map = new Map<string, MonthlyGroup>();
 
   for (const r of reservations || []) {
-    const d = getResDate(r);
+    // Use an adjusted copy to reflect auto-cancel rule for past pending
+    const adjusted = withEffectiveStatus(r);
+    const d = getResDate(adjusted);
     if (!d) continue;
     const dj = dayjs(d);
     const ym = dj.format('YYYY-MM');
@@ -39,8 +71,12 @@ export const groupCompletedByMonth = (reservations: any[]): MonthlyGroup[] => {
       map.set(ym, { ym, label, items: [], monthTotal: 0 });
     }
     const g = map.get(ym)!;
-    g.items.push(r);
-    g.monthTotal += pickNumericPrice(r);
+    g.items.push(adjusted);
+    // Exclude cancelled from monthly totals
+    const eff = getEffectiveStatus(adjusted);
+    if (eff !== 'cancelled') {
+      g.monthTotal += pickNumericPrice(adjusted);
+    }
   }
 
   // Sort groups by year-month descending (latest first)
@@ -58,7 +94,12 @@ export const groupCompletedByMonth = (reservations: any[]): MonthlyGroup[] => {
 };
 
 export const computeOverallTotal = (reservations: any[]): number => {
-  return (reservations || []).reduce((sum, r) => sum + pickNumericPrice(r), 0);
+  return (reservations || []).reduce((sum, r) => {
+    const adjusted = withEffectiveStatus(r);
+    const eff = getEffectiveStatus(adjusted);
+    if (eff === 'cancelled') return sum;
+    return sum + pickNumericPrice(adjusted);
+  }, 0);
 };
 
 export const formatPeso = (amount: number): string => {
