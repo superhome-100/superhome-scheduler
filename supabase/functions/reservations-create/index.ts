@@ -243,6 +243,34 @@ Deno.serve(async (req: Request) => {
       }, { status: 400 });
     }
 
+    // Open Water Autonomous Platform group-size rule:
+    // require at least 2 buddies (owner + 2 buddies = min group of 3),
+    // mirroring legacy behavior for autonomousPlatform and autonomousPlatformCBS.
+    if (body.res_type === 'open_water') {
+      const owType = body.openwater?.open_water_type || null;
+      if (owType === 'autonomous_platform' || owType === 'autonomous_platform_cbs') {
+        const buddies: unknown = body.buddies;
+        const buddyList = Array.isArray(buddies) ? buddies : [];
+        if (buddyList.length < 2) {
+          return json({
+            error: 'Booking this training type requires a minimum of 2 buddies.'
+          }, { status: 400 });
+        }
+      }
+    }
+
+    // Pool Autonomous buddy cap: at most 1 buddy allowed
+    if (body.res_type === 'pool') {
+      const poolType = body.pool?.pool_type || null;
+      if (poolType === 'autonomous') {
+        const buddies: unknown = body.buddies;
+        const buddyCount = Array.isArray(buddies) ? buddies.length : 0;
+        if (buddyCount > 1) {
+          return json({ error: 'Pool Autonomous allows at most 1 buddy.' }, { status: 400 });
+        }
+      }
+    }
+
     // Classroom capacity check (authoritative): block creation when no room available for selected time
     if (body.res_type === 'classroom') {
       const s = body.classroom?.start_time ?? null;
@@ -1045,6 +1073,12 @@ Deno.serve(async (req: Request) => {
           timePeriod = body.classroom?.start_time || '';
         }
 
+        // Enforce per-buoy pax cap for Open Water autonomous: owner + up to 2 buddies
+        const allBuddies: string[] = Array.isArray(body.buddies) ? body.buddies : [];
+        const isOWAutonomous = body.res_type === 'open_water' && (body.openwater?.open_water_type || '') !== 'course_coaching';
+        const groupBuddies: string[] = isOWAutonomous ? allBuddies.slice(0, 2) : allBuddies;
+        const overflowBuddies: string[] = isOWAutonomous ? allBuddies.slice(2) : [];
+
         // Pre-clean any leftover buddy_group for the same initiator/date/slot/type
         // Use service client to ensure cleanup regardless of RLS context
         try {
@@ -1072,7 +1106,8 @@ Deno.serve(async (req: Request) => {
             p_res_date: res_date_iso.split('T')[0],
             p_time_period: timePeriod,
             p_res_type: body.res_type,
-            p_buddy_uids: body.buddies
+            // Only include up to 2 buddies in the owner's group for OW autonomous (3 pax cap)
+            p_buddy_uids: groupBuddies
           });
 
         if (buddyGroupError) {
@@ -1126,8 +1161,8 @@ Deno.serve(async (req: Request) => {
               .eq('res_date', res_date_iso);
           }
 
-          // Create reservations for buddies (if they don't already have one)
-          for (const buddyUid of body.buddies) {
+          // Create reservations for buddies that belong to this group (if they don't already have one)
+          for (const buddyUid of groupBuddies) {
             if (buddyUid === body.uid) continue; // Skip initiator
 
             // Check if buddy already has a reservation for this date AND same slot (time key)
@@ -1400,6 +1435,59 @@ Deno.serve(async (req: Request) => {
               }
             } catch (detailErr) {
               console.error(`Unexpected error creating detail for buddy ${buddyUid}:`, detailErr);
+            }
+          }
+
+          // Create reservations for overflow buddies WITHOUT linking them to the owner's buddy group.
+          // This lets the system auto-pair them on a separate buoy/new group, respecting 3 pax per buoy.
+          for (const buddyUid of overflowBuddies) {
+            if (buddyUid === body.uid) continue;
+            // Create reservation parent (same status rule)
+            const buddyInitialStatus: 'pending' | 'confirmed' =
+              body.res_type === 'pool' || body.res_type === 'classroom' ? 'confirmed' : 'pending';
+            const { data: parentRow, error: parentErr } = await serviceSupabase
+              .from('reservations')
+              .insert({ uid: buddyUid, res_date: res_date_iso, res_type: body.res_type, res_status: buddyInitialStatus })
+              .select('*')
+              .maybeSingle();
+            if (parentErr) {
+              console.error(`Failed to create reservation for overflow buddy ${buddyUid}:`, parentErr);
+              continue;
+            }
+            try {
+              if (body.res_type === 'open_water' && body.openwater && parentRow?.reservation_id != null) {
+                await serviceSupabase
+                  .from('res_openwater')
+                  .insert({
+                    reservation_id: parentRow.reservation_id,
+                    uid: buddyUid,
+                    res_date: res_date_iso,
+                    // no buddy_group_id on purpose
+                    ...body.openwater,
+                  });
+              } else if (body.res_type === 'pool' && body.pool && parentRow?.reservation_id != null) {
+                await serviceSupabase
+                  .from('res_pool')
+                  .insert({
+                    reservation_id: parentRow.reservation_id,
+                    uid: buddyUid,
+                    res_date: res_date_iso,
+                    // no buddy_group_id
+                    ...body.pool,
+                  });
+              } else if (body.res_type === 'classroom' && body.classroom && parentRow?.reservation_id != null) {
+                await serviceSupabase
+                  .from('res_classroom')
+                  .insert({
+                    reservation_id: parentRow.reservation_id,
+                    uid: buddyUid,
+                    res_date: res_date_iso,
+                    // no buddy_group_id
+                    ...body.classroom,
+                  });
+              }
+            } catch (e) {
+              console.error(`Failed to create detail for overflow buddy ${buddyUid}:`, e);
             }
           }
         }

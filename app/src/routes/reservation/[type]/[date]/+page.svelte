@@ -284,7 +284,8 @@
         if (!reservation) return;
         const raw = buildRawFromFlattened(reservation);
         const rt = String(raw.res_type || 'pool');
-        reservationFormInitialType = rt === 'open_water' ? 'openwater' : (rt === 'classroom' ? 'classroom' : 'pool');
+        reservationFormInitialType =
+          rt === 'open_water' ? 'openwater' : rt === 'classroom' ? 'classroom' : 'pool';
         editingReservation = raw;
         showReservationDetails = false;
         await tick();
@@ -295,30 +296,28 @@
     }}
   />
 
-  <div class="fab-container s--N6BxoB9_jwI" aria-hidden="false">
-    <button
-      class="fab-btn s--N6BxoB9_jwI"
-      type="button"
-      aria-label="Add new reservation"
-      title="Add new reservation"
-      on:click={handleNewReservation}
+  <button
+    class="fab-btn s--N6BxoB9_jwI"
+    type="button"
+    aria-label="Add new reservation"
+    title="Add new reservation"
+    on:click={handleNewReservation}
+  >
+    <svg
+      viewBox="0 0 24 24"
+      width="24"
+      height="24"
+      fill="currentColor"
+      aria-hidden="true"
+      class="s--N6BxoB9_jwI"
     >
-      <svg
-        viewBox="0 0 24 24"
-        width="24"
-        height="24"
-        fill="currentColor"
-        aria-hidden="true"
+      <path
+        d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
         class="s--N6BxoB9_jwI"
-      >
-        <path
-          d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
-          class="s--N6BxoB9_jwI"
-        ></path>
-      </svg>
-      <span class="fab-text s--N6BxoB9_jwI">New Reservation</span>
-    </button>
-  </div>
+      ></path>
+    </svg>
+    <span class="fab-text s--N6BxoB9_jwI">New Reservation</span>
+  </button>
 {/if}
 
 <!-- Reservation Details Modal (owner-only actions) -->

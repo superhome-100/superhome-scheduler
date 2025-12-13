@@ -348,6 +348,23 @@ export function sanitizeReservationData(data: any): any {
     }
   });
 
+  // Normalize buddies: keep array of string UIDs, unique; drop for Course/Coaching subtypes
+  if (Array.isArray(sanitized.buddies)) {
+    const raw = sanitized.buddies as any[];
+    const asStrings = raw
+      .map((v) => (typeof v === 'string' ? v : (v && typeof v.uid === 'string' ? v.uid : null)))
+      .filter((v): v is string => !!v && v.trim().length > 0);
+    const unique = Array.from(new Set(asStrings));
+
+    // If subtype is Course/Coaching, omit buddies
+    const isCourseCoaching = (
+      (sanitized.res_type === 'open_water' && sanitized.openwater?.open_water_type === 'course_coaching') ||
+      (sanitized.res_type === 'pool' && sanitized.pool?.pool_type === 'course_coaching') ||
+      (sanitized.res_type === 'classroom' && sanitized.classroom?.classroom_type === 'course_coaching')
+    );
+    sanitized.buddies = isCourseCoaching ? undefined : unique;
+  }
+
   return sanitized;
 }
 

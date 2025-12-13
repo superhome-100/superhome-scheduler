@@ -1,10 +1,9 @@
 <script lang="ts">
   export let names: string[] = [];
-  // Only render non-empty names, up to two buddies
+  // Only render non-empty names, show all
   $: filtered = (names || [])
     .map((n) => (n ?? '').trim())
-    .filter((n) => n.length > 0)
-    .slice(0, 2);
+    .filter((n) => n.length > 0);
 </script>
 
 <div class="buddies-section">
