@@ -72,8 +72,8 @@ export const validateForm = (formData: any) => {
       // Student count for Pool Course/Coaching
       if (formData.poolType === 'course_coaching') {
         const studentCount = parseInt(formData.studentCount as unknown as string, 10);
-        if (!formData.studentCount || isNaN(studentCount) || studentCount <= 0 || studentCount > 3) {
-          errors.studentCount = 'Number of students must be between 1-3';
+        if (!formData.studentCount || isNaN(studentCount) || studentCount <= 0 || studentCount > 6) {
+          errors.studentCount = 'Number of students must be between 1-6';
         }
       }
     }
@@ -86,8 +86,8 @@ export const validateForm = (formData: any) => {
       // Student count for Classroom Course/Coaching
       if (formData.classroomType === 'course_coaching') {
         const studentCount = parseInt(formData.studentCount as unknown as string, 10);
-        if (!formData.studentCount || isNaN(studentCount) || studentCount <= 0 || studentCount > 3) {
-          errors.studentCount = 'Number of students must be between 1-3';
+        if (!formData.studentCount || isNaN(studentCount) || studentCount <= 0 || studentCount > 10) {
+          errors.studentCount = 'Number of students must be between 1-10';
         }
       }
     }
@@ -166,8 +166,20 @@ export const validateForm = (formData: any) => {
     // Student count validation for Course/Coaching
     if (formData.openWaterType === OpenWaterType.CourseCoaching) {
       const studentCount = parseInt(formData.studentCount as unknown as string, 10);
-      if (!formData.studentCount || isNaN(studentCount) || studentCount <= 0 || studentCount > 3) {
-        errors.studentCount = 'Number of students must be between 1-3';
+      if (!formData.studentCount || isNaN(studentCount) || studentCount <= 0 || studentCount > 4) {
+        errors.studentCount = 'Number of students must be between 1-4';
+      }
+    }
+
+    // Autonomous Platform group-size rule: require owner + at least 2 buddies (min group of 3)
+    if (
+      formData.openWaterType === OpenWaterType.AutonomousPlatform ||
+      formData.openWaterType === OpenWaterType.AutonomousPlatformCbs
+    ) {
+      const buddies: unknown = formData.buddies;
+      const buddyList = Array.isArray(buddies) ? buddies : [];
+      if (buddyList.length < 2) {
+        errors.buddies = 'Booking this training type requires a minimum of 2 buddies.';
       }
     }
   }

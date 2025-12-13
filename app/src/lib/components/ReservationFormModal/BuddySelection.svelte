@@ -5,6 +5,8 @@
     export let formData: any;
     export let editing: boolean = false;
     export let initialReservation: any = null;
+    export let errors: Record<string, string> = {};
+    export let submitAttempted: boolean = false;
 
     let searchQuery = "";
     let searchResults: any[] = [];
@@ -12,6 +14,21 @@
     let searching = false;
     let showResults = false;
     let prefilling = false;
+
+    // Dynamic buddy limit rules:
+    // - Pool Autonomous: 1 buddy (2 pax total)
+    // - Open Water Autonomous types: up to 3 buddies (4 pax total)
+    // - Others: 2 buddies
+    let maxBuddies = 2;
+    $: maxBuddies = (() => {
+        if (formData?.type === 'pool' && formData?.poolType === 'autonomous') return 1;
+        if (formData?.type === 'openwater') {
+            const t = formData?.openWaterType;
+            // Treat any non-course/coaching OW type as autonomous for buddy cap purposes
+            if (t && t !== 'course_coaching') return 3;
+        }
+        return 2;
+    })();
 
     // Debounce search
     let searchTimeout: NodeJS.Timeout;
@@ -58,8 +75,9 @@
     }
 
     function selectBuddy(user: any) {
-        if (selectedBuddies.length >= 2) {
-            alert("You can only add up to 2 buddies");
+        if (selectedBuddies.length >= maxBuddies) {
+            const msg = `You can only add up to ${maxBuddies} buddy${maxBuddies === 1 ? '' : 'ies'}`;
+            alert(msg);
             return;
         }
 
@@ -139,8 +157,8 @@
                 ),
             );
             if (!memberUids.length) return;
-            // Cap to 2 buddies as per UI rule
-            const limited = memberUids.slice(0, 2);
+            // Cap to current UI rule
+            const limited = memberUids.slice(0, maxBuddies);
             // Fetch profiles to display names
             const { data: profiles, error: pErr } = await supabase
                 .from("user_profiles")
@@ -203,7 +221,7 @@
     {/if}
 
     <!-- Search Box -->
-    {#if selectedBuddies.length < 2}
+    {#if selectedBuddies.length < maxBuddies}
         <div class="buddy-search-container">
             <div class="search-input-wrapper">
                 <svg
@@ -261,11 +279,15 @@
 
         <p class="helper-text">
             {#if selectedBuddies.length === 0}
-                Add up to 2 dive buddies to this reservation
-            {:else if selectedBuddies.length === 1}
-                You can add 1 more buddy
+                Add up to {maxBuddies} dive buddy{maxBuddies === 1 ? '' : 'ies'} to this reservation
+            {:else}
+                You can add {maxBuddies - selectedBuddies.length} more buddy{(maxBuddies - selectedBuddies.length) === 1 ? '' : 'ies'}
             {/if}
         </p>
+
+        {#if submitAttempted && selectedBuddies.length < maxBuddies && errors && errors.buddies}
+            <p class="buddy-error">{errors.buddies}</p>
+        {/if}
     {/if}
 </div>
 
@@ -450,6 +472,12 @@
         margin-top: 0.5rem;
         font-size: 0.75rem;
         color: #6b7280;
+    }
+
+    .buddy-error {
+        margin-top: 0.5rem;
+        font-size: 0.75rem;
+        color: #ef4444;
     }
 
     /* Mobile Responsive */

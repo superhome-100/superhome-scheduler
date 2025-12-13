@@ -13,7 +13,7 @@
   export let owDepth: number | null = null;
   export let isAdmin: boolean = false;
 
-  // Buddy names (max 2 displayed)
+  // Buddy names (show all)
   let buddyNames: string[] = [];
   // Only show buddies section when at least one name is present
   $: hasBuddyInput = buddyNames.some((n) => (n ?? '').trim().length > 0);
@@ -30,7 +30,7 @@
       const timePeriod: 'AM' | 'PM' | undefined = (reservation?.time_period || reservation?.timeOfDay || reservation?.res_openwater?.time_period);
       if (!uid || !dateStr || (timePeriod !== 'AM' && timePeriod !== 'PM')) return;
       const names = await getBuddyGroupMembersForSlot(String(dateStr), timePeriod, 'open_water', uid);
-      buddyNames = Array.isArray(names) ? names.slice(0, 2) : [];
+      buddyNames = Array.isArray(names) ? names : [];
     } catch (e) {
       // Silent fail; keep buddies blank
       buddyNames = [];
