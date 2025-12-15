@@ -66,27 +66,57 @@ Deno.serve(async (req: Request) => {
       return json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Locate the open water reservation detail row by reservation_id
-    const { data: owRow, error: owErr } = await serviceSupabase
-      .from('res_openwater')
-      .select('uid, buddy_group_id')
+    // Verify caller privileges: Admin OR Owner
+    const { data: resMeta, error: resMetaErr } = await serviceSupabase
+      .from('reservations')
+      .select('uid, res_type')
       .eq('reservation_id', body.reservation_id)
       .maybeSingle();
 
-    if (owErr) {
-      console.error('[get-buddy-nicknames] Error loading res_openwater', owErr.message);
-      return json({ error: owErr.message }, { status: 400 });
+    if (resMetaErr) {
+      return json({ error: resMetaErr.message }, { status: 400 });
+    }
+    if (!resMeta) {
+      return json({ error: 'Reservation not found' }, { status: 404 });
     }
 
-    if (!owRow) {
-      console.warn('[get-buddy-nicknames] No res_openwater row found for reservation', {
-        reservation_id: body.reservation_id,
-      });
-      return json({ error: 'Open water reservation not found' }, { status: 404 });
+    const isOwner = user.id === resMeta.uid;
+    // We already checked isAdmin above (but using single profile query). 
+    // Let's rely on that isAdmin boolean. 
+    // Extend permission: Admin OR Owner
+    if (!isAdmin && !isOwner) {
+      return json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const ownerUid = owRow.uid as string;
-    const buddyGroupId = owRow.buddy_group_id as string | null;
+    const ownerUid = resMeta.uid;
+    let buddyGroupId: string | null = null;
+
+    // Fetch buddy_group_id from specific detail table based on res_type
+    if (resMeta.res_type === 'open_water') {
+      const { data: owRow, error: owErr } = await serviceSupabase
+        .from('res_openwater')
+        .select('buddy_group_id')
+        .eq('reservation_id', body.reservation_id)
+        .maybeSingle();
+      if (owErr) console.error('[get-buddy-nicknames] res_openwater error', owErr);
+      buddyGroupId = owRow?.buddy_group_id || null;
+    } else if (resMeta.res_type === 'pool') {
+      const { data: plRow, error: plErr } = await serviceSupabase
+        .from('res_pool')
+        .select('buddy_group_id')
+        .eq('reservation_id', body.reservation_id)
+        .maybeSingle();
+      if (plErr) console.error('[get-buddy-nicknames] res_pool error', plErr);
+      buddyGroupId = plRow?.buddy_group_id || null;
+    } else if (resMeta.res_type === 'classroom') {
+      const { data: clRow, error: clErr } = await serviceSupabase
+        .from('res_classroom')
+        .select('buddy_group_id')
+        .eq('reservation_id', body.reservation_id)
+        .maybeSingle();
+      if (clErr) console.error('[get-buddy-nicknames] res_classroom error', clErr);
+      buddyGroupId = clRow?.buddy_group_id || null;
+    }
 
     let memberUids: string[] = [];
 
@@ -104,13 +134,14 @@ Deno.serve(async (req: Request) => {
       memberUids = Array.from(
         new Set(
           (members ?? [])
-            .filter((m: any) => m.status === 'accepted')
+            .filter((m: any) => m.status === 'accepted' || m.status === 'pending')
             .map((m: any) => m.uid as string),
         ),
       );
     }
 
     // If there is no buddy group or it has no accepted members, fall back to just the owner
+    // (This behavior is preserved from original implementation)
     if (!memberUids.length) {
       memberUids = [ownerUid];
     } else if (!memberUids.includes(ownerUid)) {
@@ -132,16 +163,17 @@ Deno.serve(async (req: Request) => {
       nameMap.set(p.uid, { nickname: p.nickname ?? null, name: p.name ?? null });
     });
 
-    const nicknames = memberUids
+    const results = memberUids
       .map((uid) => {
         const entry = nameMap.get(uid);
         if (!entry) return null;
         const display = entry.nickname || entry.name;
-        return display && String(display).trim() !== '' ? String(display).trim() : null;
+        const displayName = display && String(display).trim() !== '' ? String(display).trim() : 'Unknown';
+        return { uid, displayName };
       })
-      .filter((n): n is string => !!n);
+      .filter((n): n is { uid: string; displayName: string } => !!n);
 
-    return json(nicknames, { status: 200 });
+    return json(results, { status: 200 });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unexpected error';
     console.error('[get-buddy-nicknames] Unhandled error', message);

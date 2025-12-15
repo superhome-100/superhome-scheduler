@@ -1,20 +1,28 @@
 <script lang="ts">
   export let names: string[] = [];
+  export let title: string = "Buddies";
+
   // Only render non-empty names, show all
   $: filtered = (names || [])
-    .map((n) => (n ?? '').trim())
+    .map((n) => (n ?? "").trim())
     .filter((n) => n.length > 0);
 </script>
 
 <div class="buddies-section">
-  <h3 class="buddies-title">Buddies</h3>
-  <div class="buddies-grid">
-    {#each filtered as n}
-      <div class="detail-item" aria-label="Buddy">
-        <span class="detail-value">{n}</span>
-      </div>
-    {/each}
-  </div>
+  <h3 class="buddies-title">{title}</h3>
+  {#if filtered.length > 0}
+    <div class="buddies-grid">
+      {#each filtered as n}
+        <div class="detail-item" aria-label="Buddy">
+          <span class="detail-value">{n}</span>
+        </div>
+      {/each}
+    </div>
+  {:else}
+    <div class="detail-item">
+      <span class="detail-value text-slate-400 italic">None</span>
+    </div>
+  {/if}
 </div>
 
 <style>

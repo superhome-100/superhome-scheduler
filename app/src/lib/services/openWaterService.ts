@@ -38,6 +38,7 @@ export type BuoyGroupWithNames = {
 }
 
 export interface MoveReservationToBuoyPayload {
+  [key: string]: unknown;
   reservation_id: number;
   buoy_id: string;
   res_date: string;
@@ -430,8 +431,8 @@ export async function getBuddyGroupMembersForSlotWithIds(
 
 export async function getBuddyNicknamesForReservation(
   reservationId: number,
-): Promise<string[]> {
-  const res = await callFunction<{ reservation_id: number }, string[]>(
+): Promise<BuddyWithId[]> {
+  const res = await callFunction<{ reservation_id: number }, { uid: string; displayName: string }[]>(
     'get-buddy-nicknames',
     { reservation_id: reservationId },
   );
@@ -442,7 +443,7 @@ export async function getBuddyNicknamesForReservation(
   }
 
   if (!Array.isArray(res.data)) return [];
-  return res.data.filter((n): n is string => typeof n === 'string' && n.trim().length > 0);
+  return res.data.map((b) => ({ uid: b.uid, name: b.displayName }));
 }
 
 export async function getMyAssignmentsDirect(
