@@ -62,9 +62,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const isAdmin = Array.isArray(profile?.privileges) && profile!.privileges.includes('admin');
-    if (!isAdmin) {
-      return json({ error: 'Forbidden' }, { status: 403 });
-    }
+    // Admin check removed here to allow Owners to proceed.
+    // Privileges are verified below (Admin OR Owner).
 
     // Verify caller privileges: Admin OR Owner
     const { data: resMeta, error: resMetaErr } = await serviceSupabase

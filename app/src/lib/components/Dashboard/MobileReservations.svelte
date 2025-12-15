@@ -1,41 +1,44 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher } from "svelte";
   // date formatting handled inside ReservationCard
-  import ReservationCard from '../ReservationCard/ReservationCard.svelte';
-  import LoadingSpinner from '../LoadingSpinner.svelte';
-  import GroupedCompletedList from '../ReservationTotals/GroupedCompletedList.svelte';
-  import ConfirmModal from '../ConfirmModal.svelte';
-  import { reservationStore } from '../../stores/reservationStore';
-  import type { BuddyWithId } from '$lib/services/openWaterService';
-  import { getBuddyGroupMembersForSlotWithIds } from '$lib/services/openWaterService';
+  import ReservationCard from "../ReservationCard/ReservationCard.svelte";
+  import LoadingSpinner from "../LoadingSpinner.svelte";
+  import GroupedCompletedList from "../ReservationTotals/GroupedCompletedList.svelte";
+  import ConfirmModal from "../ConfirmModal.svelte";
+  import { reservationStore } from "../../stores/reservationStore";
+  import type { BuddyWithId } from "$lib/services/openWaterService";
+  import {
+    getBuddyGroupMembersForSlotWithIds,
+    getBuddyNicknamesForReservation,
+  } from "$lib/services/openWaterService";
+  import dayjs from "dayjs";
 
   const dispatch = createEventDispatcher();
 
   export let upcomingReservations: any[] = [];
   export let completedReservations: any[] = [];
   export let monthlyTotals: Record<string, number> = {};
-  export let activeMobileTab: 'upcoming' | 'completed' = 'upcoming';
+  export let activeMobileTab: "upcoming" | "completed" = "upcoming";
   export let showMobileViewAll = false;
   export let upcomingListEl: HTMLDivElement | null = null;
   export let completedListEl: HTMLDivElement | null = null;
   export let loading = false;
   export let error: string | null = null;
 
-  const handleTabChange = (tab: 'upcoming' | 'completed') => {
-    dispatch('tabChange', tab);
+  const handleTabChange = (tab: "upcoming" | "completed") => {
+    dispatch("tabChange", tab);
   };
 
-
   const handleViewAll = () => {
-    dispatch('viewAll');
+    dispatch("viewAll");
   };
 
   const handleReservationClick = (reservation: any) => {
-    dispatch('reservationClick', reservation);
+    dispatch("reservationClick", reservation);
   };
 
   const handleNewReservation = () => {
-    dispatch('newReservation');
+    dispatch("newReservation");
   };
 
   // Cancel confirmation state
@@ -50,7 +53,8 @@
   const toggleBuddySelection = (uid: string, checked: boolean) => {
     if (!uid) return;
     if (checked) {
-      if (!selectedBuddyIds.includes(uid)) selectedBuddyIds = [...selectedBuddyIds, uid];
+      if (!selectedBuddyIds.includes(uid))
+        selectedBuddyIds = [...selectedBuddyIds, uid];
     } else {
       selectedBuddyIds = selectedBuddyIds.filter((id) => id !== uid);
     }
@@ -61,39 +65,128 @@
     selectedBuddyIds = [];
     if (!reservation) return;
 
-    const displayType = reservation.type || (reservation.res_type === 'open_water' ? 'Open Water' : reservation.res_type);
-    const isOW = displayType === 'Open Water' || reservation?.res_type === 'open_water';
-    if (!isOW) return;
+    const displayType =
+      reservation.type ||
+      (reservation.res_type === "open_water"
+        ? "Open Water"
+        : reservation.res_type);
+    const isOW =
+      displayType === "Open Water" || reservation?.res_type === "open_water";
+    const isPool = displayType === "Pool" || reservation?.res_type === "pool";
 
-    const owType =
-      (reservation as any)?.open_water_type ||
-      (reservation as any)?.res_openwater?.open_water_type ||
+    const poolType =
+      reservation?.pool_type ??
+      reservation?.poolType ??
+      reservation?.res_pool?.pool_type ??
+      reservation?.res_pool?.poolType ??
+      reservation?.raw_reservation?.pool_type ??
+      reservation?.raw_reservation?.poolType ??
+      reservation?.raw_reservation?.res_pool?.pool_type ??
+      reservation?.raw_reservation?.res_pool?.poolType ??
       null;
-    if (owType === 'course_coaching') return;
 
-    const uid: string | undefined = reservation?.uid ? String(reservation.uid) : undefined;
-    const dateStr: string | undefined = reservation?.res_date || reservation?.date;
-    const timePeriod: 'AM' | 'PM' | undefined =
-      (reservation as any)?.time_period ||
-      (reservation as any)?.timeOfDay ||
-      (reservation as any)?.res_openwater?.time_period;
+    if (!isOW && !(isPool && poolType === "autonomous")) return;
 
-    if (!uid || !dateStr || (timePeriod !== 'AM' && timePeriod !== 'PM')) return;
+    // Handle Open Water
+    if (isOW) {
+      const owType =
+        (reservation as any)?.open_water_type ||
+        (reservation as any)?.res_openwater?.open_water_type ||
+        null;
+      if (owType === "course_coaching") return;
 
-    loadingBuddyOptions = true;
-    try {
-      const buddies = await getBuddyGroupMembersForSlotWithIds(
-        String(dateStr),
-        timePeriod,
-        'open_water',
-        uid,
-      );
-      buddyCancelOptions = Array.isArray(buddies) ? buddies : [];
-    } catch (e) {
-      console.warn('[MobileReservations] Failed to load buddy cancel options', e);
-      buddyCancelOptions = [];
-    } finally {
-      loadingBuddyOptions = false;
+      const uid: string | undefined = reservation?.uid
+        ? String(reservation.uid)
+        : undefined;
+      const dateStr: string | undefined =
+        reservation?.res_date || reservation?.date;
+      const timePeriod: "AM" | "PM" | undefined =
+        (reservation as any)?.time_period ||
+        (reservation as any)?.timeOfDay ||
+        (reservation as any)?.res_openwater?.time_period;
+
+      if (!uid || !dateStr || (timePeriod !== "AM" && timePeriod !== "PM"))
+        return;
+
+      loadingBuddyOptions = true;
+      try {
+        const buddies = await getBuddyGroupMembersForSlotWithIds(
+          String(dateStr),
+          timePeriod,
+          "open_water",
+          uid,
+        );
+        buddyCancelOptions = Array.isArray(buddies) ? buddies : [];
+      } catch (e) {
+        console.warn(
+          "[MobileReservations] Failed to load buddy cancel options",
+          e,
+        );
+        buddyCancelOptions = [];
+      } finally {
+        loadingBuddyOptions = false;
+      }
+      return;
+    }
+
+    // Handle Pool Autonomous
+    if (isPool && poolType === "autonomous") {
+      const uid: string | undefined = reservation?.uid
+        ? String(reservation.uid)
+        : undefined;
+      // Try specific reservation ID lookup first
+      if (reservation?.reservation_id) {
+        loadingBuddyOptions = true;
+        try {
+          const buddies = await getBuddyNicknamesForReservation(
+            Number(reservation.reservation_id),
+          );
+          buddyCancelOptions = buddies.filter((b) => b.uid !== uid);
+        } catch (e) {
+          console.warn(
+            "[MobileReservations] Failed to load pool buddy options",
+            e,
+          );
+          buddyCancelOptions = [];
+        } finally {
+          loadingBuddyOptions = false;
+        }
+        return;
+      }
+
+      // Fallback: try time-slot based group lookup
+      const start: string | null =
+        reservation?.start_time ??
+        reservation?.startTime ??
+        reservation?.res_pool?.start_time ??
+        reservation?.raw_reservation?.start_time ??
+        reservation?.raw_reservation?.res_pool?.start_time ??
+        null;
+      const dateStr: string | undefined =
+        reservation?.res_date || reservation?.date;
+
+      if (!uid || !dateStr || !start) return;
+
+      let parsed = dayjs(start, ["HH:mm", "HH:mm:ss"], true);
+      if (!parsed.isValid()) parsed = dayjs(start);
+      if (!parsed.isValid()) return;
+
+      const timePeriodPool: "AM" | "PM" = parsed.hour() < 12 ? "AM" : "PM";
+
+      loadingBuddyOptions = true;
+      try {
+        const buddies = await getBuddyGroupMembersForSlotWithIds(
+          String(dateStr),
+          timePeriodPool,
+          "pool",
+          uid,
+        );
+        buddyCancelOptions = buddies;
+      } catch (e) {
+        buddyCancelOptions = [];
+      } finally {
+        loadingBuddyOptions = false;
+      }
     }
   }
 
@@ -108,25 +201,46 @@
       const r = reservationToCancel;
       confirmOpen = false;
       if (!r) return;
-      const t = (r.res_type || (r.type === 'Open Water' ? 'open_water' : r.type === 'Pool' ? 'pool' : r.type === 'Classroom' ? 'classroom' : r.res_type)) as 'open_water' | 'pool' | 'classroom';
-      const start = r?.res_pool?.start_time || r?.res_classroom?.start_time || r?.start_time || undefined;
-      const period = (r?.res_openwater?.time_period || r?.time_period) as 'AM' | 'PM' | undefined;
+      const t = (r.res_type ||
+        (r.type === "Open Water"
+          ? "open_water"
+          : r.type === "Pool"
+            ? "pool"
+            : r.type === "Classroom"
+              ? "classroom"
+              : r.res_type)) as "open_water" | "pool" | "classroom";
+      const start =
+        r?.res_pool?.start_time ||
+        r?.res_classroom?.start_time ||
+        r?.start_time ||
+        undefined;
+      const period = (r?.res_openwater?.time_period || r?.time_period) as
+        | "AM"
+        | "PM"
+        | undefined;
 
       const buddiesToCancel = buddyCancelOptions.length
-        ? selectedBuddyIds.filter((id) => buddyCancelOptions.some((b) => b.uid === id))
+        ? selectedBuddyIds.filter((id) =>
+            buddyCancelOptions.some((b) => b.uid === id),
+          )
         : [];
 
-      const { success } = await reservationStore.cancelReservation(r.uid, r.res_date, {
-        res_type: t,
-        start_time: start,
-        time_period: t === 'open_water' ? (period || 'AM') : undefined
-      }, buddiesToCancel);
+      const { success } = await reservationStore.cancelReservation(
+        r.uid,
+        r.res_date,
+        {
+          res_type: t,
+          start_time: start,
+          time_period: t === "open_water" ? period || "AM" : undefined,
+        },
+        buddiesToCancel,
+      );
       if (success) {
-        dispatch('computeOverflow');
-        dispatch('retry');
+        dispatch("computeOverflow");
+        dispatch("retry");
       }
     } catch (e) {
-      console.error('MobileReservations: cancel failed', e);
+      console.error("MobileReservations: cancel failed", e);
     } finally {
       reservationToCancel = null;
     }
@@ -137,23 +251,25 @@
 <div class="mobile-reservations">
   <div class="reservation-section">
     <div class="tabs-row">
-      <button 
-        class="tab-btn" 
-        class:active={activeMobileTab === 'upcoming'}
-        on:click={() => handleTabChange('upcoming')}
-        aria-pressed={activeMobileTab === 'upcoming'}
+      <button
+        class="tab-btn"
+        class:active={activeMobileTab === "upcoming"}
+        on:click={() => handleTabChange("upcoming")}
+        aria-pressed={activeMobileTab === "upcoming"}
       >
         <span>Upcoming</span>
-        <span class="indicator" class:active={activeMobileTab === 'upcoming'}></span>
+        <span class="indicator" class:active={activeMobileTab === "upcoming"}
+        ></span>
       </button>
-      <button 
-        class="tab-btn" 
-        class:active={activeMobileTab === 'completed'}
-        on:click={() => handleTabChange('completed')}
-        aria-pressed={activeMobileTab === 'completed'}
+      <button
+        class="tab-btn"
+        class:active={activeMobileTab === "completed"}
+        on:click={() => handleTabChange("completed")}
+        aria-pressed={activeMobileTab === "completed"}
       >
         <span>Completed</span>
-        <span class="indicator" class:active={activeMobileTab === 'completed'}></span>
+        <span class="indicator" class:active={activeMobileTab === "completed"}
+        ></span>
       </button>
     </div>
 
@@ -166,51 +282,84 @@
       {:else if error}
         <div class="error-state">
           <p>Error: {error}</p>
-          <button on:click={() => dispatch('retry')}>Retry</button>
+          <button on:click={() => dispatch("retry")}>Retry</button>
         </div>
-      {:else if activeMobileTab === 'upcoming'}
+      {:else if activeMobileTab === "upcoming"}
         {#if upcomingReservations.length > 0}
-          <div class="reservation-list compact mobile-scroll" bind:this={upcomingListEl} on:scroll={() => dispatch('computeOverflow')}>
+          <div
+            class="reservation-list compact mobile-scroll"
+            bind:this={upcomingListEl}
+            on:scroll={() => dispatch("computeOverflow")}
+          >
             {#each upcomingReservations as reservation}
               <div class="flex items-stretch justify-between gap-2">
                 <div class="flex-1 min-w-0">
-                  <ReservationCard reservation={reservation} showPrice={false} on:click={() => handleReservationClick(reservation)} on:cancel={() => handleCancelRequest(reservation)} />
+                  <ReservationCard
+                    {reservation}
+                    showPrice={false}
+                    on:click={() => handleReservationClick(reservation)}
+                    on:cancel={() => handleCancelRequest(reservation)}
+                  />
                 </div>
               </div>
             {/each}
           </div>
         {:else}
           <div class="empty-state">
-            <svg class="empty-icon" viewBox="0 0 24 24" width="48" height="48" fill="currentColor">
-              <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+            <svg
+              class="empty-icon"
+              viewBox="0 0 24 24"
+              width="48"
+              height="48"
+              fill="currentColor"
+            >
+              <path
+                d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"
+              />
             </svg>
             <p class="empty-text">No upcoming reservations</p>
-            <button class="create-first-btn" on:click={handleNewReservation}>Create your first reservation</button>
+            <button class="create-first-btn" on:click={handleNewReservation}
+              >Create your first reservation</button
+            >
           </div>
         {/if}
+      {:else if completedReservations.length > 0}
+        <div
+          class="reservation-list compact mobile-scroll"
+          bind:this={completedListEl}
+          on:scroll={() => dispatch("computeOverflow")}
+        >
+          <GroupedCompletedList
+            reservations={completedReservations}
+            {monthlyTotals}
+            on:reservationClick={(e) => handleReservationClick(e.detail)}
+          />
+        </div>
       {:else}
-        {#if completedReservations.length > 0}
-          <div class="reservation-list compact mobile-scroll" bind:this={completedListEl} on:scroll={() => dispatch('computeOverflow')}>
-            <GroupedCompletedList
-              reservations={completedReservations}
-              monthlyTotals={monthlyTotals}
-              on:reservationClick={(e) => handleReservationClick(e.detail)}
+        <div class="empty-state">
+          <svg
+            class="empty-icon"
+            viewBox="0 0 24 24"
+            width="48"
+            height="48"
+            fill="currentColor"
+          >
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
             />
-          </div>
-        {:else}
-          <div class="empty-state">
-            <svg class="empty-icon" viewBox="0 0 24 24" width="48" height="48" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-            </svg>
-            <p class="empty-text">No completed reservations</p>
-          </div>
-        {/if}
+          </svg>
+          <p class="empty-text">No completed reservations</p>
+        </div>
       {/if}
     </div>
 
     {#if showMobileViewAll}
       <div class="mobile-view-all">
-        <button class="refresh-btn" on:click={handleViewAll} aria-label="View all">
+        <button
+          class="refresh-btn"
+          on:click={handleViewAll}
+          aria-label="View all"
+        >
           View All
         </button>
       </div>
@@ -226,11 +375,14 @@
   confirmText="Yes, cancel"
   cancelText="No, keep it"
   on:confirm={confirmCancel}
-  on:cancel={() => { /* noop */ }}
+  on:cancel={() => {
+    /* noop */
+  }}
 >
   {#if loadingBuddyOptions}
     <div class="flex items-center gap-2 pt-2">
-      <span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+      <span class="loading loading-spinner loading-xs" aria-hidden="true"
+      ></span>
       <span class="text-xs text-slate-500">Loading buddies</span>
     </div>
   {:else if buddyCancelOptions.length > 0}
@@ -243,8 +395,10 @@
               class="checkbox checkbox-xs sm:checkbox-sm"
               checked={selectedBuddyIds.includes(buddy.uid)}
               on:change={(e) =>
-                toggleBuddySelection(buddy.uid, (e.currentTarget as HTMLInputElement).checked)
-              }
+                toggleBuddySelection(
+                  buddy.uid,
+                  (e.currentTarget as HTMLInputElement).checked,
+                )}
             />
             <span>Also cancel {buddy.name}'s reservation.</span>
           </label>
@@ -292,24 +446,24 @@
     transition: all 0.2s ease;
   }
 
-  .tab-btn.active { 
-    background: #3b82f6; 
-    border-color: #3b82f6; 
-    color: #fff; 
+  .tab-btn.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #fff;
   }
 
-  .indicator { 
-    width: 8px; 
-    height: 8px; 
-    border-radius: 9999px; 
-    background: #cbd5e1; 
+  .indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: #cbd5e1;
   }
-  .indicator.active { 
-    background: #22c55e; 
+  .indicator.active {
+    background: #22c55e;
   }
 
-  .reservation-content { 
-    padding: 1rem; 
+  .reservation-content {
+    padding: 1rem;
   }
 
   .mobile-scroll {
@@ -436,4 +590,3 @@
     }
   }
 </style>
-
