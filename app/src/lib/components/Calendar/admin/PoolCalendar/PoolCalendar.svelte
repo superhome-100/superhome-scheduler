@@ -151,6 +151,17 @@
     // Show suffix whenever a positive student_count exists. Keep label compact: "Base + N"
     return count > 0 ? `${base} + ${count}` : base;
   };
+
+  const getResStatus = (res: PoolResLike): string =>
+    String((res as any)?.res_status ?? (res as any)?.status ?? '').toLowerCase();
+
+  const cardClassFor = (res: PoolResLike): string => {
+    const s = getResStatus(res);
+    if (s === 'pending') {
+      return 'bg-gradient-to-br from-orange-100 to-orange-200 text-orange-900 border border-orange-300';
+    }
+    return 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-900 border border-blue-300';
+  };
 </script>
 
 <div
@@ -219,7 +230,7 @@
               style={`grid-column: ${startLane + 2} / ${startLane + 2 + span}; grid-row: 2 / ${2 + hourSlots.length};`}
             >
               <div
-                class="pointer-events-auto absolute left-1 right-1 rounded-lg text-[0.7rem] sm:text-sm cursor-pointer hover:font-semibold bg-gradient-to-br from-blue-100 to-blue-200 text-blue-900 border border-blue-300 flex flex-col justify-center p-2 overflow-hidden z-10"
+                class={`pointer-events-auto absolute left-1 right-1 rounded-lg text-[0.7rem] sm:text-sm cursor-pointer hover:font-semibold ${cardClassFor(reservation)} flex flex-col justify-center p-2 overflow-hidden z-10`}
                 style={`top: ${rect.topPx}px; height: ${rect.heightPx}px;`}
                 on:click={() => handleReservationClick(reservation)}
                 on:keydown={(e) =>

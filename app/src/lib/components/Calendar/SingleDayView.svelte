@@ -471,7 +471,7 @@
   $: approvedPlottedPoolReservations = filteredReservations.filter((r) => {
     if (selectedCalendarType !== ReservationType.pool) return false;
     if (r.res_type !== "pool") return false;
-    const approved = r.res_status === "confirmed";
+    const approved = r.res_status === "confirmed" || r.res_status === "pending";
     // Support both admin (joined res_pool) and user (flattened fields) data shapes
     const start = r?.res_pool?.start_time ?? r?.start_time ?? null;
     const end = r?.res_pool?.end_time ?? r?.end_time ?? null;
