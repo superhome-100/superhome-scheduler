@@ -5,6 +5,7 @@ import { formatDateForISO, formatTimeFor24Hour, getTimeOfDay } from './dateUtils
 export interface UnifiedReservation {
   // Core identification
   id: string;
+  reservation_id?: number;
   uid: string;
   res_date: string;
   res_type: 'pool' | 'open_water' | 'classroom';
@@ -174,6 +175,7 @@ export const transformReservationToUnified = (reservation: any): UnifiedReservat
   const unified: UnifiedReservation = {
     // Core identification
     id: `${uid}-${res_date}`,
+    reservation_id: reservation.reservation_id,
     uid,
     res_date,
     res_type,

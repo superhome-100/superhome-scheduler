@@ -39,6 +39,11 @@ function getCutoffTime(res_type: ReservationType, reservationDate: string): Date
   }
 }
 
+function overlaps(s1: string | null, e1: string | null, s2: string | null, e2: string | null): boolean {
+  if (!s1 || !e1 || !s2 || !e2) return false;
+  return s1 < e2 && e1 > s2;
+}
+
 async function findAvailableRoom(
   supabase: any,
   res_date_iso: string,
@@ -1141,24 +1146,36 @@ Deno.serve(async (req: Request) => {
         // If we have a buddyGroupId (created or reused), proceed to link initiator and buddies
         if (buddyGroupId) {
           // Update initiator's reservation with buddy_group_id
+          // Use serviceSupabase to bypass RLS restrictions on updates to specific columns if any
           if (body.res_type === 'open_water') {
-            await supabase
+            const tp = (body.openwater?.time_period || 'AM').toUpperCase();
+            await serviceSupabase
               .from('res_openwater')
               .update({ buddy_group_id: buddyGroupId })
               .eq('uid', body.uid)
-              .eq('res_date', res_date_iso);
+              .eq('res_date', res_date_iso)
+              .eq('time_period', tp);
           } else if (body.res_type === 'pool') {
-            await supabase
-              .from('res_pool')
-              .update({ buddy_group_id: buddyGroupId })
-              .eq('uid', body.uid)
-              .eq('res_date', res_date_iso);
+            // For pool, we must match start_time to avoid updating wrong slot if multiple exist
+            const startTime = body.pool?.start_time || null;
+            if (startTime) {
+              await serviceSupabase
+                .from('res_pool')
+                .update({ buddy_group_id: buddyGroupId })
+                .eq('uid', body.uid)
+                .eq('res_date', res_date_iso)
+                .eq('start_time', startTime);
+            }
           } else if (body.res_type === 'classroom') {
-            await supabase
-              .from('res_classroom')
-              .update({ buddy_group_id: buddyGroupId })
-              .eq('uid', body.uid)
-              .eq('res_date', res_date_iso);
+            const startTime = body.classroom?.start_time || null;
+            if (startTime) {
+              await serviceSupabase
+                .from('res_classroom')
+                .update({ buddy_group_id: buddyGroupId })
+                .eq('uid', body.uid)
+                .eq('res_date', res_date_iso)
+                .eq('start_time', startTime);
+            }
           }
 
           // Create reservations for buddies that belong to this group (if they don't already have one)
