@@ -8,13 +8,16 @@
   export let size: 'xs' | 'sm' | 'md' = 'sm';
   export let className: string = '';
   export let date: string | null = null;
+  export let compact: boolean = false;
   
   $: getHref = (type: string) => {
     return date ? `/reservation/${type}/${date}` : `/reservation/${type}`;
   };
 </script>
 
-<div class={`flex justify-center mb-8 flex-wrap gap-6 button-container ${className}`}>
+<div
+  class={`flex justify-start flex-wrap gap-6 ${compact ? '' : 'mb-8'} ${compact ? '' : 'button-container'} ${className}`}
+>
   <a
     href={getHref('openwater')}
     class={`btn btn-${size} bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 hover:text-slate-800`}

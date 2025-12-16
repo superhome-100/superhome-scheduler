@@ -33,20 +33,25 @@
   let selectedReservation: FlattenedReservation | null = null;
   let showReservationForm = false;
   let reservationFormInitialType: 'openwater' | 'pool' | 'classroom' = 'pool';
+  let reservationFormInitialDate: string = '';
   let editingReservation: any = null;
 
   $: type = $page.params.type as ReservationType;
   $: date = $page.params.date;
+  $: reservationFormInitialDate = date;
 
-  const handleNewReservation = async () => {
+  const handleNewReservationFromDayView = async (
+    e: CustomEvent<{ date: string; type: ReservationType }>
+  ) => {
     editingReservation = null;
-    const rt = type as ReservationType;
+    const rt = e.detail?.type as ReservationType;
     reservationFormInitialType =
       rt === ReservationType.openwater
         ? 'openwater'
         : rt === ReservationType.classroom
         ? 'classroom'
         : 'pool';
+    reservationFormInitialDate = e.detail?.date ?? date;
     await tick();
     showReservationForm = true;
   };
@@ -278,6 +283,7 @@
     on:backToCalendar={handleBackToCalendar}
     on:reservationClick={handleReservationClick}
     on:refreshReservations={handleRefreshReservations}
+    on:newReservation={handleNewReservationFromDayView}
     on:editReservation={async (e) => {
       try {
         const reservation = e.detail as FlattenedReservation | null;
@@ -296,28 +302,6 @@
     }}
   />
 
-  <button
-    class="fab-btn s--N6BxoB9_jwI"
-    type="button"
-    aria-label="Add new reservation"
-    title="Add new reservation"
-    on:click={handleNewReservation}
-  >
-    <svg
-      viewBox="0 0 24 24"
-      width="24"
-      height="24"
-      fill="currentColor"
-      aria-hidden="true"
-      class="s--N6BxoB9_jwI"
-    >
-      <path
-        d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
-        class="s--N6BxoB9_jwI"
-      ></path>
-    </svg>
-    <span class="fab-text s--N6BxoB9_jwI">New Reservation</span>
-  </button>
 {/if}
 
 <!-- Reservation Details Modal (owner-only actions) -->
@@ -379,7 +363,7 @@
 <ReservationFormModal
   isOpen={showReservationForm}
   initialType={reservationFormInitialType}
-  initialDate={date}
+  initialDate={reservationFormInitialDate}
   editing={!!editingReservation}
   initialReservation={editingReservation}
   on:submit={async () => { showReservationForm = false; editingReservation = null; await loadReservations(); }}

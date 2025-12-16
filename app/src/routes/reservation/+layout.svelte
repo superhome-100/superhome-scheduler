@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { ReservationType } from '$lib/types/reservations';
+  import ReservationTypeSwitcher from '$lib/components/Reservation/ReservationTypeSwitcher.svelte';
 
   let isAdmin = false;
   let checked = false;
@@ -41,6 +42,14 @@
   {#if $authStore.user}
     <!-- Reservation content - reuse shared header and container like admin pages -->
     <PageHeader title="Reservations" subtitle="Manage your reservations">
+      <svelte:fragment slot="subtitle">
+        <ReservationTypeSwitcher
+          value={currentType}
+          date={currentDate}
+          size="sm"
+          compact={true}
+        />
+      </svelte:fragment>
     </PageHeader>
     <MainContainer constrain={true} padding={false}>
       <slot />
