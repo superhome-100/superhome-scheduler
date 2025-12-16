@@ -7,7 +7,6 @@
   import PullToRefresh from '../PullToRefresh.svelte';
   import ReservationFormModal from '../ReservationFormModal/ReservationFormModal.svelte';
   import ReservationDetailsModal from '../ReservationDetailsModal/ReservationDetailsModal.svelte';
-  import ReservationTypeButtons from './ReservationTypeButtons.svelte';
   import ReservationCalendar from './ReservationCalendar.svelte';
   import FloatingActionButton from './FloatingActionButton.svelte';
   import { transformReservationForModal } from './reservationUtils';
@@ -93,13 +92,6 @@
     // Close modal and refresh data
     showReservationModal = false;
     loadReservations();
-  };
-
-  const handleTypeSelected = (event: CustomEvent<{ type: ReservationType }>) => {
-    console.log('Reservation: Type selected:', event.detail.type);
-    selectedType = event.detail.type;
-    console.log('Reservation: selectedType updated to:', selectedType);
-    console.log('Reservation: About to pass selectedType to ReservationCalendar:', selectedType);
   };
 
   const handleReservationClick = (event: CustomEvent) => {
@@ -327,13 +319,6 @@
           <!-- Calendar Content Card -->
           <div class="card bg-base-100 shadow-lg border border-base-300">
             <div class="card-body p-0">
-              <!-- Reservation Type Buttons -->
-              <ReservationTypeButtons 
-                {selectedType}
-                on:typeSelected={handleTypeSelected}
-              />
-
-              <!-- Calendar Section -->
               <ReservationCalendar 
                 {selectedType}
                 {reservations}

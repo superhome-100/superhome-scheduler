@@ -1,12 +1,7 @@
 <script lang="ts">
   import { sidebarActions } from '../../stores/sidebar';
-  import { themeStore } from '../../stores/theme';
   export let title: string;
   export let subtitle: string = '';
-
-  const handleToggleTheme = () => {
-    themeStore.toggle();
-  };
 </script>
 
 <style>
@@ -71,23 +66,14 @@
       </button>
       <div class="flex-1">
         <h1 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 text-base-content">{title}</h1>
-        {#if subtitle}
+        {#if $$slots.subtitle}
+          <slot name="subtitle" />
+        {:else if subtitle}
           <p class="text-sm sm:text-base text-base-content/80">{subtitle}</p>
         {/if}
       </div>
       <div class="flex items-center gap-2 flex-wrap justify-end">
         <slot name="right" />
-        <button
-          type="button"
-          class="btn btn-ghost btn-sm normal-case"
-          on:click={handleToggleTheme}
-        >
-          {#if $themeStore === 'superhome'}
-            Dark mode
-          {:else}
-            Light mode
-          {/if}
-        </button>
       </div>
     </div>
   </div>

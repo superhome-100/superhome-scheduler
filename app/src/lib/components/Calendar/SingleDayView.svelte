@@ -9,6 +9,7 @@
   import PoolCalendar from "./admin/PoolCalendar/PoolCalendar.svelte";
   import OpenWaterAdminTables from "./admin/OpenWaterCalendar/OpenWaterAdminTables.svelte";
   import ClassroomCalendar from "./admin/ClassroomCalendar/ClassroomCalendar.svelte";
+  import FloatingActionButton from "../Reservation/FloatingActionButton.svelte";
   import { pullToRefresh } from "../../actions/pullToRefresh";
   import {
     loadAvailableBuoys as svcLoadAvailableBuoys,
@@ -308,6 +309,13 @@
   const handleBackToCalendar = () => {
     // Return the last active selection so parent pages can restore it
     dispatch("backToCalendar", { type: selectedCalendarType });
+  };
+
+  const handleNewReservation = () => {
+    dispatch("newReservation", {
+      date: selectedDate,
+      type: selectedCalendarType,
+    });
   };
 
   // Current user (for user account single day view) - no longer needed for data loading
@@ -803,34 +811,18 @@
   use:pullToRefresh={{ onRefresh: refreshCurrentView }}
 >
   <!-- Header -->
-  {#if selectedCalendarType === "openwater" && !isAdmin}
-    <div class="bg-white border-b border-slate-200 p-4 flex items-center gap-4 sticky top-0 z-10 s-q0MoLB9oUH9p">
-      <button class="btn btn-ghost btn-sm flex items-center gap-2 px-2 py-1 bg-slate-100 border border-slate-200 rounded-lg text-slate-600 text-sm font-medium hover:bg-slate-200 hover:text-slate-700 transition-all duration-200 s-q0MoLB9oUH9p" on:click={handleBackToCalendar}>
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="s-q0MoLB9oUH9p"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" class="s-q0MoLB9oUH9p"></path></svg>
-        Back
-      </button>
-      <div class="flex items-center gap-3 ml-auto sm:flex-1 sm:min-w-0 s-q0MoLB9oUH9p">
-        <h1 class="date-title text-xl font-semibold text-slate-800 m-0 sm:whitespace-nowrap sm:overflow-hidden sm:text-ellipsis sm:flex-1 s-q0MoLB9oUH9p">{formattedDateTitle}</h1>
-        <div class="nav-buttons s-q0MoLB9oUH9p">
-          <button class="btn btn-outline btn-sm s-q0MoLB9oUH9p" aria-label="Previous Day" on:click={prevDay}>Prev</button>
-          <button class="btn btn-outline btn-sm s-q0MoLB9oUH9p" aria-label="Next Day" on:click={nextDay}>Next</button>
-        </div>
-      </div>
-    </div>
-  {:else}
-    <SingleDayHeader
-      {selectedDate}
-      showListButton={isAdmin}
-      on:back={handleBackToCalendar}
-      on:changeDate={(e) => {
-        const d = String(e.detail);
-        // Keep current selection context and navigate so route reloads data
-        const type = selectedCalendarType || ReservationType.openwater;
-        goto(`/reservation/${type}/${d}`);
-      }}
-      on:openList={openDayList}
-    />
-  {/if}
+  <SingleDayHeader
+    {selectedDate}
+    showListButton={isAdmin}
+    on:back={handleBackToCalendar}
+    on:changeDate={(e) => {
+      const d = String(e.detail);
+      // Keep current selection context and navigate so route reloads data
+      const type = selectedCalendarType || ReservationType.openwater;
+      goto(`/reservation/${type}/${d}`);
+    }}
+    on:openList={openDayList}
+  />
 
   <!-- Calendar Content -->
   <div
@@ -1055,4 +1047,6 @@
       </div>
     </div>
   {/if}
+
+  <FloatingActionButton on:newReservation={handleNewReservation} />
 </div>
