@@ -11,7 +11,20 @@
   let checked = false;
 
   // Current route context for day/list views
-  $: currentType = ($page.params.type as ReservationType) ?? ReservationType.openwater;
+  $: currentType = (() => {
+    const fromParams = $page.params.type as ReservationType | undefined;
+    if (fromParams && (Object.values(ReservationType) as string[]).includes(fromParams)) {
+      return fromParams;
+    }
+
+    // Month routes are implemented as static folders: /reservation/openwater | /reservation/pool | /reservation/classroom
+    const seg = $page.url.pathname.split('/')[2] as ReservationType | undefined;
+    if (seg && (Object.values(ReservationType) as string[]).includes(seg)) {
+      return seg;
+    }
+
+    return ReservationType.openwater;
+  })();
   $: currentDate = ($page.params as any).date ?? null;
 
   onMount(async () => {

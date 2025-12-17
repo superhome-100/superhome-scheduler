@@ -83,6 +83,7 @@ interface CreateReservationData {
 
 // Update reservation data
 interface UpdateReservationData {
+  reservation_id?: number;
   res_status?: ReservationStatus;
   res_date?: string;
   price?: number;
@@ -447,6 +448,9 @@ class ReservationService {
   ): Promise<ServiceResponse<CompleteReservation>> {
     try {
       const payload: any = { uid, res_date };
+      if (typeof updateData.reservation_id === 'number') {
+        payload.reservation_id = updateData.reservation_id;
+      }
       if (updateData.res_status || updateData.res_date || typeof updateData.price === 'number') {
         payload.parent = {
           ...(updateData.res_status ? { res_status: updateData.res_status as any } : {}),

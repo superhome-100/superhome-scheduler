@@ -114,6 +114,56 @@ export async function callFunction<TReq extends Record<string, unknown>, TRes>(
         const d = data as any;
         detailed = typeof d.message === 'string' ? d.message : (typeof d.error === 'string' ? d.error : undefined);
       }
+
+      // Fallback: some Supabase environments return only a generic non-2xx message.
+      // When that happens and we couldn't extract details from context, re-fetch the function
+      // endpoint directly and parse the response body.
+      if (!detailed) {
+        const msg = (anyErr?.message || error.message || '').toLowerCase();
+        const isGenericNon2xx = msg.includes('non-2xx status code');
+        if (isGenericNon2xx) {
+          try {
+            const baseUrl = (import.meta as any).env?.VITE_PUBLIC_SUPABASE_URL;
+            if (typeof baseUrl === 'string' && baseUrl.length > 0) {
+              const resp = await fetch(`${baseUrl.replace(/\/$/, '')}/functions/v1/${name}`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${sessionData.session.access_token}`,
+                },
+                body: JSON.stringify(payload),
+              });
+
+              // Only try to parse body if the fallback request is non-2xx (expected in this branch)
+              if (!resp.ok) {
+                try {
+                  const parsed: any = await resp.clone().json();
+                  if (parsed) {
+                    if (typeof parsed.message === 'string') detailed = parsed.message;
+                    else if (typeof parsed.error === 'string') detailed = parsed.error;
+                  }
+                } catch {}
+
+                if (!detailed) {
+                  try {
+                    const txt = await resp.clone().text();
+                    if (txt && txt.trim().length > 0) {
+                      try {
+                        const parsed2 = JSON.parse(txt);
+                        if (typeof parsed2?.message === 'string') detailed = parsed2.message;
+                        else if (typeof parsed2?.error === 'string') detailed = parsed2.error;
+                        else detailed = txt;
+                      } catch {
+                        detailed = txt;
+                      }
+                    }
+                  } catch {}
+                }
+              }
+            }
+          } catch {}
+        }
+      }
       return { data: null, error: detailed || error.message };
     }
     return { data: data ?? null, error: null };

@@ -3,7 +3,7 @@
   import { authStore } from '../../stores/auth';
   import { reservationStore, upcomingReservations, pastReservations, reservationStats } from '../../stores/reservationStore';
   import { reservationApi } from '../../api/reservationApi';
-  import type { CreateReservationData, CompleteReservation } from '../../api/reservationApi';
+  import type { CreateReservationData, CompleteReservation, UpdateReservationData } from '../../api/reservationApi';
   import { now } from '../../utils/dateUtils';
   import { showLoading, hideLoading } from '../../stores/ui';
   import Toast from '../Toast.svelte';
@@ -46,7 +46,7 @@
     }
   };
 
-  let editFormData: Partial<CreateReservationData> = {};
+  let editFormData: UpdateReservationData = {};
 
   // Reactive stores
   $: currentReservations = activeTab === 'upcoming' ? $upcomingReservations : 
@@ -154,6 +154,9 @@
   const openEditForm = (reservation: CompleteReservation) => {
     selectedReservation = reservation;
     editFormData = {
+      reservation_id: typeof reservation.reservation_id === 'number'
+        ? reservation.reservation_id
+        : (reservation.reservation_id != null ? Number(reservation.reservation_id) : undefined),
       res_type: reservation.res_type,
       res_date: reservation.res_date,
       res_status: reservation.res_status

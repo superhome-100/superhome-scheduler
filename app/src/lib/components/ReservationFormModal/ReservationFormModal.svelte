@@ -316,6 +316,18 @@
           res_date: reservationDateTime.toISOString(),
         };
 
+        // Ensure reservation_id (PK) is passed through for updates
+        {
+          const rawId =
+            initialReservation?.reservation_id ??
+            initialReservation?.raw_reservation?.reservation_id ??
+            null;
+          const idNum = rawId != null ? Number(rawId) : null;
+          if (idNum != null && Number.isFinite(idNum)) {
+            updateData.reservation_id = idNum;
+          }
+        }
+
         if (submissionData.type === "pool") {
           updateData.pool = {
             start_time: toHHMM(submissionData.startTime),

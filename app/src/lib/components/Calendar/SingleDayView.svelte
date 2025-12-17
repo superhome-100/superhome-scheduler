@@ -475,14 +475,78 @@
     return String(res.res_type || 'Reservation');
   }
 
+  function poolChild(res: any): any {
+    const rp = res?.res_pool ?? null;
+    if (Array.isArray(rp)) return rp[0] ?? null;
+    return rp;
+  }
+
+  let lastPoolDebugKey = '';
+  $: if (selectedCalendarType === ReservationType.pool) {
+    const key = `${selectedDate}-${selectedCalendarType}-${(reservations || []).length}`;
+    if (key !== lastPoolDebugKey) {
+      lastPoolDebugKey = key;
+      try {
+        const shouldLogAll =
+          typeof window !== 'undefined' &&
+          (window as any).__POOL_DEBUG_ALL === true;
+
+        const dayPool = (dayReservations || []).filter((r: any) => String(r?.res_type) === 'pool');
+        const coaching = dayPool.filter((r: any) => {
+          const child = poolChild(r);
+          const pt = String(child?.pool_type ?? r?.pool_type ?? '').toLowerCase();
+          return pt.includes('coach') || pt.includes('course');
+        });
+        const withTimetable = dayPool.filter((r: any) => {
+          const child = poolChild(r);
+          const start = child?.start_time ?? r?.start_time ?? null;
+          const end = child?.end_time ?? r?.end_time ?? null;
+          return !!start && !!end;
+        });
+        const coachingDiagnostics = coaching.slice(0, 5).map((r: any) => {
+          const child = poolChild(r);
+          const rp = r?.res_pool ?? null;
+          const rpShape = Array.isArray(rp) ? 'array' : (rp ? 'object' : 'none');
+          const start = child?.start_time ?? r?.start_time ?? null;
+          const end = child?.end_time ?? r?.end_time ?? null;
+          const lane = child?.lane ?? r?.lane ?? null;
+          const poolType = child?.pool_type ?? r?.pool_type ?? null;
+          const sc = child?.student_count ?? r?.student_count ?? null;
+          return { uid: r?.uid, res_status: r?.res_status, rpShape, start, end, lane, poolType, student_count: sc };
+        });
+        console.log('[PoolDayView dbg]', {
+          selectedDate,
+          totalReservations: (reservations || []).length,
+          dayReservations: (dayReservations || []).length,
+          dayPool: dayPool.length,
+          dayPoolWithTimetable: withTimetable.length,
+          dayPoolCoaching: coaching.length,
+          approvedPlottedPoolReservations: approvedPlottedPoolReservations,
+          coachingSample: coachingDiagnostics,
+        });
+
+        if (shouldLogAll) {
+          console.log('[PoolDayView dbg] ALL reservations', reservations);
+          console.log('[PoolDayView dbg] ALL dayReservations', dayReservations);
+          console.log('[PoolDayView dbg] ALL filteredReservations', filteredReservations);
+          console.log('[PoolDayView dbg] ALL approvedPlottedPoolReservations', approvedPlottedPoolReservations);
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.log('[PoolDayView dbg] failed', msg);
+      }
+    }
+  }
+
   // Only show approved Pool reservations with defined times (lane may be provisional in UI)
   $: approvedPlottedPoolReservations = filteredReservations.filter((r) => {
     if (selectedCalendarType !== ReservationType.pool) return false;
     if (r.res_type !== "pool") return false;
     const approved = r.res_status === "confirmed" || r.res_status === "pending";
     // Support both admin (joined res_pool) and user (flattened fields) data shapes
-    const start = r?.res_pool?.start_time ?? r?.start_time ?? null;
-    const end = r?.res_pool?.end_time ?? r?.end_time ?? null;
+    const child = poolChild(r);
+    const start = child?.start_time ?? r?.start_time ?? null;
+    const end = child?.end_time ?? r?.end_time ?? null;
     const hasTimetable = !!start && !!end;
     return approved && hasTimetable;
   });
@@ -784,10 +848,15 @@
       alert("Error updating boat assignment: " + (error as Error).message);
     }
   };
-  // Generate time slots for 8:00 to 20:00 (13 hours)
-  const timeSlots = Array.from({ length: 13 }, (_, i) => {
-    const hour = (i + 8).toString().padStart(2, "0");
-    return `${hour}:00`;
+  // Generate time slots for 8:00 to 20:00 in 30-minute increments
+  // Pool placement logic relies on this granularity to avoid dropping back-to-back bookings.
+  const timeSlots = Array.from({ length: 25 }, (_, i) => {
+    const totalMins = (8 * 60) + (i * 30);
+    const hour = Math.floor(totalMins / 60)
+      .toString()
+      .padStart(2, "0");
+    const min = (totalMins % 60).toString().padStart(2, "0");
+    return `${hour}:${min}`;
   });
 
   // Pull to refresh handler
