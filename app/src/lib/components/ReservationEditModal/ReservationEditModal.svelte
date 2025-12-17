@@ -199,6 +199,7 @@
       const submission = getSubmissionData(formData);
 
       const update: UpdateReservationData = {};
+      update.reservation_id = reservation.reservation_id as any;
       let anyChange = false;
       // Update parent date/time if changed
       const originalIso = getOriginalResDateIso();

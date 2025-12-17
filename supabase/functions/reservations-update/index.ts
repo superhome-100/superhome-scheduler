@@ -6,6 +6,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
 import { MSG_NO_POOL_LANES, MSG_NO_CLASSROOMS } from '../_shared/strings.ts'
 import { findAvailablePoolLane, poolSpanWidth } from '../_shared/poolLane.ts'
+import { checkPoolLaneCollision } from '../_shared/poolCollision.ts'
 
 // Cut-off rules (same as cutoffRules.ts)
 const CUTOFF_RULES = {
@@ -216,6 +217,7 @@ type ReservationStatus = 'pending' | 'confirmed' | 'rejected' | 'cancelled'
 type UpdatePayload = {
   uid: string
   res_date: string
+  reservation_id?: number
   parent?: { res_status?: ReservationStatus; res_date?: string; price?: number }
   pool?: Record<string, unknown>
   classroom?: Record<string, unknown>
@@ -257,20 +259,28 @@ Deno.serve(async (req: Request) => {
 
     const body = (await req.json()) as UpdatePayload
     console.log('[reservations-update] Incoming payload:', JSON.stringify(body))
-    if (!body?.uid || !body?.res_date) return json({ error: 'Invalid payload: uid and res_date are required' }, { status: 400 })
+    if (!body?.uid || (!body?.res_date && body?.reservation_id == null)) {
+      return json({ error: 'Invalid payload: uid and either res_date or reservation_id are required' }, { status: 400 })
+    }
 
     // Get current reservation type for validation
-    const { data: currentReservation, error: currentErr } = await supabase
+    const baseSelect = 'res_type, res_status, reservation_id, res_date'
+    const currentQuery = supabase
       .from('reservations')
-      .select('res_type, res_status, reservation_id')
+      .select(baseSelect)
       .eq('uid', body.uid)
-      .eq('res_date', body.res_date)
-      .single()
+
+    const { data: currentReservation, error: currentErr } = body.reservation_id != null
+      ? await currentQuery.eq('reservation_id', body.reservation_id).single()
+      : await currentQuery.eq('res_date', body.res_date).single()
     
     if (currentErr) {
-      console.error('[reservations-update] Failed to load current reservation by uid/res_date:', currentErr)
-      return json({ error: `Reservation not found for provided uid/res_date: ${currentErr.message}` }, { status: 400 })
+      console.error('[reservations-update] Failed to load current reservation:', currentErr)
+      return json({ error: `Reservation not found for provided uid/res_date or reservation_id: ${currentErr.message}` }, { status: 400 })
     }
+
+    // Normalize to authoritative res_date from DB (client may send stale/shifted ISO)
+    ;(body as any).res_date = (currentReservation as any).res_date
     
     const res_type = currentReservation.res_type as ReservationType
     const current_status = (currentReservation.res_status as ReservationStatus) || 'pending'
@@ -747,11 +757,11 @@ Deno.serve(async (req: Request) => {
 
     if (res_type === 'pool') {
       // Load current detail to use for cutoff and comparisons
-      let currentPool: { start_time: string | null; end_time: string | null; pool_type?: string | null; student_count?: number | null } | null = null
+      let currentPool: { start_time: string | null; end_time: string | null; lane?: string | null; pool_type?: string | null; student_count?: number | null } | null = null
       try {
         const { data: cp } = await supabase
           .from('res_pool')
-          .select('start_time, end_time, pool_type, student_count')
+          .select('start_time, end_time, lane, pool_type, student_count')
           .eq('uid', body.uid)
           .eq('res_date', detailResDateKey)
           .limit(1)
@@ -796,7 +806,7 @@ Deno.serve(async (req: Request) => {
               resDateIso: detailResDateKey,
               startTime: poolRow?.start_time ?? null,
               endTime: poolRow?.end_time ?? null,
-              excludeUid: body.uid,
+              excludeReservationId: reservationId,
               poolType: poolRow?.pool_type ?? null,
               studentCount: poolRow?.student_count as number | null,
               totalLanes: 8,
@@ -842,6 +852,129 @@ Deno.serve(async (req: Request) => {
           }
           body.pool = allowed
         }
+
+        // Collision check: if the update specifies (or implies) a lane, ensure the requested
+        // lane block is still available for the (possibly updated) time window.
+        try {
+          const incoming = body.pool as any
+          const proposedStart = incoming?.start_time ?? currentPool?.start_time ?? null
+          const proposedEnd = incoming?.end_time ?? currentPool?.end_time ?? null
+          const proposedLane = incoming?.lane ?? currentPool?.lane ?? null
+          const proposedPoolType = incoming?.pool_type ?? currentPool?.pool_type ?? null
+          const proposedStudentCount = incoming?.student_count ?? currentPool?.student_count ?? null
+
+          const timeChanged =
+            (incoming?.start_time && incoming.start_time !== currentPool?.start_time) ||
+            (incoming?.end_time && incoming.end_time !== currentPool?.end_time)
+          const spanInputsChanged =
+            (incoming?.pool_type && incoming.pool_type !== currentPool?.pool_type) ||
+            (typeof incoming?.student_count !== 'undefined' && incoming.student_count !== currentPool?.student_count)
+
+          console.log('[reservations-update][pool][collision][debug] candidate', {
+            reservationId,
+            detailResDateKey,
+            proposedStart,
+            proposedEnd,
+            proposedLane,
+            timeChanged,
+            spanInputsChanged,
+            hasIncomingLane: incoming?.lane != null,
+          })
+
+          // If lane is missing but time/span inputs changed, try to auto-assign a new lane.
+          // This prevents updates from proceeding with lane=null (which would bypass collision detection).
+          if (proposedStart && proposedEnd && proposedLane == null && (timeChanged || spanInputsChanged || body.parent?.res_date)) {
+            const autoLane = await findAvailablePoolLane(
+              { supabase: admin || supabase },
+              {
+                resDateIso: detailResDateKey,
+                startTime: proposedStart,
+                endTime: proposedEnd,
+                excludeReservationId: reservationId,
+                poolType: proposedPoolType,
+                studentCount: proposedStudentCount,
+                totalLanes: 8,
+              },
+            );
+            if (!autoLane) {
+              console.warn('[reservations-update][pool] No pool lanes available for updated time window')
+              return json({ error: MSG_NO_POOL_LANES }, { status: 400 })
+            }
+            body.pool = { ...(body.pool as any), lane: autoLane }
+            console.log('[reservations-update][pool] Auto-assigned lane for update', {
+              reservationId,
+              lane: autoLane,
+              start: proposedStart,
+              end: proposedEnd,
+            })
+          }
+
+          // Validate collisions whenever time/span inputs change OR lane is explicitly changed.
+          // If lane isn't provided in payload, we fall back to currentPool.lane.
+          const laneForCheck = (body.pool as any)?.lane ?? proposedLane
+          if (proposedStart && proposedEnd && laneForCheck != null && (incoming?.lane != null || timeChanged || spanInputsChanged)) {
+            const { collision, blockedLanes } = await checkPoolLaneCollision(
+              { supabase: admin || supabase },
+              {
+                resDateIso: detailResDateKey,
+                startTime: proposedStart,
+                endTime: proposedEnd,
+                excludeReservationId: reservationId,
+                lane: laneForCheck,
+                poolType: proposedPoolType,
+                studentCount: proposedStudentCount,
+                totalLanes: 8,
+              },
+            )
+            if (collision) {
+              const blocked = Array.isArray(blockedLanes) && blockedLanes.length
+                ? ` Blocked lane(s): ${blockedLanes.join(', ')}.`
+                : '';
+              return json({
+                error: 'collision',
+                message: `Selected pool lane is no longer available for the selected time.${blocked}`
+              }, { status: 409 })
+            }
+          } else {
+            console.log('[reservations-update][pool][collision][debug] skipped', {
+              reason: !proposedStart || !proposedEnd
+                ? 'missing_start_or_end'
+                : (proposedLane == null ? 'missing_lane' : 'no_relevant_change'),
+              reservationId,
+              proposedStart,
+              proposedEnd,
+              proposedLane,
+              timeChanged,
+              spanInputsChanged,
+            })
+
+            // Still emit reservation cell logs to help verify collision logic even when
+            // we are not enforcing collision checks (e.g., note-only edits).
+            if (proposedStart && proposedEnd) {
+              try {
+                await checkPoolLaneCollision(
+                  { supabase: admin || supabase },
+                  {
+                    resDateIso: detailResDateKey,
+                    startTime: proposedStart,
+                    endTime: proposedEnd,
+                    excludeReservationId: reservationId,
+                    lane: proposedLane,
+                    poolType: proposedPoolType,
+                    studentCount: proposedStudentCount,
+                    totalLanes: 8,
+                    debug: true,
+                  },
+                )
+              } catch (e) {
+                console.warn('[reservations-update][pool][collision][debug] failed to emit cell logs:', e)
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('[reservations-update] Pool collision check failed (skipping):', e)
+        }
+
         // Non-approval updates: do not auto-assign
         let { data: upd, error } = await supabase.from('res_pool').update(body.pool).eq('uid', body.uid).eq('res_date', detailResDateKey).select('uid')
         if (error) {

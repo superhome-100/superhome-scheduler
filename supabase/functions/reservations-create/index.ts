@@ -5,6 +5,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
 import { findAvailablePoolLane } from '../_shared/poolLane.ts'
+import { checkPoolLaneCollision } from '../_shared/poolCollision.ts'
 
 // Cut-off rules (same as cutoffRules.ts)
 const CUTOFF_RULES = {
@@ -323,36 +324,52 @@ Deno.serve(async (req: Request) => {
       if (!s || !e) {
         return json({ error: 'Start and end time are required for pool reservations' }, { status: 400 });
       }
-      const toMin = (raw: string | null) => {
-        if (!raw) return NaN;
-        const m = String(raw).match(/^(\d{2}):(\d{2})/);
-        if (!m) return NaN;
-        return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-      };
-      const sUser = toMin(s);
-      const eUser = toMin(e);
       const dateOnly = String(body.res_date).split('T')[0];
-      const from = `${dateOnly} 00:00:00+00`;
-      const to = `${dateOnly} 23:59:59+00`;
-      const { data: overlaps, error: overErr } = await supabase
-        .from('reservations')
-        .select('res_status, res_pool(start_time, end_time)')
-        .eq('res_type', 'pool')
-        .gte('res_date', from)
-        .lte('res_date', to)
-        .in('res_status', ['pending', 'confirmed']);
-      if (overErr) {
-        return json({ error: overErr.message }, { status: 400 });
-      }
-      const overlapsCount = (overlaps || []).reduce((acc: number, r: any) => {
-        const sDb = toMin(r?.res_pool?.start_time ?? null);
-        const eDb = toMin(r?.res_pool?.end_time ?? null);
-        if (Number.isNaN(sDb) || Number.isNaN(eDb) || Number.isNaN(sUser) || Number.isNaN(eUser)) return acc;
-        return sDb < eUser && eDb > sUser ? acc + 1 : acc;
-      }, 0);
-      const CAPACITY = 8; // lanes 1..8
-      if (overlapsCount >= CAPACITY) {
-        return json({ error: 'No pool lanes available for the selected time' }, { status: 409 });
+
+      // If a lane was explicitly selected, verify it doesn't collide with any existing
+      // pending/confirmed pool reservations (including multi-lane span for course/coaching).
+      const explicitLane = (body.pool as any)?.lane != null ? String((body.pool as any).lane) : null;
+      if (explicitLane) {
+        const { collision, blockedLanes } = await checkPoolLaneCollision(
+          { supabase: serviceSupabase },
+          {
+            resDateIso: body.res_date,
+            startTime: s,
+            endTime: e,
+            lane: explicitLane,
+            poolType: body.pool.pool_type ?? null,
+            studentCount: body.pool.student_count ?? null,
+            totalLanes: 8,
+          },
+        );
+        if (collision) {
+          const blocked = Array.isArray(blockedLanes) && blockedLanes.length
+            ? ` Blocked lane(s): ${blockedLanes.join(', ')}.`
+            : '';
+          return json({
+            error: 'collision',
+            message: `Selected pool lane is no longer available for the selected time.${blocked}`
+          }, { status: 409 });
+        }
+      } else {
+        // No explicit lane: ensure at least one contiguous lane block exists for the requested span.
+        const lane = await findAvailablePoolLane(
+          { supabase: serviceSupabase },
+          {
+            resDateIso: body.res_date,
+            startTime: s,
+            endTime: e,
+            poolType: body.pool.pool_type ?? null,
+            studentCount: body.pool.student_count ?? null,
+            totalLanes: 8,
+          },
+        );
+        if (!lane) {
+          return json({
+            error: 'no_pool_lanes',
+            message: 'No pool lanes available for the selected time'
+          }, { status: 409 });
+        }
       }
     }
 

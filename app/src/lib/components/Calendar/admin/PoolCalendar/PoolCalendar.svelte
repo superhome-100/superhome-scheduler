@@ -5,6 +5,7 @@
     computeGridMetrics,
     rectForRange,
     buildSlotMins,
+    toMin,
   } from "$lib/calendar/timeGrid";
   import {
     getStartHHmm,
@@ -12,6 +13,8 @@
     getLane,
     assignProvisionalLanes,
     resKey,
+    getStudentCount as getStudentCountUtil,
+    getPoolType as getPoolTypeUtil,
   } from "./poolUtils";
   import type { PoolResLike } from "./poolUtils";
   import ReservationDetailsModal from "../../../ReservationDetailsModal/ReservationDetailsModal.svelte";
@@ -43,13 +46,17 @@
   };
 
   // Derived hour slots and grid rows
-  $: hourSlots = hourSlotsFrom(timeSlots || []);
+  $: sortedTimeSlots = (timeSlots || [])
+    .slice()
+    .sort((a, b) => toMin(String(a).match(/\d{2}:\d{2}/)?.[0] || '00:00') - toMin(String(b).match(/\d{2}:\d{2}/)?.[0] || '00:00'));
+
+  $: hourSlots = hourSlotsFrom(sortedTimeSlots);
   const HEADER_ROW_PX = 40;
   const HOUR_ROW_PX = 60;
   $: rowTemplate = `${HEADER_ROW_PX}px repeat(${hourSlots.length}, ${HOUR_ROW_PX}px)`;
 
   // Build slot minutes and assign lanes for display
-  $: slotMins = buildSlotMins(timeSlots);
+  $: slotMins = buildSlotMins(sortedTimeSlots);
   $: displayReservations = assignProvisionalLanes(
     reservations || [],
     lanes,
@@ -126,23 +133,9 @@
     }
   };
 
-  // Extract student count for pool reservations (flattened or nested under res_pool)
-  const getStudentCount = (res: PoolResLike): number => {
-    const n = res?.student_count ?? res?.res_pool?.student_count ?? null;
-    const parsed = typeof n === "string" ? parseInt(n, 10) : n;
-    return Number.isFinite(parsed) && (parsed as number) > 0
-      ? (parsed as number)
-      : 0;
-  };
+  const getStudentCount = (res: PoolResLike): number => getStudentCountUtil(res);
 
-  // Extract pool_type; we expect 'autonomous' or 'course_coaching'
-  // Tolerate camelCase fallbacks from any transformed sources
-  const getPoolType = (res: PoolResLike): string | null =>
-    (res?.pool_type ??
-      res?.poolType ??
-      res?.res_pool?.pool_type ??
-      res?.res_pool?.poolType ??
-      null) as string | null;
+  const getPoolType = (res: PoolResLike): string | null => getPoolTypeUtil(res);
 
   // Display label with optional + N suffix (Course/Coaching style)
   const getDisplayLabel = (res: PoolResLike): string => {
@@ -168,7 +161,7 @@
   class="bg-white rounded-lg border border-base-300 overflow-hidden shadow-sm"
 >
   <!-- Wrapper grid with scroll -->
-  <div class="relative max-h-[60vh] overflow-y-auto">
+  <div class="relative">
     <!-- Base grid -->
     <div
       class="grid"
@@ -184,7 +177,7 @@
         <div
           class="box-border p-2 text-center font-semibold text-base-content border-r border-base-300 last:border-r-0 bg-base-200 border-b-2"
         >
-          Lane {lane}
+          <span class="hidden sm:inline">Lane &nbsp;</span>{lane}
         </div>
       {/each}
 
@@ -222,9 +215,8 @@
           {@const reservation = item.r}
           {@const rect = item.rect}
           {@const startLane = reservation.__display_lane_idx as number}
-          {@const span = (reservation.__display_span as number) || 1}
+          {@const span = Math.max(1, Number(reservation.__display_span ?? 1))}
           {#if rect}
-            <!-- Grid area spans across contiguous lanes; +2 because column 1 is the time gutter -->
             <div
               class="relative"
               style={`grid-column: ${startLane + 2} / ${startLane + 2 + span}; grid-row: 2 / ${2 + hourSlots.length};`}
@@ -233,8 +225,7 @@
                 class={`pointer-events-auto absolute left-1 right-1 rounded-lg text-[0.7rem] sm:text-sm cursor-pointer hover:font-semibold ${cardClassFor(reservation)} flex flex-col justify-center p-2 overflow-hidden z-10`}
                 style={`top: ${rect.topPx}px; height: ${rect.heightPx}px;`}
                 on:click={() => handleReservationClick(reservation)}
-                on:keydown={(e) =>
-                  e.key === "Enter" && handleReservationClick(reservation)}
+                on:keydown={(e) => e.key === "Enter" && handleReservationClick(reservation)}
                 role="button"
                 tabindex="0"
                 aria-label="View pool reservation details"

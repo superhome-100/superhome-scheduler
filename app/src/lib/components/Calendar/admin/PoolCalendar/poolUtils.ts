@@ -22,7 +22,14 @@ export interface PoolResLike {
     student_count?: number | string | null;
     pool_type?: string | null;
     poolType?: string | null;
-  } | null;
+  } | Array<{
+    start_time?: string | null;
+    end_time?: string | null;
+    lane?: string | number | null;
+    student_count?: number | string | null;
+    pool_type?: string | null;
+    poolType?: string | null;
+  }> | null;
   // Optional user info used for display in the calendar
   user_id?: string | number | null;
   user?: { id?: string | number | null } | null;
@@ -44,17 +51,23 @@ export interface PoolResLike {
   __display_span?: number;
 }
 
+const getResPool = (res: PoolResLike): NonNullable<PoolResLike['res_pool']> extends any[] ? any : any => {
+  const rp: any = (res as any)?.res_pool ?? null;
+  if (Array.isArray(rp)) return rp[0] ?? null;
+  return rp;
+};
+
 export const getStartHHmm = (res: PoolResLike): string => (
-  hhmm(res?.start_time) || hhmm(res?.res_pool?.start_time) || hhmm(res?.startTime)
+  hhmm(res?.start_time) || hhmm(getResPool(res)?.start_time) || hhmm(res?.startTime)
 );
 
 export const getEndHHmm = (res: PoolResLike): string => (
-  hhmm(res?.end_time) || hhmm(res?.res_pool?.end_time) || hhmm(res?.endTime)
+  hhmm(res?.end_time) || hhmm(getResPool(res)?.end_time) || hhmm(res?.endTime)
 );
 
 export const getLane = (res: PoolResLike): string => (
   (res?.lane != null ? String(res.lane) : '') ||
-  (res?.res_pool?.lane != null ? String(res.res_pool.lane) : '')
+  (getResPool(res)?.lane != null ? String(getResPool(res).lane) : '')
 );
 
 export { hhmm, toMin, buildSlotMins };
@@ -71,7 +84,7 @@ export const resKey = (r: PoolResLike, lanes: string[]): string => {
 
 // Extractors for counts
 export const getStudentCount = (res: PoolResLike): number => {
-  const raw = res?.student_count ?? res?.res_pool?.student_count ?? 0;
+  const raw = res?.student_count ?? getResPool(res)?.student_count ?? 0;
   const n = typeof raw === 'string' ? parseInt(raw, 10) : raw;
   return Number.isFinite(n) && n > 0 ? n as number : 0;
 };
@@ -86,16 +99,27 @@ export const getPeopleCount = (res: PoolResLike): number => {
 export const getPoolType = (res: PoolResLike): string | null => (
   (res?.pool_type
     ?? res?.poolType
-    ?? res?.res_pool?.pool_type
-    ?? res?.res_pool?.poolType
+    ?? getResPool(res)?.pool_type
+    ?? getResPool(res)?.poolType
     ?? null) as string | null
 );
+
+const normalizePoolType = (raw: string | null): string | null => {
+  if (!raw) return null;
+  const s = String(raw).trim().toLowerCase();
+  if (!s) return null;
+  // Accept either canonical values or UI/display strings.
+  if (s === 'course_coaching') return 'course_coaching';
+  const simplified = s.replace(/\s+/g, '_').replace(/\//g, '_');
+  if (simplified.includes('course') && simplified.includes('coach')) return 'course_coaching';
+  return simplified;
+};
 
 // Compute how many contiguous lanes a reservation should occupy for display/assignment
 // - course_coaching: occupies (1 + student_count)
 // - autonomous or others: occupies 1 lane
 const getSpanWidth = (res: PoolResLike, totalLanes: number): number => {
-  const type = getPoolType(res);
+  const type = normalizePoolType(getPoolType(res));
   if (type === 'course_coaching') {
     const width = getPeopleCount(res);
     return Math.max(1, Math.min(width, totalLanes));
@@ -135,6 +159,26 @@ export function assignProvisionalLanes(
     return -1;
   };
 
+  const indexAfter = (mins: number): number => {
+    if (!slotMins.length) return -1;
+    for (let i = 0; i < slotMins.length; i++) if (slotMins[i] > mins) return i;
+    return -1;
+  };
+
+  const safeRange = (startMins: number, endMins: number): { sIdx: number; eIdx: number } | null => {
+    const sIdx = indexAtOrAfter(startMins);
+    // Treat ranges as [start, end) so back-to-back bookings don't collide.
+    // Using indexAtOrAfter(end) prevents a booking ending exactly on a slot boundary
+    // from occupying the next slot.
+    let eIdx = indexAtOrAfter(endMins);
+    if (sIdx < 0) return null;
+    if (eIdx === -1) eIdx = slotMins.length;
+    // Ensure non-empty range even when times are equal/coarse-grained
+    if (eIdx <= sIdx) eIdx = Math.min(sIdx + 1, slotMins.length);
+    if (eIdx <= sIdx) return null;
+    return { sIdx, eIdx };
+  };
+
   // Helper to clamp width to available lanes
   const clampSpan = (width: number) => Math.max(1, Math.min(width, lanes.length));
 
@@ -142,12 +186,11 @@ export function assignProvisionalLanes(
   for (const r of cloned) {
     const explicit = String(getLane(r) || '');
     const startLane = explicit ? lanes.indexOf(explicit) : -1;
-    const sIdx = indexAtOrAfter(toMin(getStartHHmm(r)));
-    let eIdx = indexAtOrAfter(toMin(getEndHHmm(r)));
-    if (eIdx === -1) eIdx = slotMins.length;
-    if (sIdx < 0 || eIdx <= sIdx) continue;
+    const range = safeRange(toMin(getStartHHmm(r)), toMin(getEndHHmm(r)));
+    if (!range) continue;
+    const { sIdx, eIdx } = range;
     if (startLane >= 0) {
-      const span = getSpanWidth(r, lanes.length);
+      const span = clampSpan(getSpanWidth(r, lanes.length));
       // Only pre-occupy if the contiguous span fits and is free; otherwise leave for assignment phase
       if (startLane + span <= lanes.length && lanesRangeFree(startLane, span, sIdx, eIdx)) {
         r.__display_lane_idx = startLane;
@@ -160,12 +203,11 @@ export function assignProvisionalLanes(
   // Assign remaining reservations to first available contiguous span
   for (const r of cloned) {
     if (typeof r.__display_lane_idx === 'number') continue; // already placed
-    const sIdx = indexAtOrAfter(toMin(getStartHHmm(r)));
-    let eIdx = indexAtOrAfter(toMin(getEndHHmm(r)));
-    if (eIdx === -1) eIdx = slotMins.length;
-    if (sIdx < 0 || eIdx <= sIdx) continue;
+    const range = safeRange(toMin(getStartHHmm(r)), toMin(getEndHHmm(r)));
+    if (!range) continue;
+    const { sIdx, eIdx } = range;
 
-    const span = getSpanWidth(r, lanes.length);
+    const span = clampSpan(getSpanWidth(r, lanes.length));
     // search start lane where a contiguous span fits
     for (let startLane = 0; startLane + span <= lanes.length; startLane++) {
       if (lanesRangeFree(startLane, span, sIdx, eIdx)) {
