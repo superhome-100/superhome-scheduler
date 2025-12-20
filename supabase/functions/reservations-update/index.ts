@@ -769,14 +769,9 @@ Deno.serve(async (req: Request) => {
       } catch {}
       const beforeMod = isBeforeModificationCutoff('pool', detailResDateKey, currentPool?.start_time || undefined)
       const beforeCancel = isBeforeCancelCutoff('pool', detailResDateKey, currentPool?.start_time || undefined)
-      // If user is editing and we are before modification cutoff and time/date changed, clear lane assignment
-      const requestedPool = body.pool as any
-      if (!isApproving && requestedPool && beforeMod) {
-        const timeChanged = (requestedPool.start_time && requestedPool.start_time !== currentPool?.start_time) || (requestedPool.end_time && requestedPool.end_time !== currentPool?.end_time)
-        if (timeChanged || body.parent?.res_date) {
-          await supabase.from('res_pool').update({ lane: null }).eq('uid', body.uid).eq('res_date', detailResDateKey)
-        }
-      }
+      // IMPORTANT: Do not clear lane pre-emptively on edits.
+      // We must validate collisions and (if needed) auto-assign a new lane BEFORE any update writes,
+      // otherwise we can leave a confirmed reservation in an inconsistent lane=null state.
       if (isApproving) {
         // On approval, auto-assign lane if missing
         const { data: poolRow, error: poolErr } = await supabase
@@ -882,60 +877,72 @@ Deno.serve(async (req: Request) => {
           })
 
           // If lane is missing but time/span inputs changed, try to auto-assign a new lane.
-          // This prevents updates from proceeding with lane=null (which would bypass collision detection).
-          if (proposedStart && proposedEnd && proposedLane == null && (timeChanged || spanInputsChanged || body.parent?.res_date)) {
-            const autoLane = await findAvailablePoolLane(
-              { supabase: admin || supabase },
-              {
-                resDateIso: detailResDateKey,
-                startTime: proposedStart,
-                endTime: proposedEnd,
-                excludeReservationId: reservationId,
-                poolType: proposedPoolType,
-                studentCount: proposedStudentCount,
-                totalLanes: 8,
-              },
-            );
-            if (!autoLane) {
-              console.warn('[reservations-update][pool] No pool lanes available for updated time window')
-              return json({ error: MSG_NO_POOL_LANES }, { status: 400 })
+          // This prevents updates from proceeding with lane=null (or with an invalid lane after span grows).
+          if (proposedStart && proposedEnd && (incoming?.lane != null || timeChanged || spanInputsChanged || body.parent?.res_date)) {
+            const explicitLaneProvided = incoming?.lane != null
+
+            // First try the intended lane (explicit or existing). If it collides (or absent), find a new lane.
+            let laneCandidate = proposedLane
+            if (laneCandidate != null) {
+              const { collision, blockedLanes } = await checkPoolLaneCollision(
+                { supabase: admin || supabase },
+                {
+                  resDateIso: detailResDateKey,
+                  startTime: proposedStart,
+                  endTime: proposedEnd,
+                  excludeReservationId: reservationId,
+                  lane: laneCandidate,
+                  poolType: proposedPoolType,
+                  studentCount: proposedStudentCount,
+                  totalLanes: 8,
+                },
+              )
+              if (collision) {
+                if (explicitLaneProvided) {
+                  const blocked = Array.isArray(blockedLanes) && blockedLanes.length
+                    ? ` Blocked lane(s): ${blockedLanes.join(', ')}.`
+                    : '';
+                  return json({
+                    error: 'collision',
+                    message: `Selected pool lane is no longer available for the selected time.${blocked}`
+                  }, { status: 409 })
+                }
+                laneCandidate = null
+              }
             }
-            body.pool = { ...(body.pool as any), lane: autoLane }
-            console.log('[reservations-update][pool] Auto-assigned lane for update', {
-              reservationId,
-              lane: autoLane,
-              start: proposedStart,
-              end: proposedEnd,
-            })
+
+            if (laneCandidate == null) {
+              const autoLane = await findAvailablePoolLane(
+                { supabase: admin || supabase },
+                {
+                  resDateIso: detailResDateKey,
+                  startTime: proposedStart,
+                  endTime: proposedEnd,
+                  excludeReservationId: reservationId,
+                  poolType: proposedPoolType,
+                  studentCount: proposedStudentCount,
+                  totalLanes: 8,
+                },
+              );
+              if (!autoLane) {
+                console.warn('[reservations-update][pool] No pool lanes available for updated time window')
+                return json({
+                  error: 'no_pool_lanes',
+                  message: MSG_NO_POOL_LANES,
+                }, { status: 409 })
+              }
+              body.pool = { ...(body.pool as any), lane: autoLane }
+              console.log('[reservations-update][pool] Auto-assigned lane for update', {
+                reservationId,
+                lane: autoLane,
+                start: proposedStart,
+                end: proposedEnd,
+              })
+            }
           }
 
-          // Validate collisions whenever time/span inputs change OR lane is explicitly changed.
-          // If lane isn't provided in payload, we fall back to currentPool.lane.
-          const laneForCheck = (body.pool as any)?.lane ?? proposedLane
-          if (proposedStart && proposedEnd && laneForCheck != null && (incoming?.lane != null || timeChanged || spanInputsChanged)) {
-            const { collision, blockedLanes } = await checkPoolLaneCollision(
-              { supabase: admin || supabase },
-              {
-                resDateIso: detailResDateKey,
-                startTime: proposedStart,
-                endTime: proposedEnd,
-                excludeReservationId: reservationId,
-                lane: laneForCheck,
-                poolType: proposedPoolType,
-                studentCount: proposedStudentCount,
-                totalLanes: 8,
-              },
-            )
-            if (collision) {
-              const blocked = Array.isArray(blockedLanes) && blockedLanes.length
-                ? ` Blocked lane(s): ${blockedLanes.join(', ')}.`
-                : '';
-              return json({
-                error: 'collision',
-                message: `Selected pool lane is no longer available for the selected time.${blocked}`
-              }, { status: 409 })
-            }
-          } else {
+          // If there were no relevant changes, keep the previous debug logging behavior.
+          if (!(incoming?.lane != null || timeChanged || spanInputsChanged || body.parent?.res_date)) {
             console.log('[reservations-update][pool][collision][debug] skipped', {
               reason: !proposedStart || !proposedEnd
                 ? 'missing_start_or_end'

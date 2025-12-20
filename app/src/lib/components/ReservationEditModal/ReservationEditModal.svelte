@@ -34,6 +34,29 @@
   let submitAttempted = false;
   let modalEl: HTMLDivElement | null = null;
 
+  // Clear prior submit error as soon as the user changes any meaningful inputs.
+  let lastEnableKey = "";
+  const enableKey = () =>
+    JSON.stringify({
+      type: formData?.type ?? null,
+      date: formData?.date ?? null,
+      startTime: formData?.startTime ?? null,
+      endTime: formData?.endTime ?? null,
+      timeOfDay: formData?.timeOfDay ?? null,
+      poolType: formData?.poolType ?? null,
+      classroomType: formData?.classroomType ?? null,
+      openWaterType: formData?.openWaterType ?? null,
+      studentCount: formData?.studentCount ?? null,
+    });
+
+  $: {
+    const k = enableKey();
+    if (k !== lastEnableKey) {
+      lastEnableKey = k;
+      if (!loading && submitError) submitError = null;
+    }
+  }
+
   // Availability/capacity client checks (READ)
   let isBlocked = false;
   let blockedReason: string | null = null;

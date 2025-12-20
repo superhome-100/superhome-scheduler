@@ -228,7 +228,11 @@
     const start = reservation?.res_pool?.start_time;
     const end = reservation?.res_pool?.end_time;
     const lane = reservation?.res_pool?.lane;
-    const hasTimetable = !!start && !!end && lane !== null && lane !== undefined && String(lane) !== '';
+    const poolType = reservation?.res_pool?.pool_type;
+    // Coaching sessions may be valid without a lane assignment; still require start/end.
+    const requiresLane = poolType !== 'course_coaching';
+    const hasLane = lane !== null && lane !== undefined && String(lane) !== '';
+    const hasTimetable = !!start && !!end && (!requiresLane || hasLane);
     return approved && hasTimetable;
   };
 

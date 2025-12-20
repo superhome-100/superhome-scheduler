@@ -78,3 +78,12 @@ reservationCells = [
 
 
 
+### Bug
+
+#### Pool Bug Type Lane Assignment
+
+when a reservation has been accepted and has a lane assigned, then changed to coaching type, but can not be accomodated for that time slot due to collision with another reservation. The Lane assigned is removed but the reservation remains in the system without a lane. This creates an inconsistent state where the reservation exists without a lane assignment so it is approved but can not be scheduled. 
+
+##### Solution
+- Implement a validation step in the reservation update process to check for lane collisions before removing the lane assignment
+- If a collision is detected, prevent the type change and notify the user by returning non-200 with error message explaining the conflict
