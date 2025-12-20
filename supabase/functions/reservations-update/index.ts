@@ -223,6 +223,7 @@ type UpdatePayload = {
   classroom?: Record<string, unknown>
   openwater?: Record<string, unknown>
   buddies_to_cancel?: string[]
+  buddies_to_unlink?: string[]
 }
 
 function json(body: unknown, init: ResponseInit = {}) {
@@ -552,6 +553,65 @@ Deno.serve(async (req: Request) => {
       }
 
       return json({ success: true, cleared_slots: true, available, message: 'Reservation cancelled and slots cleared for new bookings' }, { status: 200 })
+    }
+
+    // Handle buddy unlinking (removal from group without cancellation)
+    const buddiesToUnlink = Array.isArray(body.buddies_to_unlink)
+      ? body.buddies_to_unlink.filter((id) => typeof id === 'string' && id.trim().length > 0)
+      : []
+
+    if (buddiesToUnlink.length > 0 && (res_type === 'pool' || res_type === 'open_water')) {
+      try {
+        console.log('[reservations-update] Processing buddies_to_unlink:', buddiesToUnlink)
+        let buddyGroupId: string | null = null
+        if (res_type === 'pool') {
+          const { data: poolRow } = await (admin || supabase)
+            .from('res_pool')
+            .select('buddy_group_id')
+            .eq('reservation_id', reservationId)
+            .eq('uid', body.uid)
+            .limit(1)
+          buddyGroupId = (poolRow && poolRow[0]?.buddy_group_id) || null
+        } else if (res_type === 'open_water') {
+          const { data: owRow } = await (admin || supabase)
+            .from('res_openwater')
+            .select('buddy_group_id')
+            .eq('reservation_id', reservationId)
+            .eq('uid', body.uid)
+            .limit(1)
+          buddyGroupId = (owRow && owRow[0]?.buddy_group_id) || null
+        }
+
+        if (buddyGroupId) {
+          for (const unlinkUid of buddiesToUnlink) {
+            // Remove from buddy_group_members
+            await (admin || supabase)
+              .from('buddy_group_members')
+              .delete()
+              .eq('buddy_group_id', buddyGroupId)
+              .eq('uid', unlinkUid)
+
+            // Clear buddy_group_id on their reservation
+            if (res_type === 'pool') {
+              await (admin || supabase)
+                .from('res_pool')
+                .update({ buddy_group_id: null })
+                .eq('uid', unlinkUid)
+                .eq('buddy_group_id', buddyGroupId)
+                .eq('res_date', body.res_date)
+            } else if (res_type === 'open_water') {
+              await (admin || supabase)
+                .from('res_openwater')
+                .update({ buddy_group_id: null })
+                .eq('uid', unlinkUid)
+                .eq('buddy_group_id', buddyGroupId)
+                .eq('res_date', body.res_date)
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[reservations-update] Buddy unlink processing failed:', e)
+      }
     }
 
     // Validate cut-off time if date is being changed (general creation/submit rule)

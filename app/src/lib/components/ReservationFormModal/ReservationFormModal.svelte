@@ -2,7 +2,10 @@
   import { createEventDispatcher } from "svelte";
   import { authStore } from "../../stores/auth";
   import { reservationStore } from "../../stores/reservationStore";
-  import type { CreateReservationData, UpdateReservationData } from "../../api/reservationApi";
+  import type {
+    CreateReservationData,
+    UpdateReservationData,
+  } from "../../api/reservationApi";
   import FormModalHeader from "./FormModalHeader.svelte";
   import FormBasicFields from "./FormBasicFields.svelte";
   import FormOpenWaterFields from "./FormOpenWaterFields.svelte";
@@ -49,7 +52,7 @@
   // When true, the modal edits an existing reservation instead of creating a new one
   export let editing: boolean = false;
   export let initialReservation: any = null;
-  
+
   // Modal title reflects whether we're creating or updating a reservation
   $: modalTitle = editing ? "Update Reservation" : "Reservation Request";
 
@@ -214,7 +217,9 @@
 
   // When capacity is blocked, surface a non-blocking toast to inform user it will go to manual approval
   $: if (capacityBlocked && capacityMessage) {
-    showErrorToast(`${capacityMessage} — your request can still be submitted and will wait for admin approval.`);
+    showErrorToast(
+      `${capacityMessage} — your request can still be submitted and will wait for admin approval.`,
+    );
   }
 
   // Form validation and loading state
@@ -230,6 +235,8 @@
   let capacityBlocked = false;
   let capacityMessage: string | null = null;
   let capacityKind: "pool" | "classroom" | null = null;
+  // Track initial buddies from BuddySelection to detect removals
+  let initialBuddyIds: string[] = [];
 
   // If a previous request failed and set a sticky "disable submit" flag,
   // re-enable the button as soon as the user changes any meaningful fields.
@@ -344,6 +351,19 @@
           res_date: reservationDateTime.toISOString(),
         };
 
+        // Calculate removed buddies to unlink
+        if (initialBuddyIds.length > 0) {
+          const currentBuddies = Array.isArray(formData.buddies)
+            ? formData.buddies
+            : [];
+          const removed = initialBuddyIds.filter(
+            (id) => !currentBuddies.includes(id),
+          );
+          if (removed.length > 0) {
+            updateData.buddies_to_unlink = removed;
+          }
+        }
+
         // Ensure reservation_id (PK) is passed through for updates
         {
           const rawId =
@@ -437,9 +457,12 @@
           res_status: "pending",
           buddies: (() => {
             const isCoaching =
-              (submissionData.type === "openwater" && formData.openWaterType === "course_coaching") ||
-              (submissionData.type === "pool" && formData.poolType === "course_coaching") ||
-              (submissionData.type === "classroom" && formData.classroomType === "course_coaching");
+              (submissionData.type === "openwater" &&
+                formData.openWaterType === "course_coaching") ||
+              (submissionData.type === "pool" &&
+                formData.poolType === "course_coaching") ||
+              (submissionData.type === "classroom" &&
+                formData.classroomType === "course_coaching");
             if (isCoaching) return undefined;
             return Array.isArray(formData.buddies) && formData.buddies.length
               ? [...formData.buddies]
@@ -572,7 +595,7 @@
   // Apply initialType when modal opens (Reservation page)
   let wasOpen = false;
   function prefillFromInitial(raw: any) {
-    console.log('[ReservationFormModal] Prefill called with', raw);
+    console.log("[ReservationFormModal] Prefill called with", raw);
     // Build default then apply values from raw
     const base = getDefaultFormData();
     base.buddies = [];
@@ -602,7 +625,9 @@
     } else if (resType === "pool") {
       base.type = "pool";
       const pool = raw?.res_pool || {};
-      base.startTime = toHHMM(pool.start_time || raw?.start_time || base.startTime);
+      base.startTime = toHHMM(
+        pool.start_time || raw?.start_time || base.startTime,
+      );
       base.endTime = toHHMM(pool.end_time || raw?.end_time || base.endTime);
       base.poolType = pool.pool_type || "";
       base.notes = pool.note || raw?.note || "";
@@ -611,8 +636,12 @@
     } else if (resType === "classroom") {
       base.type = "classroom";
       const classroom = raw?.res_classroom || {};
-      base.startTime = toHHMM(classroom.start_time || raw?.start_time || base.startTime);
-      base.endTime = toHHMM(classroom.end_time || raw?.end_time || base.endTime);
+      base.startTime = toHHMM(
+        classroom.start_time || raw?.start_time || base.startTime,
+      );
+      base.endTime = toHHMM(
+        classroom.end_time || raw?.end_time || base.endTime,
+      );
       base.classroomType = classroom.classroom_type || "";
       base.notes = classroom.note || raw?.note || "";
       base.studentCount =
@@ -626,7 +655,7 @@
       // Prefill form from existing reservation when editing
       const base = prefillFromInitial(initialReservation);
       formData = base;
-      console.log('[ReservationFormModal] Prefilled on open', formData);
+      console.log("[ReservationFormModal] Prefilled on open", formData);
     } else if (initialType && formData.type !== initialType) {
       formData.type = initialType;
       // Apply defaults for the selected type (times, date)
@@ -647,14 +676,21 @@
   // Also prefill if editing payload changes while modal is already open
   $: if (isOpen && editing && initialReservation) {
     // If the current formData does not match the incoming identifiers, rehydrate
-    const wantsType = (initialReservation?.res_type === 'open_water') ? 'openwater'
-      : (initialReservation?.res_type === 'classroom') ? 'classroom' : 'pool';
+    const wantsType =
+      initialReservation?.res_type === "open_water"
+        ? "openwater"
+        : initialReservation?.res_type === "classroom"
+          ? "classroom"
+          : "pool";
     const sameType = formData.type === wantsType;
-    const sameDate = !!formData.date && (formData.date === String((initialReservation?.res_date || '')).split('T')[0]);
+    const sameDate =
+      !!formData.date &&
+      formData.date ===
+        String(initialReservation?.res_date || "").split("T")[0];
     if (!sameType || !sameDate) {
       const base = prefillFromInitial(initialReservation);
       formData = base;
-      console.log('[ReservationFormModal] Prefilled on change', formData);
+      console.log("[ReservationFormModal] Prefilled on change", formData);
     }
   }
 
@@ -776,17 +812,14 @@
         {/if}
 
         <!-- Buddy Selection (hidden for Course/Coaching across types) -->
-        {#if !(
-          (formData.type === "openwater" && formData.openWaterType === "course_coaching") ||
-          (formData.type === "pool" && formData.poolType === "course_coaching") ||
-          (formData.type === "classroom" && formData.classroomType === "course_coaching")
-        )}
+        {#if !((formData.type === "openwater" && formData.openWaterType === "course_coaching") || (formData.type === "pool" && formData.poolType === "course_coaching") || (formData.type === "classroom" && formData.classroomType === "course_coaching"))}
           <BuddySelection
             bind:formData
             {editing}
             {initialReservation}
             {errors}
             {submitAttempted}
+            bind:initialBuddyIds
           />
         {/if}
 
@@ -795,7 +828,10 @@
 
         {#if capacityBlocked && capacityMessage}
           <div class="alert alert-warning my-2 text-sm">
-            <span>{capacityMessage}. Your request can still be submitted and will require admin approval.</span>
+            <span
+              >{capacityMessage}. Your request can still be submitted and will
+              require admin approval.</span
+            >
           </div>
         {/if}
         <!-- Actions -->
