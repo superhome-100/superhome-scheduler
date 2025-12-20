@@ -1,24 +1,24 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import { now, isToday } from '../../utils/dateUtils';
-  import { timeOfDayOptions, openWaterTypes } from './formConstants';
+  import { createEventDispatcher } from "svelte";
+  import { now, isToday } from "../../utils/dateUtils";
+  import { timeOfDayOptions, openWaterTypes } from "./formConstants";
 
   export let formData: any;
   export let errors: Record<string, string> = {};
   export let submitAttempted: boolean = false;
 
   const dispatch = createEventDispatcher();
-  
+
   // Get depth constraints based on Open Water type
   $: depthConstraints = (() => {
     switch (formData.openWaterType) {
-      case 'course_coaching':
+      case "course_coaching":
         return { min: 15, max: 130 };
-      case 'autonomous_buoy':
+      case "autonomous_buoy":
         return { min: 15, max: 89 };
-      case 'autonomous_platform':
+      case "autonomous_platform":
         return { min: 15, max: 99 };
-      case 'autonomous_platform_cbs':
+      case "autonomous_platform_cbs":
         return { min: 90, max: 130 };
       default:
         return { min: 1, max: 200 };
@@ -30,22 +30,22 @@
     if (errors.timeOfDay) {
       delete errors.timeOfDay;
     }
-    
+
     // Validate time period for today
     if (formData.date && formData.timeOfDay && isToday(formData.date)) {
       const currentTime = now();
       const currentHour = currentTime.hour();
-      
+
       // Check if selected time period is still available today
-      if (formData.timeOfDay === 'AM' && currentHour >= 12) {
-        errors.timeOfDay = 'AM time slot is no longer available for today';
-      } else if (formData.timeOfDay === 'PM' && currentHour >= 17) {
-        errors.timeOfDay = 'PM time slot is no longer available for today';
+      if (formData.timeOfDay === "AM" && currentHour >= 12) {
+        errors.timeOfDay = "AM time slot is no longer available for today";
+      } else if (formData.timeOfDay === "PM" && currentHour >= 17) {
+        errors.timeOfDay = "PM time slot is no longer available for today";
       }
     }
-    
+
     // Trigger full form validation to include cutoff rules
-    dispatch('validationChange', { errors });
+    dispatch("validationChange", { errors });
   };
 
   // Depth field UX: only show error after touch or form submit
@@ -54,7 +54,8 @@
 
   // Student count UX: only show error after touch or form submit
   let studentCountTouched = false;
-  $: showStudentCountError = !!errors.studentCount && (submitAttempted || studentCountTouched);
+  $: showStudentCountError =
+    !!errors.studentCount && (submitAttempted || studentCountTouched);
 </script>
 
 <!-- Time of Day (Only for Open Water) -->
@@ -98,7 +99,7 @@
 </div>
 
 <!-- Student Count (Only for Course/Coaching) -->
-{#if formData.openWaterType === 'course_coaching'}
+{#if formData.openWaterType === "course_coaching"}
   <div class="form-group">
     <label for="studentCount" class="form-label">No. of Students *</label>
     <select
@@ -126,7 +127,7 @@
   <div class="form-group">
     <label for="depth" class="form-label">
       Depth (meters)
-      {#if formData.openWaterType !== 'course_coaching'}
+      {#if formData.openWaterType !== "course_coaching"}
         *
       {/if}
     </label>
@@ -140,7 +141,7 @@
       class="form-control"
       class:error={showDepthError}
       bind:value={formData.depth}
-      required={formData.openWaterType !== 'course_coaching'}
+      required={formData.openWaterType !== "course_coaching"}
       on:blur={() => (depthTouched = true)}
     />
     {#if showDepthError}
@@ -148,7 +149,6 @@
     {/if}
   </div>
 {/if}
-
 
 <!-- Auto-pairing functionality removed -->
 
@@ -185,7 +185,6 @@
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
-
 
   .form-control.error {
     border-color: #ef4444;

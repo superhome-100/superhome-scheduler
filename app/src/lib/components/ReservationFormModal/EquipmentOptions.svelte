@@ -3,19 +3,31 @@
 </script>
 
 <!-- Equipment Options Section -->
-{#if formData.openWaterType && ((formData.openWaterType.startsWith('autonomous') && formData.openWaterType !== 'autonomous_platform' && formData.openWaterType !== 'autonomous_platform_cbs') || formData.openWaterType === 'course_coaching')}
+{#if formData.openWaterType && ((formData.openWaterType.startsWith("autonomous") && formData.openWaterType !== "autonomous_platform" && formData.openWaterType !== "autonomous_platform_cbs") || formData.openWaterType === "course_coaching")}
   <div class="equipment-section">
     <h3 class="section-title">Equipment Options</h3>
     <div class="equipment-grid">
       <!-- Pulley Options - Radio buttons for Course/Coaching, Checkbox for Autonomous -->
-      {#if formData.openWaterType === 'course_coaching'}
+      {#if formData.openWaterType === "course_coaching"}
         <div class="equipment-item radio-group">
           <div class="radio-container">
-            <input id="pulleyYes" type="radio" name="pulley" value="true" bind:group={formData.pulley} />
+            <input
+              id="pulleyYes"
+              type="radio"
+              name="pulley"
+              value="true"
+              bind:group={formData.pulley}
+            />
             <label for="pulleyYes" class="radio-label">Pulley</label>
           </div>
           <div class="radio-container">
-            <input id="pulleyNo" type="radio" name="pulley" value="false" bind:group={formData.pulley} />
+            <input
+              id="pulleyNo"
+              type="radio"
+              name="pulley"
+              value="false"
+              bind:group={formData.pulley}
+            />
             <label for="pulleyNo" class="radio-label">No Pulley</label>
           </div>
         </div>
@@ -25,33 +37,61 @@
           <label for="pulley" class="checkbox-label">Pulley</label>
         </div>
       {/if}
-      
+
       <!-- Additional Equipment Options - Only for Course/Coaching -->
-      {#if formData.openWaterType === 'course_coaching'}
+      {#if formData.openWaterType === "course_coaching"}
         <div class="equipment-item checkbox-item">
-          <input id="deepFimTraining" type="checkbox" bind:checked={formData.deepFimTraining} />
-          <label for="deepFimTraining" class="checkbox-label">Deep FIM Training</label>
+          <input
+            id="deepFimTraining"
+            type="checkbox"
+            bind:checked={formData.deepFimTraining}
+          />
+          <label for="deepFimTraining" class="checkbox-label"
+            >Deep FIM Training</label
+          >
         </div>
         <div class="equipment-item checkbox-item">
-          <input id="bottomPlate" type="checkbox" bind:checked={formData.bottomPlate} />
+          <input
+            id="bottomPlate"
+            type="checkbox"
+            bind:checked={formData.bottomPlate}
+          />
           <label for="bottomPlate" class="checkbox-label">Bottom Plate</label>
         </div>
         <div class="equipment-item checkbox-item">
-          <input id="largeBuoy" type="checkbox" bind:checked={formData.largeBuoy} />
+          <input
+            id="largeBuoy"
+            type="checkbox"
+            bind:checked={formData.largeBuoy}
+          />
           <label for="largeBuoy" class="checkbox-label">Large Buoy</label>
         </div>
       {:else}
         <!-- For Autonomous types, show all options as checkboxes -->
         <div class="equipment-item checkbox-item">
-          <input id="deepFimTraining" type="checkbox" bind:checked={formData.deepFimTraining} />
-          <label for="deepFimTraining" class="checkbox-label">Deep FIM Training</label>
+          <input
+            id="deepFimTraining"
+            type="checkbox"
+            bind:checked={formData.deepFimTraining}
+          />
+          <label for="deepFimTraining" class="checkbox-label"
+            >Deep FIM Training</label
+          >
         </div>
         <div class="equipment-item checkbox-item">
-          <input id="bottomPlate" type="checkbox" bind:checked={formData.bottomPlate} />
+          <input
+            id="bottomPlate"
+            type="checkbox"
+            bind:checked={formData.bottomPlate}
+          />
           <label for="bottomPlate" class="checkbox-label">Bottom Plate</label>
         </div>
         <div class="equipment-item checkbox-item">
-          <input id="largeBuoy" type="checkbox" bind:checked={formData.largeBuoy} />
+          <input
+            id="largeBuoy"
+            type="checkbox"
+            bind:checked={formData.largeBuoy}
+          />
           <label for="largeBuoy" class="checkbox-label">Large Buoy</label>
         </div>
       {/if}

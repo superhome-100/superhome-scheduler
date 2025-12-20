@@ -160,10 +160,12 @@ export function isBeforeModificationCutoff(
     }
     return now < getCutoffTime('open_water', reservationDateISO);
   }
-  // Pool/Classroom: before actual start time
+  // Pool/Classroom: 30 minutes before actual start time
   if (!startTime) return true; // if unknown, be permissive for UI
   const dt = new Date(`${new Date(reservationDateISO).toISOString().slice(0,10)}T${startTime}`);
-  return now < dt;
+  const cutoff = new Date(dt);
+  cutoff.setMinutes(cutoff.getMinutes() - 30);
+  return now < cutoff;
 }
 
 export function isBeforeCancelCutoff(
