@@ -204,6 +204,42 @@ Deno.serve(async (req: Request) => {
       if (refreshOldErr) {
         console.error('Failed to refresh boat count for old group', refreshOldErr.message)
       }
+
+      // Cleanup: if old group has no remaining members, delete it to avoid empty groups in UI
+      try {
+        const { count: memberCount, error: countErr } = await serviceSupabase
+          .from('res_openwater')
+          .select('reservation_id', { count: 'exact', head: true })
+          .eq('group_id', currentGroupId)
+
+        if (countErr) {
+          console.error('[openwater-move-buoy] Failed to count members in old group', {
+            group_id: currentGroupId,
+            error: countErr.message,
+          })
+        } else if ((memberCount ?? 0) === 0) {
+          const { error: delErr } = await serviceSupabase
+            .from('buoy_group')
+            .delete()
+            .eq('id', currentGroupId)
+
+          if (delErr) {
+            console.error('[openwater-move-buoy] Failed to delete empty old buoy_group', {
+              group_id: currentGroupId,
+              error: delErr.message,
+            })
+          } else {
+            console.log('[openwater-move-buoy] Deleted empty old buoy_group', {
+              group_id: currentGroupId,
+            })
+          }
+        }
+      } catch (e) {
+        console.error('[openwater-move-buoy] Unexpected error while cleaning up old group', {
+          group_id: currentGroupId,
+          error: e instanceof Error ? e.message : String(e),
+        })
+      }
     }
 
     const { error: refreshNewErr } = await serviceSupabase.rpc('refresh_boat_count', {

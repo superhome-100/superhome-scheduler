@@ -113,7 +113,7 @@
   $: moveDialogNames = (() => {
     if (Array.isArray(buddyNames) && buddyNames.length) {
       return buddyNames
-        .map((n) => (n ?? '').trim())
+        .map((n) => String(n ?? '').trim())
         .filter((n) => n.length > 0);
     }
 
@@ -195,15 +195,20 @@
     try {
       loadingBuddies = true;
 
-      const names = await getBuddyNicknamesForReservation(
+      const buddies = await getBuddyNicknamesForReservation(
         reservation.reservation_id,
       );
       console.log('[DiversGroupDisplay] loaded buddy names (via Edge Function)', {
         reservationId: reservation.reservation_id,
-        names,
+        buddies,
       });
-      buddyNames = names;
-      hasBuddyGroup = names.length > 0;
+      buddyNames = Array.isArray(buddies)
+        ? buddies
+            .map((b) => (b as any)?.name)
+            .map((n) => String(n ?? '').trim())
+            .filter((n) => n.length > 0)
+        : [];
+      hasBuddyGroup = buddyNames.length > 0;
     } catch (err) {
       console.error("Failed to load buddy group members for move dialog", err);
     } finally {
