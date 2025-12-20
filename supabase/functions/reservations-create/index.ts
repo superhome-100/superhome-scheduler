@@ -199,6 +199,13 @@ Deno.serve(async (req: Request) => {
     const pre = handlePreflight(req)
     if (pre) return pre
 
+    const debugPoolCollision = (() => {
+      const header = req.headers.get('x-debug-pool-collision')
+      if (header && String(header).trim() !== '' && String(header).trim() !== '0') return true
+      const env = Deno.env.get('POOL_COLLISION_DEBUG')
+      return env === '1' || String(env || '').toLowerCase() === 'true'
+    })()
+
     if (req.method !== 'POST') return json({ error: 'Method Not Allowed' }, { status: 405 });
 
     const authHeader = req.headers.get('Authorization');
@@ -340,6 +347,7 @@ Deno.serve(async (req: Request) => {
             poolType: body.pool.pool_type ?? null,
             studentCount: body.pool.student_count ?? null,
             totalLanes: 8,
+            debug: debugPoolCollision,
           },
         );
         if (collision) {
@@ -369,6 +377,30 @@ Deno.serve(async (req: Request) => {
             error: 'no_pool_lanes',
             message: 'No pool lanes available for the selected time'
           }, { status: 409 });
+        }
+        // Persist the simulated/selected lane so subsequent inserts cannot proceed without it.
+        ;(body.pool as any).lane = lane
+
+        // Optional deep debug: emit cell logs for the chosen lane so you can inspect
+        // existing cells, incoming cells, and overlaps for the final assignment.
+        if (debugPoolCollision) {
+          try {
+            await checkPoolLaneCollision(
+              { supabase: serviceSupabase },
+              {
+                resDateIso: body.res_date,
+                startTime: s,
+                endTime: e,
+                lane,
+                poolType: body.pool.pool_type ?? null,
+                studentCount: body.pool.student_count ?? null,
+                totalLanes: 8,
+                debug: true,
+              },
+            )
+          } catch (e) {
+            console.warn('[reservations-create][pool][collision][debug] failed to emit cell logs:', e)
+          }
         }
       }
     }
@@ -844,48 +876,15 @@ Deno.serve(async (req: Request) => {
                 .eq('start_time', st)
             }
           } catch {}
-          // Auto-assign lane on creation using shared helper (service role sees all pool reservations)
-          let lane: string | null =
+          // Lane must be determined before we insert pool details.
+          // This prevents creating an inconsistent reservation with lane=null.
+          const lane: string | null =
             (body.pool as any).lane != null ? String((body.pool as any).lane) : null;
-
-          const startTime = body.pool.start_time ?? null;
-          const endTime = body.pool.end_time ?? null;
-
-          if (!lane && startTime && endTime) {
-            try {
-              const autoLane = await findAvailablePoolLane(
-                { supabase: serviceSupabase },
-                {
-                  resDateIso: res_date_iso,
-                  startTime,
-                  endTime,
-                  excludeUid: body.uid,
-                  poolType: body.pool.pool_type ?? null,
-                  studentCount: body.pool.student_count ?? null,
-                  totalLanes: 8,
-                },
-              );
-              if (autoLane) {
-                lane = autoLane;
-                console.log('[reservations-create] Auto-assigned pool lane', {
-                  uid: body.uid,
-                  res_date: res_date_iso,
-                  start_time: startTime,
-                  end_time: endTime,
-                  lane: autoLane,
-                });
-              } else {
-                console.warn('[reservations-create] No pool lane available during auto-assign; inserting without lane', {
-                  uid: body.uid,
-                  res_date: res_date_iso,
-                  start_time: startTime,
-                  end_time: endTime,
-                });
-              }
-            } catch (err) {
-              const msg = err instanceof Error ? err.message : String(err);
-              console.error('[reservations-create] Error while auto-assigning pool lane:', msg);
-            }
+          if (!lane) {
+            return json({
+              error: 'no_pool_lanes',
+              message: MSG_NO_POOL_LANES,
+            }, { status: 409 })
           }
 
           const insertPayload: any = {
@@ -894,9 +893,7 @@ Deno.serve(async (req: Request) => {
             res_date: res_date_iso,
             ...body.pool,
           };
-          if (lane) {
-            insertPayload.lane = lane;
-          }
+          insertPayload.lane = lane;
 
           let ins = await supabase.from('res_pool').insert(insertPayload)
           let error = ins.error

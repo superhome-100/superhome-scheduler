@@ -231,6 +231,34 @@
   let capacityMessage: string | null = null;
   let capacityKind: "pool" | "classroom" | null = null;
 
+  // If a previous request failed and set a sticky "disable submit" flag,
+  // re-enable the button as soon as the user changes any meaningful fields.
+  let lastEnableKey = "";
+  const enableKey = () =>
+    JSON.stringify({
+      type: formData?.type ?? null,
+      date: formData?.date ?? null,
+      startTime: formData?.startTime ?? null,
+      endTime: formData?.endTime ?? null,
+      timeOfDay: formData?.timeOfDay ?? null,
+      poolType: formData?.poolType ?? null,
+      classroomType: formData?.classroomType ?? null,
+      openWaterType: formData?.openWaterType ?? null,
+      studentCount: formData?.studentCount ?? null,
+    });
+
+  $: {
+    const k = enableKey();
+    if (k !== lastEnableKey) {
+      lastEnableKey = k;
+      if (!loading) {
+        noLaneError = false;
+        noRoomError = false;
+      }
+      if (submitError) submitError = null;
+    }
+  }
+
   // Scroll helpers for ensuring error visibility
   let modalEl: HTMLDivElement | null = null;
   const scrollToTop = () => {
@@ -632,6 +660,13 @@
 
   // Handle validation changes from child components
   const handleValidationChange = (event: CustomEvent) => {
+    // If a previous submit attempt set a sticky disable flag (e.g., no lanes/rooms),
+    // any meaningful change from the form should re-enable submit.
+    if (!loading) {
+      noLaneError = false;
+      noRoomError = false;
+      if (submitError) submitError = null;
+    }
     // If no specific errors are provided, trigger full form validation
     if (event.detail.errors && Object.keys(event.detail.errors).length === 0) {
       const { errors: validationErrors } = validateForm(formData);
