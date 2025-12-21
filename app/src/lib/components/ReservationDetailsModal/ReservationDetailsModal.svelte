@@ -15,6 +15,7 @@
     getBuddyGroupMembersForSlotWithIds,
     getBuddyNicknamesForReservation,
   } from "$lib/services/openWaterService";
+  import { supabase } from "../../utils/supabase";
 
   const dispatch = createEventDispatcher();
 
@@ -54,6 +55,51 @@
   let buddyCancelOptions: BuddyWithId[] = [];
   let selectedBuddyIds: string[] = [];
   let loadingBuddyOptions = false;
+
+  // Admin Note state
+  let adminNote: string = "";
+  let loadingAdminNote = false;
+
+  async function loadAdminNote() {
+    if (!isAdmin || !reservation?.reservation_id) {
+      adminNote = "";
+      return;
+    }
+    loadingAdminNote = true;
+    const { data } = await supabase
+      .from("reservations")
+      .select("admin_notes")
+      .eq("reservation_id", reservation.reservation_id)
+      .single();
+    adminNote = data?.admin_notes || "";
+    loadingAdminNote = false;
+  }
+
+  $: if (isOpen && reservation && isAdmin) {
+    // Debounce or just call? If reservation changes, calling is fine.
+    // If it's same reservation, maybe check? But simpler to just load.
+    loadAdminNote();
+  }
+
+  async function handleSaveAdminNote(note: string) {
+    if (!reservation) return;
+    const { success, error } = await reservationStore.updateReservation(
+      reservation.uid,
+      reservation.res_date,
+      {
+        reservation_id: reservation.reservation_id,
+        admin_note: note,
+      },
+    );
+    if (success) {
+      adminNote = note;
+      await loadAdminNote();
+      emitUpdated();
+    } else {
+      console.error("Failed to save admin note:", error);
+      // Could show toast here
+    }
+  }
 
   // Get display values for the reservation (unified structure)
   $: displayType =
@@ -414,6 +460,9 @@
         {displayDate}
         {displayNotes}
         {isAdmin}
+        {adminNote}
+        {loadingAdminNote}
+        onSaveAdminNote={handleSaveAdminNote}
         bind:owDepth
       />
 

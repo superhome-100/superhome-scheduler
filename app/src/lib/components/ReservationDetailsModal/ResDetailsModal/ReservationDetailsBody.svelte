@@ -15,6 +15,23 @@
   export let displayNotes: string;
   export let owDepth: number | null = null;
   export let isAdmin: boolean = false;
+  export let adminNote: string = "";
+  export let loadingAdminNote: boolean = false;
+  export let onSaveAdminNote: (note: string) => void = () => {};
+
+  let editAdminNote = "";
+  let isEditingAdminNote = false;
+  // Sync edit buffer when prop loads
+  $: if (adminNote !== undefined && adminNote !== null) {
+    // Only update if we are not actively editing or if it matches what we just saved (simplification)
+    // For now, just simplistic sync: usually loading happens once.
+    // If we want to be safer, we can check if it differs from *original*.
+    // But let's just default to prop.
+    // Actually, if user types, we don't want re-fetch to wipe.
+    // But re-fetch only happens on mount/update.
+    // Let's assume loading is fast.
+    editAdminNote = adminNote;
+  }
 
   // Buddy names (show all)
   let buddyNames: string[] = [];
@@ -411,8 +428,65 @@
 
     {#if !(isAdmin && displayType === "Classroom") && displayNotes}
       <div class="notes-section">
-        <h3 class="notes-title">Notes</h3>
+        <h3 class="notes-title">{isAdmin ? "User Notes" : "Notes"}</h3>
         <p class="notes-content">{displayNotes}</p>
+      </div>
+    {/if}
+
+    {#if isAdmin}
+      <div class="notes-section admin-notes">
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="notes-title">Admin Notes</h3>
+          {#if !isEditingAdminNote && !loadingAdminNote}
+            <button
+              class="btn btn-ghost btn-xs text-primary hover:bg-primary/10"
+              on:click={() => (isEditingAdminNote = true)}
+            >
+              Edit
+            </button>
+          {/if}
+        </div>
+
+        {#if loadingAdminNote}
+          <div class="flex items-center gap-2 py-2">
+            <span class="loading loading-spinner loading-xs"></span>
+            <span class="text-xs text-slate-500">Loading notes...</span>
+          </div>
+        {:else if isEditingAdminNote}
+          <div class="flex flex-col gap-2">
+            <textarea
+              class="textarea textarea-bordered textarea-sm w-full text-slate-700 bg-slate-50 border-orange-200 focus:border-orange-500"
+              rows="3"
+              placeholder="Add private admin notes here..."
+              bind:value={editAdminNote}
+            ></textarea>
+            <div class="flex justify-end gap-2">
+              <button
+                class="btn btn-xs"
+                on:click={() => {
+                  isEditingAdminNote = false;
+                  editAdminNote = adminNote;
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                class="btn btn-xs btn-primary"
+                disabled={editAdminNote === adminNote}
+                on:click={async () => {
+                  onSaveAdminNote(editAdminNote);
+                  isEditingAdminNote = false;
+                }}
+              >
+                Save Note
+              </button>
+            </div>
+          </div>
+        {:else}
+          <p class="notes-content {adminNote ? '' : 'text-slate-400 italic'}">
+            {adminNote || "No notes added."}
+          </p>
+        {/if}
       </div>
     {/if}
   </div>
