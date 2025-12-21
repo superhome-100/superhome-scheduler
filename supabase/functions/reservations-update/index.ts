@@ -192,43 +192,47 @@ function getCutoffDescription(res_type: ReservationType): string {
 
 // Pool lane auto-assignment helpers are shared in _shared/poolLane.ts
 
-async function checkAvailability(supabase: any, date: string, res_type: ReservationType, subtype?: string): Promise<{ isAvailable: boolean; reason?: string }> {
+async function checkAvailability(
+  supabase: any,
+  date: string,
+  res_type: ReservationType,
+  subtypes: (string | null | undefined)[]
+): Promise<{ isAvailable: boolean; reason?: string }> {
   try {
-    let query = supabase
+    const dateOnly = date.split('T')[0];
+    const { data, error } = await supabase
       .from('availabilities')
-      .select('available, reason')
-      .eq('date', date.split('T')[0]) // Extract date part
-      .eq('category', res_type)
-      .limit(1);
-
-    // Handle nullable type correctly (use .is for NULL)
-    if (subtype && subtype.length > 0) {
-      query = query.eq('type', subtype);
-    } else {
-      // Only match rows where type IS NULL
-      query = (query as any).is('type', null);
-    }
-
-    const { data, error } = await query;
+      .select('available, reason, type')
+      .eq('date', dateOnly)
+      .eq('category', res_type);
 
     if (error) {
-      console.error('Error checking availability:', error)
-      return { isAvailable: false }
+      console.error('Error checking availability:', error);
+      return { isAvailable: false };
     }
 
-    // If no row found, it's available by default
     if (!data || data.length === 0) {
-      return { isAvailable: true }
+      // No overrides: available by default
+      return { isAvailable: true };
     }
 
-    const row = Array.isArray(data) ? data[0] : data
-    return {
-      isAvailable: !!row.available,
-      reason: row.reason || undefined
+    // Check all relevant subtypes. If any one of them is marked unavailable, the slot is unavailable.
+    // Relevant subtypes include: null (generic), and everything in the subtypes array.
+    const relevantTypes = [null, '', ...subtypes];
+    
+    for (const row of data as any[]) {
+      if (relevantTypes.includes(row.type) && !row.available) {
+        return {
+          isAvailable: false,
+          reason: row.reason || undefined
+        };
+      }
     }
+
+    return { isAvailable: true };
   } catch (error) {
-    console.error('Error checking availability:', error)
-    return { isAvailable: false }
+    console.error('Error checking availability:', error);
+    return { isAvailable: false };
   }
 }
 
@@ -244,7 +248,6 @@ type UpdatePayload = {
   openwater?: Record<string, unknown>
   buddies_to_cancel?: string[]
   buddies_to_unlink?: string[]
-  admin_note?: string
   admin_note?: string
 }
 
@@ -710,11 +713,18 @@ Deno.serve(async (req: Request) => {
     if (body.parent?.res_date) {
       const isPendingNonApproval = current_status === 'pending' && !isApprovingRequest
       if (!isPendingNonApproval) {
-        const availability = await checkAvailability(supabase, targetDate, res_type, category || undefined);
+        // Collect subtypes to check
+        const subtypes: (string | null | undefined)[] = [category];
+        if (res_type === 'open_water') {
+          const tp = body.openwater?.time_period || currentDetails?.time_period;
+          if (tp) subtypes.push(tp);
+        }
+
+        const availability = await checkAvailability(supabase, targetDate, res_type, subtypes);
         if (!availability.isAvailable) {
           const reason = availability.reason ? ` (${availability.reason})` : '';
           return json({ 
-            error: `This date is not available for reservations${reason}` 
+            error: `Reservation failed - selected dates are fully booked.${reason}` 
           }, { status: 400 });
         }
       } else {

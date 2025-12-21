@@ -835,6 +835,7 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: never; Returns: boolean }
+      is_disabled: { Args: never; Returns: boolean }
       refresh_boat_count: { Args: { p_group_id: number }; Returns: undefined }
       sweep_cancelled_for_slot: {
         Args: {

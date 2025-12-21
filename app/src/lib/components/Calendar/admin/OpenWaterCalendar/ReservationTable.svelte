@@ -26,6 +26,8 @@
     groupId: number,
     note: string | null,
   ) => void = () => {};
+  export let isFull: boolean = false;
+  export let onToggleFull: (timePeriod: "AM" | "PM") => void = () => {};
 
   $: filteredGroups = buoyGroups.filter((bg) => bg.time_period === timePeriod);
 </script>
@@ -42,6 +44,41 @@
       {#if !readOnly}
         <div class="ml-auto flex flex-row flex-nowrap items-center gap-2">
           <BoatCapacityDisplay {boatCapacity} />
+          <button
+            type="button"
+            class="btn {isFull
+              ? 'btn-error'
+              : 'btn-ghost'} btn-xs flex items-center gap-1"
+            on:click={() => onToggleFull(timePeriod)}
+            aria-label="Mark {timePeriod} as {isFull ? 'Available' : 'Full'}"
+            disabled={loading}
+          >
+            {#if isFull}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                class="w-4 h-4"
+                fill="currentColor"
+              >
+                <path
+                  d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"
+                />
+              </svg>
+              <span>Full</span>
+            {:else}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                class="w-4 h-4"
+                fill="currentColor"
+              >
+                <path
+                  d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM8.9 6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2H8.9V6zM18 20H6V10h12v10z"
+                />
+              </svg>
+              <span>Mark Full</span>
+            {/if}
+          </button>
           <button
             type="button"
             class="btn btn-ghost btn-xs flex items-center gap-1"

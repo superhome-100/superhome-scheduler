@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, handlePreflight } from '../_shared/cors.ts';
 
 interface AvailabilityRequest {
-  action: 'create' | 'update' | 'delete' | 'get';
+  action: 'create' | 'update' | 'delete' | 'get' | 'upsert' | 'toggle';
   id?: number;
   date?: string;
   // Updated schema: category = reservation_type enum, type = text
@@ -166,6 +166,85 @@ serve(async (req) => {
 
         return new Response(
           JSON.stringify({ data: getData }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+
+      case 'upsert':
+        if (!date || !category) {
+          return new Response(
+            JSON.stringify({ error: 'Date and category are required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const { data: upsertData, error: upsertError } = await supabaseClient
+          .from('availabilities')
+          .upsert({
+            date,
+            category,
+            type: type ?? null,
+            available: available ?? true,
+            reason: reason ?? null
+          }, {
+            onConflict: 'date, category, type'
+          })
+          .select()
+          .single();
+
+        if (upsertError) {
+          return new Response(
+            JSON.stringify({ error: upsertError.message }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ data: upsertData }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+
+      case 'toggle':
+        if (!date || !category) {
+          return new Response(
+            JSON.stringify({ error: 'Date and category are required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Find existing
+        const { data: existing } = await supabaseClient
+          .from('availabilities')
+          .select('id, available')
+          .eq('date', date)
+          .eq('category', category)
+          .eq('type', type ?? null)
+          .maybeSingle();
+
+        const newAvailable = existing ? !existing.available : (available ?? false);
+
+        const { data: toggleData, error: toggleError } = await supabaseClient
+          .from('availabilities')
+          .upsert({
+            date,
+            category,
+            type: type ?? null,
+            available: newAvailable,
+            reason: reason ?? null
+          }, {
+            onConflict: 'date, category, type'
+          })
+          .select()
+          .single();
+
+        if (toggleError) {
+          return new Response(
+            JSON.stringify({ error: toggleError.message }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ data: toggleData }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
 

@@ -126,7 +126,7 @@ async function checkAvailability(
   supabase: any,
   date: string,
   res_type: ReservationType,
-  subtype: string | null | undefined
+  subtypes: (string | null | undefined)[]
 ): Promise<{ isAvailable: boolean; reason?: string }> {
   try {
     const dateOnly = date.split('T')[0];
@@ -146,20 +146,20 @@ async function checkAvailability(
       return { isAvailable: true };
     }
 
-    // Prefer specific subtype override, fall back to generic (type IS NULL or empty string)
-    const specific = subtype ? data.find((row: any) => row.type === subtype) : null;
-    const generic = data.find((row: any) => row.type === null || row.type === '');
-    const override = specific ?? generic;
-
-    if (!override) {
-      // No applicable override -> available by default
-      return { isAvailable: true };
+    // Check all relevant subtypes. If any one of them is marked unavailable, the slot is unavailable.
+    // Relevant subtypes include: null (generic), and everything in the subtypes array.
+    const relevantTypes = [null, '', ...subtypes];
+    
+    for (const row of data as any[]) {
+      if (relevantTypes.includes(row.type) && !row.available) {
+        return {
+          isAvailable: false,
+          reason: row.reason || undefined
+        };
+      }
     }
 
-    return {
-      isAvailable: override.available,
-      reason: override.reason || undefined
-    };
+    return { isAvailable: true };
   } catch (error) {
     console.error('Error checking availability:', error);
     return { isAvailable: false };
@@ -285,22 +285,27 @@ Deno.serve(async (req: Request) => {
       }, { status: 400 });
     }
 
-    // Determine subtype for availability checks based on reservation type
-    let subtype: string | null | undefined = null;
+    // Determine subtypes for availability checks based on reservation type
+    let subtypes: (string | null | undefined)[] = [];
     if (body.res_type === 'pool') {
-      subtype = body.pool?.pool_type ?? null;
+      subtypes = [body.pool?.pool_type];
     } else if (body.res_type === 'classroom') {
-      subtype = body.classroom?.classroom_type ?? null;
+      subtypes = [body.classroom?.classroom_type];
     } else if (body.res_type === 'open_water') {
-      subtype = body.openwater?.open_water_type ?? null;
+      // For Open Water, check both activity type and the specific time period (AM/PM)
+      subtypes = [
+        body.openwater?.open_water_type,
+        body.openwater?.time_period
+      ];
     }
 
-    // Check availability (category = res_type, type = subtype or null)
-    const availability = await checkAvailability(supabase, body.res_date, body.res_type, subtype);
+    // Check availability (category = res_type, type = subtypes)
+    const availability = await checkAvailability(supabase, body.res_date, body.res_type, subtypes);
     if (!availability.isAvailable) {
       const reason = availability.reason ? ` (${availability.reason})` : '';
       return json({ 
-        error: `This date is not available for reservations${reason}` 
+        // Specific error message for full dates as requested by user
+        error: `Reservation failed - selected dates are fully booked.${reason}` 
       }, { status: 400 });
     }
 

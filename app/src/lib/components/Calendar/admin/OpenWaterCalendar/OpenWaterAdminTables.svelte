@@ -262,6 +262,9 @@
     }
   }
 
+  import { availabilityApi } from "../../../../api/availabilityApi";
+  import type { AvailabilityBlock } from "../../../../api/availabilityApi";
+
   async function handleAutoAssign(timePeriod: "AM" | "PM") {
     if (readOnly || !selectedDate) return;
     try {
@@ -290,6 +293,49 @@
       );
     }
   }
+
+  let availabilities: AvailabilityBlock[] = [];
+  let togglingFull = false;
+
+  async function loadAvailabilities() {
+    if (!selectedDate) return;
+    const { success, data } = await availabilityApi.list();
+    if (success && data) {
+      availabilities = data.filter(
+        (a) => a.date === selectedDate && a.category === "openwater",
+      );
+    }
+  }
+
+  async function handleToggleFull(timePeriod: "AM" | "PM") {
+    if (readOnly || !selectedDate || togglingFull) return;
+    togglingFull = true;
+    try {
+      const { success, error } = await availabilityApi.toggle({
+        date: selectedDate,
+        category: "openwater",
+        type: timePeriod,
+      });
+
+      if (!success) {
+        alert("Error toggling full status: " + (error ?? "Unknown error"));
+        return;
+      }
+
+      await loadAvailabilities();
+    } catch (error) {
+      console.error("Error toggling full status:", error);
+    } finally {
+      togglingFull = false;
+    }
+  }
+
+  $: if (selectedDate) {
+    loadAvailabilities();
+  }
+
+  $: amFull = availabilities.some((a) => a.type === "AM" && !a.available);
+  $: pmFull = availabilities.some((a) => a.type === "PM" && !a.available);
 </script>
 
 <!-- Reservation Tables Section -->
@@ -310,6 +356,8 @@
     onLock={handleLock}
     onUnlock={handleUnlock}
     onMouseDown={handleMouseDown}
+    isFull={amFull}
+    onToggleFull={handleToggleFull}
     on:groupClick={handleGroupClick}
     on:moveReservationToBuoy={handleMoveReservationToBuoy}
     on:statusClick={handleStatusClick}
@@ -331,6 +379,8 @@
     onLock={handleLock}
     onUnlock={handleUnlock}
     onMouseDown={handleMouseDown}
+    isFull={pmFull}
+    onToggleFull={handleToggleFull}
     on:groupClick={handleGroupClick}
     on:statusClick={handleStatusClick}
   />

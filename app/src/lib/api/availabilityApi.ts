@@ -83,6 +83,18 @@ export class AvailabilityApi {
     if (error) return { success: false, error };
     return { success: true };
   }
+  async toggle(payload: { date: string; category: AvailabilityCategoryLiteral; type?: string | null }): Promise<{ success: boolean; data?: AvailabilityBlock; error?: string }> {
+    const normalizedType = payload.type === '' ? null : (payload.type ?? null);
+    const body = {
+      action: 'toggle' as const,
+      date: dayjs(payload.date).format('YYYY-MM-DD'),
+      category: this.uiToDbCategory(payload.category),
+      type: normalizedType,
+    };
+    const { data, error } = await callFunction<typeof body, { data: AvailabilityBlock }>('availability-manage', body);
+    if (error) return { success: false, error };
+    return { success: true, data: data?.data };
+  }
 }
 
 export const availabilityApi = new AvailabilityApi();
