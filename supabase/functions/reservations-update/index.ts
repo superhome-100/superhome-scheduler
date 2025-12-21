@@ -24,6 +24,24 @@ const CUTOFF_RULES = {
   }
 } as const
 
+
+function parseTimeMinutes(t: string): number {
+  if (!t) return 0
+  const parts = t.split(':')
+  const h = parseInt(parts[0], 10)
+  const m = parseInt(parts[1], 10)
+  return h * 60 + m
+}
+
+function overlaps(s1: string | null, e1: string | null, s2: string | null, e2: string | null): boolean {
+  if (!s1 || !e1 || !s2 || !e2) return false
+  const start1 = parseTimeMinutes(s1)
+  const end1 = parseTimeMinutes(e1)
+  const start2 = parseTimeMinutes(s2)
+  const end2 = parseTimeMinutes(e2)
+  return Math.max(start1, start2) < Math.min(end1, end2)
+}
+
 async function findAvailableRoom(
   supabase: any,
   res_date_iso: string,
@@ -225,6 +243,8 @@ type UpdatePayload = {
   classroom?: Record<string, unknown>
   openwater?: Record<string, unknown>
   buddies_to_cancel?: string[]
+  buddies_to_unlink?: string[]
+  admin_note?: string
 }
 
 function json(body: unknown, init: ResponseInit = {}) {
@@ -1432,6 +1452,69 @@ Deno.serve(async (req: Request) => {
       }
     } catch (e) {
       console.warn('[reservations-update] Buddy cascade block error:', e)
+    }
+
+    // Admin Note update
+    if (body.admin_note !== undefined && reservationId != null) {
+      console.log('[reservations-update] Attempting to update admin note for reservationId:', reservationId)
+      // Verify admin privilege explicitly
+      const { data: profile } = await supabase.from('user_profiles').select('privileges').eq('uid', user.id).single();
+      const userIsAdmin = Array.isArray(profile?.privileges) && profile!.privileges.includes('admin');
+
+      if (userIsAdmin) {
+        // Find buddy group id if this is pool or open water
+        let buddyGroupId: string | null = null
+        if (res_type === 'pool' || res_type === 'open_water') {
+          const table = res_type === 'pool' ? 'res_pool' : 'res_openwater'
+          const { data: detail } = await (admin || supabase)
+            .from(table)
+            .select('buddy_group_id')
+            .eq('uid', body.uid)
+            .eq('res_date', detailResDateKey)
+            .maybeSingle()
+          buddyGroupId = detail?.buddy_group_id || null
+        }
+
+        if (buddyGroupId) {
+          console.log('[reservations-update] Cascading admin note to buddy group:', buddyGroupId)
+          // Find all (uid, res_date) pairs for this buddy group in the relevant child table
+          const table = res_type === 'pool' ? 'res_pool' : 'res_openwater'
+          const { data: members } = await (admin || supabase)
+            .from(table)
+            .select('uid, res_date')
+            .eq('buddy_group_id', buddyGroupId)
+
+          if (members && members.length > 0) {
+            // Update all reservations in the group
+            for (const member of members) {
+              await (admin || supabase)
+                .from('reservations')
+                .update({
+                  admin_notes: body.admin_note,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('uid', member.uid)
+                .eq('res_date', member.res_date)
+            }
+          }
+        } else {
+          // No buddy group, just update single reservation
+          const { error: noteErr } = await (admin || supabase)
+            .from('reservations')
+            .update({
+              admin_notes: body.admin_note,
+              updated_at: new Date().toISOString()
+            })
+            .eq('reservation_id', reservationId)
+
+          if (noteErr) {
+            console.error('[reservations-update] Failed to update admin note:', noteErr)
+            return json({ error: noteErr.message }, { status: 400 })
+          }
+        }
+      } else {
+        return json({ error: 'Unauthorized to update admin notes' }, { status: 403 })
+      }
     }
 
     // Build response with effective key and (optional) updated child snapshot
