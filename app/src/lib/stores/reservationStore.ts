@@ -1,7 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
 import { reservationApi } from '../api/reservationApi';
 import type { CompleteReservation, CreateReservationData, UpdateReservationData } from '../api/reservationApi';
-import { isBeforeCancelCutoff } from '../utils/cutoffRules';
+import { isBeforeCancelCutoff, isBeforeModificationCutoff } from '../utils/cutoffRules';
 
 // Store state interface
 interface ReservationStoreState {
@@ -237,6 +237,81 @@ function createReservationStore() {
 
     // Update a reservation
     updateReservation: async (uid: string, res_date: string, updateData: UpdateReservationData) => {
+      // Find existing reservation to validate against rules
+      const existingRes = get(store).reservations.find(r => r.uid === uid && r.res_date === res_date);
+        
+      if (existingRes) {
+        // Determine start time / time period for cutoff check
+        let startTime = existingRes.res_pool?.start_time || existingRes.res_classroom?.start_time;
+        // For Open Water, time_period is string, cast to allow passing to isBeforeModificationCutoff
+        let timePeriod = existingRes.res_openwater?.time_period; 
+        
+        const isBeforeMod = isBeforeModificationCutoff(
+          existingRes.res_type, 
+          existingRes.res_date, 
+          startTime || undefined, 
+          timePeriod as any
+        );
+
+        if (!isBeforeMod) {
+          // Check for forbidden changes
+          
+          // 1. Date/Time changes
+          if (updateData.res_date && updateData.res_date !== existingRes.res_date) {
+             const msg = "Cannot change date after cut-off.";
+             update(state => ({ ...state, error: msg }));
+             return { success: false, error: msg };
+          }
+          
+          // Pool/Classroom time change
+          if (updateData.pool?.start_time && updateData.pool.start_time !== existingRes.res_pool?.start_time) {
+             const msg = "Cannot change time after cut-off.";
+             update(state => ({ ...state, error: msg }));
+             return { success: false, error: msg };
+          }
+          if (updateData.classroom?.start_time && updateData.classroom.start_time !== existingRes.res_classroom?.start_time) {
+             const msg = "Cannot change time after cut-off.";
+             update(state => ({ ...state, error: msg }));
+             return { success: false, error: msg };
+          }
+          // OpenWater time period
+          if (updateData.openwater?.time_period && updateData.openwater.time_period !== existingRes.res_openwater?.time_period) {
+             const msg = "Cannot change time period after cut-off.";
+             update(state => ({ ...state, error: msg }));
+             return { success: false, error: msg };
+          }
+
+          // 2. Student count increase
+          // Check Pool
+          if (updateData.pool?.student_count !== undefined) {
+             const currentCount = existingRes.res_pool?.student_count || 0;
+             if ((updateData.pool.student_count || 0) > currentCount) {
+                const msg = "Cannot increase student count after cut-off.";
+                update(state => ({ ...state, error: msg }));
+                return { success: false, error: msg };
+             }
+          }
+          // Check Classroom
+          if (updateData.classroom?.student_count !== undefined) {
+             const currentCount = existingRes.res_classroom?.student_count || 0;
+             if ((updateData.classroom.student_count || 0) > currentCount) {
+                const msg = "Cannot increase student count after cut-off.";
+                update(state => ({ ...state, error: msg }));
+                return { success: false, error: msg };
+             }
+          }
+          // Check OpenWater
+          if (updateData.openwater?.student_count !== undefined) {
+             const currentCount = existingRes.res_openwater?.student_count || 0;
+             if ((updateData.openwater.student_count || 0) > currentCount) {
+                const msg = "Cannot increase student count after cut-off.";
+                update(state => ({ ...state, error: msg }));
+                return { success: false, error: msg };
+             }
+          }
+        }
+      }
+
       update(state => ({ ...state, loading: true, error: null }));
       
       const result = await reservationApi.updateReservation(uid, res_date, updateData);

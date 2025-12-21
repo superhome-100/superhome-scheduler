@@ -24,6 +24,24 @@ const CUTOFF_RULES = {
   }
 } as const
 
+
+function parseTimeMinutes(t: string): number {
+  if (!t) return 0
+  const parts = t.split(':')
+  const h = parseInt(parts[0], 10)
+  const m = parseInt(parts[1], 10)
+  return h * 60 + m
+}
+
+function overlaps(s1: string | null, e1: string | null, s2: string | null, e2: string | null): boolean {
+  if (!s1 || !e1 || !s2 || !e2) return false
+  const start1 = parseTimeMinutes(s1)
+  const end1 = parseTimeMinutes(e1)
+  const start2 = parseTimeMinutes(s2)
+  const end2 = parseTimeMinutes(e2)
+  return Math.max(start1, start2) < Math.min(end1, end2)
+}
+
 async function findAvailableRoom(
   supabase: any,
   res_date_iso: string,
@@ -132,7 +150,9 @@ function isBeforeModificationCutoff(
   const day = new Date(reservationDateISO)
   const dayISO = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
   const start = new Date(`${dayISO}T${startTime}`)
-  return now < start
+  const cutoff = new Date(start)
+  cutoff.setMinutes(cutoff.getMinutes() - 30) // 30 mins buffer
+  return now < cutoff
 }
 
 function isBeforeCancelCutoff(
@@ -223,6 +243,8 @@ type UpdatePayload = {
   classroom?: Record<string, unknown>
   openwater?: Record<string, unknown>
   buddies_to_cancel?: string[]
+  buddies_to_unlink?: string[]
+  admin_note?: string
 }
 
 function json(body: unknown, init: ResponseInit = {}) {
@@ -347,6 +369,28 @@ Deno.serve(async (req: Request) => {
       : []
 
     // Handle cancellation early: enforce cutoff, clear lane/room, set status=cancelled
+    
+    // Fetch current details for validation (cutoff and constraints)
+    let currentDetails: any = null;
+    let startTimeForCutoff: string | null = null;
+    let currentStudentCount: number = 0;
+    
+    if (res_type === 'pool') {
+       const { data } = await supabase.from('res_pool').select('*').eq('uid', body.uid).eq('reservation_id', reservationId).single();
+       currentDetails = data;
+       startTimeForCutoff = data?.start_time || null;
+       currentStudentCount = data?.student_count || 0;
+    } else if (res_type === 'classroom') {
+       const { data } = await supabase.from('res_classroom').select('*').eq('uid', body.uid).eq('reservation_id', reservationId).single();
+       currentDetails = data;
+       startTimeForCutoff = data?.start_time || null;
+       currentStudentCount = data?.student_count || 0;
+    } else if (res_type === 'open_water') {
+       const { data } = await supabase.from('res_openwater').select('*').eq('uid', body.uid).eq('reservation_id', reservationId).single();
+       currentDetails = data;
+       currentStudentCount = data?.student_count || 0;
+    }
+
     if (isCancellingRequest) {
       // Load current detail to evaluate cutoff and know which table to clear
       let currentPool: { start_time: string | null; end_time?: string | null; lane?: string | null } | null = null
@@ -552,6 +596,103 @@ Deno.serve(async (req: Request) => {
       }
 
       return json({ success: true, cleared_slots: true, available, message: 'Reservation cancelled and slots cleared for new bookings' }, { status: 200 })
+    }
+
+    // Handle buddy unlinking (removal from group without cancellation)
+    const buddiesToUnlink = Array.isArray(body.buddies_to_unlink)
+      ? body.buddies_to_unlink.filter((id) => typeof id === 'string' && id.trim().length > 0)
+      : []
+
+    if (buddiesToUnlink.length > 0 && (res_type === 'pool' || res_type === 'open_water')) {
+      try {
+        console.log('[reservations-update] Processing buddies_to_unlink:', buddiesToUnlink)
+        let buddyGroupId: string | null = null
+        if (res_type === 'pool') {
+          const { data: poolRow } = await (admin || supabase)
+            .from('res_pool')
+            .select('buddy_group_id')
+            .eq('reservation_id', reservationId)
+            .eq('uid', body.uid)
+            .limit(1)
+          buddyGroupId = (poolRow && poolRow[0]?.buddy_group_id) || null
+        } else if (res_type === 'open_water') {
+          const { data: owRow } = await (admin || supabase)
+            .from('res_openwater')
+            .select('buddy_group_id')
+            .eq('reservation_id', reservationId)
+            .eq('uid', body.uid)
+            .limit(1)
+          buddyGroupId = (owRow && owRow[0]?.buddy_group_id) || null
+        }
+
+        if (buddyGroupId) {
+          for (const unlinkUid of buddiesToUnlink) {
+            // Remove from buddy_group_members
+            await (admin || supabase)
+              .from('buddy_group_members')
+              .delete()
+              .eq('buddy_group_id', buddyGroupId)
+              .eq('uid', unlinkUid)
+
+            // Clear buddy_group_id on their reservation
+            if (res_type === 'pool') {
+              await (admin || supabase)
+                .from('res_pool')
+                .update({ buddy_group_id: null })
+                .eq('uid', unlinkUid)
+                .eq('buddy_group_id', buddyGroupId)
+                .eq('res_date', body.res_date)
+            } else if (res_type === 'open_water') {
+              await (admin || supabase)
+                .from('res_openwater')
+                .update({ buddy_group_id: null })
+                .eq('uid', unlinkUid)
+                .eq('buddy_group_id', buddyGroupId)
+                .eq('res_date', body.res_date)
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[reservations-update] Buddy unlink processing failed:', e)
+      }
+    }
+
+    // Enforce Modification Rules if not cancelling
+    if (!isCancellingRequest) {
+      const isBeforeMod = isBeforeModificationCutoff(
+          res_type, 
+          (currentReservation as any).res_date, 
+          startTimeForCutoff
+      );
+
+      if (!isBeforeMod) {
+          // 1. No date change
+          if (body.parent?.res_date && body.parent.res_date !== (currentReservation as any).res_date) {
+               return json({ error: 'Cannot change date after modification cut-off.' }, { status: 400 });
+          }
+          
+          // 2. No time change
+          if (res_type === 'pool' && body.pool?.start_time && body.pool.start_time !== currentDetails?.start_time) {
+               return json({ error: 'Cannot change start time after modification cut-off.' }, { status: 400 });
+          }
+          if (res_type === 'classroom' && body.classroom?.start_time && body.classroom.start_time !== currentDetails?.start_time) {
+               return json({ error: 'Cannot change start time after modification cut-off.' }, { status: 400 });
+          }
+          if (res_type === 'open_water' && body.openwater?.time_period && body.openwater.time_period !== currentDetails?.time_period) {
+               return json({ error: 'Cannot change time period after modification cut-off.' }, { status: 400 });
+          }
+
+          // 3. No student count increase
+          let newCount: number | undefined;
+          if (res_type === 'pool' && body.pool && typeof body.pool.student_count === 'number') newCount = body.pool.student_count;
+          if (res_type === 'classroom' && body.classroom && typeof body.classroom.student_count === 'number') newCount = body.classroom.student_count;
+          if (res_type === 'open_water' && body.openwater && typeof body.openwater.student_count === 'number') newCount = body.openwater.student_count;
+
+          // Note: newCount comes from body, currentStudentCount from DB
+          if (newCount !== undefined && newCount > currentStudentCount) {
+               return json({ error: 'Cannot increase student count after modification cut-off.' }, { status: 400 });
+          }
+      }
     }
 
     // Validate cut-off time if date is being changed (general creation/submit rule)
@@ -1311,6 +1452,69 @@ Deno.serve(async (req: Request) => {
       }
     } catch (e) {
       console.warn('[reservations-update] Buddy cascade block error:', e)
+    }
+
+    // Admin Note update
+    if (body.admin_note !== undefined && reservationId != null) {
+      console.log('[reservations-update] Attempting to update admin note for reservationId:', reservationId)
+      // Verify admin privilege explicitly
+      const { data: profile } = await supabase.from('user_profiles').select('privileges').eq('uid', user.id).single();
+      const userIsAdmin = Array.isArray(profile?.privileges) && profile!.privileges.includes('admin');
+
+      if (userIsAdmin) {
+        // Find buddy group id if this is pool or open water
+        let buddyGroupId: string | null = null
+        if (res_type === 'pool' || res_type === 'open_water') {
+          const table = res_type === 'pool' ? 'res_pool' : 'res_openwater'
+          const { data: detail } = await (admin || supabase)
+            .from(table)
+            .select('buddy_group_id')
+            .eq('uid', body.uid)
+            .eq('res_date', detailResDateKey)
+            .maybeSingle()
+          buddyGroupId = detail?.buddy_group_id || null
+        }
+
+        if (buddyGroupId) {
+          console.log('[reservations-update] Cascading admin note to buddy group:', buddyGroupId)
+          // Find all (uid, res_date) pairs for this buddy group in the relevant child table
+          const table = res_type === 'pool' ? 'res_pool' : 'res_openwater'
+          const { data: members } = await (admin || supabase)
+            .from(table)
+            .select('uid, res_date')
+            .eq('buddy_group_id', buddyGroupId)
+
+          if (members && members.length > 0) {
+            // Update all reservations in the group
+            for (const member of members) {
+              await (admin || supabase)
+                .from('reservations')
+                .update({
+                  admin_notes: body.admin_note,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('uid', member.uid)
+                .eq('res_date', member.res_date)
+            }
+          }
+        } else {
+          // No buddy group, just update single reservation
+          const { error: noteErr } = await (admin || supabase)
+            .from('reservations')
+            .update({
+              admin_notes: body.admin_note,
+              updated_at: new Date().toISOString()
+            })
+            .eq('reservation_id', reservationId)
+
+          if (noteErr) {
+            console.error('[reservations-update] Failed to update admin note:', noteErr)
+            return json({ error: noteErr.message }, { status: 400 })
+          }
+        }
+      } else {
+        return json({ error: 'Unauthorized to update admin notes' }, { status: 403 })
+      }
     }
 
     // Build response with effective key and (optional) updated child snapshot

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import { reservationTypes } from './formConstants';
-  import { now, isPast } from '../../utils/dateUtils';
+  import { createEventDispatcher } from "svelte";
+  import { reservationTypes } from "./formConstants";
+  import { now, isPast } from "../../utils/dateUtils";
 
   export let formData: any;
   export let errors: Record<string, string> = {};
@@ -14,25 +14,25 @@
     const n = now();
     const cutoff = n.hour(18).minute(0).second(0).millisecond(0);
     const afterCutoff = n.isSameOrAfter(cutoff);
-    if (formData?.type !== 'openwater' && afterCutoff) {
-      return n.add(1, 'day').format('YYYY-MM-DD');
+    if (formData?.type !== "openwater" && afterCutoff) {
+      return n.add(1, "day").format("YYYY-MM-DD");
     }
-    return n.format('YYYY-MM-DD');
+    return n.format("YYYY-MM-DD");
   })();
 
   const handleTypeChange = () => {
-    if (formData.type === 'openwater') {
+    if (formData.type === "openwater") {
       // Clear time fields for Open Water
-      formData.startTime = '';
-      formData.endTime = '';
+      formData.startTime = "";
+      formData.endTime = "";
     }
     // If after cutoff and switching to Pool/Classroom, ensure date respects min
-    if (formData.type !== 'openwater') {
+    if (formData.type !== "openwater") {
       if (formData.date && formData.date < currentMinDate) {
         formData.date = currentMinDate;
       }
     }
-    dispatch('typeChange');
+    dispatch("typeChange");
   };
 
   const handleDateChange = () => {
@@ -40,14 +40,14 @@
     if (errors.date) {
       delete errors.date;
     }
-    
+
     // Validate date in real-time
     if (formData.date && isPast(formData.date)) {
-      errors.date = 'Reservation date must be today or in the future';
+      errors.date = "Reservation date must be today or in the future";
     }
-    
+
     // Trigger full form validation to include cutoff rules
-    dispatch('validationChange', { errors });
+    dispatch("validationChange", { errors });
   };
 </script>
 

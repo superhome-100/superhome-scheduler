@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import { classroomTypes } from './formConstants';
+  import { createEventDispatcher } from "svelte";
+  import { classroomTypes } from "./formConstants";
 
   export let formData: any;
   export let errors: Record<string, string> = {};
@@ -9,12 +9,13 @@
   const dispatch = createEventDispatcher();
 
   const handleChange = () => {
-    dispatch('validationChange', { errors: {} });
+    dispatch("validationChange", { errors: {} });
   };
 
   // Student count UX: only show error after touch or form submit
   let studentCountTouched = false;
-  $: showStudentCountError = !!errors.studentCount && (submitAttempted || studentCountTouched);
+  $: showStudentCountError =
+    !!errors.studentCount && (submitAttempted || studentCountTouched);
 </script>
 
 <!-- Classroom Type -->
@@ -39,9 +40,11 @@
 </div>
 
 <!-- Student Count (Only for Course/Coaching) -->
-{#if formData.classroomType === 'course_coaching'}
+{#if formData.classroomType === "course_coaching"}
   <div class="form-group">
-    <label for="classroomStudentCount" class="form-label">No. of Students *</label>
+    <label for="classroomStudentCount" class="form-label"
+      >No. of Students *</label
+    >
     <select
       id="classroomStudentCount"
       class="form-control"
@@ -70,7 +73,9 @@
 {/if}
 
 <style>
-  .form-group { margin-bottom: 1rem; }
+  .form-group {
+    margin-bottom: 1rem;
+  }
   .form-label {
     display: block;
     font-size: 0.875rem;

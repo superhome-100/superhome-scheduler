@@ -483,6 +483,7 @@ export type Database = {
       }
       reservations: {
         Row: {
+          admin_notes: string | null
           created_at: string
           price: number | null
           res_date: string
@@ -493,6 +494,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_notes?: string | null
           created_at?: string
           price?: number | null
           res_date: string
@@ -503,6 +505,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_notes?: string | null
           created_at?: string
           price?: number | null
           res_date?: string
@@ -603,20 +606,19 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["openwater_activity_type"]
       }
-      _current_user_is_active: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      _current_user_is_active: { Args: never; Returns: boolean }
       _owns_reservation: {
         Args: { _res_date: string; _uid: string }
         Returns: boolean
       }
       _process_buoy_group: {
         Args: {
+          p_created_ids: number[]
           p_group_depths: number[]
           p_group_uids: string[]
           p_open_water_type: string
           p_res_date: string
+          p_skipped: Json
           p_time_period: string
         }
         Returns: Record<string, unknown>
@@ -644,12 +646,9 @@ export type Database = {
         Args: { p_buoy_name: string; p_res_date: string; p_time_period: string }
         Returns: number
       }
-      check_group_capacity: {
-        Args: { p_group_id: number }
-        Returns: number
-      }
+      check_group_capacity: { Args: { p_group_id: number }; Returns: number }
       claim_assignment_job: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           res_date: string
           time_period: string
@@ -659,10 +658,7 @@ export type Database = {
         Args: { p_res_date: string; p_status?: string; p_time_period: string }
         Returns: undefined
       }
-      compute_boat_count: {
-        Args: { p_group_id: number }
-        Returns: number
-      }
+      compute_boat_count: { Args: { p_group_id: number }; Returns: number }
       compute_monthly_completed_totals: {
         Args: { p_from: string; p_to: string }
         Returns: {
@@ -707,237 +703,10 @@ export type Database = {
         }
         Returns: string
       }
-      cron_process_assignment_queue: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cron_process_assignment_queue: { Args: never; Returns: undefined }
       find_best_buoy_for_depth: {
         Args: { target_depth: number }
         Returns: string
-      }
-      gbt_bit_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_bool_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_bool_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_bpchar_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_bytea_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_cash_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_cash_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_date_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_date_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_decompress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_enum_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_enum_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_float4_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_float4_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_float8_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_float8_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_inet_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_int2_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_int2_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_int4_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_int4_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_int8_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_int8_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_intv_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_intv_decompress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_intv_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_macad_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_macad_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_macad8_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_macad8_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_numeric_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_oid_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_oid_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_text_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_time_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_time_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_timetz_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_ts_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_ts_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_tstz_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_uuid_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_uuid_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_var_decompress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbt_var_fetch: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbtreekey_var_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbtreekey_var_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbtreekey16_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbtreekey16_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbtreekey2_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbtreekey2_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbtreekey32_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbtreekey32_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbtreekey4_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbtreekey4_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbtreekey8_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gbtreekey8_out: {
-        Args: { "": unknown }
-        Returns: unknown
       }
       get_buddy_group_with_members: {
         Args: { p_res_date: string; p_res_type: string; p_time_period: string }
@@ -1027,14 +796,8 @@ export type Database = {
         Args: { diver_count: number; target_depth: number }
         Returns: string
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      refresh_boat_count: {
-        Args: { p_group_id: number }
-        Returns: undefined
-      }
+      is_admin: { Args: never; Returns: boolean }
+      refresh_boat_count: { Args: { p_group_id: number }; Returns: undefined }
       sweep_cancelled_for_slot: {
         Args: {
           p_res_date: string
