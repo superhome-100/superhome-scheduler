@@ -5,8 +5,15 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   background: hsl(var(--b1));
   overflow-x: auto;
-  overflow-y: visible;
-  max-height: 70vh;
+  overflow-y: auto; /* Changed from visible to allow internal scroll if needed */
+  max-height: 80vh; /* Increased slightly */
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: hsl(var(--b2));
 }
 
 /* Enhanced table styling for better visibility */
