@@ -96,6 +96,10 @@ interface UpdateReservationData {
   openwater?: Partial<OpenWaterReservationDetails>;
   // Optional list of buddy UIDs to cancel with this reservation
   buddies_to_cancel?: string[];
+  // Optional list of buddy UIDs to unlink (remove from group) without cancelling
+  buddies_to_unlink?: string[];
+  // Admin note
+  admin_note?: string;  
   // Admin note
   admin_note?: string;
 }
@@ -468,6 +472,12 @@ class ReservationService {
       if (updateData.openwater) payload.openwater = updateData.openwater;
       if (Array.isArray(updateData.buddies_to_cancel)) {
         payload.buddies_to_cancel = updateData.buddies_to_cancel;
+      }
+      if (Array.isArray(updateData.buddies_to_unlink)) {
+        payload.buddies_to_unlink = updateData.buddies_to_unlink;
+      }
+      if (updateData.admin_note !== undefined) {
+        payload.admin_note = updateData.admin_note;
       }
       if (updateData.admin_note !== undefined) {
         payload.admin_note = updateData.admin_note;

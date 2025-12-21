@@ -1,12 +1,19 @@
 <script lang="ts">
     import { supabase } from "$lib/utils/supabase";
     import { authStore } from "$lib/stores/auth";
+    import dayjs from "dayjs";
+    import {
+        getBuddyNicknamesForReservation,
+        getBuddyGroupMembersForSlotWithIds,
+        type BuddyWithId,
+    } from "$lib/services/openWaterService";
 
     export let formData: any;
     export let editing: boolean = false;
     export let initialReservation: any = null;
     export let errors: Record<string, string> = {};
     export let submitAttempted: boolean = false;
+    export let initialBuddyIds: string[] = [];
 
     let searchQuery = "";
     let searchResults: any[] = [];
@@ -21,11 +28,12 @@
     // - Others: 2 buddies
     let maxBuddies = 2;
     $: maxBuddies = (() => {
-        if (formData?.type === 'pool' && formData?.poolType === 'autonomous') return 1;
-        if (formData?.type === 'openwater') {
+        if (formData?.type === "pool" && formData?.poolType === "autonomous")
+            return 1;
+        if (formData?.type === "openwater") {
             const t = formData?.openWaterType;
             // Treat any non-course/coaching OW type as autonomous for buddy cap purposes
-            if (t && t !== 'course_coaching') return 3;
+            if (t && t !== "course_coaching") return 3;
         }
         return 2;
     })();
@@ -76,7 +84,7 @@
 
     function selectBuddy(user: any) {
         if (selectedBuddies.length >= maxBuddies) {
-            const msg = `You can only add up to ${maxBuddies} buddy${maxBuddies === 1 ? '' : 'ies'}`;
+            const msg = `You can only add up to ${maxBuddies} buddy${maxBuddies === 1 ? "" : "ies"}`;
             alert(msg);
             return;
         }
@@ -101,80 +109,110 @@
     }
 
     async function prefillExistingBuddies() {
-        // Only for edit mode and open water reservations
         if (prefilling) return;
         if (!editing) return;
+
+        // Check if type supports buddies
+        const isOW = formData?.type === "openwater";
+        const isPoolAuto =
+            formData?.type === "pool" && formData?.poolType === "autonomous";
+
+        if (!isOW && !isPoolAuto) return;
+
+        // Avoid overwriting if user already changed selection
+        if (Array.isArray(formData?.buddies) && formData.buddies.length > 0)
+            return;
+        if (selectedBuddies.length > 0) return;
+
+        const uid = $authStore.user?.id;
+        if (!uid) return;
+
+        prefilling = true;
         try {
-            const isOpenWater = formData?.type === "openwater";
-            if (!isOpenWater) return;
-            // Determine date and time period
+            let buddies: BuddyWithId[] = [];
+
+            // 1. Try fetching by Reservation ID first (most accurate)
+            const resId =
+                initialReservation?.reservation_id ?? initialReservation?.id;
+            if (resId) {
+                buddies = await getBuddyNicknamesForReservation(Number(resId));
+                // Filter out self just in case
+                buddies = buddies.filter((b) => b.uid !== uid);
+
+                if (buddies.length > 0) {
+                    // Filter duplicates and map
+                    selectedBuddies = buddies.map((b) => ({
+                        uid: b.uid,
+                        name: b.name,
+                        nickname: null, // Service doesn't return nickname separately sadly, but name is enough
+                    }));
+                    formData.buddies = selectedBuddies.map((b) => b.uid);
+                    initialBuddyIds = [...formData.buddies];
+                    return;
+                }
+            }
+
+            // 2. Fallback: Fetch by Time Slot (Group lookup)
             const resDateRaw =
                 (initialReservation?.res_date as string | undefined) ||
                 (initialReservation?.date as string | undefined) ||
                 (formData?.date as string | undefined);
-            const timePeriod =
-                (initialReservation?.res_openwater?.time_period as string | undefined) ||
-                (initialReservation?.time_period as string | undefined) ||
-                (formData?.timeOfDay as string | undefined) ||
-                undefined;
-            const me = $authStore.user?.id;
-            if (!resDateRaw || (timePeriod !== "AM" && timePeriod !== "PM") || !me) return;
-            // Avoid overwriting if user already changed selection
-            if (Array.isArray(formData?.buddies) && formData.buddies.length > 0) return;
-            if (selectedBuddies.length > 0) return;
 
-            prefilling = true;
-            const dateOnly = String(resDateRaw).split("T")[0];
-            // Load group members via RPC (read-only)
-            const { data, error } = await supabase.rpc(
-                "get_buddy_group_with_members",
-                {
-                    p_res_date: dateOnly,
-                    p_time_period: timePeriod,
-                    p_res_type: "open_water",
-                },
-            );
-            if (error) {
-                console.warn("[BuddySelection] prefill RPC error:", error.message);
-                return;
+            if (!resDateRaw) return;
+
+            let timePeriod: "AM" | "PM" | undefined;
+            let resTypeForService: "open_water" | "pool" | undefined;
+
+            if (isOW) {
+                resTypeForService = "open_water";
+                timePeriod =
+                    (initialReservation?.res_openwater?.time_period as
+                        | "AM"
+                        | "PM"
+                        | undefined) ||
+                    (initialReservation?.time_period as
+                        | "AM"
+                        | "PM"
+                        | undefined) ||
+                    (formData?.timeOfDay as "AM" | "PM" | undefined);
+            } else if (isPoolAuto) {
+                resTypeForService = "pool";
+                // Determine PM/AM from start time
+                const startTime =
+                    (initialReservation?.res_pool?.start_time as string) ||
+                    (initialReservation?.start_time as string) ||
+                    (formData?.startTime as string);
+
+                if (startTime) {
+                    let parsed = dayjs(startTime, ["HH:mm", "HH:mm:ss"], true);
+                    if (!parsed.isValid())
+                        parsed = dayjs(`2000-01-01T${startTime}`); // simplified parse
+                    if (parsed.isValid()) {
+                        timePeriod = parsed.hour() < 12 ? "AM" : "PM";
+                    }
+                }
             }
-            type RpcRow = {
-                buddy_group_id: string;
-                member_uid: string;
-                member_status: string;
-            };
-            const rows = (data || []) as RpcRow[];
-            if (!rows.length) return;
-            const myRow = rows.find((r) => r.member_uid === me);
-            if (!myRow) return;
-            const groupId = myRow.buddy_group_id;
-            const memberUids = Array.from(
-                new Set(
-                    rows
-                        .filter((r) => r.buddy_group_id === groupId)
-                        .map((r) => r.member_uid)
-                        .filter((uid) => uid !== me),
-                ),
-            );
-            if (!memberUids.length) return;
-            // Cap to current UI rule
-            const limited = memberUids.slice(0, maxBuddies);
-            // Fetch profiles to display names
-            const { data: profiles, error: pErr } = await supabase
-                .from("user_profiles")
-                .select("uid, name, nickname")
-                .in("uid", limited);
-            if (pErr) {
-                console.warn("[BuddySelection] profile fetch error:", pErr.message);
-                return;
+
+            if (resDateRaw && timePeriod && resTypeForService) {
+                const groupBuddies = await getBuddyGroupMembersForSlotWithIds(
+                    String(resDateRaw),
+                    timePeriod,
+                    resTypeForService,
+                    uid,
+                );
+
+                if (groupBuddies && groupBuddies.length > 0) {
+                    selectedBuddies = groupBuddies.map((b) => ({
+                        uid: b.uid,
+                        name: b.name,
+                        nickname: null,
+                    }));
+                    formData.buddies = selectedBuddies.map((b) => b.uid);
+                    initialBuddyIds = [...formData.buddies];
+                }
             }
-            const buddies = (profiles || []).map((u: any) => ({
-                uid: u.uid,
-                name: u.name ?? null,
-                nickname: u.nickname ?? null,
-            }));
-            selectedBuddies = buddies;
-            formData.buddies = buddies.map((b) => b.uid);
+        } catch (e) {
+            console.warn("[BuddySelection] Failed to prefill buddies", e);
         } finally {
             prefilling = false;
         }
@@ -183,7 +221,8 @@
     // Attempt prefill when modal opens with edit data or when edit fields change
     $: if (editing && initialReservation) {
         // React when inputs relevant to prefill are available
-        prefillExistingBuddies();
+        // We use a timeout to let formData stabilize if it's being set reactively elsewhere
+        setTimeout(() => prefillExistingBuddies(), 0);
     }
 </script>
 
@@ -279,9 +318,14 @@
 
         <p class="helper-text">
             {#if selectedBuddies.length === 0}
-                Add up to {maxBuddies} dive buddy{maxBuddies === 1 ? '' : 'ies'} to this reservation
+                Add up to {maxBuddies} dive buddy{maxBuddies === 1 ? "" : "ies"}
+                to this reservation
             {:else}
-                You can add {maxBuddies - selectedBuddies.length} more buddy{(maxBuddies - selectedBuddies.length) === 1 ? '' : 'ies'}
+                You can add {maxBuddies - selectedBuddies.length} more buddy{maxBuddies -
+                    selectedBuddies.length ===
+                1
+                    ? ""
+                    : "ies"}
             {/if}
         </p>
 

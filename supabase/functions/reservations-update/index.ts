@@ -245,6 +245,7 @@ type UpdatePayload = {
   buddies_to_cancel?: string[]
   buddies_to_unlink?: string[]
   admin_note?: string
+  admin_note?: string
 }
 
 function json(body: unknown, init: ResponseInit = {}) {
@@ -657,6 +658,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+        // Enforce Modification Rules if not cancelling
     // Enforce Modification Rules if not cancelling
     if (!isCancellingRequest) {
       const isBeforeMod = isBeforeModificationCutoff(
