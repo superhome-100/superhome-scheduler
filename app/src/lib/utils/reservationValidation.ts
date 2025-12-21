@@ -5,7 +5,7 @@ import type {
   ClassroomReservationDetails, 
   OpenWaterReservationDetails 
 } from '../services/reservationService';
-import { getCutoffTime, isBeforeCutoff, formatCutoffTime, getCutoffDescription } from './cutoffRules';
+import { getCutoffTime, isBeforeCutoff, formatCutoffTime, getCutoffDescription, isBeforeModificationCutoff } from './cutoffRules';
 import { availabilityService } from '../services/availabilityService';
 
 // Validation error interface
@@ -443,15 +443,35 @@ async function validateCutoffAndAvailability(
     return errors;
   }
 
-  // Check cut-off time
-  const cutoffTime = getCutoffTime(data.res_type, data.res_date);
-  const now = new Date();
+  // Check cut-off time using accurate modification cutoff logic (shared rule for creation/increases)
+  const startTime = data.pool?.start_time || data.classroom?.start_time;
+  const timePeriod = data.openwater?.time_period;
+  
+  const withinCutoff = isBeforeModificationCutoff(
+    data.res_type, 
+    data.res_date, 
+    startTime || undefined,
+    timePeriod as any
+  );
 
-  if (now > cutoffTime) {
+  if (!withinCutoff) {
     const cutoffDescription = getCutoffDescription(data.res_type);
+    // Calculate what the cutoff time was for display
+    let calculatedCutoff: Date;
+    if (data.res_type === 'open_water') {
+        calculatedCutoff = getCutoffTime(data.res_type, data.res_date);
+    } else if (startTime) {
+        const dt = new Date(`${data.res_date}T${startTime}`);
+        calculatedCutoff = new Date(dt);
+        calculatedCutoff.setMinutes(calculatedCutoff.getMinutes() - 30);
+    } else {
+        // Fallback if no start time, though validation should catch that earlier
+        calculatedCutoff = getCutoffTime(data.res_type, data.res_date);
+    }
+
     errors.push({
       field: 'res_date',
-      message: `${cutoffDescription}. Cut-off time was ${formatCutoffTime(cutoffTime)}`
+      message: `${cutoffDescription}. Cut-off time was ${formatCutoffTime(calculatedCutoff)}`
     });
   }
 

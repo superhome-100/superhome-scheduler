@@ -19,6 +19,7 @@ interface BaseReservation {
   res_date: string;
   res_type: ReservationType;
   res_status: ReservationStatus;
+  admin_notes?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -99,6 +100,8 @@ interface UpdateReservationData {
   buddies_to_unlink?: string[];
   // Admin note
   admin_note?: string;  
+  // Admin note
+  admin_note?: string;
 }
 
 // Query options
@@ -338,6 +341,7 @@ class ReservationService {
         .from('reservations')
         .select(`
           *,
+          admin_notes,
           res_pool!left(start_time, end_time, lane, pool_type, student_count, note),
           res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, group_id, note),
           res_classroom!left(start_time, end_time, room, classroom_type, student_count, note)
@@ -409,6 +413,7 @@ class ReservationService {
         .from('reservations')
         .select(`
           *,
+          admin_notes,
           res_pool!left(start_time, end_time, lane, pool_type, student_count, note),
           res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, group_id, note),
           res_classroom!left(start_time, end_time, room, classroom_type, student_count, note)
@@ -474,6 +479,10 @@ class ReservationService {
       if (updateData.admin_note !== undefined) {
         payload.admin_note = updateData.admin_note;
       }
+      if (updateData.admin_note !== undefined) {
+        payload.admin_note = updateData.admin_note;
+      }
+
 
       const { error } = await callFunction<typeof payload, { ok: boolean }>('reservations-update', payload);
       if (error) {

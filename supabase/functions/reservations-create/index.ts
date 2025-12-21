@@ -229,8 +229,56 @@ Deno.serve(async (req: Request) => {
     if (!body?.uid || !body?.res_type || !body?.res_date) return json({ error: 'Invalid payload' }, { status: 400 });
 
     // Validate cut-off time
-    if (!isBeforeCutoff(body.res_date, body.res_type)) {
-      const cutoffTime = getCutoffTime(body.res_type, body.res_date);
+    // Extract start time / time period for accurate cutoff check
+    let startTimeForCutoff: string | null = null;
+    let timePeriodForCutoff: string | null = null;
+
+    if (body.res_type === 'pool') startTimeForCutoff = body.pool?.start_time || null;
+    else if (body.res_type === 'classroom') startTimeForCutoff = body.classroom?.start_time || null;
+    else if (body.res_type === 'open_water') timePeriodForCutoff = body.openwater?.time_period || null;
+
+    const isBeforeCreationCutoff = (resDate: string, resType: ReservationType, sTime: string | null, tPeriod: string | null) => {
+      const now = new Date();
+      if (resType === 'open_water') {
+        const d = new Date(resDate);
+        // Check same day first
+        const today = new Date(now);
+        today.setUTCHours(0,0,0,0);
+        const rDay = new Date(d);
+        rDay.setUTCHours(0,0,0,0);
+        if (rDay.getTime() === today.getTime()) return false;
+
+        // Check 6 PM previous day
+        // Approximate: if we are at/after 6 PM previous day locally...
+        // Use getCutoffTime logic which seems to handle the 6 PM rule
+        return now < getCutoffTime(resType, resDate);
+      }
+      
+      // Pool/Classroom: 30 mins before start
+      if (!sTime) return isBeforeCutoff(resDate, resType); // Fallback if no start time provided (though required later)
+      
+      const day = new Date(resDate);
+      const dayISO = day.toISOString().split('T')[0];
+      const startDt = new Date(`${dayISO}T${sTime}`);
+      const cutoff = new Date(startDt);
+      cutoff.setMinutes(cutoff.getMinutes() - 30);
+      return now < cutoff;
+    };
+
+    if (!isBeforeCreationCutoff(body.res_date, body.res_type, startTimeForCutoff, timePeriodForCutoff)) {
+      // Calculate display time for error message
+      let cutoffTime: Date;
+      if (body.res_type === 'open_water') {
+         cutoffTime = getCutoffTime(body.res_type, body.res_date);
+      } else if (startTimeForCutoff) {
+         const d = new Date(body.res_date).toISOString().split('T')[0];
+         const dt = new Date(`${d}T${startTimeForCutoff}`);
+         cutoffTime = new Date(dt);
+         cutoffTime.setMinutes(cutoffTime.getMinutes() - 30);
+      } else {
+         cutoffTime = getCutoffTime(body.res_type, body.res_date);
+      }
+
       const cutoffDescription = getCutoffDescription(body.res_type);
       return json({ 
         error: `${cutoffDescription}. Cut-off time was ${formatCutoffTime(cutoffTime)}` 

@@ -483,6 +483,7 @@ export type Database = {
       }
       reservations: {
         Row: {
+          admin_notes: string | null
           created_at: string
           price: number | null
           res_date: string
@@ -493,6 +494,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_notes?: string | null
           created_at?: string
           price?: number | null
           res_date: string
@@ -503,6 +505,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_notes?: string | null
           created_at?: string
           price?: number | null
           res_date?: string

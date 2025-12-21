@@ -1,6 +1,11 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount, onDestroy } from 'svelte';
-  import { now, isToday, isValidTimeFormat, normalize24HourTime } from '../../utils/dateUtils';
+  import { createEventDispatcher, onMount, onDestroy } from "svelte";
+  import {
+    now,
+    isToday,
+    isValidTimeFormat,
+    normalize24HourTime,
+  } from "../../utils/dateUtils";
 
   export let formData: any;
   export let errors: Record<string, string> = {};
@@ -8,19 +13,23 @@
   const dispatch = createEventDispatcher();
 
   // Get current time in HH:MM format for min attribute when date is today
-  $: currentTime = now().format('HH:mm');
+  $: currentTime = now().format("HH:mm");
   $: isDateToday = formData.date ? isToday(formData.date) : false;
   $: minTime = isDateToday ? currentTime : undefined;
   // Use utility functions from dateUtils
 
   // Generate 30-minute intervals for time dropdowns
-  const generateTimeIntervals = (startHour: number, endHour: number, includeEndHour30: boolean = false): string[] => {
+  const generateTimeIntervals = (
+    startHour: number,
+    endHour: number,
+    includeEndHour30: boolean = false,
+  ): string[] => {
     const intervals: string[] = [];
     for (let hour = startHour; hour <= endHour; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         // For the end hour, only include 30-minute slot if includeEndHour30 is true
         if (hour === endHour && minute > 0 && !includeEndHour30) break;
-        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        const timeString = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
         intervals.push(timeString);
       }
     }
@@ -33,36 +42,36 @@
 
   // Calculate end time automatically when start time changes
   const calculateEndTime = (startTime: string): string => {
-    if (!startTime) return '';
-    
-    const [hours, minutes] = startTime.split(':').map(Number);
+    if (!startTime) return "";
+
+    const [hours, minutes] = startTime.split(":").map(Number);
     let endHours = hours;
     let endMinutes = minutes + 30;
-    
+
     if (endMinutes >= 60) {
       endHours += 1;
       endMinutes = 0;
     }
-    
+
     // Ensure end time doesn't exceed 20:00
     if (endHours > 20 || (endHours === 20 && endMinutes > 0)) {
-      return '20:00';
+      return "20:00";
     }
-    
-    return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+
+    return `${endHours.toString().padStart(2, "0")}:${endMinutes.toString().padStart(2, "0")}`;
   };
 
   // Filter end time slots based on start time
-  $: filteredEndTimeSlots = formData.startTime 
-    ? endTimeSlots.filter(time => time > formData.startTime)
+  $: filteredEndTimeSlots = formData.startTime
+    ? endTimeSlots.filter((time) => time > formData.startTime)
     : endTimeSlots;
 
   // Dropdown state management
   let startTimeDropdownOpen = false;
   let endTimeDropdownOpen = false;
 
-  const toggleDropdown = (field: 'startTime' | 'endTime') => {
-    if (field === 'startTime') {
+  const toggleDropdown = (field: "startTime" | "endTime") => {
+    if (field === "startTime") {
       startTimeDropdownOpen = !startTimeDropdownOpen;
       endTimeDropdownOpen = false; // Close other dropdown
     } else {
@@ -71,9 +80,9 @@
     }
   };
 
-  const selectTime = (field: 'startTime' | 'endTime', time: string) => {
+  const selectTime = (field: "startTime" | "endTime", time: string) => {
     formData[field] = time;
-    if (field === 'startTime') {
+    if (field === "startTime") {
       startTimeDropdownOpen = false;
     } else {
       endTimeDropdownOpen = false;
@@ -84,7 +93,7 @@
   // Close dropdowns when clicking outside
   const handleClickOutside = (event: MouseEvent) => {
     const target = event.target as HTMLElement;
-    if (!target.closest('.dropdown-container')) {
+    if (!target.closest(".dropdown-container")) {
       startTimeDropdownOpen = false;
       endTimeDropdownOpen = false;
     }
@@ -92,52 +101,56 @@
 
   // Add event listener for clicking outside
   onMount(() => {
-    document.addEventListener('click', handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
   });
 
   onDestroy(() => {
-    document.removeEventListener('click', handleClickOutside);
+    document.removeEventListener("click", handleClickOutside);
   });
 
-  const handleTimeChange = (field: 'startTime' | 'endTime') => {
+  const handleTimeChange = (field: "startTime" | "endTime") => {
     // Clear any existing time errors when user changes time
-    if (errors[field] && errors[field].includes('must be in the future')) {
+    if (errors[field] && errors[field].includes("must be in the future")) {
       delete errors[field];
     }
-    
+
     // Auto-calculate end time when start time changes
-    if (field === 'startTime' && formData.startTime) {
+    if (field === "startTime" && formData.startTime) {
       const calculatedEndTime = calculateEndTime(formData.startTime);
       formData.endTime = calculatedEndTime;
     }
-    
+
     // Validate time in real-time when date is today
     if (formData.date && formData[field] && isToday(formData.date)) {
       const currentTimeObj = now();
       const normalizedTime = normalize24HourTime(formData[field]);
       const selectedTime = now(`${formData.date}T${normalizedTime}`);
-      
+
       if (selectedTime.isBefore(currentTimeObj)) {
-        errors[field] = `${field === 'startTime' ? 'Start' : 'End'} time must be in the future`;
+        errors[field] =
+          `${field === "startTime" ? "Start" : "End"} time must be in the future`;
       }
     }
-    
+
     // Validate time order if both times are set
     if (formData.startTime && formData.endTime) {
       const startTimeNormalized = normalize24HourTime(formData.startTime);
       const endTimeNormalized = normalize24HourTime(formData.endTime);
       const startTime = now(`${formData.date}T${startTimeNormalized}`);
       const endTime = now(`${formData.date}T${endTimeNormalized}`);
-      
+
       if (startTime.isAfter(endTime) || startTime.isSame(endTime)) {
-        errors.endTime = 'End time must be after start time';
-      } else if (errors.endTime && errors.endTime.includes('must be after start time')) {
+        errors.endTime = "End time must be after start time";
+      } else if (
+        errors.endTime &&
+        errors.endTime.includes("must be after start time")
+      ) {
         delete errors.endTime;
       }
     }
-    
+
     // Trigger validation update
-    dispatch('validationChange', { errors });
+    dispatch("validationChange", { errors });
   };
 </script>
 
@@ -147,29 +160,32 @@
   <div class="form-group time-field">
     <label for="startTime" class="form-label">Start Time *</label>
     <div class="dropdown-container">
-      <div 
+      <div
         class="dropdown-trigger"
         class:error={errors.startTime}
-        on:click={() => toggleDropdown('startTime')}
+        on:click={() => toggleDropdown("startTime")}
         role="button"
         tabindex="0"
-        on:keydown={(e) => e.key === 'Enter' && toggleDropdown('startTime')}
+        on:keydown={(e) => e.key === "Enter" && toggleDropdown("startTime")}
       >
-        <span class="dropdown-value">{formData.startTime || 'Select Start Time'}</span>
+        <span class="dropdown-value"
+          >{formData.startTime || "Select Start Time"}</span
+        >
         <span class="dropdown-arrow" class:open={startTimeDropdownOpen}>▼</span>
       </div>
-      
+
       {#if startTimeDropdownOpen}
         <div class="dropdown-menu">
           {#each startTimeSlots as timeSlot}
-            <div 
+            <div
               class="dropdown-option"
               class:selected={formData.startTime === timeSlot}
-              on:click={() => selectTime('startTime', timeSlot)}
+              on:click={() => selectTime("startTime", timeSlot)}
               role="option"
               aria-selected={formData.startTime === timeSlot}
               tabindex="0"
-              on:keydown={(e) => e.key === 'Enter' && selectTime('startTime', timeSlot)}
+              on:keydown={(e) =>
+                e.key === "Enter" && selectTime("startTime", timeSlot)}
             >
               {timeSlot}
             </div>
@@ -186,29 +202,32 @@
   <div class="form-group time-field">
     <label for="endTime" class="form-label">End Time *</label>
     <div class="dropdown-container">
-      <div 
+      <div
         class="dropdown-trigger"
         class:error={errors.endTime}
-        on:click={() => toggleDropdown('endTime')}
+        on:click={() => toggleDropdown("endTime")}
         role="button"
         tabindex="0"
-        on:keydown={(e) => e.key === 'Enter' && toggleDropdown('endTime')}
+        on:keydown={(e) => e.key === "Enter" && toggleDropdown("endTime")}
       >
-        <span class="dropdown-value">{formData.endTime || 'Select End Time'}</span>
+        <span class="dropdown-value"
+          >{formData.endTime || "Select End Time"}</span
+        >
         <span class="dropdown-arrow" class:open={endTimeDropdownOpen}>▼</span>
       </div>
-      
+
       {#if endTimeDropdownOpen}
         <div class="dropdown-menu">
           {#each filteredEndTimeSlots as timeSlot}
-            <div 
+            <div
               class="dropdown-option"
               class:selected={formData.endTime === timeSlot}
-              on:click={() => selectTime('endTime', timeSlot)}
+              on:click={() => selectTime("endTime", timeSlot)}
               role="option"
               aria-selected={formData.endTime === timeSlot}
               tabindex="0"
-              on:keydown={(e) => e.key === 'Enter' && selectTime('endTime', timeSlot)}
+              on:keydown={(e) =>
+                e.key === "Enter" && selectTime("endTime", timeSlot)}
             >
               {timeSlot}
             </div>
@@ -328,7 +347,9 @@
     border: 1px solid #d1d5db;
     border-top: none;
     border-radius: 0 0 6px 6px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06);
     z-index: 1000;
     max-height: 200px;
     overflow-y: auto;
