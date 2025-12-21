@@ -215,6 +215,42 @@ export type Database = {
           },
         ]
       }
+      buoy_group_admin_notes: {
+        Row: {
+          admin_note: string | null
+          group_id: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          admin_note?: string | null
+          group_id: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          admin_note?: string | null
+          group_id?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buoy_group_admin_notes_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: true
+            referencedRelation: "buoy_group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buoy_group_admin_notes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["uid"]
+          },
+        ]
+      }
       price_template_updates: {
         Row: {
           auto_ow: number
@@ -740,11 +776,13 @@ export type Database = {
       get_buoy_groups_with_names: {
         Args: { p_res_date: string; p_time_period: string }
         Returns: {
+          admin_note: string
           boat: string
           buoy_name: string
           id: number
           member_names: string[]
           member_uids: string[]
+          open_water_type: string
           res_date: string
           time_period: string
         }[]

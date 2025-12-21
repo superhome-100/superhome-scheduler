@@ -22,6 +22,10 @@
   export let onAutoAssign: (timePeriod: "AM" | "PM") => void = () => {};
   export let onLock: (timePeriod: "AM" | "PM") => void = () => {};
   export let onUnlock: (timePeriod: "AM" | "PM") => void = () => {};
+  export let onUpdateNote: (
+    groupId: number,
+    note: string | null,
+  ) => void = () => {};
 
   $: filteredGroups = buoyGroups.filter((bg) => bg.time_period === timePeriod);
 </script>
@@ -127,6 +131,7 @@
               {readOnly}
               {onUpdateBuoy}
               {onUpdateBoat}
+              {onUpdateNote}
               on:groupClick
               on:moveReservationToBuoy
               on:statusClick

@@ -12,6 +12,7 @@ export type AdminBuoyGroup = {
   res_openwater?: Array<{ uid: string }>;
   boat_count?: number | null;
   open_water_type?: string | null;
+  admin_note?: string | null;
   // Nested open water reservations associated with this buoy group
   reservations: OpenWaterReservationView[];
 };
