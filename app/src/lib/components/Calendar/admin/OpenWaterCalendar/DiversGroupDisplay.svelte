@@ -35,12 +35,17 @@
     const typeFromReservation = reservation.open_water_type ?? null;
     const isCourse =
       (typeFromGroup && typeFromGroup.toLowerCase() === "course_coaching") ||
-      (typeFromReservation && typeFromReservation.toLowerCase() === "course_coaching");
+      (typeFromReservation &&
+        typeFromReservation.toLowerCase() === "course_coaching");
 
     const rawNick = (reservation.nickname ?? "").trim();
     const rawName = (reservation.name ?? "").trim();
-    const profileNick = (reservation as any)?.user_profiles?.nickname ? String((reservation as any).user_profiles.nickname).trim() : "";
-    const profileName = (reservation as any)?.user_profiles?.name ? String((reservation as any).user_profiles.name).trim() : "";
+    const profileNick = (reservation as any)?.user_profiles?.nickname
+      ? String((reservation as any).user_profiles.nickname).trim()
+      : "";
+    const profileName = (reservation as any)?.user_profiles?.name
+      ? String((reservation as any).user_profiles.name).trim()
+      : "";
 
     // Try direct values first
     let baseName = rawNick || rawName || profileNick || profileName || "";
@@ -51,13 +56,15 @@
       const uids: string[] = Array.isArray((buoyGroup as any)?.member_uids)
         ? ((buoyGroup as any).member_uids as string[])
         : [];
-      const names: (string | null)[] = Array.isArray((buoyGroup as any)?.member_names)
+      const names: (string | null)[] = Array.isArray(
+        (buoyGroup as any)?.member_names,
+      )
         ? ((buoyGroup as any).member_names as (string | null)[])
         : [];
       if (uids.length && names.length) {
         const idx = uids.indexOf(reservation.uid);
         if (idx >= 0) {
-          const n = (names[idx] ?? '').toString().trim();
+          const n = (names[idx] ?? "").toString().trim();
           if (n) baseName = n;
         }
       }
@@ -80,7 +87,9 @@
   // Decide per-reservation if the lock icon should be shown, derived only from
   // the reservation data itself (no reliance on array index ordering).
   function shouldShowLockIcon(reservation: OpenWaterReservationView): boolean {
-    const hasBuoy = !!(reservation.buoy && String(reservation.buoy).trim() !== "");
+    const hasBuoy = !!(
+      reservation.buoy && String(reservation.buoy).trim() !== ""
+    );
     if (!hasBuoy) return false;
 
     const type = (reservation.open_water_type ?? "").toLowerCase();
@@ -113,11 +122,11 @@
   $: moveDialogNames = (() => {
     if (Array.isArray(buddyNames) && buddyNames.length) {
       return buddyNames
-        .map((n) => String(n ?? '').trim())
+        .map((n) => String(n ?? "").trim())
         .filter((n) => n.length > 0);
     }
 
-    const fallback = (selectedDisplayName ?? '').trim();
+    const fallback = (selectedDisplayName ?? "").trim();
     return fallback ? [fallback] : [];
   })();
 
@@ -149,7 +158,9 @@
     dispatch("statusClick", { reservation, displayName });
   }
 
-  function formatReservationSummary(reservation: OpenWaterReservationView): string {
+  function formatReservationSummary(
+    reservation: OpenWaterReservationView,
+  ): string {
     const typeLabel = reservation.open_water_type || "--";
 
     const configs: string[] = [];
@@ -166,7 +177,8 @@
     }
 
     const depthLabel =
-      typeof reservation.depth_m === "number" && !Number.isNaN(reservation.depth_m)
+      typeof reservation.depth_m === "number" &&
+      !Number.isNaN(reservation.depth_m)
         ? `${reservation.depth_m} m`
         : "--";
 
@@ -177,7 +189,7 @@
     reservation: OpenWaterReservationView,
     displayName: string,
   ) {
-    console.log('[DiversGroupDisplay] openMoveDialog called', {
+    console.log("[DiversGroupDisplay] openMoveDialog called", {
       reservation,
       displayName,
     });
@@ -198,14 +210,17 @@
       const buddies = await getBuddyNicknamesForReservation(
         reservation.reservation_id,
       );
-      console.log('[DiversGroupDisplay] loaded buddy names (via Edge Function)', {
-        reservationId: reservation.reservation_id,
-        buddies,
-      });
+      console.log(
+        "[DiversGroupDisplay] loaded buddy names (via Edge Function)",
+        {
+          reservationId: reservation.reservation_id,
+          buddies,
+        },
+      );
       buddyNames = Array.isArray(buddies)
         ? buddies
             .map((b) => (b as any)?.name)
-            .map((n) => String(n ?? '').trim())
+            .map((n) => String(n ?? "").trim())
             .filter((n) => n.length > 0)
         : [];
       hasBuddyGroup = buddyNames.length > 0;
@@ -251,7 +266,7 @@
         <div class="flex items-center gap-2 text-sm w-full">
           <div
             class={`res-status-marker w-2 h-2 rounded-full flex-shrink-0 ${getStatusColorClass(
-              reservation?.res_status ?? null
+              reservation?.res_status ?? null,
             )}`}
             on:click|stopPropagation={() => {
               if (!readOnly)
@@ -300,8 +315,7 @@
                   openMoveDialog(
                     reservation,
                     getReservationDisplayName(reservation, index),
-                  )
-                }
+                  )}
                 aria-label="Move to buoy"
               >
                 ⚑
@@ -323,17 +337,30 @@
           </div>
         </div>
       {/each}
+      {#if !readOnly && buoyGroup.admin_note}
+        <div class="px-0.5">
+          <p
+            class="text-[10px] text-primary/80 italic font-medium leading-tight break-words"
+          >
+            "{buoyGroup.admin_note}"
+          </p>
+        </div>
+      {/if}
     </div>
   </div>
   {#if showMoveDialog && !readOnly}
     <div
       class="fixed inset-0 z-[80] flex items-center justify-center bg-base-300/80 backdrop-blur-sm"
     >
-      <div class="bg-base-100 rounded-xl shadow-2xl w-full max-w-sm p-4 space-y-4">
+      <div
+        class="bg-base-100 rounded-xl shadow-2xl w-full max-w-sm p-4 space-y-4"
+      >
         <h3 class="text-lg font-semibold text-base-content">Move to buoy</h3>
         {#if moveDialogNames.length}
           <div class="space-y-1">
-            <p class="text-sm text-base-content/80">Move the following users to buoy:</p>
+            <p class="text-sm text-base-content/80">
+              Move the following users to buoy:
+            </p>
             <div class="flex flex-wrap gap-1">
               {#each moveDialogNames as name}
                 <span class="badge badge-sm badge-primary">{name}</span>

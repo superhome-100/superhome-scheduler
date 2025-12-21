@@ -34,6 +34,7 @@ export type BuoyGroupWithNames = {
   boat: string | null
   boat_count?: number | null
   open_water_type?: string | null
+  admin_note?: string | null
   member_uids: string[] | null
 }
 
@@ -89,6 +90,17 @@ export async function updateBoatAssignment(
   if (res.error) throw new Error(res.error);
 }
 
+export async function updateBuoyGroupNote(
+  groupId: number,
+  adminNote: string | null
+): Promise<void> {
+  const res = await callFunction<{ group_id: number; admin_note: string | null }, { ok: boolean }>(
+    "update-buoy-group-note",
+    { group_id: groupId, admin_note: adminNote }
+  );
+  if (res.error) throw new Error(res.error);
+}
+
 export async function loadAvailableBuoys(): Promise<Buoy[]> {
   // Direct SQL: admin-only by RLS; caller must have privileges
   const { data, error } = await supabase
@@ -115,6 +127,7 @@ export async function getBuoyGroupsWithNames({ resDate, timePeriod }: { resDate:
     boat: string | null;
     boat_count?: number | null;
     open_water_type?: string | null;
+    admin_note?: string | null;
     member_uids?: string[] | null;
     member_names?: (string | null)[] | null;
   }>;
@@ -175,6 +188,7 @@ export async function getBuoyGroupsWithNames({ resDate, timePeriod }: { resDate:
       boat: r.boat,
       boat_count: r.boat_count ?? null,
       open_water_type: r.open_water_type ?? null,
+      admin_note: r.admin_note ?? null,
       member_uids,
       member_names,
     } as BuoyGroupWithNames;

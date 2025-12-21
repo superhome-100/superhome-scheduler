@@ -15,6 +15,10 @@
   export let selectedDate: string = "";
   export let onUpdateBuoy: (groupId: number, buoyName: string) => void;
   export let onUpdateBoat: (groupId: number, boatName: string) => void;
+  export let onUpdateNote: (
+    groupId: number,
+    note: string | null,
+  ) => void = () => {};
   // Parent-provided callback to refresh assignments after server-side updates
   export let onRefreshAssignments: () => void;
   // When true, render in view-only mode (no edits or moves)
@@ -87,8 +91,11 @@
             for (const reservation of reservations) {
               const typeFromGroup = group.open_water_type ?? null;
               const typeFromReservation = reservation.open_water_type ?? null;
-              const normalizedType =
-                (typeFromReservation || typeFromGroup || "").toLowerCase();
+              const normalizedType = (
+                typeFromReservation ||
+                typeFromGroup ||
+                ""
+              ).toLowerCase();
 
               if (normalizedType === "course_coaching") {
                 const n = reservation.student_count ?? 0;
@@ -130,11 +137,11 @@
     const deltaX = event.clientX - startX;
     const newWidth = Math.max(50, startWidth + deltaX);
     const tables = document.querySelectorAll(
-      '.reservation-card [role="table"]'
+      '.reservation-card [role="table"]',
     );
     tables.forEach((table) => {
       const elements = table.querySelectorAll(
-        `[data-column="${currentColumn}"]`
+        `[data-column="${currentColumn}"]`,
       );
       elements.forEach((el) => {
         (el as HTMLElement).style.width = `${newWidth}px`;
@@ -165,7 +172,7 @@
   }
 
   async function handleMoveReservationToBuoy(
-    event: CustomEvent<MoveReservationToBuoyPayload>
+    event: CustomEvent<MoveReservationToBuoyPayload>,
   ) {
     if (readOnly) return; // Block moves in view-only mode
     if (movingReservation) return;
@@ -184,7 +191,7 @@
       console.error("Error moving reservation to buoy:", error);
       alert(
         "Error moving reservation to buoy: " +
-          ((error as Error)?.message ?? "Unknown error")
+          ((error as Error)?.message ?? "Unknown error"),
       );
     } finally {
       movingReservation = false;
@@ -279,7 +286,7 @@
       console.error("Error auto-assigning buoys:", error);
       alert(
         "Error auto-assigning buoys: " +
-          ((error as Error)?.message ?? "Unknown error")
+          ((error as Error)?.message ?? "Unknown error"),
       );
     }
   }
@@ -298,6 +305,7 @@
     {readOnly}
     {onUpdateBuoy}
     {onUpdateBoat}
+    {onUpdateNote}
     onAutoAssign={handleAutoAssign}
     onLock={handleLock}
     onUnlock={handleUnlock}
@@ -318,6 +326,7 @@
     {readOnly}
     {onUpdateBuoy}
     {onUpdateBoat}
+    {onUpdateNote}
     onAutoAssign={handleAutoAssign}
     onLock={handleLock}
     onUnlock={handleUnlock}

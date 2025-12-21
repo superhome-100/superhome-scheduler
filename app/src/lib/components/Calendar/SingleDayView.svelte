@@ -15,6 +15,7 @@
     loadAvailableBuoys as svcLoadAvailableBuoys,
     updateBoatAssignment as svcUpdateBoat,
     updateBuoyAssignment as svcUpdateBuoy,
+    updateBuoyGroupNote as svcUpdateNote,
     getBuoyGroupsWithNames as svcGetBuoyGroupsWithNames,
     type Buoy,
     type TimePeriod,
@@ -48,6 +49,7 @@
     res_openwater?: Array<{ uid: string }>;
     boat_count?: number | null;
     open_water_type?: string | null;
+    admin_note?: string | null;
     // Optional per-reservation statuses parallel to member_names/member_uids
     member_statuses?: (string | null)[] | null;
   };
@@ -114,13 +116,13 @@
 
   // Admin-only day list modal state
   let dayListOpen = false;
-  let dayListTab: 'pending' | 'approved' | 'denied' = 'pending';
+  let dayListTab: "pending" | "approved" | "denied" = "pending";
 
   // Enriched buoy groups including nested open water reservations
   // Admins rely on full reservation join; non-admins fall back to buoy group member arrays
   $: buoyGroupsWithReservations = (buoyGroups || []).map((bg) => {
     const joinedReservations = (openWaterReservations || []).filter(
-      (r) => r.group_id !== null && r.group_id === bg.id
+      (r) => r.group_id !== null && r.group_id === bg.id,
     );
 
     // For admins (and when we have joined reservations), use the full reservation rows as-is.
@@ -135,29 +137,47 @@
     // resolved from group.member_names or the prebuilt openWaterDisplayNamesByUid map. This avoids
     // relying on user_profiles join which may be blocked by RLS for other users.
     if (joinedReservations.length > 0) {
-      const uids: string[] = Array.isArray(bg.member_uids) ? bg.member_uids : [];
-      const names: (string | null)[] = Array.isArray(bg.member_names) ? bg.member_names : [];
+      const uids: string[] = Array.isArray(bg.member_uids)
+        ? bg.member_uids
+        : [];
+      const names: (string | null)[] = Array.isArray(bg.member_names)
+        ? bg.member_names
+        : [];
       const byUidName = new Map<string, string>();
       // Prefer map from user_profiles
       for (const u of uids) {
-        const nFromMap = (openWaterDisplayNamesByUid.get(u) ?? '').toString().trim();
+        const nFromMap = (openWaterDisplayNamesByUid.get(u) ?? "")
+          .toString()
+          .trim();
         if (u && nFromMap) byUidName.set(u, nFromMap);
       }
       // Fill gaps from RPC member_names if needed (best-effort index pairing)
       for (let i = 0; i < Math.min(uids.length, names.length); i++) {
         const u = uids[i];
         if (byUidName.has(u)) continue;
-        const n = (names[i] ?? '').toString().trim();
+        const n = (names[i] ?? "").toString().trim();
         if (u && n) byUidName.set(u, n);
       }
       const enriched = joinedReservations.map((r) => {
-        const currentNick = (r as any)?.nickname ? String((r as any).nickname).trim() : '';
-        const currentName = (r as any)?.name ? String((r as any).name).trim() : '';
+        const currentNick = (r as any)?.nickname
+          ? String((r as any).nickname).trim()
+          : "";
+        const currentName = (r as any)?.name
+          ? String((r as any).name).trim()
+          : "";
         if (currentNick || currentName) return r;
         const fromGroup = byUidName.get(r.uid);
-        const fromRes = (reservationNamesByUid.get(r.uid) ?? '').toString().trim();
-        const fromMap = (openWaterDisplayNamesByUid.get(r.uid) ?? '').toString().trim();
-        const display = (fromGroup && fromGroup.trim()) || (fromRes && fromRes.trim()) || (fromMap && fromMap.trim()) || '';
+        const fromRes = (reservationNamesByUid.get(r.uid) ?? "")
+          .toString()
+          .trim();
+        const fromMap = (openWaterDisplayNamesByUid.get(r.uid) ?? "")
+          .toString()
+          .trim();
+        const display =
+          (fromGroup && fromGroup.trim()) ||
+          (fromRes && fromRes.trim()) ||
+          (fromMap && fromMap.trim()) ||
+          "";
         if (!display) return r;
         return { ...r, nickname: display } as OpenWaterReservationView;
       });
@@ -182,7 +202,7 @@
         nickname:
           (openWaterDisplayNamesByUid.get(uid) ?? "").toString().trim() !== ""
             ? (openWaterDisplayNamesByUid.get(uid) as string)
-            : (String(memberNames[index] ?? "")),
+            : String(memberNames[index] ?? ""),
         name: "",
         group_id: bg.id,
         time_period: bg.time_period,
@@ -195,7 +215,7 @@
         open_water_type: bg.open_water_type ?? null,
         student_count: null,
         note: null,
-      })
+      }),
     );
 
     return {
@@ -227,7 +247,9 @@
     statusDialogDisplayName = null;
   }
 
-  async function confirmStatusUpdate(newStatus: "pending" | "confirmed" | "rejected") {
+  async function confirmStatusUpdate(
+    newStatus: "pending" | "confirmed" | "rejected",
+  ) {
     if (!statusDialogReservation || statusDialogSubmitting) return;
     statusDialogSubmitting = true;
     statusDialogError = null;
@@ -236,7 +258,7 @@
       const result = await reservationApi.updateReservationStatus(
         uid,
         res_date,
-        newStatus
+        newStatus,
       );
       if (!result.success) {
         statusDialogError =
@@ -247,7 +269,9 @@
       // Update local reservations state instead of forcing a full reload.
       // Rejected reservations will be hidden by the openWaterReservations filter.
       reservations = reservations.map((r) =>
-        r.reservation_id === reservation_id ? { ...r, res_status: newStatus } : r
+        r.reservation_id === reservation_id
+          ? { ...r, res_status: newStatus }
+          : r,
       );
 
       closeStatusDialog();
@@ -263,7 +287,7 @@
 
   async function quickUpdateStatus(
     res: FlattenedReservation,
-    newStatus: "pending" | "confirmed" | "rejected"
+    newStatus: "pending" | "confirmed" | "rejected",
   ) {
     if (!isAdmin) return;
     statusDialogReservation = res;
@@ -283,7 +307,7 @@
       initializedCalendarType = true;
       console.log(
         "SingleDayView: Set selectedCalendarType to initialType:",
-        selectedCalendarType
+        selectedCalendarType,
       );
     } else {
       // Fallback to URL parameter if no initialType provided
@@ -295,7 +319,7 @@
         initializedCalendarType = true;
         console.log(
           "SingleDayView: Set selectedCalendarType from URL:",
-          selectedCalendarType
+          selectedCalendarType,
         );
       }
     }
@@ -332,11 +356,25 @@
       await svcUpdateBuoy(groupId, buoyName);
       // Update local state
       buoyGroups = buoyGroups.map((bg) =>
-        bg.id === groupId ? { ...bg, buoy_name: buoyName } : bg
+        bg.id === groupId ? { ...bg, buoy_name: buoyName } : bg,
       );
     } catch (error) {
       console.error("Error updating buoy assignment:", error);
       alert("Error updating buoy assignment: " + (error as Error).message);
+    }
+  };
+
+  // Update buoy group note (admin only)
+  const updateBuoyNote = async (groupId: number, note: string | null) => {
+    try {
+      await svcUpdateNote(groupId, note);
+      // Update local state
+      buoyGroups = buoyGroups.map((bg) =>
+        bg.id === groupId ? { ...bg, admin_note: note } : bg,
+      );
+    } catch (error) {
+      console.error("Error updating buoy group note:", error);
+      alert("Error updating buoy group note: " + (error as Error).message);
     }
   };
 
@@ -372,7 +410,7 @@
     (r) =>
       r.res_type === "open_water" &&
       r.res_status !== "rejected" &&
-      r.res_status !== "cancelled"
+      r.res_status !== "cancelled",
   ) as OpenWaterReservationView[];
 
   // Build a fast uid -> display name map from the loaded reservations themselves
@@ -380,7 +418,9 @@
   $: reservationNamesByUid = (() => {
     const map = new Map<string, string>();
     for (const r of openWaterReservations || []) {
-      const nick = (r as any)?.nickname ? String((r as any).nickname).trim() : "";
+      const nick = (r as any)?.nickname
+        ? String((r as any).nickname).trim()
+        : "";
       const nm = (r as any)?.name ? String((r as any).name).trim() : "";
       const upNick = (r as any)?.user_profiles?.nickname
         ? String((r as any).user_profiles.nickname).trim()
@@ -396,25 +436,28 @@
 
   // All reservations for the selected day, filtered by currently selected calendar type
   $: dayTypeReservations = dayReservations.filter((r) => {
-    if (selectedCalendarType === ReservationType.openwater) return r.res_type === 'open_water';
-    if (selectedCalendarType === ReservationType.pool) return r.res_type === 'pool';
-    if (selectedCalendarType === ReservationType.classroom) return r.res_type === 'classroom';
+    if (selectedCalendarType === ReservationType.openwater)
+      return r.res_type === "open_water";
+    if (selectedCalendarType === ReservationType.pool)
+      return r.res_type === "pool";
+    if (selectedCalendarType === ReservationType.classroom)
+      return r.res_type === "classroom";
     return false;
   }) as FlattenedReservation[];
 
   $: dayPendingReservations = dayTypeReservations.filter(
-    (r) => r.res_status === 'pending'
+    (r) => r.res_status === "pending",
   );
   $: dayApprovedReservations = dayTypeReservations.filter(
-    (r) => r.res_status === 'confirmed'
+    (r) => r.res_status === "confirmed",
   );
   $: dayDeniedReservations = dayTypeReservations.filter(
-    (r) => r.res_status === 'rejected'
+    (r) => r.res_status === "rejected",
   );
 
   function openDayList() {
     if (!isAdmin) return;
-    dayListTab = 'pending';
+    dayListTab = "pending";
     dayListOpen = true;
   }
 
@@ -423,56 +466,59 @@
   }
 
   function getReservationDisplayName(res: FlattenedReservation): string {
-    const fromMap = (reservationNamesByUid.get(res.uid) ?? '').toString().trim();
+    const fromMap = (reservationNamesByUid.get(res.uid) ?? "")
+      .toString()
+      .trim();
     if (fromMap) return fromMap;
     const up = ((res as any).user_profiles ?? {}) as {
       nickname?: string | null;
       name?: string | null;
     };
-    const nick = (up.nickname ?? '').toString().trim();
-    const name = (up.name ?? '').toString().trim();
-    return nick || name || 'Unknown';
+    const nick = (up.nickname ?? "").toString().trim();
+    const name = (up.name ?? "").toString().trim();
+    return nick || name || "Unknown";
   }
 
   function getReservationSubtitle(res: FlattenedReservation): string {
-    const type = String(res.res_type || '').toLowerCase();
+    const type = String(res.res_type || "").toLowerCase();
 
-    if (type === 'open_water') {
-      const owType = (res as any).open_water_type || 'Open Water';
+    if (type === "open_water") {
+      const owType = (res as any).open_water_type || "Open Water";
       const depthVal = (res as any).depth_m;
-      const depth = depthVal != null ? `${depthVal} m` : 'Depth N/A';
-      const buoy = (res as any).buoy || 'N/A';
+      const depth = depthVal != null ? `${depthVal} m` : "Depth N/A";
+      const buoy = (res as any).buoy || "N/A";
       return `${owType} · ${depth} · Buoy: ${buoy}`;
     }
 
-    if (type === 'pool') {
-      const poolType = (res as any).pool_type || 'Pool';
+    if (type === "pool") {
+      const poolType = (res as any).pool_type || "Pool";
       const start =
         (res as any)?.res_pool?.start_time ?? (res as any)?.start_time ?? null;
       const end =
         (res as any)?.res_pool?.end_time ?? (res as any)?.end_time ?? null;
-      const timeLabel = start && end ? `${start}–${end}` : 'Time N/A';
-      const lane =
-        (res as any)?.res_pool?.lane ?? (res as any)?.lane ?? null;
-      const laneLabel = lane ? `Lane: ${lane}` : 'Lane: N/A';
+      const timeLabel = start && end ? `${start}–${end}` : "Time N/A";
+      const lane = (res as any)?.res_pool?.lane ?? (res as any)?.lane ?? null;
+      const laneLabel = lane ? `Lane: ${lane}` : "Lane: N/A";
       return `${poolType} · ${timeLabel} · ${laneLabel}`;
     }
 
-    if (type === 'classroom') {
-      const classType = (res as any).classroom_type || 'Classroom';
+    if (type === "classroom") {
+      const classType = (res as any).classroom_type || "Classroom";
       const start =
-        (res as any)?.res_classroom?.start_time ?? (res as any)?.start_time ?? null;
+        (res as any)?.res_classroom?.start_time ??
+        (res as any)?.start_time ??
+        null;
       const end =
         (res as any)?.res_classroom?.end_time ?? (res as any)?.end_time ?? null;
-      const timeLabel = start && end ? `${start}–${end}` : 'Time N/A';
+      const timeLabel = start && end ? `${start}–${end}` : "Time N/A";
       const room =
         (res as any)?.res_classroom?.room ?? (res as any)?.room ?? null;
-      const roomLabel = room ? `Room: ${room}` : 'Room: N/A';
+      const roomLabel = room ? `Room: ${room}` : "Room: N/A";
       return `${classType} · ${timeLabel} · ${roomLabel}`;
     }
 
     // Fallback for any other type
-    return String(res.res_type || 'Reservation');
+    return String(res.res_type || "Reservation");
   }
 
   function poolChild(res: any): any {
@@ -481,21 +527,25 @@
     return rp;
   }
 
-  let lastPoolDebugKey = '';
+  let lastPoolDebugKey = "";
   $: if (selectedCalendarType === ReservationType.pool) {
     const key = `${selectedDate}-${selectedCalendarType}-${(reservations || []).length}`;
     if (key !== lastPoolDebugKey) {
       lastPoolDebugKey = key;
       try {
         const shouldLogAll =
-          typeof window !== 'undefined' &&
+          typeof window !== "undefined" &&
           (window as any).__POOL_DEBUG_ALL === true;
 
-        const dayPool = (dayReservations || []).filter((r: any) => String(r?.res_type) === 'pool');
+        const dayPool = (dayReservations || []).filter(
+          (r: any) => String(r?.res_type) === "pool",
+        );
         const coaching = dayPool.filter((r: any) => {
           const child = poolChild(r);
-          const pt = String(child?.pool_type ?? r?.pool_type ?? '').toLowerCase();
-          return pt.includes('coach') || pt.includes('course');
+          const pt = String(
+            child?.pool_type ?? r?.pool_type ?? "",
+          ).toLowerCase();
+          return pt.includes("coach") || pt.includes("course");
         });
         const withTimetable = dayPool.filter((r: any) => {
           const child = poolChild(r);
@@ -506,15 +556,24 @@
         const coachingDiagnostics = coaching.slice(0, 5).map((r: any) => {
           const child = poolChild(r);
           const rp = r?.res_pool ?? null;
-          const rpShape = Array.isArray(rp) ? 'array' : (rp ? 'object' : 'none');
+          const rpShape = Array.isArray(rp) ? "array" : rp ? "object" : "none";
           const start = child?.start_time ?? r?.start_time ?? null;
           const end = child?.end_time ?? r?.end_time ?? null;
           const lane = child?.lane ?? r?.lane ?? null;
           const poolType = child?.pool_type ?? r?.pool_type ?? null;
           const sc = child?.student_count ?? r?.student_count ?? null;
-          return { uid: r?.uid, res_status: r?.res_status, rpShape, start, end, lane, poolType, student_count: sc };
+          return {
+            uid: r?.uid,
+            res_status: r?.res_status,
+            rpShape,
+            start,
+            end,
+            lane,
+            poolType,
+            student_count: sc,
+          };
         });
-        console.log('[PoolDayView dbg]', {
+        console.log("[PoolDayView dbg]", {
           selectedDate,
           totalReservations: (reservations || []).length,
           dayReservations: (dayReservations || []).length,
@@ -526,14 +585,20 @@
         });
 
         if (shouldLogAll) {
-          console.log('[PoolDayView dbg] ALL reservations', reservations);
-          console.log('[PoolDayView dbg] ALL dayReservations', dayReservations);
-          console.log('[PoolDayView dbg] ALL filteredReservations', filteredReservations);
-          console.log('[PoolDayView dbg] ALL approvedPlottedPoolReservations', approvedPlottedPoolReservations);
+          console.log("[PoolDayView dbg] ALL reservations", reservations);
+          console.log("[PoolDayView dbg] ALL dayReservations", dayReservations);
+          console.log(
+            "[PoolDayView dbg] ALL filteredReservations",
+            filteredReservations,
+          );
+          console.log(
+            "[PoolDayView dbg] ALL approvedPlottedPoolReservations",
+            approvedPlottedPoolReservations,
+          );
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        console.log('[PoolDayView dbg] failed', msg);
+        console.log("[PoolDayView dbg] failed", msg);
       }
     }
   }
@@ -596,20 +661,27 @@
       let pm: any[] = [];
       if (isAdmin) {
         [am, pm] = await Promise.all([
-          svcGetBuoyGroupsWithNames({ resDate: selectedDate, timePeriod: "AM" }),
-          svcGetBuoyGroupsWithNames({ resDate: selectedDate, timePeriod: "PM" }),
+          svcGetBuoyGroupsWithNames({
+            resDate: selectedDate,
+            timePeriod: "AM",
+          }),
+          svcGetBuoyGroupsWithNames({
+            resDate: selectedDate,
+            timePeriod: "PM",
+          }),
         ]);
       } else {
-        const [{ data: amData, error: amErr }, { data: pmData, error: pmErr }] = await Promise.all([
-          supabase.rpc("get_buoy_groups_public", {
-            p_res_date: selectedDate,
-            p_time_period: "AM",
-          }),
-          supabase.rpc("get_buoy_groups_public", {
-            p_res_date: selectedDate,
-            p_time_period: "PM",
-          }),
-        ]);
+        const [{ data: amData, error: amErr }, { data: pmData, error: pmErr }] =
+          await Promise.all([
+            supabase.rpc("get_buoy_groups_public", {
+              p_res_date: selectedDate,
+              p_time_period: "AM",
+            }),
+            supabase.rpc("get_buoy_groups_public", {
+              p_res_date: selectedDate,
+              p_time_period: "PM",
+            }),
+          ]);
         if (amErr) throw amErr;
         if (pmErr) throw pmErr;
         am = amData ?? [];
@@ -622,9 +694,9 @@
       const allUids: string[] = Array.from(
         new Set(
           [...am, ...pm].flatMap((g: any) =>
-            Array.isArray(g.member_uids) ? (g.member_uids as string[]) : []
-          )
-        )
+            Array.isArray(g.member_uids) ? (g.member_uids as string[]) : [],
+          ),
+        ),
       );
       if (allUids.length > 0) {
         try {
@@ -633,21 +705,30 @@
             .select("uid, name, nickname")
             .in("uid", allUids);
           if (!profilesErr && Array.isArray(profiles)) {
-            for (const p of profiles as Array<{ uid: string; name: string | null; nickname: string | null }>) {
-              const display = ((p.nickname ?? p.name) ?? "").trim();
+            for (const p of profiles as Array<{
+              uid: string;
+              name: string | null;
+              nickname: string | null;
+            }>) {
+              const display = (p.nickname ?? p.name ?? "").trim();
               if (p.uid && display) displayNameMap.set(p.uid, display);
             }
           }
         } catch (e) {
           // Non-fatal: keep whatever names we have
-          console.warn("Failed to backfill user names for Open Water groups", e);
+          console.warn(
+            "Failed to backfill user names for Open Water groups",
+            e,
+          );
         }
       }
 
       // As a final fallback, use RPC member_names by attempting to pair indices only when
       // there is no entry from user_profiles. This is best-effort and covers rare gaps.
       for (const g of [...am, ...pm]) {
-        const uids: string[] = Array.isArray(g.member_uids) ? g.member_uids : [];
+        const uids: string[] = Array.isArray(g.member_uids)
+          ? g.member_uids
+          : [];
         const names: (string | null)[] = Array.isArray(g.member_names)
           ? g.member_names
           : [];
@@ -668,7 +749,9 @@
         const member_uids: string[] | null = Array.isArray(g.member_uids)
           ? g.member_uids
           : null;
-        const member_names: (string | null)[] | null = Array.isArray(g.member_names)
+        const member_names: (string | null)[] | null = Array.isArray(
+          g.member_names,
+        )
           ? g.member_names
           : null;
         // Provide res_openwater for compatibility with existing code paths
@@ -687,6 +770,7 @@
           res_openwater,
           boat_count: typeof g.boat_count === "number" ? g.boat_count : null,
           open_water_type: g.open_water_type ?? null,
+          admin_note: g.admin_note ?? null,
           member_statuses: g.member_statuses ?? null,
         } as BuoyGroupLite;
       });
@@ -722,20 +806,29 @@
             String(row.time_period || "").toUpperCase() === "PM" ? "PM" : "AM";
           const g = row.buoy_group || {};
           if (!map[uid]) map[uid] = {};
-          map[uid][tp] = { buoy_name: g.buoy_name ?? null, boat: g.boat ?? null };
+          map[uid][tp] = {
+            buoy_name: g.buoy_name ?? null,
+            boat: g.boat ?? null,
+          };
         });
       } else {
         // Users call public RPC to avoid RLS issues
-        const { data, error } = await supabase.rpc("get_openwater_assignment_map", {
-          p_res_date: selectedDate,
-        });
+        const { data, error } = await supabase.rpc(
+          "get_openwater_assignment_map",
+          {
+            p_res_date: selectedDate,
+          },
+        );
         if (error) throw error;
         (data ?? []).forEach((row: any) => {
           const uid: string = row.uid;
           const tp: TimePeriod =
             String(row.time_period || "").toUpperCase() === "PM" ? "PM" : "AM";
           if (!map[uid]) map[uid] = {};
-          map[uid][tp] = { buoy_name: row.buoy_name ?? null, boat: row.boat ?? null };
+          map[uid][tp] = {
+            buoy_name: row.buoy_name ?? null,
+            boat: row.boat ?? null,
+          };
         });
       }
       assignmentMap = map;
@@ -841,7 +934,7 @@
       await svcUpdateBoat(groupId, boatName);
       // Update local state
       buoyGroups = buoyGroups.map((bg) =>
-        bg.id === groupId ? { ...bg, boat: boatName } : bg
+        bg.id === groupId ? { ...bg, boat: boatName } : bg,
       );
     } catch (error) {
       console.error("Error updating boat assignment:", error);
@@ -851,7 +944,7 @@
   // Generate time slots for 8:00 to 20:00 in 30-minute increments
   // Pool placement logic relies on this granularity to avoid dropping back-to-back bookings.
   const timeSlots = Array.from({ length: 25 }, (_, i) => {
-    const totalMins = (8 * 60) + (i * 30);
+    const totalMins = 8 * 60 + i * 30;
     const hour = Math.floor(totalMins / 60)
       .toString()
       .padStart(2, "0");
@@ -864,7 +957,10 @@
     if (selectedCalendarType === "openwater") {
       await Promise.all([loadOpenWaterAssignments(), loadAvailableBuoys()]);
       // Ask parent to reload reservations list as well
-      dispatch("refreshReservations", { date: selectedDate, type: selectedCalendarType });
+      dispatch("refreshReservations", {
+        date: selectedDate,
+        type: selectedCalendarType,
+      });
     }
   }
 
@@ -905,7 +1001,7 @@
         reservations={approvedPlottedPoolReservations}
         currentUserId={$authStore.user?.id}
         {isAdmin}
-        on:editReservation={(e) => dispatch('editReservation', e.detail)}
+        on:editReservation={(e) => dispatch("editReservation", e.detail)}
       />
     {:else if selectedCalendarType === "openwater"}
       <!-- OPEN WATER CALENDAR: Admin sees editable tables; Users see read-only tables with Boat/Buoy/Divers group -->
@@ -919,6 +1015,7 @@
           {selectedDate}
           onUpdateBuoy={updateBuoyAssignment}
           onUpdateBoat={updateBoatAssignment}
+          onUpdateNote={updateBuoyNote}
           onRefreshAssignments={refreshCurrentView}
           on:statusClick={handleStatusClickFromCalendar}
         />
@@ -930,17 +1027,25 @@
         reservations={approvedClassroomReservations}
         currentUserId={$authStore.user?.id}
         {isAdmin}
-        on:editReservation={(e) => dispatch('editReservation', e.detail)}
+        on:editReservation={(e) => dispatch("editReservation", e.detail)}
       />
     {/if}
   </div>
 
   {#if statusDialogOpen && statusDialogReservation}
-    <div class="fixed inset-0 z-[90] flex items-center justify-center bg-base-300/70 backdrop-blur-sm">
-      <div class="bg-base-100 rounded-xl shadow-xl w-full max-w-sm p-4 space-y-4">
-        <h3 class="text-lg font-semibold text-base-content">Update reservation</h3>
+    <div
+      class="fixed inset-0 z-[90] flex items-center justify-center bg-base-300/70 backdrop-blur-sm"
+    >
+      <div
+        class="bg-base-100 rounded-xl shadow-xl w-full max-w-sm p-4 space-y-4"
+      >
+        <h3 class="text-lg font-semibold text-base-content">
+          Update reservation
+        </h3>
         {#if statusDialogDisplayName}
-          <p class="text-sm font-semibold text-primary bg-primary/10 inline-flex px-2 py-1 rounded">
+          <p
+            class="text-sm font-semibold text-primary bg-primary/10 inline-flex px-2 py-1 rounded"
+          >
             {statusDialogDisplayName}
           </p>
         {/if}
@@ -982,11 +1087,17 @@
   {/if}
 
   {#if isAdmin && dayListOpen}
-    <div class="fixed inset-0 z-[85] flex items-center justify-center bg-base-300/70 backdrop-blur-sm">
-      <div class="bg-base-100 rounded-xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
-        <div class="flex items-center justify-between px-4 py-3 border-b border-base-300">
+    <div
+      class="fixed inset-0 z-[85] flex items-center justify-center bg-base-300/70 backdrop-blur-sm"
+    >
+      <div
+        class="bg-base-100 rounded-xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col"
+      >
+        <div
+          class="flex items-center justify-between px-4 py-3 border-b border-base-300"
+        >
           <h3 class="text-base font-semibold text-base-content">
-            Reservations for {dayjs(selectedDate).format('YYYY-MM-DD')}
+            Reservations for {dayjs(selectedDate).format("YYYY-MM-DD")}
           </h3>
           <button
             type="button"
@@ -1001,22 +1112,22 @@
           <div class="tabs tabs-boxed w-full">
             <button
               type="button"
-              class={`tab tab-sm flex-1 ${dayListTab === 'pending' ? 'tab-active' : ''}`}
-              on:click={() => (dayListTab = 'pending')}
+              class={`tab tab-sm flex-1 ${dayListTab === "pending" ? "tab-active" : ""}`}
+              on:click={() => (dayListTab = "pending")}
             >
               Pending
             </button>
             <button
               type="button"
-              class={`tab tab-sm flex-1 ${dayListTab === 'approved' ? 'tab-active' : ''}`}
-              on:click={() => (dayListTab = 'approved')}
+              class={`tab tab-sm flex-1 ${dayListTab === "approved" ? "tab-active" : ""}`}
+              on:click={() => (dayListTab = "approved")}
             >
               Approved
             </button>
             <button
               type="button"
-              class={`tab tab-sm flex-1 ${dayListTab === 'denied' ? 'tab-active' : ''}`}
-              on:click={() => (dayListTab = 'denied')}
+              class={`tab tab-sm flex-1 ${dayListTab === "denied" ? "tab-active" : ""}`}
+              on:click={() => (dayListTab = "denied")}
             >
               Denied
             </button>
@@ -1024,18 +1135,24 @@
         </div>
 
         <div class="px-4 py-3 space-y-2 overflow-y-auto">
-          {#if dayListTab === 'pending'}
+          {#if dayListTab === "pending"}
             {#each dayPendingReservations as res (res.reservation_id)}
-              <div class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2">
+              <div
+                class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2"
+              >
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm font-semibold truncate">{getReservationDisplayName(res)}</p>
-                  <p class="text-xs text-base-content/80 truncate">{getReservationSubtitle(res)}</p>
+                  <p class="text-sm font-semibold truncate">
+                    {getReservationDisplayName(res)}
+                  </p>
+                  <p class="text-xs text-base-content/80 truncate">
+                    {getReservationSubtitle(res)}
+                  </p>
                 </div>
                 <div class="flex items-center gap-1">
                   <button
                     type="button"
                     class="btn btn-xs btn-success"
-                    on:click={() => quickUpdateStatus(res, 'confirmed')}
+                    on:click={() => quickUpdateStatus(res, "confirmed")}
                     disabled={statusDialogSubmitting}
                   >
                     Approve
@@ -1043,7 +1160,7 @@
                   <button
                     type="button"
                     class="btn btn-xs btn-error"
-                    on:click={() => quickUpdateStatus(res, 'rejected')}
+                    on:click={() => quickUpdateStatus(res, "rejected")}
                     disabled={statusDialogSubmitting}
                   >
                     Deny
@@ -1051,20 +1168,28 @@
                 </div>
               </div>
             {:else}
-              <p class="text-xs text-base-content/60">No pending reservations for this day.</p>
+              <p class="text-xs text-base-content/60">
+                No pending reservations for this day.
+              </p>
             {/each}
-          {:else if dayListTab === 'approved'}
+          {:else if dayListTab === "approved"}
             {#each dayApprovedReservations as res (res.reservation_id)}
-              <div class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2">
+              <div
+                class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2"
+              >
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm font-semibold truncate">{getReservationDisplayName(res)}</p>
-                  <p class="text-xs text-base-content/80 truncate">{getReservationSubtitle(res)}</p>
+                  <p class="text-sm font-semibold truncate">
+                    {getReservationDisplayName(res)}
+                  </p>
+                  <p class="text-xs text-base-content/80 truncate">
+                    {getReservationSubtitle(res)}
+                  </p>
                 </div>
                 <div class="flex items-center gap-1">
                   <button
                     type="button"
                     class="btn btn-xs btn-outline"
-                    on:click={() => quickUpdateStatus(res, 'pending')}
+                    on:click={() => quickUpdateStatus(res, "pending")}
                     disabled={statusDialogSubmitting}
                   >
                     Mark Pending
@@ -1072,7 +1197,7 @@
                   <button
                     type="button"
                     class="btn btn-xs btn-error"
-                    on:click={() => quickUpdateStatus(res, 'rejected')}
+                    on:click={() => quickUpdateStatus(res, "rejected")}
                     disabled={statusDialogSubmitting}
                   >
                     Deny
@@ -1080,20 +1205,28 @@
                 </div>
               </div>
             {:else}
-              <p class="text-xs text-base-content/60">No approved reservations for this day.</p>
+              <p class="text-xs text-base-content/60">
+                No approved reservations for this day.
+              </p>
             {/each}
           {:else}
             {#each dayDeniedReservations as res (res.reservation_id)}
-              <div class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2">
+              <div
+                class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2"
+              >
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm font-semibold truncate">{getReservationDisplayName(res)}</p>
-                  <p class="text-xs text-base-content/80 truncate">{getReservationSubtitle(res)}</p>
+                  <p class="text-sm font-semibold truncate">
+                    {getReservationDisplayName(res)}
+                  </p>
+                  <p class="text-xs text-base-content/80 truncate">
+                    {getReservationSubtitle(res)}
+                  </p>
                 </div>
                 <div class="flex items-center gap-1">
                   <button
                     type="button"
                     class="btn btn-xs btn-outline"
-                    on:click={() => quickUpdateStatus(res, 'pending')}
+                    on:click={() => quickUpdateStatus(res, "pending")}
                     disabled={statusDialogSubmitting}
                   >
                     Mark Pending
@@ -1101,7 +1234,7 @@
                   <button
                     type="button"
                     class="btn btn-xs btn-success"
-                    on:click={() => quickUpdateStatus(res, 'confirmed')}
+                    on:click={() => quickUpdateStatus(res, "confirmed")}
                     disabled={statusDialogSubmitting}
                   >
                     Approve
@@ -1109,7 +1242,9 @@
                 </div>
               </div>
             {:else}
-              <p class="text-xs text-base-content/60">No denied reservations for this day.</p>
+              <p class="text-xs text-base-content/60">
+                No denied reservations for this day.
+              </p>
             {/each}
           {/if}
         </div>
