@@ -97,6 +97,8 @@ interface UpdateReservationData {
   buddies_to_cancel?: string[];
   // Optional list of buddy UIDs to unlink (remove from group) without cancelling
   buddies_to_unlink?: string[];
+  // Admin note
+  admin_note?: string;  
 }
 
 // Query options
@@ -468,6 +470,9 @@ class ReservationService {
       }
       if (Array.isArray(updateData.buddies_to_unlink)) {
         payload.buddies_to_unlink = updateData.buddies_to_unlink;
+      }
+      if (updateData.admin_note !== undefined) {
+        payload.admin_note = updateData.admin_note;
       }
 
       const { error } = await callFunction<typeof payload, { ok: boolean }>('reservations-update', payload);

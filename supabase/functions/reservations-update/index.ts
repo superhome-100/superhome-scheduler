@@ -224,6 +224,8 @@ type UpdatePayload = {
   openwater?: Record<string, unknown>
   buddies_to_cancel?: string[]
   buddies_to_unlink?: string[]
+  admin_note?: string
+  admin_note?: string
 }
 
 function json(body: unknown, init: ResponseInit = {}) {
@@ -611,6 +613,44 @@ Deno.serve(async (req: Request) => {
         }
       } catch (e) {
         console.warn('[reservations-update] Buddy unlink processing failed:', e)
+      }
+    }
+
+        // Enforce Modification Rules if not cancelling
+    if (!isCancellingRequest) {
+      const isBeforeMod = isBeforeModificationCutoff(
+          res_type, 
+          (currentReservation as any).res_date, 
+          startTimeForCutoff
+      );
+
+      if (!isBeforeMod) {
+          // 1. No date change
+          if (body.parent?.res_date && body.parent.res_date !== (currentReservation as any).res_date) {
+               return json({ error: 'Cannot change date after modification cut-off.' }, { status: 400 });
+          }
+          
+          // 2. No time change
+          if (res_type === 'pool' && body.pool?.start_time && body.pool.start_time !== currentDetails?.start_time) {
+               return json({ error: 'Cannot change start time after modification cut-off.' }, { status: 400 });
+          }
+          if (res_type === 'classroom' && body.classroom?.start_time && body.classroom.start_time !== currentDetails?.start_time) {
+               return json({ error: 'Cannot change start time after modification cut-off.' }, { status: 400 });
+          }
+          if (res_type === 'open_water' && body.openwater?.time_period && body.openwater.time_period !== currentDetails?.time_period) {
+               return json({ error: 'Cannot change time period after modification cut-off.' }, { status: 400 });
+          }
+
+          // 3. No student count increase
+          let newCount: number | undefined;
+          if (res_type === 'pool' && body.pool && typeof body.pool.student_count === 'number') newCount = body.pool.student_count;
+          if (res_type === 'classroom' && body.classroom && typeof body.classroom.student_count === 'number') newCount = body.classroom.student_count;
+          if (res_type === 'open_water' && body.openwater && typeof body.openwater.student_count === 'number') newCount = body.openwater.student_count;
+
+          // Note: newCount comes from body, currentStudentCount from DB
+          if (newCount !== undefined && newCount > currentStudentCount) {
+               return json({ error: 'Cannot increase student count after modification cut-off.' }, { status: 400 });
+          }
       }
     }
 
