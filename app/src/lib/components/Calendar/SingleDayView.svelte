@@ -465,6 +465,38 @@
     dayListOpen = false;
   }
 
+  let bulkProcessing = false;
+
+  async function approveAllPending() {
+    if (!isAdmin || dayPendingReservations.length === 0 || bulkProcessing)
+      return;
+
+    try {
+      bulkProcessing = true;
+      const reservationsToApprove = dayPendingReservations.map((r) => ({
+        uid: r.uid,
+        res_date: r.res_date,
+      }));
+
+      const result = await reservationApi.bulkUpdateStatus(
+        reservationsToApprove,
+        "confirmed",
+      );
+
+      if (!result.success) {
+        alert("Failed to approve some reservations: " + result.error);
+      }
+
+      // After bulk update, refresh assignments and reservations
+      await refreshCurrentView();
+    } catch (err) {
+      console.error("Error in bulk approval:", err);
+      alert("An error occurred during bulk approval.");
+    } finally {
+      bulkProcessing = false;
+    }
+  }
+
   function getReservationDisplayName(res: FlattenedReservation): string {
     const fromMap = (reservationNamesByUid.get(res.uid) ?? "")
       .toString()
@@ -1136,6 +1168,21 @@
 
         <div class="px-4 py-3 space-y-2 overflow-y-auto">
           {#if dayListTab === "pending"}
+            {#if dayPendingReservations.length > 0}
+              <div class="flex justify-end pb-2">
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm w-full"
+                  on:click={approveAllPending}
+                  disabled={bulkProcessing}
+                >
+                  {#if bulkProcessing}
+                    <span class="loading loading-spinner loading-xs"></span>
+                  {/if}
+                  Approve All Pending ({dayPendingReservations.length})
+                </button>
+              </div>
+            {/if}
             {#each dayPendingReservations as res (res.reservation_id)}
               <div
                 class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2"
