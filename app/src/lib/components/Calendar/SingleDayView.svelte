@@ -635,6 +635,46 @@
     }
   }
 
+  function getReservationPeriod(res: FlattenedReservation): "AM" | "PM" {
+    if (res.res_type === "open_water") {
+      const tp = (res as OpenWaterReservationView).time_period;
+      return String(tp || "").toUpperCase() === "PM" ? "PM" : "AM";
+    }
+
+    // For pool and classroom, use start_time from various possible locations
+    const start =
+      (res as any)?.res_pool?.start_time ??
+      (res as any)?.res_classroom?.start_time ??
+      (res as any)?.start_time ??
+      null;
+
+    if (start) {
+      const hour = parseInt(start.split(":")[0], 10);
+      return hour >= 12 ? "PM" : "AM";
+    }
+
+    return "AM";
+  }
+
+  $: pendingAM = dayPendingReservations.filter(
+    (r) => getReservationPeriod(r) === "AM",
+  );
+  $: pendingPM = dayPendingReservations.filter(
+    (r) => getReservationPeriod(r) === "PM",
+  );
+  $: approvedAM = dayApprovedReservations.filter(
+    (r) => getReservationPeriod(r) === "AM",
+  );
+  $: approvedPM = dayApprovedReservations.filter(
+    (r) => getReservationPeriod(r) === "PM",
+  );
+  $: deniedAM = dayDeniedReservations.filter(
+    (r) => getReservationPeriod(r) === "AM",
+  );
+  $: deniedPM = dayDeniedReservations.filter(
+    (r) => getReservationPeriod(r) === "PM",
+  );
+
   // Only show approved Pool reservations with defined times (lane may be provisional in UI)
   $: approvedPlottedPoolReservations = filteredReservations.filter((r) => {
     if (selectedCalendarType !== ReservationType.pool) return false;
@@ -1183,116 +1223,264 @@
                 </button>
               </div>
             {/if}
-            {#each dayPendingReservations as res (res.reservation_id)}
+
+            {#if pendingAM.length > 0}
               <div
-                class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2"
+                class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1 mt-2 px-1"
               >
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm font-semibold truncate">
-                    {getReservationDisplayName(res)}
-                  </p>
-                  <p class="text-xs text-base-content/80 truncate">
-                    {getReservationSubtitle(res)}
-                  </p>
-                </div>
-                <div class="flex items-center gap-1">
-                  <button
-                    type="button"
-                    class="btn btn-xs btn-success"
-                    on:click={() => quickUpdateStatus(res, "confirmed")}
-                    disabled={statusDialogSubmitting}
-                  >
-                    Approve
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-xs btn-error"
-                    on:click={() => quickUpdateStatus(res, "rejected")}
-                    disabled={statusDialogSubmitting}
-                  >
-                    Deny
-                  </button>
-                </div>
+                Morning (AM)
               </div>
-            {:else}
+              {#each pendingAM as res (res.reservation_id)}
+                <div
+                  class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2"
+                >
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold truncate">
+                      {getReservationDisplayName(res)}
+                    </p>
+                    <p class="text-xs text-base-content/80 truncate">
+                      {getReservationSubtitle(res)}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-success"
+                      on:click={() => quickUpdateStatus(res, "confirmed")}
+                      disabled={statusDialogSubmitting}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-error"
+                      on:click={() => quickUpdateStatus(res, "rejected")}
+                      disabled={statusDialogSubmitting}
+                    >
+                      Deny
+                    </button>
+                  </div>
+                </div>
+              {/each}
+            {/if}
+
+            {#if pendingPM.length > 0}
+              <div
+                class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1 mt-4 px-1"
+              >
+                Afternoon (PM)
+              </div>
+              {#each pendingPM as res (res.reservation_id)}
+                <div
+                  class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2"
+                >
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold truncate">
+                      {getReservationDisplayName(res)}
+                    </p>
+                    <p class="text-xs text-base-content/80 truncate">
+                      {getReservationSubtitle(res)}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-success"
+                      on:click={() => quickUpdateStatus(res, "confirmed")}
+                      disabled={statusDialogSubmitting}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-error"
+                      on:click={() => quickUpdateStatus(res, "rejected")}
+                      disabled={statusDialogSubmitting}
+                    >
+                      Deny
+                    </button>
+                  </div>
+                </div>
+              {/each}
+            {/if}
+
+            {#if dayPendingReservations.length === 0}
               <p class="text-xs text-base-content/60">
                 No pending reservations for this day.
               </p>
-            {/each}
+            {/if}
           {:else if dayListTab === "approved"}
-            {#each dayApprovedReservations as res (res.reservation_id)}
+            {#if approvedAM.length > 0}
               <div
-                class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2"
+                class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1 mt-2 px-1"
               >
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm font-semibold truncate">
-                    {getReservationDisplayName(res)}
-                  </p>
-                  <p class="text-xs text-base-content/80 truncate">
-                    {getReservationSubtitle(res)}
-                  </p>
-                </div>
-                <div class="flex items-center gap-1">
-                  <button
-                    type="button"
-                    class="btn btn-xs btn-outline"
-                    on:click={() => quickUpdateStatus(res, "pending")}
-                    disabled={statusDialogSubmitting}
-                  >
-                    Mark Pending
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-xs btn-error"
-                    on:click={() => quickUpdateStatus(res, "rejected")}
-                    disabled={statusDialogSubmitting}
-                  >
-                    Deny
-                  </button>
-                </div>
+                Morning (AM)
               </div>
-            {:else}
+              {#each approvedAM as res (res.reservation_id)}
+                <div
+                  class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2"
+                >
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold truncate">
+                      {getReservationDisplayName(res)}
+                    </p>
+                    <p class="text-xs text-base-content/80 truncate">
+                      {getReservationSubtitle(res)}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-outline"
+                      on:click={() => quickUpdateStatus(res, "pending")}
+                      disabled={statusDialogSubmitting}
+                    >
+                      Mark Pending
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-error"
+                      on:click={() => quickUpdateStatus(res, "rejected")}
+                      disabled={statusDialogSubmitting}
+                    >
+                      Deny
+                    </button>
+                  </div>
+                </div>
+              {/each}
+            {/if}
+
+            {#if approvedPM.length > 0}
+              <div
+                class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1 mt-4 px-1"
+              >
+                Afternoon (PM)
+              </div>
+              {#each approvedPM as res (res.reservation_id)}
+                <div
+                  class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2"
+                >
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold truncate">
+                      {getReservationDisplayName(res)}
+                    </p>
+                    <p class="text-xs text-base-content/80 truncate">
+                      {getReservationSubtitle(res)}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-outline"
+                      on:click={() => quickUpdateStatus(res, "pending")}
+                      disabled={statusDialogSubmitting}
+                    >
+                      Mark Pending
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-error"
+                      on:click={() => quickUpdateStatus(res, "rejected")}
+                      disabled={statusDialogSubmitting}
+                    >
+                      Deny
+                    </button>
+                  </div>
+                </div>
+              {/each}
+            {/if}
+
+            {#if dayApprovedReservations.length === 0}
               <p class="text-xs text-base-content/60">
                 No approved reservations for this day.
               </p>
-            {/each}
+            {/if}
           {:else}
-            {#each dayDeniedReservations as res (res.reservation_id)}
+            {#if deniedAM.length > 0}
               <div
-                class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2"
+                class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1 mt-2 px-1"
               >
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm font-semibold truncate">
-                    {getReservationDisplayName(res)}
-                  </p>
-                  <p class="text-xs text-base-content/80 truncate">
-                    {getReservationSubtitle(res)}
-                  </p>
-                </div>
-                <div class="flex items-center gap-1">
-                  <button
-                    type="button"
-                    class="btn btn-xs btn-outline"
-                    on:click={() => quickUpdateStatus(res, "pending")}
-                    disabled={statusDialogSubmitting}
-                  >
-                    Mark Pending
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-xs btn-success"
-                    on:click={() => quickUpdateStatus(res, "confirmed")}
-                    disabled={statusDialogSubmitting}
-                  >
-                    Approve
-                  </button>
-                </div>
+                Morning (AM)
               </div>
-            {:else}
+              {#each deniedAM as res (res.reservation_id)}
+                <div
+                  class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2"
+                >
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold truncate">
+                      {getReservationDisplayName(res)}
+                    </p>
+                    <p class="text-xs text-base-content/80 truncate">
+                      {getReservationSubtitle(res)}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-outline"
+                      on:click={() => quickUpdateStatus(res, "pending")}
+                      disabled={statusDialogSubmitting}
+                    >
+                      Mark Pending
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-success"
+                      on:click={() => quickUpdateStatus(res, "confirmed")}
+                      disabled={statusDialogSubmitting}
+                    >
+                      Approve
+                    </button>
+                  </div>
+                </div>
+              {/each}
+            {/if}
+
+            {#if deniedPM.length > 0}
+              <div
+                class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1 mt-4 px-1"
+              >
+                Afternoon (PM)
+              </div>
+              {#each deniedPM as res (res.reservation_id)}
+                <div
+                  class="flex items-center justify-between gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-2"
+                >
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold truncate">
+                      {getReservationDisplayName(res)}
+                    </p>
+                    <p class="text-xs text-base-content/80 truncate">
+                      {getReservationSubtitle(res)}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-outline"
+                      on:click={() => quickUpdateStatus(res, "pending")}
+                      disabled={statusDialogSubmitting}
+                    >
+                      Mark Pending
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-success"
+                      on:click={() => quickUpdateStatus(res, "confirmed")}
+                      disabled={statusDialogSubmitting}
+                    >
+                      Approve
+                    </button>
+                  </div>
+                </div>
+              {/each}
+            {/if}
+
+            {#if dayDeniedReservations.length === 0}
               <p class="text-xs text-base-content/60">
                 No denied reservations for this day.
               </p>
-            {/each}
+            {/if}
           {/if}
         </div>
       </div>
