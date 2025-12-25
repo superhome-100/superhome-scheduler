@@ -8,6 +8,8 @@
         type BuddyWithId,
     } from "$lib/services/openWaterService";
 
+    import ConfirmModal from "../ConfirmModal.svelte";
+
     export let formData: any;
     export let editing: boolean = false;
     export let initialReservation: any = null;
@@ -21,6 +23,13 @@
     let searching = false;
     let showResults = false;
     let prefilling = false;
+
+    // Confirmation modal state
+    let showConfirmModal = false;
+    let buddyUidToRemove: string | null = null;
+    let confirmTitle = "Remove Buddy";
+    let confirmMessage =
+        "Are you sure you want to remove this buddy? This will also DELETE their reservation.";
 
     // Dynamic buddy limit rules:
     // - Pool Autonomous: 1 buddy (2 pax total)
@@ -97,6 +106,25 @@
     }
 
     function removeBuddy(uid: string) {
+        // If editing and the buddy was already part of the reservation, show confirmation
+        if (editing && initialBuddyIds.includes(uid)) {
+            buddyUidToRemove = uid;
+            showConfirmModal = true;
+        } else {
+            // Immediate removal for newly added buddies or if not editing
+            performRemoval(uid);
+        }
+    }
+
+    function handleConfirmRemoval() {
+        if (buddyUidToRemove) {
+            performRemoval(buddyUidToRemove);
+            buddyUidToRemove = null;
+        }
+        showConfirmModal = false;
+    }
+
+    function performRemoval(uid: string) {
         selectedBuddies = selectedBuddies.filter((b) => b.uid !== uid);
         formData.buddies = selectedBuddies.map((b) => b.uid);
     }
@@ -334,6 +362,15 @@
         {/if}
     {/if}
 </div>
+
+<ConfirmModal
+    bind:open={showConfirmModal}
+    title={confirmTitle}
+    message={confirmMessage}
+    confirmText="Remove & Delete"
+    on:confirm={handleConfirmRemoval}
+    on:cancel={() => (showConfirmModal = false)}
+/>
 
 <style>
     .buddy-section {
