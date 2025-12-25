@@ -1044,6 +1044,7 @@
           buoyGroups={buoyGroupsWithReservations}
           loading={assignmentsLoading || loadingBuoyGroups}
           readOnly={!isAdmin}
+          currentUserId={$authStore.user?.id}
           {selectedDate}
           onUpdateBuoy={updateBuoyAssignment}
           onUpdateBoat={updateBoatAssignment}

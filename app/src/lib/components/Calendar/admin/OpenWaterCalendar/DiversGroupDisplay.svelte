@@ -8,6 +8,7 @@
   export let availableBuoys: { buoy_name: string; max_depth: number }[] = [];
   // When true, suppress any controls that would mutate state
   export let readOnly: boolean = false;
+  export let currentUserId: string | undefined = undefined;
 
   const dispatch = createEventDispatcher();
 
@@ -158,10 +159,24 @@
     dispatch("statusClick", { reservation, displayName });
   }
 
-  function formatReservationSummary(
+  function getReservationSummaryLines(
     reservation: OpenWaterReservationView,
-  ): string {
-    const typeLabel = reservation.open_water_type || "--";
+  ): Array<{ label: string; value: string }> {
+    const lines: Array<{ label: string; value: string }> = [];
+
+    lines.push({
+      label: "Openwater Type",
+      value: reservation.open_water_type || "--",
+    });
+
+    if (!readOnly) {
+      const depthLabel =
+        typeof reservation.depth_m === "number" &&
+        !Number.isNaN(reservation.depth_m)
+          ? `${reservation.depth_m} m`
+          : "--";
+      lines.push({ label: "Depth", value: depthLabel });
+    }
 
     const configs: string[] = [];
     if (reservation.pulley) configs.push("Pulley");
@@ -169,20 +184,33 @@
     if (reservation.bottom_plate) configs.push("Bottom plate");
     if (reservation.large_buoy) configs.push("Large buoy");
 
-    const configsLabel = configs.length ? configs.join(", ") : "None";
+    lines.push({
+      label: "Configs",
+      value: configs.length ? configs.join(", ") : "None",
+    });
 
-    if (readOnly) {
-      // Non-admin view: hide depth information entirely
-      return `Openwater Type: ${typeLabel}\nConfigs: ${configsLabel}`;
+    // Comment visible only to Owner AND Admin
+    const isAdmin = !readOnly;
+    const isOwner = currentUserId && reservation.uid === currentUserId;
+    if ((isAdmin || isOwner) && reservation.note) {
+      lines.push({ label: "Comment", value: reservation.note });
     }
 
-    const depthLabel =
-      typeof reservation.depth_m === "number" &&
-      !Number.isNaN(reservation.depth_m)
-        ? `${reservation.depth_m} m`
-        : "--";
+    // Internal group comment (admin_note) visibility
+    const isMember =
+      currentUserId &&
+      ((buoyGroup.member_uids || []).includes(currentUserId) ||
+        (buoyGroup.reservations || []).some((r) => r.uid === currentUserId));
+    const canSeeGroupNote = isAdmin || isMember;
+    if (
+      canSeeGroupNote &&
+      buoyGroup.admin_note &&
+      String(buoyGroup.admin_note).trim() !== ""
+    ) {
+      lines.push({ label: "Admin Note", value: buoyGroup.admin_note });
+    }
 
-    return `Openwater Type: ${typeLabel}\nDepth: ${depthLabel}\nConfigs: ${configsLabel}`;
+    return lines;
   }
 
   async function openMoveDialog(
@@ -321,10 +349,7 @@
                 ⚑
               </button>
             {/if}
-            <div
-              class="tooltip tooltip-left z-20"
-              data-tip={formatReservationSummary(reservation)}
-            >
+            <div class="relative flex items-center group/info">
               <button
                 type="button"
                 class="btn btn-ghost btn-xs p-1 min-h-0 h-6 w-6 flex items-center justify-center"
@@ -333,18 +358,46 @@
               >
                 i
               </button>
+
+              <!-- Custom Rich Tooltip -->
+              <div
+                class="absolute right-full mr-2 hidden group-hover/info:block z-[60] bg-neutral text-neutral-content p-3 rounded-lg shadow-xl text-[11px] min-w-[200px] border border-neutral-focus animate-in fade-in zoom-in duration-200"
+              >
+                <div class="space-y-1.5">
+                  {#each getReservationSummaryLines(reservation) as line}
+                    <div class="flex flex-col text-left leading-normal">
+                      <span class="font-bold text-gray-300">{line.label}:</span>
+                      <span class="font-normal text-white break-words"
+                        >{line.value}</span
+                      >
+                    </div>
+                  {/each}
+                </div>
+                <!-- Small arrow for the tooltip -->
+                <div
+                  class="absolute top-1/2 -translate-y-1/2 left-full w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-l-[5px] border-l-neutral"
+                ></div>
+              </div>
             </div>
           </div>
         </div>
       {/each}
-      {#if !readOnly && buoyGroup.admin_note}
-        <div class="px-0.5">
-          <p
-            class="text-[10px] text-primary/80 italic font-medium leading-tight break-words"
-          >
-            "{buoyGroup.admin_note}"
-          </p>
-        </div>
+      {#if buoyGroup.admin_note && String(buoyGroup.admin_note).trim() !== ""}
+        {@const isMember =
+          currentUserId &&
+          ((buoyGroup.member_uids || []).includes(currentUserId) ||
+            (buoyGroup.reservations || []).some(
+              (r) => r.uid === currentUserId,
+            ))}
+        {#if !readOnly || isMember}
+          <div class="px-0.5 mt-1 border-t border-primary/10 pt-1">
+            <p
+              class="text-[10px] text-primary/80 italic font-medium leading-[1.2] break-words"
+            >
+              "{buoyGroup.admin_note}"
+            </p>
+          </div>
+        {/if}
       {/if}
     </div>
   </div>

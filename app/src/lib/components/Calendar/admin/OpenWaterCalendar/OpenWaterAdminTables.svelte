@@ -23,6 +23,7 @@
   export let onRefreshAssignments: () => void;
   // When true, render in view-only mode (no edits or moves)
   export let readOnly: boolean = false;
+  export let currentUserId: string | undefined = undefined;
 
   const dispatch = createEventDispatcher();
 
@@ -349,6 +350,7 @@
     {availableBoats}
     {effectiveLoading}
     {readOnly}
+    {currentUserId}
     {onUpdateBuoy}
     {onUpdateBoat}
     {onUpdateNote}
@@ -372,6 +374,7 @@
     {availableBoats}
     {effectiveLoading}
     {readOnly}
+    {currentUserId}
     {onUpdateBuoy}
     {onUpdateBoat}
     {onUpdateNote}
