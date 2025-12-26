@@ -631,28 +631,69 @@ Deno.serve(async (req: Request) => {
 
         if (buddyGroupId) {
           for (const unlinkUid of buddiesToUnlink) {
-            // Remove from buddy_group_members
+            // 1. Remove from buddy_group_members
             await (admin || supabase)
               .from('buddy_group_members')
               .delete()
               .eq('buddy_group_id', buddyGroupId)
               .eq('uid', unlinkUid)
 
-            // Clear buddy_group_id on their reservation
-            if (res_type === 'pool') {
-              await (admin || supabase)
-                .from('res_pool')
-                .update({ buddy_group_id: null })
+            // 2. Locate the buddy's reservation for the same date and type to "remove" it
+            try {
+              const { data: mr, error: mrErr } = await (admin || supabase)
+                .from('reservations')
+                .select('reservation_id')
                 .eq('uid', unlinkUid)
-                .eq('buddy_group_id', buddyGroupId)
+                .eq('res_type', res_type)
                 .eq('res_date', body.res_date)
-            } else if (res_type === 'open_water') {
-              await (admin || supabase)
-                .from('res_openwater')
-                .update({ buddy_group_id: null })
-                .eq('uid', unlinkUid)
-                .eq('buddy_group_id', buddyGroupId)
-                .eq('res_date', body.res_date)
+                .in('res_status', ['pending', 'confirmed']) // Only remove active ones
+                .limit(1)
+
+              if (!mrErr && mr && mr.length > 0) {
+                const memberResId = mr[0].reservation_id
+                
+                // Clear resource assignments on detail tables
+                if (res_type === 'pool') {
+                  await (admin || supabase)
+                    .from('res_pool')
+                    .update({ lane: null, buddy_group_id: null })
+                    .eq('reservation_id', memberResId)
+                } else if (res_type === 'open_water') {
+                  await (admin || supabase)
+                    .from('res_openwater')
+                    .update({ buoy: null, group_id: null, buddy_group_id: null })
+                    .eq('reservation_id', memberResId)
+                }
+
+                // Mark the reservation as cancelled
+                await (admin || supabase)
+                  .from('reservations')
+                  .update({ 
+                    res_status: 'cancelled', 
+                    price: 0, 
+                    updated_at: new Date().toISOString() 
+                  })
+                  .eq('reservation_id', memberResId)
+              } else {
+                // Fallback: if we can't find by res_date (e.g. time shift), at least clear group linkage if they have it
+                if (res_type === 'pool') {
+                  await (admin || supabase)
+                    .from('res_pool')
+                    .update({ buddy_group_id: null })
+                    .eq('uid', unlinkUid)
+                    .eq('buddy_group_id', buddyGroupId)
+                    .eq('res_date', body.res_date)
+                } else if (res_type === 'open_water') {
+                  await (admin || supabase)
+                    .from('res_openwater')
+                    .update({ buddy_group_id: null })
+                    .eq('uid', unlinkUid)
+                    .eq('buddy_group_id', buddyGroupId)
+                    .eq('res_date', body.res_date)
+                }
+              }
+            } catch (innerErr) {
+              console.warn('[reservations-update] Failed to remove unlinked buddy reservation:', unlinkUid, innerErr)
             }
           }
         }
