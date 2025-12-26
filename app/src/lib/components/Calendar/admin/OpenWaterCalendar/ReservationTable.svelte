@@ -19,6 +19,7 @@
   export let onMouseDown: (event: MouseEvent, column: string) => void;
   // When true, rows render in read-only mode
   export let readOnly: boolean = false;
+  export let currentUserId: string | undefined = undefined;
   export let onAutoAssign: (timePeriod: "AM" | "PM") => void = () => {};
   export let onLock: (timePeriod: "AM" | "PM") => void = () => {};
   export let onUnlock: (timePeriod: "AM" | "PM") => void = () => {};
@@ -166,6 +167,7 @@
               {availableBuoys}
               {availableBoats}
               {readOnly}
+              {currentUserId}
               {onUpdateBuoy}
               {onUpdateBoat}
               {onUpdateNote}

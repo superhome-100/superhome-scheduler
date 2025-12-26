@@ -9,6 +9,7 @@
   export let onUpdateBoat: (groupId: number, boatName: string) => void;
   // When true, render controls as disabled
   export let readOnly: boolean = false;
+  export let currentUserId: string | undefined = undefined;
   export let onUpdateNote: (
     groupId: number,
     note: string | null,
@@ -111,6 +112,7 @@
         {buoyGroup}
         {availableBuoys}
         {readOnly}
+        {currentUserId}
         on:groupClick={openCommentModal}
         on:moveReservationToBuoy
         on:statusClick
@@ -175,7 +177,7 @@
               disabled={isSavingNote}
             ></textarea>
             <p class="text-[10px] text-base-content/50">
-              Only administrators can see this comment.
+              Only administrators and group members can see this comment.
             </p>
           </div>
         </div>
