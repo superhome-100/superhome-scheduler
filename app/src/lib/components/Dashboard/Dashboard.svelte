@@ -72,8 +72,10 @@
   let reservationToDelete: any = null;
 
   // Derived user info
+  let userNickname: string | null = null;
   $: ({ userEmail, userName, userAvatarUrl, userInitial } =
     getUserInfo($authStore));
+  $: welcomeName = userNickname || userName;
 
   // Get current view from URL path
   $: currentView = $page.url.pathname;
@@ -109,21 +111,21 @@
       const uid = reservation.uid || $authStore.user?.id;
       const resDate = reservation.res_date || reservation.date;
       if (!uid || !resDate) {
-        console.error('Missing uid or res_date on reservation for delete');
+        console.error("Missing uid or res_date on reservation for delete");
         return;
       }
-      const { error } = await supabase.functions.invoke('reservations-delete', {
-        body: { uid, res_date: resDate }
+      const { error } = await supabase.functions.invoke("reservations-delete", {
+        body: { uid, res_date: resDate },
       });
       if (error) {
-        console.error('Delete reservation failed:', error);
+        console.error("Delete reservation failed:", error);
         return;
       }
       // Refresh data after deletion
       await loadReservations();
       await loadMonthlyTotals();
     } catch (e) {
-      console.error('Delete reservation exception:', e);
+      console.error("Delete reservation exception:", e);
     } finally {
       reservationToDelete = null;
     }
@@ -151,7 +153,7 @@
           res_pool!left(start_time, end_time, lane, pool_type, student_count, note),
           res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, note),
           res_classroom!left(start_time, end_time, room, classroom_type, student_count, note)
-        `
+        `,
         )
         .eq("uid", $authStore.user.id)
         .order("res_date", { ascending: true });
@@ -159,7 +161,7 @@
       if (fetchError) throw fetchError;
 
       // Store raw rows; downstream code uses unified transform when needed
-      reservations = (data || []);
+      reservations = data || [];
     } catch (err) {
       console.error("Error loading reservations:", err);
       error =
@@ -174,17 +176,24 @@
     try {
       if (!reservations || reservations.length === 0) return;
       const badIds = (reservations as any[])
-        .filter(r => String(r?.res_status || '').toLowerCase() === 'cancelled' && Number(r?.price || 0) !== 0)
-        .map(r => r.reservation_id)
-        .filter((id) => typeof id === 'number');
+        .filter(
+          (r) =>
+            String(r?.res_status || "").toLowerCase() === "cancelled" &&
+            Number(r?.price || 0) !== 0,
+        )
+        .map((r) => r.reservation_id)
+        .filter((id) => typeof id === "number");
       if (badIds.length === 0) return;
-      const { success } = await normalizeCancelledPrices({ mode: 'by_ids', reservation_ids: badIds });
+      const { success } = await normalizeCancelledPrices({
+        mode: "by_ids",
+        reservation_ids: badIds,
+      });
       if (success) {
         await loadReservations();
         await loadMonthlyTotals();
       }
     } catch (e) {
-      console.warn('normalizeCancelledIfNeeded failed:', e);
+      console.warn("normalizeCancelledIfNeeded failed:", e);
     }
   };
 
@@ -202,7 +211,7 @@
         {
           p_from: from.toISOString().slice(0, 10),
           p_to: to.toISOString().slice(0, 10),
-        }
+        },
       );
       if (rpcError) throw rpcError;
       const map: Record<string, number> = {};
@@ -348,8 +357,18 @@
         adminChecked = true;
       }
 
-      // Load reservations
+      // Load profile and reservations
       try {
+        if ($authStore.user) {
+          supabase
+            .from("user_profiles")
+            .select("nickname")
+            .eq("uid", $authStore.user.id)
+            .single()
+            .then(({ data }) => {
+              if (data?.nickname) userNickname = data.nickname;
+            });
+        }
         await loadReservations();
         await normalizeCancelledIfNeeded();
         await loadMonthlyTotals();
@@ -411,7 +430,10 @@
   {:else if $authStore.user}
     {#if currentView === "/"}
       <!-- Sticky Header -->
-      <PageHeader title="Dashboard" subtitle={`Welcome back, ${userName}!`} />
+      <PageHeader
+        title="Dashboard"
+        subtitle={`Welcome back, ${welcomeName}!`}
+      />
 
       <!-- Pull-to-Refresh Body -->
       <PullToRefresh onRefresh={handleRefresh} {refreshing}>
@@ -499,24 +521,38 @@
   on:close={closeReservationDetails}
   on:edit={() => {
     try {
-      const raw = (selectedReservation && (selectedReservation as any).raw_reservation) || null;
+      const raw =
+        (selectedReservation && (selectedReservation as any).raw_reservation) ||
+        null;
       if (!raw) {
         // If raw is missing, fall back to transforming back minimal fields
-        console.warn('Dashboard: Missing raw_reservation on selectedReservation');
+        console.warn(
+          "Dashboard: Missing raw_reservation on selectedReservation",
+        );
         return;
       }
-      const resType = (raw.res_type || 'pool') as DbReservationType;
+      const resType = (raw.res_type || "pool") as DbReservationType;
       reservationFormInitialType =
-        resType === 'open_water' ? 'openwater' : resType === 'classroom' ? 'classroom' : 'pool';
+        resType === "open_water"
+          ? "openwater"
+          : resType === "classroom"
+            ? "classroom"
+            : "pool";
       editingReservation = raw;
       showReservationForm = true;
     } catch (e) {
-      console.error('Dashboard: failed to open edit form from details modal', e);
+      console.error(
+        "Dashboard: failed to open edit form from details modal",
+        e,
+      );
     } finally {
       showReservationDetails = false;
     }
   }}
-  on:updated={async () => { await loadReservations(); await loadMonthlyTotals(); }}
+  on:updated={async () => {
+    await loadReservations();
+    await loadMonthlyTotals();
+  }}
 />
 
 <!-- Sign Out Modal -->
