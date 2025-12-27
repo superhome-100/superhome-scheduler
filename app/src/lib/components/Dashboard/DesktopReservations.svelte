@@ -11,6 +11,8 @@
     getBuddyGroupMembersForSlotWithIds,
     getBuddyNicknamesForReservation,
   } from "$lib/services/openWaterService";
+  import { checkCancellationAvailability } from "../../utils/reservationCancelUtils";
+  import ErrorModal from "../ErrorModal.svelte";
   import dayjs from "dayjs";
 
   export let upcomingReservations: any[] = [];
@@ -28,6 +30,9 @@
   // Cancel confirmation state
   let confirmOpen = false;
   let reservationToCancel: any = null;
+  let cancelErrorOpen = false;
+  let cancelErrorMessage =
+    "Unable to cancel. The cancellation cutoff time has already passed.";
 
   // Buddy cancellation options for upcoming list cancel
   let buddyCancelOptions: BuddyWithId[] = [];
@@ -175,6 +180,16 @@
   }
 
   const handleCancelRequest = async (reservation: any) => {
+    if (!reservation) return;
+
+    // Use centralized cancellation check
+    const { canCancel, message } = checkCancellationAvailability(reservation);
+    if (!canCancel) {
+      if (message) cancelErrorMessage = message;
+      cancelErrorOpen = true;
+      return;
+    }
+
     reservationToCancel = reservation;
     await loadBuddyCancelOptionsFor(reservation);
     confirmOpen = true;
@@ -306,6 +321,12 @@
         </div>
       {/if}
     </ConfirmModal>
+
+    <ErrorModal
+      bind:open={cancelErrorOpen}
+      title="Cancellation Failed"
+      message={cancelErrorMessage}
+    />
     <div class="reservation-content">
       {#if loading}
         <div class="loading-state">
