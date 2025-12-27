@@ -8,8 +8,10 @@
   import OpenWaterDetailsLoader from "./ResDetailsModal/OpenWaterDetailsLoader.svelte";
   import "./ResDetailsModal/ReservationDetailsStyles.css";
   import { getEditPhase, type EditPhase } from "../../utils/cutoffRules";
+  import { checkCancellationAvailability } from "../../utils/reservationCancelUtils";
   import { reservationStore } from "../../stores/reservationStore";
   import ConfirmModal from "../ConfirmModal.svelte";
+  import ErrorModal from "../ErrorModal.svelte";
   import type { BuddyWithId } from "$lib/services/openWaterService";
   import {
     getBuddyGroupMembersForSlotWithIds,
@@ -159,7 +161,7 @@
   })();
 
   $: editPhase = (() => {
-    if (!reservation) return "before_mod_cutoff" as EditPhase;
+    if (!reservation) return "flexible" as EditPhase;
     const t = reservation.res_type as "open_water" | "pool" | "classroom";
     const iso = getOriginalIso()!;
     if (t === "open_water")
@@ -185,16 +187,24 @@
       reservation?.res_status || reservation?.status,
     ).toLowerCase();
     if (!["pending", "confirmed"].includes(status)) return false;
-    // Allow edit in both phases except after cancel cutoff; modal will restrict fields when between mod and cancel
-    return editPhase !== "after_cancel_cutoff";
+    // Allow edit in both flexible/restricted phases except after modification cutoff (locked)
+    return editPhase !== "locked";
   })();
+
+  let cancelErrorOpen = false;
+  let cancelErrorMessage =
+    "Unable to cancel. The cancellation cutoff time has already passed.";
 
   $: canCancel = (() => {
     if (!reservation) return false;
     if (!isOwner) return false; // Gate to owner only
     if (!upcoming) return false;
-    // Only allow before cancel cutoff
-    return editPhase !== "after_cancel_cutoff";
+    const status = String(
+      reservation?.res_status || reservation?.status,
+    ).toLowerCase();
+    if (!["pending", "confirmed"].includes(status)) return false;
+    // Show the button even if past cutoff, we'll handle the error in handleCancel
+    return true;
   })();
 
   const toggleBuddySelection = (uid: string, checked: boolean) => {
@@ -377,6 +387,15 @@
 
   async function handleCancel() {
     if (!reservation) return;
+
+    // Use centralized cancellation check
+    const { canCancel, message } = checkCancellationAvailability(reservation);
+    if (!canCancel) {
+      if (message) cancelErrorMessage = message;
+      cancelErrorOpen = true;
+      return;
+    }
+
     await loadBuddyCancelOptions();
     confirmOpen = true;
   }
@@ -528,3 +547,9 @@
     </div>
   {/if}
 </ConfirmModal>
+
+<ErrorModal
+  bind:open={cancelErrorOpen}
+  title="Cancellation Failed"
+  message={cancelErrorMessage}
+/>

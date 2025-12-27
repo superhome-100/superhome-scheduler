@@ -18,8 +18,15 @@
     getSubmissionData,
   } from "../ReservationFormModal/formUtils";
   import type { UpdateReservationData } from "../../api/reservationApi";
-  import { isBeforeCutoff, getEditPhase, type EditPhase } from "../../utils/cutoffRules";
-  import { checkBlockForForm, checkCapacityForForm } from "$lib/utils/availabilityClient";
+  import {
+    isBeforeCutoff,
+    getEditPhase,
+    type EditPhase,
+  } from "../../utils/cutoffRules";
+  import {
+    checkBlockForForm,
+    checkCapacityForForm,
+  } from "$lib/utils/availabilityClient";
 
   const dispatch = createEventDispatcher();
 
@@ -65,22 +72,33 @@
   let capacityKind: "pool" | "classroom" | null = null;
 
   // Derived helpers
-  const resType = () => reservation?.res_type as "open_water" | "pool" | "classroom";
+  const resType = () =>
+    reservation?.res_type as "open_water" | "pool" | "classroom";
   // Try to get exact original ISO res_date from the raw reservation when available
   const getOriginalResDateIso = (): string => {
     const fromSelf = reservation?.res_date as string | undefined;
-    const fromRaw = reservation?.raw_reservation?.res_date as string | undefined;
+    const fromRaw = reservation?.raw_reservation?.res_date as
+      | string
+      | undefined;
     const pick = fromRaw || fromSelf;
     if (pick) return pick;
     // Fallback: build from visible fields (date + startTime/timeOfDay)
     try {
-      if (reservation?.res_type === 'open_water') {
-        const day = formData.date || (reservation?.date?.slice(0,10) ?? "");
-        const t = (formData.timeOfDay || reservation?.time_period || 'AM') === 'PM' ? '13:00' : '08:00';
+      if (reservation?.res_type === "open_water") {
+        const day = formData.date || (reservation?.date?.slice(0, 10) ?? "");
+        const t =
+          (formData.timeOfDay || reservation?.time_period || "AM") === "PM"
+            ? "13:00"
+            : "08:00";
         return new Date(`${day}T${t}:00.000Z`).toISOString();
       }
-      const day = formData.date || (reservation?.date?.slice(0,10) ?? "");
-      const st = formData.startTime || reservation?.start_time || reservation?.res_pool?.start_time || reservation?.res_classroom?.start_time || '08:00';
+      const day = formData.date || (reservation?.date?.slice(0, 10) ?? "");
+      const st =
+        formData.startTime ||
+        reservation?.start_time ||
+        reservation?.res_pool?.start_time ||
+        reservation?.res_classroom?.start_time ||
+        "08:00";
       return new Date(`${day}T${st}`).toISOString();
     } catch {
       return reservation?.res_date;
@@ -99,27 +117,51 @@
     formData.date = iso ? new Date(iso).toISOString().slice(0, 10) : "";
 
     if (reservation.res_type === "open_water") {
-      formData.timeOfDay = reservation?.res_openwater?.time_period || reservation?.time_period || "AM";
-      formData.openWaterType = reservation?.res_openwater?.open_water_type || reservation?.open_water_type || undefined;
-      formData.depth = (reservation?.res_openwater?.depth_m ?? reservation?.depth_m ?? undefined) as any;
-      formData.pulley = (reservation?.res_openwater?.pulley ?? reservation?.pulley ?? false) as any;
-      formData.deepFimTraining = !!(reservation?.res_openwater?.deep_fim_training ?? reservation?.deep_fim_training);
-      formData.bottomPlate = !!(reservation?.res_openwater?.bottom_plate ?? reservation?.bottom_plate);
-      formData.largeBuoy = !!(reservation?.res_openwater?.large_buoy ?? reservation?.large_buoy);
-      formData.notes = reservation?.res_openwater?.note ?? reservation?.note ?? "";
+      formData.timeOfDay =
+        reservation?.res_openwater?.time_period ||
+        reservation?.time_period ||
+        "AM";
+      formData.openWaterType =
+        reservation?.res_openwater?.open_water_type ||
+        reservation?.open_water_type ||
+        undefined;
+      formData.depth = (reservation?.res_openwater?.depth_m ??
+        reservation?.depth_m ??
+        undefined) as any;
+      formData.pulley = (reservation?.res_openwater?.pulley ??
+        reservation?.pulley ??
+        false) as any;
+      formData.deepFimTraining = !!(
+        reservation?.res_openwater?.deep_fim_training ??
+        reservation?.deep_fim_training
+      );
+      formData.bottomPlate = !!(
+        reservation?.res_openwater?.bottom_plate ?? reservation?.bottom_plate
+      );
+      formData.largeBuoy = !!(
+        reservation?.res_openwater?.large_buoy ?? reservation?.large_buoy
+      );
+      formData.notes =
+        reservation?.res_openwater?.note ?? reservation?.note ?? "";
     } else if (reservation.res_type === "pool") {
       const pool = reservation.res_pool || {};
-      formData.poolType = pool.pool_type || reservation.pool_type || "autonomous";
+      formData.poolType =
+        pool.pool_type || reservation.pool_type || "autonomous";
       formData.startTime = pool.start_time || reservation.start_time || "";
       formData.endTime = pool.end_time || reservation.end_time || "";
-      formData.studentCount = (pool.student_count ?? reservation.student_count ?? "") as any;
+      formData.studentCount = (pool.student_count ??
+        reservation.student_count ??
+        "") as any;
       formData.notes = pool.note || reservation.note || "";
     } else if (reservation.res_type === "classroom") {
       const cls = reservation.res_classroom || {};
-      formData.classroomType = cls.classroom_type || reservation.classroom_type || undefined;
+      formData.classroomType =
+        cls.classroom_type || reservation.classroom_type || undefined;
       formData.startTime = cls.start_time || reservation.start_time || "";
       formData.endTime = cls.end_time || reservation.end_time || "";
-      formData.studentCount = (cls.student_count ?? reservation.student_count ?? "") as any;
+      formData.studentCount = (cls.student_count ??
+        reservation.student_count ??
+        "") as any;
       formData.notes = cls.note || reservation.note || "";
     }
   };
@@ -130,7 +172,11 @@
 
   const scrollToTop = () => {
     if (modalEl) {
-      try { modalEl.scrollTo({ top: 0, behavior: "smooth" }); } catch { modalEl.scrollTop = 0; }
+      try {
+        modalEl.scrollTo({ top: 0, behavior: "smooth" });
+      } catch {
+        modalEl.scrollTop = 0;
+      }
     }
   };
 
@@ -149,17 +195,25 @@
     }
   };
 
-  // Edit phase evaluation: before modification cutoff, between modification & cancel cutoff, or after cancel cutoff
+  // Edit phase evaluation: flexible, restricted (cannot cancel), or locked (cannot modify)
   $: editPhase = (() => {
-    if (!formData.date) return 'before_mod_cutoff' as EditPhase;
+    if (!formData.date) return "flexible" as EditPhase;
     const t = resType();
-    if (t === 'open_water') {
-      const timeOfDay: 'AM' | 'PM' = (formData.timeOfDay || reservation?.res_openwater?.time_period || reservation?.time_period || 'AM') as any;
+    if (t === "open_water") {
+      const timeOfDay: "AM" | "PM" = (formData.timeOfDay ||
+        reservation?.res_openwater?.time_period ||
+        reservation?.time_period ||
+        "AM") as any;
       // Use original ISO if possible for consistent day computation
       const iso = getOriginalResDateIso();
       return getEditPhase(t, iso, undefined, timeOfDay);
     }
-    const start = formData.startTime || reservation?.start_time || reservation?.res_pool?.start_time || reservation?.res_classroom?.start_time || '';
+    const start =
+      formData.startTime ||
+      reservation?.start_time ||
+      reservation?.res_pool?.start_time ||
+      reservation?.res_classroom?.start_time ||
+      "";
     const iso = getOriginalResDateIso();
     return getEditPhase(t, iso, start, undefined);
   })();
@@ -173,27 +227,61 @@
     blockedReason = res.reason;
   }
 
-  $: if (formData.date && formData.type) { checkAvailabilityClient(); }
-  $: if (formData.type === "pool" && formData.poolType && formData.date) { checkAvailabilityClient(); }
-  $: if (formData.type === "classroom" && formData.classroomType && formData.date) { checkAvailabilityClient(); }
-  $: if (formData.type === "openwater" && formData.openWaterType && formData.date) { checkAvailabilityClient(); }
+  $: if (formData.date && formData.type) {
+    checkAvailabilityClient();
+  }
+  $: if (formData.type === "pool" && formData.poolType && formData.date) {
+    checkAvailabilityClient();
+  }
+  $: if (
+    formData.type === "classroom" &&
+    formData.classroomType &&
+    formData.date
+  ) {
+    checkAvailabilityClient();
+  }
+  $: if (
+    formData.type === "openwater" &&
+    formData.openWaterType &&
+    formData.date
+  ) {
+    checkAvailabilityClient();
+  }
 
   async function checkCapacityClient() {
     if (!formData?.date || !formData?.startTime || !formData?.endTime) {
-      capacityBlocked = false; capacityMessage = null; capacityKind = null; return;
+      capacityBlocked = false;
+      capacityMessage = null;
+      capacityKind = null;
+      return;
     }
     if (formData.type !== "pool" && formData.type !== "classroom") {
-      capacityBlocked = false; capacityMessage = null; capacityKind = null; return;
+      capacityBlocked = false;
+      capacityMessage = null;
+      capacityKind = null;
+      return;
     }
     const res = await checkCapacityForForm(formData);
     capacityBlocked = !res.available;
     capacityKind = res.kind;
-    capacityMessage = res.available ? null : (res.reason || (res.kind === "pool" ? "No pool lanes available for the selected time" : "No classrooms available for the selected time window"));
+    capacityMessage = res.available
+      ? null
+      : res.reason ||
+        (res.kind === "pool"
+          ? "No pool lanes available for the selected time"
+          : "No classrooms available for the selected time window");
   }
-  $: if ((formData.type === "pool" || formData.type === "classroom") && formData.date && formData.startTime && formData.endTime) { checkCapacityClient(); }
+  $: if (
+    (formData.type === "pool" || formData.type === "classroom") &&
+    formData.date &&
+    formData.startTime &&
+    formData.endTime
+  ) {
+    checkCapacityClient();
+  }
 
   const handleKeydown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
+    if (event.key === "Escape") {
       closeModal();
     }
   };
@@ -204,7 +292,9 @@
     submitError = null;
 
     if (capacityBlocked && capacityMessage) {
-      submitError = capacityMessage; scrollToTop(); return;
+      submitError = capacityMessage;
+      scrollToTop();
+      return;
     }
 
     const { isValid, errors: validationErrors } = validateForm(formData);
@@ -228,13 +318,21 @@
       const originalIso = getOriginalResDateIso();
       let newIso: string | null = null;
       if (reservation.res_type === "open_water") {
-        const t = (submission.timeOfDay || formData.timeOfDay) === 'PM' ? '13:00' : '08:00';
+        const t =
+          (submission.timeOfDay || formData.timeOfDay) === "PM"
+            ? "13:00"
+            : "08:00";
         newIso = new Date(`${submission.date}T${t}`).toISOString();
       } else {
-        newIso = new Date(`${submission.date}T${submission.startTime}`).toISOString();
+        newIso = new Date(
+          `${submission.date}T${submission.startTime}`,
+        ).toISOString();
       }
       const dateTimeChanged = !!(newIso && newIso !== originalIso);
-      if (dateTimeChanged) { update.res_date = newIso; anyChange = true; }
+      if (dateTimeChanged) {
+        update.res_date = newIso;
+        anyChange = true;
+      }
 
       if (reservation.res_type === "pool") {
         update.pool = {
@@ -242,16 +340,27 @@
           end_time: submission.endTime,
           note: (submission.notes || "").trim() || undefined,
           pool_type: formData.poolType || undefined,
-          student_count: formData.poolType === "course_coaching" ? parseInt((formData.studentCount as any) || "0", 10) : undefined,
+          student_count:
+            formData.poolType === "course_coaching"
+              ? parseInt((formData.studentCount as any) || "0", 10)
+              : undefined,
         };
         // Detect changes against original for pool
         const orig = reservation.res_pool || {};
         const changedPool =
-          (update.pool.start_time && update.pool.start_time !== (orig.start_time || reservation.start_time)) ||
-          (update.pool.end_time && update.pool.end_time !== (orig.end_time || reservation.end_time)) ||
-          (update.pool.pool_type && update.pool.pool_type !== (orig.pool_type || reservation.pool_type)) ||
-          (typeof update.pool.student_count === 'number' && update.pool.student_count !== (orig.student_count ?? reservation.student_count)) ||
-          (typeof update.pool.note === 'string' && update.pool.note !== (orig.note || reservation.note));
+          (update.pool.start_time &&
+            update.pool.start_time !==
+              (orig.start_time || reservation.start_time)) ||
+          (update.pool.end_time &&
+            update.pool.end_time !== (orig.end_time || reservation.end_time)) ||
+          (update.pool.pool_type &&
+            update.pool.pool_type !==
+              (orig.pool_type || reservation.pool_type)) ||
+          (typeof update.pool.student_count === "number" &&
+            update.pool.student_count !==
+              (orig.student_count ?? reservation.student_count)) ||
+          (typeof update.pool.note === "string" &&
+            update.pool.note !== (orig.note || reservation.note));
         anyChange = anyChange || !!changedPool;
       } else if (reservation.res_type === "classroom") {
         update.classroom = {
@@ -259,23 +368,43 @@
           end_time: submission.endTime,
           note: (submission.notes || "").trim() || undefined,
           classroom_type: formData.classroomType || undefined,
-          student_count: formData.classroomType === "course_coaching" ? parseInt((formData.studentCount as any) || "0", 10) : undefined,
+          student_count:
+            formData.classroomType === "course_coaching"
+              ? parseInt((formData.studentCount as any) || "0", 10)
+              : undefined,
         };
         const orig = reservation.res_classroom || {};
         const changedClass =
-          (update.classroom.start_time && update.classroom.start_time !== (orig.start_time || reservation.start_time)) ||
-          (update.classroom.end_time && update.classroom.end_time !== (orig.end_time || reservation.end_time)) ||
-          (update.classroom.classroom_type && update.classroom.classroom_type !== (orig.classroom_type || reservation.classroom_type)) ||
-          (typeof update.classroom.student_count === 'number' && update.classroom.student_count !== (orig.student_count ?? reservation.student_count)) ||
-          (typeof update.classroom.note === 'string' && update.classroom.note !== (orig.note || reservation.note));
+          (update.classroom.start_time &&
+            update.classroom.start_time !==
+              (orig.start_time || reservation.start_time)) ||
+          (update.classroom.end_time &&
+            update.classroom.end_time !==
+              (orig.end_time || reservation.end_time)) ||
+          (update.classroom.classroom_type &&
+            update.classroom.classroom_type !==
+              (orig.classroom_type || reservation.classroom_type)) ||
+          (typeof update.classroom.student_count === "number" &&
+            update.classroom.student_count !==
+              (orig.student_count ?? reservation.student_count)) ||
+          (typeof update.classroom.note === "string" &&
+            update.classroom.note !== (orig.note || reservation.note));
         anyChange = anyChange || !!changedClass;
       } else if (reservation.res_type === "open_water") {
         update.openwater = {
           time_period: submission.timeOfDay,
-          depth_m: formData.depth ? parseInt((formData.depth as any) || "0", 10) : undefined,
+          depth_m: formData.depth
+            ? parseInt((formData.depth as any) || "0", 10)
+            : undefined,
           open_water_type: formData.openWaterType || undefined,
-          student_count: formData.openWaterType === "course_coaching" ? parseInt((formData.studentCount as any) || "0", 10) : undefined,
-          pulley: formData.openWaterType === "course_coaching" ? (formData.pulley === "true" || formData.pulley === true) : !!formData.pulley,
+          student_count:
+            formData.openWaterType === "course_coaching"
+              ? parseInt((formData.studentCount as any) || "0", 10)
+              : undefined,
+          pulley:
+            formData.openWaterType === "course_coaching"
+              ? formData.pulley === "true" || formData.pulley === true
+              : !!formData.pulley,
           deep_fim_training: !!formData.deepFimTraining,
           bottom_plate: !!formData.bottomPlate,
           large_buoy: !!formData.largeBuoy,
@@ -283,51 +412,96 @@
         };
         const orig = reservation.res_openwater || {};
         const changedOw =
-          (update.openwater.time_period && update.openwater.time_period !== (orig.time_period || reservation.time_period)) ||
-          (update.openwater.open_water_type && update.openwater.open_water_type !== (orig.open_water_type || reservation.open_water_type)) ||
-          (typeof update.openwater.student_count === 'number' && update.openwater.student_count !== (orig.student_count ?? reservation.student_count)) ||
-          (typeof update.openwater.depth_m === 'number' && update.openwater.depth_m !== (orig.depth_m ?? reservation.depth_m)) ||
-          (typeof update.openwater.pulley === 'boolean' && update.openwater.pulley !== (orig.pulley ?? reservation.pulley)) ||
-          (typeof update.openwater.deep_fim_training === 'boolean' && update.openwater.deep_fim_training !== (orig.deep_fim_training ?? reservation.deep_fim_training)) ||
-          (typeof update.openwater.bottom_plate === 'boolean' && update.openwater.bottom_plate !== (orig.bottom_plate ?? reservation.bottom_plate)) ||
-          (typeof update.openwater.large_buoy === 'boolean' && update.openwater.large_buoy !== (orig.large_buoy ?? reservation.large_buoy)) ||
-          (typeof update.openwater.note === 'string' && update.openwater.note !== (orig.note || reservation.note));
+          (update.openwater.time_period &&
+            update.openwater.time_period !==
+              (orig.time_period || reservation.time_period)) ||
+          (update.openwater.open_water_type &&
+            update.openwater.open_water_type !==
+              (orig.open_water_type || reservation.open_water_type)) ||
+          (typeof update.openwater.student_count === "number" &&
+            update.openwater.student_count !==
+              (orig.student_count ?? reservation.student_count)) ||
+          (typeof update.openwater.depth_m === "number" &&
+            update.openwater.depth_m !==
+              (orig.depth_m ?? reservation.depth_m)) ||
+          (typeof update.openwater.pulley === "boolean" &&
+            update.openwater.pulley !== (orig.pulley ?? reservation.pulley)) ||
+          (typeof update.openwater.deep_fim_training === "boolean" &&
+            update.openwater.deep_fim_training !==
+              (orig.deep_fim_training ?? reservation.deep_fim_training)) ||
+          (typeof update.openwater.bottom_plate === "boolean" &&
+            update.openwater.bottom_plate !==
+              (orig.bottom_plate ?? reservation.bottom_plate)) ||
+          (typeof update.openwater.large_buoy === "boolean" &&
+            update.openwater.large_buoy !==
+              (orig.large_buoy ?? reservation.large_buoy)) ||
+          (typeof update.openwater.note === "string" &&
+            update.openwater.note !== (orig.note || reservation.note));
         anyChange = anyChange || !!changedOw;
       }
 
       // Phase-based restrictions
       const t = resType();
-      if (editPhase === 'after_cancel_cutoff') {
-        submitError = 'The modification window has closed; this reservation can no longer be edited.';
+      if (editPhase === "locked") {
+        submitError =
+          "The modification window has closed; this reservation can no longer be edited.";
         scrollToTop();
         loading = false;
         return;
       }
 
-      if (editPhase === 'between_mod_and_cancel') {
+      if (editPhase === "restricted") {
         // Disallow date/time changes
         if (dateTimeChanged) {
-          submitError = 'You cannot change the date or time after the modification cutoff.';
+          submitError =
+            "You cannot change the date or time after the modification cutoff.";
           scrollToTop();
           loading = false;
           return;
         }
         // Only reductions in student count for course types; allow switching to autonomous
         const getNums = () => {
-          const origNum = (reservation?.res_pool?.student_count ?? reservation?.res_classroom?.student_count ?? reservation?.res_openwater?.student_count ?? reservation?.student_count ?? null) as number | null;
-          const newNum = (t === 'open_water') ? (update.openwater?.student_count ?? origNum) : (t === 'pool' ? (update.pool?.student_count ?? origNum) : (update.classroom?.student_count ?? origNum));
+          const origNum = (reservation?.res_pool?.student_count ??
+            reservation?.res_classroom?.student_count ??
+            reservation?.res_openwater?.student_count ??
+            reservation?.student_count ??
+            null) as number | null;
+          const newNum =
+            t === "open_water"
+              ? (update.openwater?.student_count ?? origNum)
+              : t === "pool"
+                ? (update.pool?.student_count ?? origNum)
+                : (update.classroom?.student_count ?? origNum);
           return { origNum, newNum };
         };
         const isCourse = () => {
-          if (t === 'open_water') return (formData.openWaterType || reservation?.open_water_type || reservation?.res_openwater?.open_water_type) === 'course_coaching';
-          if (t === 'pool') return (formData.poolType || reservation?.pool_type || reservation?.res_pool?.pool_type) === 'course_coaching';
-          if (t === 'classroom') return (formData.classroomType || reservation?.classroom_type || reservation?.res_classroom?.classroom_type) === 'course_coaching';
+          if (t === "open_water")
+            return (
+              (formData.openWaterType ||
+                reservation?.open_water_type ||
+                reservation?.res_openwater?.open_water_type) ===
+              "course_coaching"
+            );
+          if (t === "pool")
+            return (
+              (formData.poolType ||
+                reservation?.pool_type ||
+                reservation?.res_pool?.pool_type) === "course_coaching"
+            );
+          if (t === "classroom")
+            return (
+              (formData.classroomType ||
+                reservation?.classroom_type ||
+                reservation?.res_classroom?.classroom_type) ===
+              "course_coaching"
+            );
           return false;
         };
         if (isCourse()) {
           const { origNum, newNum } = getNums();
           if (origNum != null && newNum != null && newNum > origNum) {
-            submitError = 'After the modification cutoff, you can only reduce the number of students.';
+            submitError =
+              "After the modification cutoff, you can only reduce the number of students.";
             scrollToTop();
             loading = false;
             return;
@@ -337,13 +511,13 @@
 
       // Status adjustments per legacy rules
       if (anyChange) {
-        if (reservation.res_type === 'open_water') {
+        if (reservation.res_type === "open_water") {
           // Set back to pending for admin review
-          update.res_status = 'pending' as any;
+          update.res_status = "pending" as any;
         } else {
           // Preserve confirmed for pool/classroom edits
-          if (reservation.res_status === 'confirmed') {
-            update.res_status = 'confirmed' as any;
+          if (reservation.res_status === "confirmed") {
+            update.res_status = "confirmed" as any;
           }
         }
       }
@@ -351,7 +525,7 @@
       const { success, error } = await reservationStore.updateReservation(
         reservation.uid,
         getOriginalResDateIso(),
-        update
+        update,
       );
 
       if (success) {
@@ -362,7 +536,8 @@
         scrollToTop();
       }
     } catch (err) {
-      submitError = err instanceof Error ? err.message : "Failed to update reservation";
+      submitError =
+        err instanceof Error ? err.message : "Failed to update reservation";
     } finally {
       loading = false;
     }
@@ -375,7 +550,7 @@
   <div
     class="modal-overlay"
     on:click={handleOverlayClick}
-    on:keydown={(e) => e.key === 'Escape' && closeModal()}
+    on:keydown={(e) => e.key === "Escape" && closeModal()}
     role="dialog"
     aria-modal="true"
     aria-label="Update Reservations"
@@ -399,23 +574,47 @@
 
         <div class="form-grid">
           <!-- Basic fields (type disabled to keep schema consistent) -->
-          <FormBasicFields bind:formData {errors} disableType={true} on:validationChange={handleValidationChange} />
+          <FormBasicFields
+            bind:formData
+            {errors}
+            disableType={true}
+            on:validationChange={handleValidationChange}
+          />
 
           {#if formData.type === "pool"}
-            <FormPoolFields bind:formData {errors} {submitAttempted} on:validationChange={handleValidationChange} />
+            <FormPoolFields
+              bind:formData
+              {errors}
+              {submitAttempted}
+              on:validationChange={handleValidationChange}
+            />
           {/if}
 
           {#if formData.type === "openwater"}
-            <FormOpenWaterFields bind:formData {errors} {submitAttempted} on:validationChange={handleValidationChange} />
+            <FormOpenWaterFields
+              bind:formData
+              {errors}
+              {submitAttempted}
+              on:validationChange={handleValidationChange}
+            />
           {/if}
 
           {#if formData.type === "classroom"}
-            <FormClassroomFields bind:formData {errors} {submitAttempted} on:validationChange={handleValidationChange} />
+            <FormClassroomFields
+              bind:formData
+              {errors}
+              {submitAttempted}
+              on:validationChange={handleValidationChange}
+            />
           {/if}
 
           {#if formData.type !== "openwater"}
             <div class="time-fields-wrapper">
-              <FormTimeFields bind:formData {errors} on:validationChange={handleValidationChange} />
+              <FormTimeFields
+                bind:formData
+                {errors}
+                on:validationChange={handleValidationChange}
+              />
             </div>
           {/if}
         </div>
@@ -427,29 +626,82 @@
         <FormNotes bind:formData />
 
         {#if capacityBlocked && capacityMessage}
-          <div class="alert my-2 text-sm" class:alert-error={capacityKind === "pool"} class:alert-warning={capacityKind !== "pool"}>
-            <span class={capacityKind === "pool" || capacityKind === "classroom" ? "text-red-600 font-semibold" : ""}>
+          <div
+            class="alert my-2 text-sm"
+            class:alert-error={capacityKind === "pool"}
+            class:alert-warning={capacityKind !== "pool"}
+          >
+            <span
+              class={capacityKind === "pool" || capacityKind === "classroom"
+                ? "text-red-600 font-semibold"
+                : ""}
+            >
               {capacityMessage}
             </span>
           </div>
         {/if}
 
-        <FormActions {loading} submitLabel="Update" isCutoffPassed={(editPhase === 'after_cancel_cutoff') || isBlocked || capacityBlocked} on:close={closeModal} />
+        <FormActions
+          {loading}
+          submitLabel="Update"
+          isCutoffPassed={editPhase === "locked" ||
+            isBlocked ||
+            capacityBlocked}
+          on:close={closeModal}
+        />
       </form>
     </div>
   </div>
 {/if}
 
 <style>
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
-  .modal-content { background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; }
-  .modal-body { padding: 1.5rem; flex: 1; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
-  .time-fields-wrapper { grid-column: 1 / -1; }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+  }
+  .modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-body {
+    padding: 1.5rem;
+    flex: 1;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .time-fields-wrapper {
+    grid-column: 1 / -1;
+  }
   @media (max-width: 768px) {
-    .modal-overlay { padding: 0.5rem; }
-    .modal-content { max-height: 95vh; }
-    .form-grid { grid-template-columns: 1fr; gap: 0.75rem; }
-    .time-fields-wrapper { grid-column: 1; }
+    .modal-overlay {
+      padding: 0.5rem;
+    }
+    .modal-content {
+      max-height: 95vh;
+    }
+    .form-grid {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+    .time-fields-wrapper {
+      grid-column: 1;
+    }
   }
 </style>

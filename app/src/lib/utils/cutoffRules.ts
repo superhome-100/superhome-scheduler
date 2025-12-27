@@ -200,10 +200,14 @@ export function isBeforeCancelCutoff(
   return now < cancelCutoff;
 }
 
-export type EditPhase = 'before_mod_cutoff' | 'between_mod_and_cancel' | 'after_cancel_cutoff';
+export type EditPhase = 'flexible' | 'restricted' | 'locked';
 
 /**
  * Compute the current edit phase relative to modification and cancel cutoffs.
+ * phases:
+ * - flexible: can cancel and modify
+ * - restricted: cannot cancel, can modify
+ * - locked: cannot cancel, cannot modify
  */
 export function getEditPhase(
   res_type: ReservationType,
@@ -211,8 +215,10 @@ export function getEditPhase(
   startTime?: string,
   timeOfDay?: 'AM' | 'PM'
 ): EditPhase {
-  const beforeMod = isBeforeModificationCutoff(res_type, reservationDateISO, startTime, timeOfDay);
-  if (beforeMod) return 'before_mod_cutoff';
-  const beforeCancel = isBeforeCancelCutoff(res_type, reservationDateISO, startTime, timeOfDay);
-  return beforeCancel ? 'between_mod_and_cancel' : 'after_cancel_cutoff';
+  const canCancel = isBeforeCancelCutoff(res_type, reservationDateISO, startTime, timeOfDay);
+  const canModify = isBeforeModificationCutoff(res_type, reservationDateISO, startTime, timeOfDay);
+
+  if (canCancel && canModify) return 'flexible';
+  if (!canCancel && canModify) return 'restricted';
+  return 'locked';
 }

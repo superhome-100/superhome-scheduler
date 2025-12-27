@@ -109,7 +109,7 @@ function createReservationStore() {
         opts.time_period
       );
       if (!withinCancelWindow) {
-        const msg = 'Cancellation window has passed for this reservation.';
+        const msg = 'Unable to cancel. The cancellation cutoff time has already passed.';
         update(state => ({ ...state, error: msg }));
         return { success: false, error: msg };
       }
