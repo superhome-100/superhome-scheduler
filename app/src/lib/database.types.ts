@@ -561,6 +561,86 @@ export type Database = {
           },
         ]
       }
+      settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
+      settings_updates: {
+        Row: {
+          availableClassrooms: string
+          availablePoolSlots: string
+          cancelationCutOffTimeCLASSROOM: number
+          cancelationCutOffTimeOW: number
+          cancelationCutOffTimePOOL: number
+          classroomLable: string
+          created_at: string | null
+          id: string
+          maxChargeableOWPerMonth: number
+          poolLable: string
+          reservationCutOffTimeCLASSROOM: number
+          reservationCutOffTimeOW: string
+          reservationCutOffTimePOOL: number
+          reservationLeadTimeDays: number
+          settings_name: string
+        }
+        Insert: {
+          availableClassrooms: string
+          availablePoolSlots: string
+          cancelationCutOffTimeCLASSROOM: number
+          cancelationCutOffTimeOW: number
+          cancelationCutOffTimePOOL: number
+          classroomLable: string
+          created_at?: string | null
+          id?: string
+          maxChargeableOWPerMonth: number
+          poolLable: string
+          reservationCutOffTimeCLASSROOM: number
+          reservationCutOffTimeOW: string
+          reservationCutOffTimePOOL: number
+          reservationLeadTimeDays: number
+          settings_name: string
+        }
+        Update: {
+          availableClassrooms?: string
+          availablePoolSlots?: string
+          cancelationCutOffTimeCLASSROOM?: number
+          cancelationCutOffTimeOW?: number
+          cancelationCutOffTimePOOL?: number
+          classroomLable?: string
+          created_at?: string | null
+          id?: string
+          maxChargeableOWPerMonth?: number
+          poolLable?: string
+          reservationCutOffTimeCLASSROOM?: number
+          reservationCutOffTimeOW?: string
+          reservationCutOffTimePOOL?: number
+          reservationLeadTimeDays?: number
+          settings_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settings_updates_settings_name_fkey"
+            columns: ["settings_name"]
+            isOneToOne: false
+            referencedRelation: "settings"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
       system_config: {
         Row: {
           description: string | null
@@ -761,6 +841,7 @@ export type Database = {
       get_buoy_groups_public: {
         Args: { p_res_date: string; p_time_period: string }
         Returns: {
+          admin_note: string
           boat: string
           boat_count: number
           buoy_name: string

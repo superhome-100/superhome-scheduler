@@ -25,6 +25,8 @@
   export let currentUserId: string | undefined = undefined;
   // Admin mode - shows full names instead of generic labels
   export let isAdmin: boolean = false;
+  // Dynamic label for classrooms (e.g., "Room", "Classroom")
+  export let classroomLable: string = "Room";
 
   const dispatch = createEventDispatcher();
 
@@ -131,7 +133,7 @@
   $: displayReservations = assignProvisionalRooms(
     reservations || [],
     ROOMS,
-    slotMins
+    slotMins,
   );
 
   // Stable key helper
@@ -140,7 +142,7 @@
   // Grid vertical metrics (shared)
   $: ({ gridStartMin, gridEndMin } = computeGridMetrics(
     hourSlots,
-    HOUR_ROW_PX
+    HOUR_ROW_PX,
   ));
 
   // Compute single rectangle for a reservation within full column (shared)
@@ -171,7 +173,8 @@
         <div
           class="box-border p-2 sm:p-3 text-center font-semibold text-base-content border-r border-base-300 last:border-r-0 text-xs sm:text-sm bg-base-200 border-b-2"
         >
-          Room {roomLabel}
+          {classroomLable}
+          {roomLabel}
         </div>
       {/each}
 

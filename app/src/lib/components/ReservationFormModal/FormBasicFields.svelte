@@ -3,6 +3,8 @@
   import { reservationTypes } from "./formConstants";
   import { now, isPast } from "../../utils/dateUtils";
 
+  import { getSettings } from "../../stores/settingsStore";
+
   export let formData: any;
   export let errors: Record<string, string> = {};
   export let disableType: boolean = false;
@@ -18,6 +20,13 @@
       return n.add(1, "day").format("YYYY-MM-DD");
     }
     return n.format("YYYY-MM-DD");
+  })();
+
+  // Compute max selectable date based on reservationLeadTimeDays
+  $: currentMaxDate = (() => {
+    const settings = getSettings();
+    const leadTimeDays = Number(settings.reservation_lead_time_days || 30);
+    return now().add(leadTimeDays, "day").format("YYYY-MM-DD");
   })();
 
   const handleTypeChange = () => {
@@ -62,6 +71,7 @@
     bind:value={formData.date}
     on:change={handleDateChange}
     min={currentMinDate}
+    max={currentMaxDate}
     required
   />
   {#if errors.date}

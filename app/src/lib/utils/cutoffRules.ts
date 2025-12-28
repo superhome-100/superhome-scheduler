@@ -3,20 +3,36 @@ import type { ReservationType } from '../services/reservationService';
 /**
  * Cut-off rules configuration for different reservation types
  */
+import { getSettings } from '../stores/settingsStore';
+
+/**
+ * Cut-off rules configuration for different reservation types
+ */
+export const getCutoffRules = () => {
+  const settings = getSettings();
+  return {
+    open_water: {
+      cutoffTime: settings.reservationCutOffTimeOW || '18:00',
+      description: 'Open water reservations must be made before 6 PM for next day'
+    },
+    pool: {
+      cutoffMinutes: settings.reservationCutOffTimePOOL ?? 30,
+      description: `Pool reservations must be made at least ${settings.reservationCutOffTimePOOL ?? 30} minutes in advance`
+    },
+    classroom: {
+      cutoffMinutes: settings.reservationCutOffTimeCLASSROOM ?? 30,
+      description: `Classroom reservations must be made at least ${settings.reservationCutOffTimeCLASSROOM ?? 30} minutes in advance`
+    }
+  };
+};
+
+// For backward compatibility and static descriptions
 export const CUTOFF_RULES = {
-  open_water: {
-    cutoffTime: '18:00', // 6 PM
-    description: 'Open water reservations must be made before 6 PM for next day'
-  },
-  pool: {
-    cutoffMinutes: 30,
-    description: 'Pool reservations must be made at least 30 minutes in advance'
-  },
-  classroom: {
-    cutoffMinutes: 30,
-    description: 'Classroom reservations must be made at least 30 minutes in advance'
-  }
+  open_water: { description: 'Open water reservations must be made before 6 PM for next day' },
+  pool: { description: 'Pool reservations must be made at least 30 minutes in advance' },
+  classroom: { description: 'Classroom reservations must be made at least 30 minutes in advance' }
 } as const;
+
 
 /**
  * Get the cutoff time for a specific reservation type and date
@@ -25,19 +41,21 @@ export function getCutoffTime(
   res_type: ReservationType, 
   reservationDate: string
 ): Date {
-  const cutoffRules = CUTOFF_RULES[res_type];
+  const rules = getCutoffRules();
   const resDate = new Date(reservationDate);
   
   if (res_type === 'open_water') {
     // 6 PM local time on the day before the reservation
     const cutoffDate = new Date(resDate);
     cutoffDate.setDate(cutoffDate.getDate() - 1);
-    cutoffDate.setHours(18, 0, 0, 0); // Use local time instead of UTC
+    const [hours, minutes] = (rules.open_water.cutoffTime as string).split(':').map(Number);
+    cutoffDate.setHours(hours || 18, minutes || 0, 0, 0); 
     return cutoffDate;
   } else {
-    // 30 minutes before reservation time
+    // X minutes before reservation time
     const cutoffTime = new Date(resDate);
-    cutoffTime.setMinutes(cutoffTime.getMinutes() - 30);
+    const minutes = Number(rules[res_type].cutoffMinutes);
+    cutoffTime.setMinutes(cutoffTime.getMinutes() - minutes);
     return cutoffTime;
   }
 }
@@ -102,19 +120,21 @@ export function getTimeUntilCutoff(
   const now = new Date();
   let cutoffTime: Date;
   
+  const rules = getCutoffRules();
   if (res_type === 'open_water') {
     // For open water, use the fixed 6 PM cutoff
     cutoffTime = getCutoffTime(res_type, reservationDate);
   } else {
-    // For pool and classroom, calculate based on start time minus 30 minutes
+    // For pool and classroom, calculate based on start time minus X minutes
+    const cutoffMinutes = Number(rules[res_type].cutoffMinutes);
     if (startTime) {
       const reservationDateTime = new Date(`${reservationDate}T${startTime}`);
       cutoffTime = new Date(reservationDateTime);
-      cutoffTime.setMinutes(cutoffTime.getMinutes() - 30);
+      cutoffTime.setMinutes(cutoffTime.getMinutes() - cutoffMinutes);
     } else {
-      // If no start time provided, use current time + 30 minutes as a fallback
+      // If no start time provided, use current time + X minutes as a fallback
       cutoffTime = new Date(now);
-      cutoffTime.setMinutes(cutoffTime.getMinutes() + 30);
+      cutoffTime.setMinutes(cutoffTime.getMinutes() + cutoffMinutes);
     }
   }
   
@@ -160,11 +180,12 @@ export function isBeforeModificationCutoff(
     }
     return now < getCutoffTime('open_water', reservationDateISO);
   }
-  // Pool/Classroom: 30 minutes before actual start time
+  // Pool/Classroom: X minutes before actual start time
   if (!startTime) return true; // if unknown, be permissive for UI
   const dt = new Date(`${new Date(reservationDateISO).toISOString().slice(0,10)}T${startTime}`);
   const cutoff = new Date(dt);
-  cutoff.setMinutes(cutoff.getMinutes() - 30);
+  const rules = getCutoffRules();
+  cutoff.setMinutes(cutoff.getMinutes() - Number(rules[res_type].cutoffMinutes));
   return now < cutoff;
 }
 
@@ -175,28 +196,33 @@ export function isBeforeCancelCutoff(
   timeOfDay?: 'AM' | 'PM'
 ): boolean {
   const now = new Date();
-  if (res_type === 'open_water') {
-    // Approximate to 6 PM the day before without settings manager
-    const baseISO = (() => {
-      if (timeOfDay) {
-        const day = new Date(reservationDateISO).toISOString().slice(0,10);
-        const t = timeOfDay === 'PM' ? '13:00' : '08:00';
-        return new Date(`${day}T${t}:00.000Z`).toISOString();
-      }
-      return reservationDateISO;
-    })();
-    return now < getCutoffTime('open_water', baseISO);
+  const settings = getSettings();
+  
+  // Get start time for the reservation
+  let reservationStartTime = startTime;
+  if (res_type === 'open_water' && !reservationStartTime) {
+    reservationStartTime = timeOfDay === 'PM' ? '13:00' : '08:00';
   }
-  // Pool/Classroom: 60 minutes before start
-  if (!startTime) {
-    // If start time is unknown in the client context, allow the cancel action
-    // and let the server perform the authoritative cutoff validation.
+
+  if (!reservationStartTime) {
+    // If start time is unknown, be permissive in UI and let server validate
     return true;
   }
-  const day = new Date(reservationDateISO).toISOString().slice(0,10);
-  const start = new Date(`${day}T${startTime}`);
+
+  const cancelMinutes = (() => {
+    switch (res_type) {
+      case 'open_water': return settings.cancelationCutOffTimeOW ?? 60;
+      case 'pool': return settings.cancelationCutOffTimePOOL ?? 60;
+      case 'classroom': return settings.cancelationCutOffTimeCLASSROOM ?? 60;
+      default: return 60;
+    }
+  })();
+
+  const day = new Date(reservationDateISO).toISOString().slice(0, 10);
+  const start = new Date(`${day}T${reservationStartTime}`);
   const cancelCutoff = new Date(start);
-  cancelCutoff.setMinutes(cancelCutoff.getMinutes() - 60);
+  cancelCutoff.setMinutes(cancelCutoff.getMinutes() - Number(cancelMinutes));
+  
   return now < cancelCutoff;
 }
 
@@ -221,4 +247,23 @@ export function getEditPhase(
   if (canCancel && canModify) return 'flexible';
   if (!canCancel && canModify) return 'restricted';
   return 'locked';
+}
+
+/**
+ * Check if the reservation date is within the allowed lead time
+ */
+export function isWithinLeadTime(reservationDateISO: string): boolean {
+  const settings = getSettings();
+  const leadTimeDays = Number(settings.reservationLeadTimeDays || 30);
+  
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  
+  const resDate = new Date(reservationDateISO);
+  resDate.setHours(0, 0, 0, 0);
+  
+  const maxDate = new Date(now);
+  maxDate.setDate(maxDate.getDate() + leadTimeDays);
+  
+  return resDate <= maxDate;
 }
