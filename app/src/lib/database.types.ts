@@ -868,6 +868,32 @@ export type Database = {
           time_period: string
         }[]
       }
+      get_effective_settings: {
+        Args: { t_date?: string }
+        Returns: {
+          availableClassrooms: string
+          availablePoolSlots: string
+          cancelationCutOffTimeCLASSROOM: number
+          cancelationCutOffTimeOW: number
+          cancelationCutOffTimePOOL: number
+          classroomLable: string
+          created_at: string | null
+          id: string
+          maxChargeableOWPerMonth: number
+          poolLable: string
+          reservationCutOffTimeCLASSROOM: number
+          reservationCutOffTimeOW: string
+          reservationCutOffTimePOOL: number
+          reservationLeadTimeDays: number
+          settings_name: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "settings_updates"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_group_members: {
         Args: { p_group_id: number }
         Returns: {

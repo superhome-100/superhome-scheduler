@@ -24,8 +24,8 @@ CREATE TABLE IF NOT EXISTS public.settings_updates (
     "maxChargeableOWPerMonth" integer NOT NULL,
     "availablePoolSlots" text NOT NULL,
     "availableClassrooms" text NOT NULL,
-    "poolLable" text NOT NULL,
-    "classroomLable" text NOT NULL,
+    "poolLabel" text NOT NULL,
+    "classroomLabel" text NOT NULL,
     created_at timestamptz DEFAULT now()
 );
 
