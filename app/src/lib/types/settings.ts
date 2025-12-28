@@ -12,7 +12,7 @@ export interface SettingsUpdate {
   maxChargeableOWPerMonth: number;
   availablePoolSlots: string;
   availableClassrooms: string;
-  poolLable: string;
-  classroomLable: string;
+  poolLabel: string;
+  classroomLabel: string;
   [key: string]: any;
 }

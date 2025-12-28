@@ -21,8 +21,8 @@
         maxChargeableOWPerMonth: 12,
         availablePoolSlots: "1,2,3,4,5,6,7,8",
         availableClassrooms: "1,2,3",
-        poolLable: "Lane",
-        classroomLable: "Room",
+        poolLabel: "Lane",
+        classroomLabel: "Room",
     };
 
     $: if (editing) {
@@ -40,8 +40,8 @@
             maxChargeableOWPerMonth: editing.maxChargeableOWPerMonth,
             availablePoolSlots: editing.availablePoolSlots,
             availableClassrooms: editing.availableClassrooms,
-            poolLable: editing.poolLable,
-            classroomLable: editing.classroomLable,
+            poolLabel: editing.poolLabel,
+            classroomLabel: editing.classroomLabel,
         };
     }
 
@@ -58,8 +58,8 @@
             maxChargeableOWPerMonth: 12,
             availablePoolSlots: "1,2,3,4,5,6,7,8",
             availableClassrooms: "1,2,3",
-            poolLable: "Lane",
-            classroomLable: "Room",
+            poolLabel: "Lane",
+            classroomLabel: "Room",
         };
         dispatch("cancelEdit");
     }
@@ -244,7 +244,7 @@
                 id="set-pool-label"
                 class="input input-bordered input-sm w-full"
                 type="text"
-                bind:value={form.poolLable}
+                bind:value={form.poolLabel}
             />
         </div>
         <div class="hidden lg:block">
@@ -272,7 +272,7 @@
                 id="set-room-label"
                 class="input input-bordered input-sm w-full"
                 type="text"
-                bind:value={form.classroomLable}
+                bind:value={form.classroomLabel}
             />
         </div>
     </div>

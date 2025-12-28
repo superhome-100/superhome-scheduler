@@ -586,11 +586,11 @@ export type Database = {
           cancelationCutOffTimeCLASSROOM: number
           cancelationCutOffTimeOW: number
           cancelationCutOffTimePOOL: number
-          classroomLable: string
+          classroomLabel: string
           created_at: string | null
           id: string
           maxChargeableOWPerMonth: number
-          poolLable: string
+          poolLabel: string
           reservationCutOffTimeCLASSROOM: number
           reservationCutOffTimeOW: string
           reservationCutOffTimePOOL: number
@@ -603,11 +603,11 @@ export type Database = {
           cancelationCutOffTimeCLASSROOM: number
           cancelationCutOffTimeOW: number
           cancelationCutOffTimePOOL: number
-          classroomLable: string
+          classroomLabel: string
           created_at?: string | null
           id?: string
           maxChargeableOWPerMonth: number
-          poolLable: string
+          poolLabel: string
           reservationCutOffTimeCLASSROOM: number
           reservationCutOffTimeOW: string
           reservationCutOffTimePOOL: number
@@ -620,11 +620,11 @@ export type Database = {
           cancelationCutOffTimeCLASSROOM?: number
           cancelationCutOffTimeOW?: number
           cancelationCutOffTimePOOL?: number
-          classroomLable?: string
+          classroomLabel?: string
           created_at?: string | null
           id?: string
           maxChargeableOWPerMonth?: number
-          poolLable?: string
+          poolLabel?: string
           reservationCutOffTimeCLASSROOM?: number
           reservationCutOffTimeOW?: string
           reservationCutOffTimePOOL?: number
@@ -876,11 +876,11 @@ export type Database = {
           cancelationCutOffTimeCLASSROOM: number
           cancelationCutOffTimeOW: number
           cancelationCutOffTimePOOL: number
-          classroomLable: string
+          classroomLabel: string
           created_at: string | null
           id: string
           maxChargeableOWPerMonth: number
-          poolLable: string
+          poolLabel: string
           reservationCutOffTimeCLASSROOM: number
           reservationCutOffTimeOW: string
           reservationCutOffTimePOOL: number

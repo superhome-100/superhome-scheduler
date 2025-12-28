@@ -108,13 +108,13 @@
                                 title={u.availablePoolSlots}
                                 >{u.availablePoolSlots}</td
                             >
-                            <td>{u.poolLable}</td>
+                            <td>{u.poolLabel}</td>
                             <td
                                 class="max-w-[80px] truncate"
                                 title={u.availableClassrooms}
                                 >{u.availableClassrooms}</td
                             >
-                            <td>{u.classroomLable}</td>
+                            <td>{u.classroomLabel}</td>
                             <td class="whitespace-nowrap">
                                 <div class="flex gap-2 justify-end">
                                     <button
@@ -262,7 +262,7 @@
                             </div>
                             <div class="flex justify-between">
                                 <span>Pool Label:</span>
-                                <span class="font-medium">{u.poolLable}</span>
+                                <span class="font-medium">{u.poolLabel}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span>Class Slots:</span>
@@ -275,7 +275,7 @@
                             <div class="flex justify-between">
                                 <span>Class Label:</span>
                                 <span class="font-medium"
-                                    >{u.classroomLable}</span
+                                    >{u.classroomLabel}</span
                                 >
                             </div>
                         </div>

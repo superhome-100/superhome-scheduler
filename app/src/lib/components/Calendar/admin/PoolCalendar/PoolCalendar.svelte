@@ -29,7 +29,7 @@
   // Admin mode - shows full names instead of generic labels
   export let isAdmin: boolean = false;
   // Dynamic label for lanes (e.g., "Slot", "Lane")
-  export let poolLable: string = "Lane";
+  export let poolLabel: string = "Lane";
 
   const dispatch = createEventDispatcher();
 
@@ -186,7 +186,7 @@
         <div
           class="box-border p-2 text-center font-semibold text-base-content border-r border-base-300 last:border-r-0 bg-base-200 border-b-2"
         >
-          <span class="hidden sm:inline">{poolLable} &nbsp;</span>{lane}
+          <span class="hidden sm:inline">{poolLabel} &nbsp;</span>{lane}
         </div>
       {/each}
 

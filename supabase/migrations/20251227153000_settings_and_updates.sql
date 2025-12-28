@@ -64,8 +64,8 @@ INSERT INTO public.settings_updates (
     "maxChargeableOWPerMonth",
     "availablePoolSlots",
     "availableClassrooms",
-    "poolLable",
-    "classroomLable"
+    "poolLabel",
+    "classroomLabel"
 ) VALUES (
     'default',
     '18:00',

@@ -26,7 +26,7 @@
   // Admin mode - shows full names instead of generic labels
   export let isAdmin: boolean = false;
   // Dynamic label for classrooms (e.g., "Room", "Classroom")
-  export let classroomLable: string = "Room";
+  export let classroomLabel: string = "Room";
 
   const dispatch = createEventDispatcher();
 
@@ -173,7 +173,7 @@
         <div
           class="box-border p-2 sm:p-3 text-center font-semibold text-base-content border-r border-base-300 last:border-r-0 text-xs sm:text-sm bg-base-200 border-b-2"
         >
-          {classroomLable}
+          {classroomLabel}
           {roomLabel}
         </div>
       {/each}

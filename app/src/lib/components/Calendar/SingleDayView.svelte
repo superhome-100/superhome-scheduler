@@ -1103,7 +1103,7 @@
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean)}
-        poolLable={settings.poolLable || "Lane"}
+        poolLabel={settings.poolLabel || "Lane"}
         on:editReservation={(e) => dispatch("editReservation", e.detail)}
       />
     {:else if selectedCalendarType === "openwater"}
@@ -1136,7 +1136,7 @@
             .split(",")
             .map((s) => s.trim())
             .filter(Boolean)}
-          classroomLable={settings.classroomLable || "Room"}
+          classroomLabel={settings.classroomLabel || "Room"}
           on:editReservation={(e) => dispatch("editReservation", e.detail)}
         />
       </div>

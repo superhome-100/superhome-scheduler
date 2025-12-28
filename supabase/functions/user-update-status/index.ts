@@ -32,48 +32,71 @@ Deno.serve(async (req: Request) => {
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return json({ error: 'Server not configured' }, { status: 500 })
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Missing environment variables')
+      return json({ error: 'Server not configured' }, { status: 500 })
+    }
+
+    // User client for identification
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } }
     })
+    
+    // Service client for admin operations
+    const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
     const { data: userRes } = await supabase.auth.getUser()
     const user = userRes?.user
-    if (!user) return json({ error: 'Unauthorized' }, { status: 401 })
+    if (!user) {
+      console.error('Auth error or user mismatch')
+      return json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    // Admin check
-    const { data: profile, error: profileErr } = await supabase
+    // Admin check using service client
+    const { data: profile, error: profileErr } = await serviceSupabase
       .from('user_profiles')
       .select('privileges')
       .eq('uid', user.id)
       .single()
-    if (profileErr) return json({ error: profileErr.message }, { status: 403 })
-    // Cast to any[] to avoid runtime issues if the type is not inferred as string[]
+    
+    if (profileErr) {
+      console.error('Profile fetch error:', profileErr)
+      return json({ error: 'Failed to verify permissions' }, { status: 403 })
+    }
+    
     const isAdmin = Array.isArray(profile?.privileges) && (profile!.privileges as any[]).includes('admin')
-    if (!isAdmin) return json({ error: 'Forbidden' }, { status: 403 })
+    if (!isAdmin) {
+      console.warn(`User ${user.id} attempted admin action without privileges`)
+      return json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const body = (await req.json()) as Payload
     if (!body || typeof body.uid !== 'string' || typeof body.status !== 'string') {
       return json({ error: 'Invalid payload' }, { status: 400 })
     }
 
-    // Strictly validate status against enum to prevent DB enum errors (e.g., "inactive")
+    // Strictly validate status against enum to prevent DB enum errors
     const allowed: Status[] = ['active', 'disabled']
     if (!allowed.includes(body.status as Status)) {
       return json({ error: 'Invalid status value. Must be "active" or "disabled"' }, { status: 400 })
     }
 
-    const { error } = await supabase
+    const { error: updateError } = await serviceSupabase
       .from('user_profiles')
       .update({ status: body.status, updated_at: new Date().toISOString() })
       .eq('uid', body.uid)
 
-    if (error) return json({ error: error.message }, { status: 500 })
+    if (updateError) {
+      console.error('Update error:', updateError)
+      return json({ error: updateError.message }, { status: 500 })
+    }
 
     return json({ ok: true }, { status: 200 })
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unexpected error'
+    console.error('Edge Function crash:', message)
     return json({ error: message }, { status: 500 })
   }
 })

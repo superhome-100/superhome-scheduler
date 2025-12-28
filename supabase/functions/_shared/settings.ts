@@ -11,8 +11,8 @@ export interface SettingsUpdate {
   maxChargeableOWPerMonth: number;
   availablePoolSlots: string;
   availableClassrooms: string;
-  poolLable: string;
-  classroomLable: string;
+  poolLabel: string;
+  classroomLabel: string;
   [key: string]: any;
 }
 
@@ -39,8 +39,8 @@ export async function fetchLatestSettings(supabase: any, settingsName: string = 
       maxChargeableOWPerMonth: 12,
       availablePoolSlots: '1,2,3,4,5,6,7,8',
       availableClassrooms: '1,2,3',
-      poolLable: 'Lane',
-      classroomLable: 'Room',
+      poolLabel: 'Lane',
+      classroomLabel: 'Room',
     } as SettingsUpdate;
   }
 

@@ -13,8 +13,8 @@ export const DEFAULT_SETTINGS: any = {
   maxChargeableOWPerMonth: 12,
   availablePoolSlots: '1,2,3,4,5,6,7,8',
   availableClassrooms: '1,2,3',
-  poolLable: 'Lane',
-  classroomLable: 'Room',
+  poolLabel: 'Lane',
+  classroomLabel: 'Room',
 };
 
 export const settingsStore = writable<any>(DEFAULT_SETTINGS);
