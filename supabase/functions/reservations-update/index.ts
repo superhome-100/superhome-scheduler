@@ -7,22 +7,10 @@ import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
 import { MSG_NO_POOL_LANES, MSG_NO_CLASSROOMS } from '../_shared/strings.ts'
 import { findAvailablePoolLane, poolSpanWidth } from '../_shared/poolLane.ts'
 import { checkPoolLaneCollision } from '../_shared/poolCollision.ts'
+import { fetchLatestSettings, type SettingsUpdate } from '../_shared/settings.ts'
 
-// Cut-off rules (same as cutoffRules.ts)
-const CUTOFF_RULES = {
-  open_water: {
-    cutoffTime: '18:00', // 6 PM
-    description: 'Open water reservations must be made before 6 PM for next day'
-  },
-  pool: {
-    cutoffMinutes: 30,
-    description: 'Pool reservations must be made at least 30 minutes in advance'
-  },
-  classroom: {
-    cutoffMinutes: 30,
-    description: 'Classroom reservations must be made at least 30 minutes in advance'
-  }
-} as const
+// Cut-off rules will be fetched from the database
+let SETTINGS: SettingsUpdate;
 
 
 function parseTimeMinutes(t: string): number {
@@ -83,9 +71,9 @@ async function findAvailableRoom(
     }
   }
 
-  for (let room = 1; room <= 3; room++) {
-    const key = String(room)
-    if (!occupied[key]) return key
+  const rooms = (SETTINGS?.availableClassrooms || '1,2,3').split(',').map(s => s.trim()).filter(Boolean);
+  for (const roomKey of rooms) {
+    if (!occupied[roomKey]) return roomKey;
   }
   return null
 }
@@ -96,20 +84,25 @@ function getCutoffTime(res_type: ReservationType, reservationDate: string): Date
   const resDate = new Date(reservationDate)
   
   if (res_type === 'open_water') {
-    // 6 PM local time on the day before, computed via local date parts to avoid UTC skew
+    // Dynamic time computed via local date parts or split if possible
     const d = new Date(reservationDate)
     const y = d.getFullYear()
     const m = String(d.getMonth() + 1).padStart(2, '0')
     const day = String(d.getDate()).padStart(2, '0')
-    // Build local midnight of reservation day, then subtract 6 hours to get previous day 18:00
+    
+    // Build local midnight of reservation day, then subtract hours/minutes from settings
     const localMidnight = new Date(`${y}-${m}-${day}T00:00`)
     const cutoff = new Date(localMidnight)
-    cutoff.setHours(18 - 24, 0, 0, 0) // previous day 18:00 local
+    const cutoffTimeStr = SETTINGS?.reservationCutOffTimeOW || '18:00'
+    const [h, min] = cutoffTimeStr.split(':').map(Number)
+    // If it's 18:00, we want previous day 18:00. 18-24 = -6
+    cutoff.setHours((h || 18) - 24, min || 0, 0, 0)
     return cutoff
   } else {
-    // 30 minutes before reservation time
+    // X minutes before reservation time
     const cutoffTime = new Date(resDate)
-    cutoffTime.setMinutes(cutoffTime.getMinutes() - 30)
+    const minutes = Number(res_type === 'pool' ? SETTINGS?.reservationCutOffTimePOOL : SETTINGS?.reservationCutOffTimeCLASSROOM) || 30
+    cutoffTime.setMinutes(cutoffTime.getMinutes() - minutes)
     return cutoffTime
   }
 }
@@ -143,7 +136,6 @@ function isBeforeModificationCutoff(
 ): boolean {
   const now = new Date()
   if (res_type === 'open_water') {
-    // 6 PM previous day
     return now < getCutoffTime('open_water', reservationDateISO)
   }
   if (!startTime) return true
@@ -151,26 +143,41 @@ function isBeforeModificationCutoff(
   const dayISO = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
   const start = new Date(`${dayISO}T${startTime}`)
   const cutoff = new Date(start)
-  cutoff.setMinutes(cutoff.getMinutes() - 30) // 30 mins buffer
+  const minutes = Number(res_type === 'pool' ? SETTINGS?.reservationCutOffTimePOOL : SETTINGS?.reservationCutOffTimeCLASSROOM) || 30
+  cutoff.setMinutes(cutoff.getMinutes() - minutes)
   return now < cutoff
 }
 
 function isBeforeCancelCutoff(
   res_type: ReservationType,
   reservationDateISO: string,
-  startTime?: string | null
+  startTime?: string | null,
+  timePeriod?: 'AM' | 'PM' | null
 ): boolean {
   const now = new Date()
-  if (res_type === 'open_water') {
-    // Same as modification cutoff for OW (previous day 18:00)
-    return now < getCutoffTime('open_water', reservationDateISO)
+  
+  // Determine start time for the reservation
+  let reservationStartTime = startTime;
+  if (res_type === 'open_water' && !reservationStartTime) {
+    reservationStartTime = timePeriod === 'PM' ? '13:00' : '08:00';
   }
-  if (!startTime) return true
+
+  if (!reservationStartTime) return true
+
+  const cancelMinutes = (() => {
+    switch (res_type) {
+      case 'open_water': return SETTINGS?.cancelationCutOffTimeOW ?? 60;
+      case 'pool': return SETTINGS?.cancelationCutOffTimePOOL ?? 60;
+      case 'classroom': return SETTINGS?.cancelationCutOffTimeCLASSROOM ?? 60;
+      default: return 60;
+    }
+  })();
+
   const day = new Date(reservationDateISO)
   const dayISO = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
-  const start = new Date(`${dayISO}T${startTime}`)
+  const start = new Date(`${dayISO}T${reservationStartTime}`)
   const cancelCut = new Date(start)
-  cancelCut.setMinutes(cancelCut.getMinutes() - 60)
+  cancelCut.setMinutes(cancelCut.getMinutes() - Number(cancelMinutes))
   return now < cancelCut
 }
 
@@ -187,7 +194,12 @@ function formatCutoffTime(cutoffTime: Date): string {
 }
 
 function getCutoffDescription(res_type: ReservationType): string {
-  return CUTOFF_RULES[res_type].description
+  if (res_type === 'open_water') {
+    const time = SETTINGS?.reservationCutOffTimeOW || '18:00'
+    return `Open water reservations must be made before ${time} for next day`
+  }
+  const min = Number(res_type === 'pool' ? SETTINGS?.reservationCutOffTimePOOL : SETTINGS?.reservationCutOffTimeCLASSROOM) || 30
+  return `${res_type.charAt(0).toUpperCase() + res_type.slice(1)} reservations must be made at least ${min} minutes in advance`
 }
 
 // Pool lane auto-assignment helpers are shared in _shared/poolLane.ts
@@ -278,6 +290,13 @@ Deno.serve(async (req: Request) => {
     const admin = SUPABASE_SERVICE_ROLE_KEY
       ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
       : null;
+
+    // Load settings from the database
+    if (admin) {
+      SETTINGS = await fetchLatestSettings(admin);
+    } else {
+      SETTINGS = await fetchLatestSettings(supabase);
+    }
 
     const { data: userRes } = await supabase.auth.getUser()
     const user = userRes?.user
@@ -427,7 +446,8 @@ Deno.serve(async (req: Request) => {
       }
 
       const startTimeForCutoff = res_type === 'pool' ? currentPool?.start_time : res_type === 'classroom' ? currentClass?.start_time : null
-      if (!isBeforeCancelCutoff(res_type, detailResDateKey, startTimeForCutoff || undefined)) {
+      const timePeriod = res_type === 'open_water' ? currentOw?.time_period : null
+      if (!isBeforeCancelCutoff(res_type, detailResDateKey, startTimeForCutoff || undefined, timePeriod as any)) {
         return json({ error: 'The cancellation window for this reservation has expired.' }, { status: 400 })
       }
 
@@ -1088,7 +1108,7 @@ Deno.serve(async (req: Request) => {
                   lane: laneCandidate,
                   poolType: proposedPoolType,
                   studentCount: proposedStudentCount,
-                  totalLanes: 8,
+                  totalLanes: (SETTINGS?.availablePoolSlots || '1,2,3,4,5,6,7,8').split(',').length,
                 },
               )
               if (collision) {
@@ -1115,7 +1135,7 @@ Deno.serve(async (req: Request) => {
                   excludeReservationId: reservationId,
                   poolType: proposedPoolType,
                   studentCount: proposedStudentCount,
-                  totalLanes: 8,
+                  totalLanes: (SETTINGS?.availablePoolSlots || '1,2,3,4,5,6,7,8').split(',').length,
                 },
               );
               if (!autoLane) {
@@ -1163,7 +1183,7 @@ Deno.serve(async (req: Request) => {
                     lane: proposedLane,
                     poolType: proposedPoolType,
                     studentCount: proposedStudentCount,
-                    totalLanes: 8,
+                    totalLanes: (SETTINGS?.availablePoolSlots || '1,2,3,4,5,6,7,8').split(',').length,
                     debug: true,
                   },
                 )

@@ -22,12 +22,14 @@
   export let timeSlots: string[];
   export let reservations: PoolResLike[];
   export let lanes: string[] = Array.from({ length: 8 }, (_, i) =>
-    String(i + 1)
+    String(i + 1),
   );
   // Optional current user id for labeling own reservations as "You"
   export let currentUserId: string | undefined = undefined;
   // Admin mode - shows full names instead of generic labels
   export let isAdmin: boolean = false;
+  // Dynamic label for lanes (e.g., "Slot", "Lane")
+  export let poolLabel: string = "Lane";
 
   const dispatch = createEventDispatcher();
 
@@ -48,7 +50,11 @@
   // Derived hour slots and grid rows
   $: sortedTimeSlots = (timeSlots || [])
     .slice()
-    .sort((a, b) => toMin(String(a).match(/\d{2}:\d{2}/)?.[0] || '00:00') - toMin(String(b).match(/\d{2}:\d{2}/)?.[0] || '00:00'));
+    .sort(
+      (a, b) =>
+        toMin(String(a).match(/\d{2}:\d{2}/)?.[0] || "00:00") -
+        toMin(String(b).match(/\d{2}:\d{2}/)?.[0] || "00:00"),
+    );
 
   $: hourSlots = hourSlotsFrom(sortedTimeSlots);
   const HEADER_ROW_PX = 40;
@@ -60,13 +66,13 @@
   $: displayReservations = assignProvisionalLanes(
     reservations || [],
     lanes,
-    slotMins
+    slotMins,
   );
 
   // Grid vertical metrics
   $: ({ gridStartMin, gridEndMin } = computeGridMetrics(
     hourSlots,
-    HOUR_ROW_PX
+    HOUR_ROW_PX,
   ));
 
   function rectForReservation(res: PoolResLike) {
@@ -133,7 +139,8 @@
     }
   };
 
-  const getStudentCount = (res: PoolResLike): number => getStudentCountUtil(res);
+  const getStudentCount = (res: PoolResLike): number =>
+    getStudentCountUtil(res);
 
   const getPoolType = (res: PoolResLike): string | null => getPoolTypeUtil(res);
 
@@ -146,14 +153,16 @@
   };
 
   const getResStatus = (res: PoolResLike): string =>
-    String((res as any)?.res_status ?? (res as any)?.status ?? '').toLowerCase();
+    String(
+      (res as any)?.res_status ?? (res as any)?.status ?? "",
+    ).toLowerCase();
 
   const cardClassFor = (res: PoolResLike): string => {
     const s = getResStatus(res);
-    if (s === 'pending') {
-      return 'bg-gradient-to-br from-orange-100 to-orange-200 text-orange-900 border border-orange-300';
+    if (s === "pending") {
+      return "bg-gradient-to-br from-orange-100 to-orange-200 text-orange-900 border border-orange-300";
     }
-    return 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-900 border border-blue-300';
+    return "bg-gradient-to-br from-blue-100 to-blue-200 text-blue-900 border border-blue-300";
   };
 </script>
 
@@ -177,7 +186,7 @@
         <div
           class="box-border p-2 text-center font-semibold text-base-content border-r border-base-300 last:border-r-0 bg-base-200 border-b-2"
         >
-          <span class="hidden sm:inline">Lane &nbsp;</span>{lane}
+          <span class="hidden sm:inline">{poolLabel} &nbsp;</span>{lane}
         </div>
       {/each}
 
@@ -225,7 +234,8 @@
                 class={`pointer-events-auto absolute left-1 right-1 rounded-lg text-[0.7rem] sm:text-sm cursor-pointer hover:font-semibold ${cardClassFor(reservation)} flex flex-col justify-center p-2 overflow-hidden z-10`}
                 style={`top: ${rect.topPx}px; height: ${rect.heightPx}px;`}
                 on:click={() => handleReservationClick(reservation)}
-                on:keydown={(e) => e.key === "Enter" && handleReservationClick(reservation)}
+                on:keydown={(e) =>
+                  e.key === "Enter" && handleReservationClick(reservation)}
                 role="button"
                 tabindex="0"
                 aria-label="View pool reservation details"

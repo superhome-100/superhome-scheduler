@@ -12,6 +12,7 @@
   import { ReservationType } from "../../types/reservations";
   import BlockReservationCard from "./BlockReservationCard.svelte";
   import PriceTemplateCard from "./PriceTemplateCard.svelte";
+  import SettingsConfigCard from "./SettingsConfigCard.svelte";
   import Toast from "../Toast.svelte";
   import {
     MSG_NO_CLASSROOMS,
@@ -100,7 +101,8 @@
   let selectedReservation: any = null;
   let adminView = "dashboard"; // Track which admin view to show
   // Admin section within dashboard
-  let adminSection: "pending" | "price" | "block" | "user_res" = "pending";
+  let adminSection: "pending" | "price" | "block" | "user_res" | "settings" =
+    "pending";
 
   // Single day view state
   let showSingleDayView = false;
@@ -478,7 +480,8 @@
         section === "pending" ||
         section === "price" ||
         section === "block" ||
-        section === "user_res"
+        section === "user_res" ||
+        section === "settings"
       ) {
         adminSection = section;
       }
@@ -542,6 +545,8 @@
             />
           {:else if adminSection === "price"}
             <PriceTemplateCard />
+          {:else if adminSection === "settings"}
+            <SettingsConfigCard />
           {:else}
             <BlockReservationCard />
           {/if}

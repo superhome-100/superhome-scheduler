@@ -120,48 +120,49 @@ export async function callFunction<TReq extends Record<string, unknown>, TRes>(
       // endpoint directly and parse the response body.
       if (!detailed) {
         const msg = (anyErr?.message || error.message || '').toLowerCase();
-        const isGenericNon2xx = msg.includes('non-2xx status code');
-        if (isGenericNon2xx) {
+        // Check for generic non-2xx status or if we just have no detailed message and it's an edge function error
+        if (msg.includes('non-2xx status code') || msg.includes('edge function')) {
           try {
-            const baseUrl = (import.meta as any).env?.VITE_PUBLIC_SUPABASE_URL;
-            if (typeof baseUrl === 'string' && baseUrl.length > 0) {
-              const resp = await fetch(`${baseUrl.replace(/\/$/, '')}/functions/v1/${name}`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${sessionData.session.access_token}`,
-                },
-                body: JSON.stringify(payload),
-              });
+            // Try to get baseUrl from import.meta.env or fallback to a sensible default matching supabase client
+            const baseUrl = (import.meta as any).env?.VITE_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
+            
+            const resp = await fetch(`${baseUrl.replace(/\/$/, '')}/functions/v1/${name}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${sessionData.session.access_token}`,
+              },
+              body: JSON.stringify(payload),
+            });
 
-              // Only try to parse body if the fallback request is non-2xx (expected in this branch)
-              if (!resp.ok) {
+            if (!resp.ok) {
+              try {
+                const parsed: any = await resp.clone().json();
+                if (parsed) {
+                  if (typeof parsed.message === 'string') detailed = parsed.message;
+                  else if (typeof parsed.error === 'string') detailed = parsed.error;
+                }
+              } catch {}
+
+              if (!detailed) {
                 try {
-                  const parsed: any = await resp.clone().json();
-                  if (parsed) {
-                    if (typeof parsed.message === 'string') detailed = parsed.message;
-                    else if (typeof parsed.error === 'string') detailed = parsed.error;
+                  const txt = await resp.clone().text();
+                  if (txt && txt.trim().length > 0) {
+                    try {
+                      const parsed2 = JSON.parse(txt);
+                      if (typeof parsed2?.message === 'string') detailed = parsed2.message;
+                      else if (typeof parsed2?.error === 'string') detailed = parsed2.error;
+                      else detailed = txt;
+                    } catch {
+                      detailed = txt;
+                    }
                   }
                 } catch {}
-
-                if (!detailed) {
-                  try {
-                    const txt = await resp.clone().text();
-                    if (txt && txt.trim().length > 0) {
-                      try {
-                        const parsed2 = JSON.parse(txt);
-                        if (typeof parsed2?.message === 'string') detailed = parsed2.message;
-                        else if (typeof parsed2?.error === 'string') detailed = parsed2.error;
-                        else detailed = txt;
-                      } catch {
-                        detailed = txt;
-                      }
-                    }
-                  } catch {}
-                }
               }
             }
-          } catch {}
+          } catch (fetchErr) {
+            console.warn('Fallback fetch failed:', fetchErr);
+          }
         }
       }
       return { data: null, error: detailed || error.message };

@@ -1,22 +1,30 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher, onMount } from "svelte";
 
-  export type AdminSection = 'pending' | 'price' | 'block' | 'user_res';
-  export let selected: AdminSection = 'pending';
+  export type AdminSection =
+    | "pending"
+    | "price"
+    | "block"
+    | "user_res"
+    | "settings";
+  export let selected: AdminSection = "pending";
 
-  const dispatch = createEventDispatcher<{ select: { section: AdminSection } }>();
+  const dispatch = createEventDispatcher<{
+    select: { section: AdminSection };
+  }>();
 
   const labels: Record<AdminSection, string> = {
-    pending: 'Pending Reservation',
-    price: 'Price Template',
-    block: 'Block Reservation',
-    user_res: 'User Reservations'
+    pending: "Pending Reservation",
+    price: "Price Template",
+    block: "Block Reservation",
+    user_res: "User Reservations",
+    settings: "Settings Config",
   };
 
   // Derive the remaining options excluding current selected
-  $: options = (['pending', 'price', 'block', 'user_res'] as AdminSection[]).filter(
-    (s) => s !== selected
-  );
+  $: options = (
+    ["pending", "price", "block", "user_res", "settings"] as AdminSection[]
+  ).filter((s) => s !== selected);
 
   let open = false;
 
@@ -28,13 +36,13 @@
     selected = section;
 
     // Update URL query param for deep-linking without navigation
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
-      url.searchParams.set('section', section);
-      window.history.replaceState({}, '', url.toString());
+      url.searchParams.set("section", section);
+      window.history.replaceState({}, "", url.toString());
     }
 
-    dispatch('select', { section });
+    dispatch("select", { section });
     // Close dropdown after selection
     open = false;
   };
@@ -49,7 +57,7 @@
 
   // Close on escape
   const onKeydown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') close();
+    if (e.key === "Escape") close();
   };
 
   let rootEl: HTMLDivElement | null = null;
@@ -77,8 +85,19 @@
       on:click={toggle}
     >
       {labels[selected]}
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 ml-2 opacity-70">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="w-4 h-4 ml-2 opacity-70"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+        />
       </svg>
     </button>
 

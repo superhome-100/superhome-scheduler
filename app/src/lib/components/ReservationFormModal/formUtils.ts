@@ -1,5 +1,6 @@
 import { now, isToday, isPast, createDayjs } from '../../utils/dateUtils';
-import { isBeforeCutoff, getCutoffDescription, formatCutoffTime, getCutoffTime } from '../../utils/cutoffRules';
+import { isBeforeCutoff, getCutoffDescription, formatCutoffTime, getCutoffTime, isWithinLeadTime } from '../../utils/cutoffRules';
+import { getSettings } from '../../stores/settingsStore';
 
 // Strong typing for Open Water types (reusable across this module)
 export enum OpenWaterType {
@@ -28,6 +29,13 @@ export const validateForm = (formData: any) => {
       const isPoolOrClassroom = formData.type === 'pool' || formData.type === 'classroom';
       if (isPoolOrClassroom && isToday(formData.date) && afterCutoff) {
         errors.date = 'After 7:30pm, Pool and Classroom reservations must be for tomorrow or later';
+      }
+
+      // Check lead time validation
+      const settings = getSettings();
+      if (!isWithinLeadTime(formData.date)) {
+        const leadTimeDays = settings.reservationLeadTimeDays || 30;
+        errors.date = `Reservations can only be made up to ${leadTimeDays} days in advance`;
       }
 
       // Check cut-off time validation
@@ -191,8 +199,11 @@ export const validateForm = (formData: any) => {
 export const getDefaultDateForType = (type: 'openwater' | 'pool' | 'classroom') => {
   const nowDt = now();
   if (type === 'openwater') {
-    // Open Water keeps 6pm cutoff logic for default date
-    const owCutoff = nowDt.hour(18).minute(0).second(0).millisecond(0);
+    // Open Water keeps dynamic cutoff logic for default date
+    const settings = getSettings();
+    const cutoffTimeStr = settings.reservationCutOffTimeOW || '18:00';
+    const [hours, minutes] = cutoffTimeStr.split(':').map(Number);
+    const owCutoff = nowDt.hour(hours || 18).minute(minutes || 0).second(0).millisecond(0);
     const owAfterCutoff = nowDt.isSameOrAfter(owCutoff);
     const addDays = owAfterCutoff ? 2 : 1;
     return nowDt.add(addDays, 'day').format('YYYY-MM-DD');

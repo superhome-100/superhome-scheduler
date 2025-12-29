@@ -4,6 +4,7 @@
   import dayjs from "dayjs";
   import { supabase } from "../../utils/supabase";
   import { authStore } from "../../stores/auth";
+  import { settingsStore, getSettings } from "../../stores/settingsStore";
 
   import SingleDayHeader from "./SingleDayHeader.svelte";
   import PoolCalendar from "./admin/PoolCalendar/PoolCalendar.svelte";
@@ -27,6 +28,8 @@
     OpenWaterReservationView,
   } from "../../types/reservationViews";
 
+  import { settingsService } from "../../services/settingsService";
+
   const dispatch = createEventDispatcher();
 
   export let selectedDate: string;
@@ -34,6 +37,7 @@
   export let isAdmin: boolean = false;
   export let initialType: ReservationType = ReservationType.openwater;
 
+  // ... (keeping existing types) ...
   // Buoy group data
   type BuoyGroupLite = {
     id: number;
@@ -57,6 +61,8 @@
   type BuoyGroupWithReservations = BuoyGroupLite & {
     reservations: OpenWaterReservationView[];
   };
+
+  // ... (keeping existing loading logic) ...
 
   // Combined loader with cancellation to avoid overlapping updates
   async function loadOpenWaterAssignments() {
@@ -86,6 +92,7 @@
   // 🔧 ADMIN-SPECIFIC: Group Management & Data -->
   // ============================================ -->
 
+  // ... (keeping admin variables) ...
   // Admin-specific data for buoy/boat management
   let buoyGroups: BuoyGroupLite[] = [];
   let loadingBuoyGroups = false;
@@ -297,6 +304,25 @@
   // Calendar type state
   let selectedCalendarType: ReservationType = ReservationType.openwater;
   let initializedCalendarType = false;
+
+  // Historical settings state
+  let currentViewSettings: any = null;
+
+  // Reactively fetch settings for the displayed date
+  $: if (selectedDate) {
+    // Reset first to avoid stale data (optional, but cleaner)
+    // Actually keeping old one might prevent flicker.
+    loadingSettings = true;
+    settingsService.getSettingsForDate(selectedDate).then((s) => {
+      if (s) currentViewSettings = s;
+      loadingSettings = false;
+    });
+  }
+
+  let loadingSettings = false;
+
+  // Derived settings: Use historical if available, otherwise fallback to store/current
+  $: settings = currentViewSettings || $settingsStore || getSettings();
 
   // Initialize from parent-provided intent first, then URL parameter
   onMount(() => {
@@ -1073,6 +1099,11 @@
         reservations={approvedPlottedPoolReservations}
         currentUserId={$authStore.user?.id}
         {isAdmin}
+        lanes={(settings.availablePoolSlots || "1,2,3,4,5,6,7,8")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)}
+        poolLabel={settings.poolLabel || "Lane"}
         on:editReservation={(e) => dispatch("editReservation", e.detail)}
       />
     {:else if selectedCalendarType === "openwater"}
@@ -1095,13 +1126,20 @@
       </div>
     {:else if selectedCalendarType === "classroom"}
       <!-- CLASSROOM CALENDAR: Only approved classroom reservations -->
-      <ClassroomCalendar
-        {timeSlots}
-        reservations={approvedClassroomReservations}
-        currentUserId={$authStore.user?.id}
-        {isAdmin}
-        on:editReservation={(e) => dispatch("editReservation", e.detail)}
-      />
+      <div class="px-2 pb-2">
+        <ClassroomCalendar
+          {timeSlots}
+          reservations={approvedClassroomReservations}
+          currentUserId={$authStore?.user?.id}
+          {isAdmin}
+          rooms={(settings.availableClassrooms || "1,2,3")
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)}
+          classroomLabel={settings.classroomLabel || "Room"}
+          on:editReservation={(e) => dispatch("editReservation", e.detail)}
+        />
+      </div>
     {/if}
   </div>
 

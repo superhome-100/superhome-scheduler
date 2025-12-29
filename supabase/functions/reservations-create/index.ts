@@ -6,36 +6,28 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 import { corsHeaders, handlePreflight } from '../_shared/cors.ts'
 import { findAvailablePoolLane } from '../_shared/poolLane.ts'
 import { checkPoolLaneCollision } from '../_shared/poolCollision.ts'
+import { fetchLatestSettings, type SettingsUpdate } from '../_shared/settings.ts'
+import { MSG_NO_POOL_LANES, MSG_NO_CLASSROOMS } from '../_shared/strings.ts'
 
-// Cut-off rules (same as cutoffRules.ts)
-const CUTOFF_RULES = {
-  open_water: {
-    cutoffTime: '18:00', // 6 PM
-    description: 'Open water reservations must be made before 6 PM for next day'
-  },
-  pool: {
-    cutoffMinutes: 30,
-    description: 'Pool reservations must be made at least 30 minutes in advance'
-  },
-  classroom: {
-    cutoffMinutes: 30,
-    description: 'Classroom reservations must be made at least 30 minutes in advance'
-  }
-} as const
+// Cut-off rules will be fetched from the database
+let SETTINGS: SettingsUpdate;
 
 function getCutoffTime(res_type: ReservationType, reservationDate: string): Date {
   const resDate = new Date(reservationDate)
   
   if (res_type === 'open_water') {
-    // 6 PM on the day before the reservation
+    // Dynamic time on the day before the reservation
     const cutoffDate = new Date(resDate)
     cutoffDate.setDate(cutoffDate.getDate() - 1)
-    cutoffDate.setUTCHours(18, 0, 0, 0)
+    const cutoffTimeStr = SETTINGS?.reservationCutOffTimeOW || '18:00'
+    const [h, m] = cutoffTimeStr.split(':').map(Number)
+    cutoffDate.setUTCHours(h || 18, m || 0, 0, 0)
     return cutoffDate
   } else {
-    // 30 minutes before reservation time
+    // X minutes before reservation time
     const cutoffTime = new Date(resDate)
-    cutoffTime.setMinutes(cutoffTime.getMinutes() - 30)
+    const minutes = Number(res_type === 'pool' ? SETTINGS?.reservationCutOffTimePOOL : SETTINGS?.reservationCutOffTimeCLASSROOM) || 30
+    cutoffTime.setMinutes(cutoffTime.getMinutes() - minutes)
     return cutoffTime
   }
 }
@@ -76,9 +68,9 @@ async function findAvailableRoom(
     }
   }
 
-  for (let room = 1; room <= 3; room++) {
-    const key = String(room);
-    if (!occupiedByRoom[key]) return key;
+  const rooms = (SETTINGS?.availableClassrooms || '1,2,3').split(',').map(s => s.trim()).filter(Boolean);
+  for (const roomKey of rooms) {
+    if (!occupiedByRoom[roomKey]) return roomKey;
   }
   return null;
 }
@@ -119,7 +111,12 @@ function formatCutoffTime(cutoffTime: Date): string {
 }
 
 function getCutoffDescription(res_type: ReservationType): string {
-  return CUTOFF_RULES[res_type].description
+  if (res_type === 'open_water') {
+    const time = SETTINGS?.reservationCutOffTimeOW || '18:00'
+    return `Open water reservations must be made before ${time} for next day`
+  }
+  const min = Number(res_type === 'pool' ? SETTINGS?.reservationCutOffTimePOOL : SETTINGS?.reservationCutOffTimeCLASSROOM) || 30
+  return `${res_type.charAt(0).toUpperCase() + res_type.slice(1)} reservations must be made at least ${min} minutes in advance`
 }
 
 async function checkAvailability(
@@ -221,6 +218,9 @@ Deno.serve(async (req: Request) => {
     });
     const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Load settings from the database
+    SETTINGS = await fetchLatestSettings(serviceSupabase);
+
     const { data: userRes } = await supabase.auth.getUser();
     const user = userRes?.user;
     if (!user) return json({ error: 'Unauthorized' }, { status: 401 });
@@ -248,22 +248,41 @@ Deno.serve(async (req: Request) => {
         rDay.setUTCHours(0,0,0,0);
         if (rDay.getTime() === today.getTime()) return false;
 
-        // Check 6 PM previous day
-        // Approximate: if we are at/after 6 PM previous day locally...
-        // Use getCutoffTime logic which seems to handle the 6 PM rule
         return now < getCutoffTime(resType, resDate);
       }
       
-      // Pool/Classroom: 30 mins before start
-      if (!sTime) return isBeforeCutoff(resDate, resType); // Fallback if no start time provided (though required later)
+      // Pool/Classroom: X mins before start
+      if (!sTime) return isBeforeCutoff(resDate, resType); 
       
       const day = new Date(resDate);
       const dayISO = day.toISOString().split('T')[0];
       const startDt = new Date(`${dayISO}T${sTime}`);
       const cutoff = new Date(startDt);
-      cutoff.setMinutes(cutoff.getMinutes() - 30);
+      const minutes = Number(resType === 'pool' ? SETTINGS?.reservationCutOffTimePOOL : SETTINGS?.reservationCutOffTimeCLASSROOM) || 30;
+      cutoff.setMinutes(cutoff.getMinutes() - minutes);
       return now < cutoff;
     };
+
+    const isWithinLeadTime = (resDate: string) => {
+      const leadTimeDays = Number(SETTINGS?.reservationLeadTimeDays || 30);
+      const now = new Date();
+      now.setUTCHours(0, 0, 0, 0);
+      
+      const rDate = new Date(resDate);
+      rDate.setUTCHours(0, 0, 0, 0);
+      
+      const maxDate = new Date(now);
+      maxDate.setUTCDate(maxDate.getUTCDate() + leadTimeDays);
+      
+      return rDate <= maxDate;
+    };
+
+    if (!isWithinLeadTime(body.res_date)) {
+      const leadTimeDays = SETTINGS?.reservationLeadTimeDays || 30;
+      return json({ 
+        error: `Reservations can only be made up to ${leadTimeDays} days in advance.` 
+      }, { status: 400 });
+    }
 
     if (!isBeforeCreationCutoff(body.res_date, body.res_type, startTimeForCutoff, timePeriodForCutoff)) {
       // Calculate display time for error message
@@ -274,7 +293,8 @@ Deno.serve(async (req: Request) => {
          const d = new Date(body.res_date).toISOString().split('T')[0];
          const dt = new Date(`${d}T${startTimeForCutoff}`);
          cutoffTime = new Date(dt);
-         cutoffTime.setMinutes(cutoffTime.getMinutes() - 30);
+         const minutes = Number(body.res_type === 'pool' ? SETTINGS?.reservationCutOffTimePOOL : SETTINGS?.reservationCutOffTimeCLASSROOM) || 30;
+         cutoffTime.setMinutes(cutoffTime.getMinutes() - minutes);
       } else {
          cutoffTime = getCutoffTime(body.res_type, body.res_date);
       }
@@ -371,7 +391,8 @@ Deno.serve(async (req: Request) => {
         if (Number.isNaN(sDb) || Number.isNaN(eDb) || Number.isNaN(sUser) || Number.isNaN(eUser)) return acc;
         return sDb < eUser && eDb > sUser ? acc + 1 : acc;
       }, 0);
-      const CAPACITY = 3; // TODO: replace with settings-backed capacity
+      const rooms = (SETTINGS?.availableClassrooms || '1,2,3').split(',').map(s => s.trim()).filter(Boolean);
+      const CAPACITY = rooms.length;
       if (overlapsCount >= CAPACITY) {
         return json({ error: 'No classrooms available for the selected time window' }, { status: 409 });
       }
@@ -381,7 +402,7 @@ Deno.serve(async (req: Request) => {
     if (body.res_type === 'pool') {
       const s = body.pool?.start_time ?? null;
       const e = body.pool?.end_time ?? null;
-      if (!s || !e) {
+      if (!body.pool || !s || !e) {
         return json({ error: 'Start and end time are required for pool reservations' }, { status: 400 });
       }
       const dateOnly = String(body.res_date).split('T')[0];
@@ -390,6 +411,7 @@ Deno.serve(async (req: Request) => {
       // pending/confirmed pool reservations (including multi-lane span for course/coaching).
       const explicitLane = (body.pool as any)?.lane != null ? String((body.pool as any).lane) : null;
       if (explicitLane) {
+        const lanes = (SETTINGS?.availablePoolSlots || '1,2,3,4,5,6,7,8').split(',').map(s => s.trim()).filter(Boolean);
         const { collision, blockedLanes } = await checkPoolLaneCollision(
           { supabase: serviceSupabase },
           {
@@ -399,7 +421,7 @@ Deno.serve(async (req: Request) => {
             lane: explicitLane,
             poolType: body.pool.pool_type ?? null,
             studentCount: body.pool.student_count ?? null,
-            totalLanes: 8,
+            totalLanes: lanes.length,
             debug: debugPoolCollision,
           },
         );
@@ -414,6 +436,7 @@ Deno.serve(async (req: Request) => {
         }
       } else {
         // No explicit lane: ensure at least one contiguous lane block exists for the requested span.
+        const lanes = (SETTINGS?.availablePoolSlots || '1,2,3,4,5,6,7,8').split(',').map(s => s.trim()).filter(Boolean);
         const lane = await findAvailablePoolLane(
           { supabase: serviceSupabase },
           {
@@ -422,7 +445,7 @@ Deno.serve(async (req: Request) => {
             endTime: e,
             poolType: body.pool.pool_type ?? null,
             studentCount: body.pool.student_count ?? null,
-            totalLanes: 8,
+            totalLanes: lanes.length,
           },
         );
         if (!lane) {
@@ -447,7 +470,7 @@ Deno.serve(async (req: Request) => {
                 lane,
                 poolType: body.pool.pool_type ?? null,
                 studentCount: body.pool.student_count ?? null,
-                totalLanes: 8,
+                totalLanes: (SETTINGS?.availablePoolSlots || '1,2,3,4,5,6,7,8').split(',').length,
                 debug: true,
               },
             )
