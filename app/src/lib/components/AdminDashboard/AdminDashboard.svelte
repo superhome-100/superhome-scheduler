@@ -24,6 +24,7 @@
   import AdminUserReservations from "./AdminUserReservations.svelte";
   import BodyContent from "../Layout/BodyContent.svelte";
   import { priceTemplatesApi } from "../../api/priceTemplatesApi";
+  import BuoyConfigList from "./BuoyConfigList.svelte";
 
   let users: any[] = [];
   let reservations: any[] = [];
@@ -42,11 +43,17 @@
     created_at: string;
   }> = [];
 
+  let buoyListRef: any;
+
   // Handle pull-to-refresh
   const handleRefresh = async () => {
     try {
       refreshing = true;
-      await loadAdminData();
+      const promises = [loadAdminData()];
+      if (adminSection === "buoy" && buoyListRef) {
+        promises.push(buoyListRef.loadBuoys());
+      }
+      await Promise.all(promises);
     } catch (error) {
       console.error("Admin refresh error:", error);
     } finally {
@@ -101,8 +108,13 @@
   let selectedReservation: any = null;
   let adminView = "dashboard"; // Track which admin view to show
   // Admin section within dashboard
-  let adminSection: "pending" | "price" | "block" | "user_res" | "settings" =
-    "pending";
+  let adminSection:
+    | "pending"
+    | "price"
+    | "block"
+    | "user_res"
+    | "settings"
+    | "buoy" = "pending";
 
   // Single day view state
   let showSingleDayView = false;
@@ -481,7 +493,8 @@
         section === "price" ||
         section === "block" ||
         section === "user_res" ||
-        section === "settings"
+        section === "settings" ||
+        section === "buoy"
       ) {
         adminSection = section;
       }
@@ -547,6 +560,20 @@
             <PriceTemplateCard />
           {:else if adminSection === "settings"}
             <SettingsConfigCard />
+          {:else if adminSection === "buoy"}
+            <div
+              class="card bg-base-100 shadow-lg border border-base-300 mt-6 text-xs w-full max-w-full overflow-hidden"
+            >
+              <div class="card-body p-4 w-full">
+                <BuoyConfigList
+                  bind:this={buoyListRef}
+                  on:error={(e) => {
+                    errorModalMessage = e.detail.message;
+                    errorModalOpen = true;
+                  }}
+                />
+              </div>
+            </div>
           {:else}
             <BlockReservationCard />
           {/if}

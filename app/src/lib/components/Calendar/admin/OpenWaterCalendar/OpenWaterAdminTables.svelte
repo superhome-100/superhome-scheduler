@@ -2,6 +2,7 @@
   import { createEventDispatcher } from "svelte";
   import ReservationTable from "./ReservationTable.svelte";
   import "../../../../../styles/reservation-table.css";
+  import type { Buoy } from "../../../../services/openWaterService";
   import type { AdminBuoyGroup } from "../../../../types/openWaterAdmin";
   import type { MoveReservationToBuoyPayload } from "../../../../services/openWaterService";
   import type { OpenWaterReservationView } from "../../../../types/reservationViews";
@@ -9,7 +10,7 @@
   import { callFunction } from "../../../../utils/functions";
 
   export let availableBoats: string[];
-  export let availableBuoys: { buoy_name: string; max_depth: number }[];
+  export let availableBuoys: Buoy[];
   export let buoyGroups: AdminBuoyGroup[];
   export let loading: boolean;
   export let selectedDate: string = "";

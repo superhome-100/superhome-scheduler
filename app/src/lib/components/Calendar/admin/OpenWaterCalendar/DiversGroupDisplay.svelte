@@ -3,9 +3,10 @@
   import type { AdminBuoyGroup } from "../../../../types/openWaterAdmin";
   import type { OpenWaterReservationView } from "../../../../types/reservationViews";
   import { getBuddyNicknamesForReservation } from "../../../../services/openWaterService";
+  import type { Buoy } from "../../../../services/openWaterService";
 
   export let buoyGroup: AdminBuoyGroup;
-  export let availableBuoys: { buoy_name: string; max_depth: number }[] = [];
+  export let availableBuoys: Buoy[] = [];
   // When true, suppress any controls that would mutate state
   export let readOnly: boolean = false;
   export let currentUserId: string | undefined = undefined;

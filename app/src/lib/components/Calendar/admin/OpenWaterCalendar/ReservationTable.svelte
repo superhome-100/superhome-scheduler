@@ -3,6 +3,7 @@
   import ResizableTableHeader from "./ResizableTableHeader.svelte";
   import ReservationTableRow from "./ReservationTableRow.svelte";
   import type { AdminBuoyGroup } from "../../../../types/openWaterAdmin";
+  import type { Buoy } from "../../../../services/openWaterService";
 
   export let timePeriod: "AM" | "PM";
   export let boatCapacity: {
@@ -11,7 +12,7 @@
     isAssigned: boolean;
   }[];
   export let buoyGroups: AdminBuoyGroup[];
-  export let availableBuoys: { buoy_name: string; max_depth: number }[];
+  export let availableBuoys: Buoy[];
   export let availableBoats: string[];
   export let loading: boolean;
   export let onUpdateBuoy: (groupId: number, buoyName: string) => void;

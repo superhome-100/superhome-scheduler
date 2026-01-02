@@ -18,17 +18,32 @@ interface Reservation {
   depth_m: number;
   open_water_type: string;
   res_status: string;
+  pulley: boolean;
+  bottom_plate: boolean;
+  large_buoy: boolean;
+  deep_fim_training: boolean;
 }
 
 interface Buoy {
   buoy_name: string;
   max_depth: number;
+  pulley: boolean;
+  bottom_plate: boolean;
+  large_buoy: boolean;
+  deep_fim_training: boolean;
 }
 
 interface GroupResult {
   buoy_name: string;
   open_water_type: string;
   uids: string[];
+}
+
+interface GroupOpts {
+  pulley: boolean;
+  bottom_plate: boolean;
+  large_buoy: boolean;
+  deep_fim_training: boolean;
 }
 
 function json(body: unknown, init: ResponseInit = {}) {
@@ -156,7 +171,7 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
   const dayEnd = new Date(dayStart);
   dayEnd.setUTCDate(dayStart.getUTCDate() + 1);
 
-  // 1. Fetch Reservations (now including buoy column)
+  // 1. Fetch Reservations (now including equipment columns)
   const { data: reservations, error: resErr } = await supabase
     .from('res_openwater')
     .select(`
@@ -164,6 +179,10 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
       depth_m,
       open_water_type,
       buoy,
+      pulley,
+      bottom_plate,
+      large_buoy,
+      deep_fim_training,
       reservations!inner (
         res_status,
         res_type
@@ -189,14 +208,18 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
       depth_m: r.depth_m,
       open_water_type: r.open_water_type,
       buoy: r.buoy,
+      pulley: r.pulley,
+      bottom_plate: r.bottom_plate,
+      large_buoy: r.large_buoy,
+      deep_fim_training: r.deep_fim_training || false,
       res_status: r.reservations.res_status
     }))
-    .filter(r => r.depth_m !== null && r.open_water_type !== null);
+    .filter((r: ReservationWithBuoy) => r.depth_m !== null && r.open_water_type !== null);
 
   // 2. Fetch Buoys
   const { data: buoys, error: buoyErr } = await supabase
     .from('buoy')
-    .select('buoy_name, max_depth')
+    .select('buoy_name, max_depth, pulley, bottom_plate, large_buoy, deep_fim_training')
     .order('max_depth', { ascending: true });
 
   if (buoyErr) throw new Error(`Error fetching buoys: ${buoyErr.message}`);
@@ -205,20 +228,62 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
   // Track assigned buoys to avoid double-assignment
   const assignedBuoyNames = new Set<string>();
 
-  // Helper to find best available buoy
-  const findBuoy = (depth: number): string | null => {
-    // Filter suitable buoys
-    const suitable = availableBuoys.filter(b => b.max_depth >= depth);
-    
-    // Try to find an unused one first
-    const unused = suitable.find(b => !assignedBuoyNames.has(b.buoy_name));
-    if (unused) {
-      return unused.buoy_name;
+  // Helper to aggregate equipment options for a group
+  const getGroupOpts = (grp: ReservationWithBuoy[]): GroupOpts => {
+    const opts = { pulley: false, bottom_plate: false, large_buoy: false, deep_fim_training: false };
+    for (const rsv of grp) {
+      opts.pulley = opts.pulley || rsv.pulley;
+      opts.bottom_plate = opts.bottom_plate || rsv.bottom_plate;
+      opts.large_buoy = opts.large_buoy || rsv.large_buoy;
+      opts.deep_fim_training = opts.deep_fim_training || rsv.deep_fim_training;
     }
+    return opts;
+  };
+
+  // Helper to count equipment matches
+  const countMatches = (buoy: Buoy, opts: GroupOpts) => {
+    let m = 0;
+    if (buoy.pulley && opts.pulley) m++;
+    if (buoy.bottom_plate && opts.bottom_plate) m++;
+    if (buoy.large_buoy && opts.large_buoy) m++;
+    if (buoy.deep_fim_training && opts.deep_fim_training) m++;
+    return m;
+  };
+
+  // Helper to count extra options (buoy has it, group didn't ask)
+  const countExtraOpts = (buoy: Buoy, opts: GroupOpts) => {
+    let e = 0;
+    if (buoy.pulley && !opts.pulley) e++;
+    if (buoy.bottom_plate && !opts.bottom_plate) e++;
+    if (buoy.large_buoy && !opts.large_buoy) e++;
+    if (buoy.deep_fim_training && !opts.deep_fim_training) e++;
+    return e;
+  };
+
+  // Helper to find best available buoy considering equipment
+  const findBuoy = (depth: number, opts: GroupOpts): string | null => {
+    // 1. Filter buoys deep enough
+    const suitable = availableBuoys.filter(b => b.max_depth >= depth && !assignedBuoyNames.has(b.buoy_name));
     
-    // If all suitable buoys are used, we cannot assign a new group
-    // This prevents "assigning buoys multiple times"
-    return null;
+    if (suitable.length === 0) return null;
+
+    // 2. Sort by matching logic:
+    //    a) Most equipment matches
+    //    b) Fewest extra (unrequested) options
+    //    c) Closest max_depth (minimize "wasted" depth)
+    suitable.sort((a, b) => {
+      const matchA = countMatches(a, opts);
+      const matchB = countMatches(b, opts);
+      if (matchA !== matchB) return matchB - matchA;
+
+      const extraA = countExtraOpts(a, opts);
+      const extraB = countExtraOpts(b, opts);
+      if (extraA !== extraB) return extraA - extraB;
+
+      return a.max_depth - b.max_depth;
+    });
+
+    return suitable[0].buoy_name;
   };
 
   // 3. Grouping Logic
@@ -229,8 +294,9 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
   // STEP 1: Process Course Coaching (1 per group, respect preferred buoy)
   const courseCoaching = validReservations.filter(r => r.open_water_type === 'course_coaching');
   for (const res of courseCoaching) {
-    // If preferred buoy is set, use it (even if used). Otherwise find unused.
-    const buoyName = res.buoy || findBuoy(res.depth_m); 
+    const opts = getGroupOpts([res]);
+    // If preferred buoy is set, use it. Otherwise find best match.
+    const buoyName = res.buoy || findBuoy(res.depth_m, opts); 
     
     if (buoyName) {
       groups.push({
@@ -256,10 +322,6 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
   const flexible = others.filter(r => r.buoy === null);
 
   // STEP 3: For anchored reservations, create or reuse a group per (buoy_name, type)
-  // without adding additional flexible members. This ensures that once a buoy is
-  // explicitly set (via res_openwater.buoy or locking), auto-assign respects that
-  // choice and does not reshuffle those members.
-
   const anchoredGroupsMap = new Map<string, ReservationWithBuoy[]>();
 
   const makeAnchorKey = (buoyName: string, type: string) => `${buoyName}__${type}`;
@@ -272,7 +334,7 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
     anchoredGroupsMap.set(key, list);
 
     assigned.add(res.uid);
-    assignedBuoyNames.add(buoyName); // Mark this buoy as already used for group creation
+    assignedBuoyNames.add(buoyName); // Mark this buoy as already used
   }
 
   for (const [key, members] of anchoredGroupsMap.entries()) {
@@ -286,7 +348,7 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
     });
   }
 
-  // STEP 4: Auto-group remaining flexible reservations (existing algorithm)
+  // STEP 4: Auto-group remaining flexible reservations
   const remaining = flexible.filter(r => !assigned.has(r.uid));
   
   // Sort by type then depth
@@ -302,8 +364,9 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
     if (currentGroup.length === 0) return;
     
     const maxDepth = Math.max(...currentGroup.map(r => r.depth_m));
+    const opts = getGroupOpts(currentGroup);
     const type = currentGroup[0].open_water_type;
-    const buoyName = findBuoy(maxDepth);
+    const buoyName = findBuoy(maxDepth, opts);
     
     if (buoyName) {
       groups.push({
@@ -326,6 +389,10 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
       const groupMaxDepth = Math.max(...currentGroup.map(r => r.depth_m));
       const depthDiff = Math.abs(res.depth_m - groupMaxDepth);
       
+      // Grouping rules:
+      // 1. Same activity type
+      // 2. Max size 3
+      // 3. Depth difference <= 15m (exception: 1st pair)
       if (
         res.open_water_type === groupType &&
         currentGroup.length < 3 &&

@@ -155,16 +155,28 @@ export type Database = {
       }
       buoy: {
         Row: {
+          bottom_plate: boolean
           buoy_name: string
+          deep_fim_training: boolean
+          large_buoy: boolean
           max_depth: number
+          pulley: boolean
         }
         Insert: {
+          bottom_plate?: boolean
           buoy_name: string
+          deep_fim_training?: boolean
+          large_buoy?: boolean
           max_depth: number
+          pulley?: boolean
         }
         Update: {
+          bottom_plate?: boolean
           buoy_name?: string
+          deep_fim_training?: boolean
+          large_buoy?: boolean
           max_depth?: number
+          pulley?: boolean
         }
         Relationships: []
       }

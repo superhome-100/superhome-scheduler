@@ -1,9 +1,10 @@
 <script lang="ts">
   import DiversGroupDisplay from "./DiversGroupDisplay.svelte";
   import type { AdminBuoyGroup } from "../../../../types/openWaterAdmin";
+  import type { Buoy } from "../../../../services/openWaterService";
 
   export let buoyGroup: AdminBuoyGroup;
-  export let availableBuoys: { buoy_name: string; max_depth: number }[];
+  export let availableBuoys: Buoy[];
   export let availableBoats: string[];
   export let onUpdateBuoy: (groupId: number, buoyName: string) => void;
   export let onUpdateBoat: (groupId: number, boatName: string) => void;
