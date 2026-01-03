@@ -1069,10 +1069,7 @@
   }));
 </script>
 
-<div
-  class="min-h-screen bg-base-200"
-  use:pullToRefresh={{ onRefresh: refreshCurrentView }}
->
+<div class="min-h-screen bg-base-200">
   <!-- Header -->
   <SingleDayHeader
     {selectedDate}
@@ -1091,6 +1088,7 @@
   <div
     class="px-2 min-h-[60vh] max-w-screen-xl mx-auto"
     class:max-w-none={selectedCalendarType === "openwater"}
+    use:pullToRefresh={{ onRefresh: refreshCurrentView }}
   >
     {#if selectedCalendarType === "pool"}
       <!-- POOL CALENDAR: Only approved and plotted reservations -->

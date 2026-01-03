@@ -9,7 +9,9 @@ export function pullToRefresh(node: HTMLElement, options: PtrOptions) {
   const threshold = options.thresholdPx ?? 60;
 
   function onTouchStart(e: TouchEvent) {
-    if (node.scrollTop !== 0) return;
+    // Check if we are at the top of the scroll container AND the window
+    // (In case the element itself is not the scroll container)
+    if (node.scrollTop !== 0 || window.scrollY !== 0) return;
     startY = e.touches[0].clientY;
   }
 
