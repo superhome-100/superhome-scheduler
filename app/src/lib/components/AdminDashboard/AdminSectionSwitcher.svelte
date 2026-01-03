@@ -6,7 +6,8 @@
     | "price"
     | "block"
     | "user_res"
-    | "settings";
+    | "settings"
+    | "buoy";
   export let selected: AdminSection = "pending";
 
   const dispatch = createEventDispatcher<{
@@ -19,11 +20,19 @@
     block: "Block Reservation",
     user_res: "User Reservations",
     settings: "Settings Config",
+    buoy: "Buoy Config",
   };
 
   // Derive the remaining options excluding current selected
   $: options = (
-    ["pending", "price", "block", "user_res", "settings"] as AdminSection[]
+    [
+      "pending",
+      "price",
+      "block",
+      "user_res",
+      "settings",
+      "buoy",
+    ] as AdminSection[]
   ).filter((s) => s !== selected);
 
   let open = false;

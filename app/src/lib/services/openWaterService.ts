@@ -5,7 +5,11 @@ export type TimePeriod = "AM" | "PM";
 
 export interface Buoy {
   buoy_name: string;
-  max_depth: number | null;
+  max_depth: number;
+  pulley: boolean;
+  bottom_plate: boolean;
+  large_buoy: boolean;
+  deep_fim_training: boolean;
 }
 
 export interface BuoyGroupMember {
@@ -105,7 +109,7 @@ export async function loadAvailableBuoys(): Promise<Buoy[]> {
   // Direct SQL: admin-only by RLS; caller must have privileges
   const { data, error } = await supabase
     .from("buoy")
-    .select("buoy_name, max_depth")
+    .select("buoy_name, max_depth, pulley, bottom_plate, large_buoy, deep_fim_training")
     .order("max_depth", { ascending: true });
   if (error) throw new Error(error.message);
   return (data ?? []) as unknown as Buoy[];
