@@ -16,6 +16,7 @@
     computeGridMetrics,
     rectForRange,
   } from "$lib/calendar/timeGrid";
+  import autoFit from "$lib/utils/autoFit";
 
   export let timeSlots: string[];
   export let reservations: any[];
@@ -235,19 +236,15 @@
                   tabindex="0"
                   aria-label="View reservation details"
                 >
-                  <div class="flex items-center gap-2 justify-between">
-                    <div class="flex items-center gap-2 min-w-0">
-                      <span
-                        class="badge h-2 w-2 p-0 bg-green-400 border-transparent"
-                      ></span>
-                      <div class="font-medium truncate">
-                        {getDisplayLabel(reservation)}
-                      </div>
-                    </div>
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span
+                      class="badge h-2 w-2 p-0 bg-green-400 border-transparent"
+                    ></span>
                     <div
-                      class="shrink-0 text-[10px] sm:text-xs text-base-content/70"
+                      class="font-medium whitespace-nowrap overflow-hidden"
+                      use:autoFit={{ min: 8, max: 14, step: 0.5 }}
                     >
-                      {getStartHHmm(reservation)}–{getEndHHmm(reservation)}
+                      {getDisplayLabel(reservation)}
                     </div>
                   </div>
                 </div>

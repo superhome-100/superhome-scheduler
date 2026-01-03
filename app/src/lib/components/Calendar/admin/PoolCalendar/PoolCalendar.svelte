@@ -7,6 +7,7 @@
     buildSlotMins,
     toMin,
   } from "$lib/calendar/timeGrid";
+  import autoFit from "$lib/utils/autoFit";
   import {
     getStartHHmm,
     getEndHHmm,
@@ -240,8 +241,11 @@
                 tabindex="0"
                 aria-label="View pool reservation details"
               >
-                <div class="flex items-center justify-center">
-                  <div class="font-medium truncate text-center">
+                <div class="flex items-center justify-center min-w-0">
+                  <div
+                    class="font-medium whitespace-nowrap overflow-hidden text-center"
+                    use:autoFit={{ min: 8, max: 14, step: 0.5 }}
+                  >
                     {getDisplayLabel(reservation)}
                   </div>
                 </div>
