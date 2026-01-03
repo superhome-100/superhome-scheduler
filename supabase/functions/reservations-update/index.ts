@@ -260,6 +260,7 @@ type UpdatePayload = {
   openwater?: Record<string, unknown>
   buddies_to_cancel?: string[]
   buddies_to_unlink?: string[]
+  buddies_to_add?: string[]
   admin_note?: string
 }
 
@@ -1525,6 +1526,157 @@ Deno.serve(async (req: Request) => {
       }
     } catch (e) {
       console.warn('[reservations-update] Buddy cascade block error:', e)
+    }
+
+    // NEW: Handle buddies_to_add
+    const buddiesToAdd = Array.isArray(body.buddies_to_add)
+      ? body.buddies_to_add.filter((id) => typeof id === 'string' && id.trim().length > 0)
+      : []
+
+    if (buddiesToAdd.length > 0 && (res_type === 'pool' || res_type === 'open_water')) {
+      try {
+        console.log('[reservations-update] Processing buddies_to_add:', buddiesToAdd)
+        const table = res_type === 'pool' ? 'res_pool' : 'res_openwater'
+        
+        // 1. Find existing buddy group
+        const { data: detail } = await (admin || supabase)
+          .from(table)
+          .select('buddy_group_id, start_time, time_period')
+          .eq('reservation_id', reservationId)
+          .single()
+        
+        let buddyGroupId = detail?.buddy_group_id || null
+        
+        // 2. If no buddy group exists, create one
+        if (!buddyGroupId) {
+          const timePeriod = res_type === 'open_water' 
+            ? (detail?.time_period || (body.openwater?.time_period as string) || 'AM')
+            : (detail?.start_time || (body.pool?.start_time as string) || '')
+            
+          const { data: createdId, error: createGroupErr } = await (admin || supabase)
+            .rpc('create_buddy_group_with_members', {
+              p_initiator_uid: body.uid,
+              p_res_date: detailResDateKey.split('T')[0],
+              p_time_period: timePeriod,
+              p_res_type: res_type,
+              p_buddy_uids: [] // Members added explicitly below
+            })
+            
+          if (createGroupErr) {
+            console.error('[reservations-update] Failed to create buddy group via RPC:', createGroupErr)
+          } else {
+            buddyGroupId = createdId as unknown as string
+            // Link initiator's detail row
+            await (admin || supabase)
+              .from(table)
+              .update({ buddy_group_id: buddyGroupId })
+              .eq('reservation_id', reservationId)
+          }
+        }
+        
+        if (buddyGroupId) {
+          // 3. For each buddy to add, create reservation and add to group
+          for (const buddyUid of buddiesToAdd) {
+            if (buddyUid === body.uid) continue
+
+            // b. Check if buddy already has a reservation for this date/slot
+            let existingResId: number | null = null
+            if (res_type === 'pool') {
+              const { data: ex } = await (admin || supabase)
+                .from('reservations')
+                .select('reservation_id, res_pool(start_time)')
+                .eq('uid', buddyUid)
+                .eq('res_type', 'pool')
+                .gte('res_date', detailResDateKey.split('T')[0] + ' 00:00:00+00')
+                .lte('res_date', detailResDateKey.split('T')[0] + ' 23:59:59+00')
+                .in('res_status', ['pending', 'confirmed'])
+                .maybeSingle()
+              
+              const initiatorStartTime = detail?.start_time || (body.pool?.start_time as string)
+              if (ex && initiatorStartTime && (ex as any).res_pool?.start_time?.slice(0,5) === initiatorStartTime.slice(0,5)) {
+                existingResId = ex.reservation_id
+              }
+            } else if (res_type === 'open_water') {
+              const { data: ex } = await (admin || supabase)
+                .from('reservations')
+                .select('reservation_id, res_openwater(time_period)')
+                .eq('uid', buddyUid)
+                .eq('res_type', 'open_water')
+                .gte('res_date', detailResDateKey.split('T')[0] + ' 00:00:00+00')
+                .lte('res_date', detailResDateKey.split('T')[0] + ' 23:59:59+00')
+                .in('res_status', ['pending', 'confirmed'])
+                .maybeSingle()
+              
+              const initiatorTP = detail?.time_period || (body.openwater?.time_period as string)
+              if (ex && initiatorTP && (ex as any).res_openwater?.time_period === initiatorTP) {
+                existingResId = ex.reservation_id
+              }
+            }
+
+            if (existingResId) {
+              // Just link existing reservation
+              await (admin || supabase)
+                .from(table)
+                .update({ buddy_group_id: buddyGroupId })
+                .eq('reservation_id', existingResId)
+              
+              await (admin || supabase)
+                .from('buddy_group_members')
+                .upsert({ buddy_group_id: buddyGroupId, uid: buddyUid, status: 'accepted' })
+            } else {
+              // Create new reservation
+              const buddyStatus = res_type === 'pool' ? 'confirmed' : 'pending'
+              const { data: parent, error: pErr } = await (admin || supabase)
+                .from('reservations')
+                .insert({
+                  uid: buddyUid,
+                  res_date: detailResDateKey,
+                  res_type: res_type,
+                  res_status: buddyStatus
+                })
+                .select('reservation_id')
+                .maybeSingle()
+              
+              if (pErr) {
+                console.error(`[reservations-update] New buddy parent insertion error:`, pErr)
+                continue
+              }
+
+              if (parent) {
+                // Mirror current initiator config
+                const { data: config } = await (admin || supabase)
+                  .from(table)
+                  .select('*')
+                  .eq('reservation_id', reservationId)
+                  .single()
+                
+                if (config) {
+                  const mirrored = { ...config }
+                  delete mirrored.reservation_id
+                  mirrored.uid = buddyUid
+                  mirrored.buddy_group_id = buddyGroupId
+                  mirrored.reservation_id = parent.reservation_id
+                  
+                  console.log(`[reservations-update] Inserting mirrored detail for buddy ${buddyUid} with reservation_id ${parent.reservation_id}`)
+                  const { error: mErr } = await (admin || supabase)
+                    .from(table)
+                    .insert(mirrored)
+                  
+                  if (mErr) {
+                    console.error(`[reservations-update] Mirrored detail insertion error for buddy ${buddyUid}:`, mErr)
+                  } else {
+                    await (admin || supabase)
+                      .from('buddy_group_members')
+                      .upsert({ buddy_group_id: buddyGroupId, uid: buddyUid, status: 'accepted' })
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[reservations-update] buddies_to_add block failed:', err)
+      }
     }
 
     // Admin Note update

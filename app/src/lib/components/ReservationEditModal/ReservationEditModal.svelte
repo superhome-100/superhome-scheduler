@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
+  import BuddySelection from "../ReservationFormModal/BuddySelection.svelte";
   import { authStore } from "../../stores/auth";
   import { reservationStore } from "../../stores/reservationStore";
   import FormModalHeader from "../ReservationFormModal/FormModalHeader.svelte";
@@ -40,6 +41,7 @@
   let submitError: string | null = null;
   let submitAttempted = false;
   let modalEl: HTMLDivElement | null = null;
+  let initialBuddyIds: string[] = [];
 
   // Clear prior submit error as soon as the user changes any meaningful inputs.
   let lastEnableKey = "";
@@ -312,6 +314,25 @@
       const submission = getSubmissionData(formData);
 
       const update: UpdateReservationData = {};
+
+      // Buddies management
+      const currentBuddies = Array.isArray(formData.buddies)
+        ? formData.buddies
+        : [];
+      const newBuddies = currentBuddies.filter(
+        (id) => !initialBuddyIds.includes(id),
+      );
+      const removedBuddies = initialBuddyIds.filter(
+        (id) => !currentBuddies.includes(id),
+      );
+
+      if (newBuddies.length > 0) {
+        update.buddies_to_add = newBuddies;
+      }
+      if (removedBuddies.length > 0) {
+        update.buddies_to_unlink = removedBuddies;
+      }
+
       update.reservation_id = reservation.reservation_id as any;
       let anyChange = false;
       // Update parent date/time if changed
@@ -621,6 +642,17 @@
 
         {#if formData.type === "openwater"}
           <EquipmentOptions bind:formData />
+        {/if}
+
+        {#if formData.type === "openwater" || (formData.type === "pool" && formData.poolType === "autonomous")}
+          <BuddySelection
+            bind:formData
+            editing={true}
+            initialReservation={reservation}
+            {errors}
+            {submitAttempted}
+            bind:initialBuddyIds
+          />
         {/if}
 
         <FormNotes bind:formData />

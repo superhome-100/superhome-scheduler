@@ -365,6 +365,23 @@ export function sanitizeReservationData(data: any): any {
     sanitized.buddies = isCourseCoaching ? undefined : unique;
   }
 
+  // Normalize buddies_to_add similarly
+  if (Array.isArray(sanitized.buddies_to_add)) {
+    const raw = sanitized.buddies_to_add as any[];
+    const asStrings = raw
+      .map((v) => (typeof v === 'string' ? v : (v && typeof v.uid === 'string' ? v.uid : null)))
+      .filter((v): v is string => !!v && v.trim().length > 0);
+    const unique = Array.from(new Set(asStrings));
+    sanitized.buddies_to_add = unique;
+  }
+
+  // Normalize buddies_to_unlink: just unique UIDs
+  if (Array.isArray(sanitized.buddies_to_unlink)) {
+    const raw = sanitized.buddies_to_unlink as any[];
+    const asStrings = raw.filter((v): v is string => typeof v === 'string' && v.trim().length > 0);
+    sanitized.buddies_to_unlink = Array.from(new Set(asStrings));
+  }
+
   return sanitized;
 }
 

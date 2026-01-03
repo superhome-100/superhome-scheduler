@@ -234,7 +234,8 @@ export const getDefaultFormData = () => ({
   pulley: false,
   deepFimTraining: false,
   bottomPlate: false,
-  largeBuoy: false
+  largeBuoy: false,
+  buddies: []
 });
 
 export const getSubmissionData = (formData: any) => {
