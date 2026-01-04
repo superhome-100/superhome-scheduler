@@ -29,6 +29,7 @@
   } from "../../types/reservationViews";
 
   import { settingsService } from "../../services/settingsService";
+  import { callFunction } from "../../utils/functions";
 
   const dispatch = createEventDispatcher();
 
@@ -125,111 +126,206 @@
   let dayListOpen = false;
   let dayListTab: "pending" | "approved" | "denied" = "pending";
 
-  // Enriched buoy groups including nested open water reservations
-  // Admins rely on full reservation join; non-admins fall back to buoy group member arrays
-  $: buoyGroupsWithReservations = (buoyGroups || []).map((bg) => {
-    const joinedReservations = (openWaterReservations || []).filter(
-      (r) => r.group_id !== null && r.group_id === bg.id,
-    );
+  function getReservationDisplayName(res: FlattenedReservation): string {
+    const fromMap = (reservationNamesByUid.get(res.uid) ?? "")
+      .toString()
+      .trim();
+    if (fromMap) return fromMap;
+    const up = ((res as any).user_profiles ?? {}) as {
+      nickname?: string | null;
+      name?: string | null;
+    };
+    const nick = (up.nickname ?? "").toString().trim();
+    const name = (up.name ?? "").toString().trim();
+    return nick || name || "Unknown";
+  }
 
-    // For admins (and when we have joined reservations), use the full reservation rows as-is.
-    if (isAdmin) {
-      return {
-        ...bg,
-        reservations: joinedReservations,
-      } as BuoyGroupWithReservations;
-    }
-
-    // For non-admins: if joined reservations are available, enrich each with a display nickname
-    // resolved from group.member_names or the prebuilt openWaterDisplayNamesByUid map. This avoids
-    // relying on user_profiles join which may be blocked by RLS for other users.
-    if (joinedReservations.length > 0) {
-      const uids: string[] = Array.isArray(bg.member_uids)
-        ? bg.member_uids
-        : [];
-      const names: (string | null)[] = Array.isArray(bg.member_names)
-        ? bg.member_names
-        : [];
-      const byUidName = new Map<string, string>();
-      // Prefer map from user_profiles
-      for (const u of uids) {
-        const nFromMap = (openWaterDisplayNamesByUid.get(u) ?? "")
-          .toString()
-          .trim();
-        if (u && nFromMap) byUidName.set(u, nFromMap);
-      }
-      // Fill gaps from RPC member_names if needed (best-effort index pairing)
-      for (let i = 0; i < Math.min(uids.length, names.length); i++) {
-        const u = uids[i];
-        if (byUidName.has(u)) continue;
-        const n = (names[i] ?? "").toString().trim();
-        if (u && n) byUidName.set(u, n);
-      }
-      const enriched = joinedReservations.map((r) => {
-        const currentNick = (r as any)?.nickname
-          ? String((r as any).nickname).trim()
-          : "";
-        const currentName = (r as any)?.name
-          ? String((r as any).name).trim()
-          : "";
-        if (currentNick || currentName) return r;
-        const fromGroup = byUidName.get(r.uid);
-        const fromRes = (reservationNamesByUid.get(r.uid) ?? "")
-          .toString()
-          .trim();
-        const fromMap = (openWaterDisplayNamesByUid.get(r.uid) ?? "")
-          .toString()
-          .trim();
-        const display =
-          (fromGroup && fromGroup.trim()) ||
-          (fromRes && fromRes.trim()) ||
-          (fromMap && fromMap.trim()) ||
-          "";
-        if (!display) return r;
-        return { ...r, nickname: display } as OpenWaterReservationView;
-      });
-      return { ...bg, reservations: enriched } as BuoyGroupWithReservations;
-    }
-
-    // For non-admins, synthesize minimal reservation views from buoy group member data
-    const memberUids = Array.isArray(bg.member_uids) ? bg.member_uids : [];
-    const memberStatuses = Array.isArray(bg.member_statuses)
+  $: mappedBuoyGroups = (buoyGroups || []).map((bg) => {
+    const uids: string[] = Array.isArray(bg.member_uids) ? bg.member_uids : [];
+    const names: (string | null)[] = Array.isArray(bg.member_names)
+      ? bg.member_names
+      : [];
+    const statuses: (string | null)[] = Array.isArray(bg.member_statuses)
       ? bg.member_statuses
       : [];
-    const memberNames = Array.isArray(bg.member_names) ? bg.member_names : [];
 
-    const syntheticReservations: OpenWaterReservationView[] = memberUids.map(
-      (uid, index) => ({
-        reservation_id: -1,
-        uid,
-        res_date: bg.res_date,
-        res_type: "open_water",
-        res_status: (memberStatuses[index] as any) ?? ("pending" as any),
-        // Prefer map-based lookup (user_profiles), fallback to RPC member_names as last resort
-        nickname:
-          (openWaterDisplayNamesByUid.get(uid) ?? "").toString().trim() !== ""
-            ? (openWaterDisplayNamesByUid.get(uid) as string)
-            : String(memberNames[index] ?? ""),
-        name: "",
-        group_id: bg.id,
-        time_period: bg.time_period,
-        depth_m: null,
-        buoy: bg.buoy_name,
-        pulley: null,
-        deep_fim_training: null,
-        bottom_plate: null,
-        large_buoy: null,
-        open_water_type: bg.open_water_type ?? null,
-        student_count: null,
-        note: null,
-      }),
+    // Synthesize or find full reservation for each member returned by the groups RPC
+    const groupReservations: OpenWaterReservationView[] = uids.map(
+      (uid, index) => {
+        // 1. Try to find a matching reservation from the prop.
+        // Match by UID and either matching group_id OR a null group_id (stale prop fallback).
+        const joined = (openWaterReservations || []).find(
+          (r) => r.uid === uid && (r.group_id === bg.id || r.group_id === null),
+        );
+
+        if (joined) {
+          // If we have a full reservation but it's missing a nickname, attempt to backfill it.
+          const currentNick = (joined as any)?.nickname
+            ? String((joined as any).nickname).trim()
+            : "";
+          const currentName = (joined as any)?.name
+            ? String((joined as any).name).trim()
+            : "";
+
+          if (!currentNick && !currentName) {
+            const display =
+              (openWaterDisplayNamesByUid.get(uid) ?? "").toString().trim() ||
+              (names[index] ?? "").toString().trim() ||
+              (reservationNamesByUid.get(uid) ?? "").toString().trim() ||
+              "";
+            if (display) {
+              return {
+                ...joined,
+                nickname: display,
+              } as OpenWaterReservationView;
+            }
+          }
+          return joined;
+        }
+
+        // 2. Fallback: Synthesize a minimal reservation view if standard join fails.
+        // This ensures the member is shown immediately once the group RPC returns data.
+        const displayName =
+          (openWaterDisplayNamesByUid.get(uid) ?? "").toString().trim() ||
+          (names[index] ?? "").toString().trim() ||
+          "Unknown";
+
+        return {
+          reservation_id: -1,
+          uid,
+          res_date: bg.res_date,
+          res_type: "open_water",
+          res_status: (statuses[index] as any) ?? ("pending" as any),
+          nickname: displayName,
+          name: "",
+          group_id: bg.id,
+          time_period: bg.time_period,
+          depth_m: null,
+          buoy: bg.buoy_name,
+          pulley: null,
+          deep_fim_training: null,
+          bottom_plate: null,
+          large_buoy: null,
+          open_water_type: bg.open_water_type ?? null,
+          student_count: null,
+          note: null,
+        } as OpenWaterReservationView;
+      },
     );
 
     return {
       ...bg,
-      reservations: syntheticReservations,
+      reservations: groupReservations,
     } as BuoyGroupWithReservations;
   }) as BuoyGroupWithReservations[];
+
+  $: buoyGroupsWithReservations = (() => {
+    const base = [...mappedBuoyGroups];
+    if (!isAdmin) return base;
+
+    // For Admins: Find divers who aren't in ANY of the loaded groups and show them as "Unassigned"
+    const assignedUids = new Set<string>();
+    for (const bg of base) {
+      for (const r of bg.reservations) {
+        assignedUids.add(r.uid);
+      }
+    }
+
+    const unassigned = (openWaterReservations || []).filter(
+      (r) => !assignedUids.has(r.uid),
+    );
+
+    if (unassigned.length > 0) {
+      const amUn = unassigned.filter((r) => r.time_period === "AM");
+      const pmUn = unassigned.filter((r) => r.time_period === "PM");
+
+      if (amUn.length > 0) {
+        base.push({
+          id: -1, // Virtual ID
+          res_date: selectedDate,
+          time_period: "AM" as TimePeriod,
+          buoy_name: null,
+          boat: null,
+          reservations: amUn,
+          member_uids: amUn.map((r) => r.uid),
+          member_names: amUn.map((r) => getReservationDisplayName(r)),
+        } as BuoyGroupWithReservations);
+      }
+      if (pmUn.length > 0) {
+        base.push({
+          id: -2, // Virtual ID
+          res_date: selectedDate,
+          time_period: "PM" as TimePeriod,
+          buoy_name: null,
+          boat: null,
+          reservations: pmUn,
+          member_uids: pmUn.map((r) => r.uid),
+          member_names: pmUn.map((r) => getReservationDisplayName(r)),
+        } as BuoyGroupWithReservations);
+      }
+    }
+    return base;
+  })();
+
+  // 🤖 AUTOMATION: Trigger initial auto-assignment for Admins
+  // If we land on a day with reservations but NO groups, trigger auto-assign once.
+  let lastAutoAssignDate = "";
+  let autoAssigning = false;
+
+  $: if (
+    isAdmin &&
+    selectedCalendarType === ReservationType.openwater &&
+    selectedDate &&
+    !assignmentsLoading &&
+    !autoAssigning &&
+    lastAutoAssignDate !== selectedDate &&
+    openWaterReservations.length > 0
+  ) {
+    // Check if assignments are missing for either period that has reservations
+    const amRes = openWaterReservations.filter((r) => r.time_period === "AM");
+    const pmRes = openWaterReservations.filter((r) => r.time_period === "PM");
+    const amGroups = buoyGroups.filter((g) => g.time_period === "AM");
+    const pmGroups = buoyGroups.filter((g) => g.time_period === "PM");
+
+    const amNeeds = amRes.length > 0 && amGroups.length === 0;
+    const pmNeeds = pmRes.length > 0 && pmGroups.length === 0;
+
+    if (amNeeds || pmNeeds) {
+      lastAutoAssignDate = selectedDate;
+      triggerInitialAutoAssign(amNeeds, pmNeeds);
+    }
+  }
+
+  async function triggerInitialAutoAssign(am: boolean, pm: boolean) {
+    autoAssigning = true;
+    try {
+      const tasks = [];
+      if (am) {
+        tasks.push(
+          callFunction("auto-assign-buoy", {
+            res_date: selectedDate,
+            time_period: "AM",
+          }),
+        );
+      }
+      if (pm) {
+        tasks.push(
+          callFunction("auto-assign-buoy", {
+            res_date: selectedDate,
+            time_period: "PM",
+          }),
+        );
+      }
+      if (tasks.length > 0) {
+        await Promise.all(tasks);
+        await refreshAssignments();
+      }
+    } catch (e) {
+      console.error("[SingleDayView] Initial auto-assign failed:", e);
+    } finally {
+      autoAssigning = false;
+    }
+  }
 
   function handleStatusClickFromCalendar(
     e: CustomEvent<{
@@ -521,20 +617,6 @@
     } finally {
       bulkProcessing = false;
     }
-  }
-
-  function getReservationDisplayName(res: FlattenedReservation): string {
-    const fromMap = (reservationNamesByUid.get(res.uid) ?? "")
-      .toString()
-      .trim();
-    if (fromMap) return fromMap;
-    const up = ((res as any).user_profiles ?? {}) as {
-      nickname?: string | null;
-      name?: string | null;
-    };
-    const nick = (up.nickname ?? "").toString().trim();
-    const name = (up.name ?? "").toString().trim();
-    return nick || name || "Unknown";
   }
 
   function getReservationSubtitle(res: FlattenedReservation): string {
