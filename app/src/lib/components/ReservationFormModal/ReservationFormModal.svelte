@@ -351,17 +351,22 @@
           res_date: reservationDateTime.toISOString(),
         };
 
-        // Calculate removed buddies to unlink
-        if (initialBuddyIds.length > 0) {
-          const currentBuddies = Array.isArray(formData.buddies)
-            ? formData.buddies
-            : [];
-          const removed = initialBuddyIds.filter(
-            (id) => !currentBuddies.includes(id),
-          );
-          if (removed.length > 0) {
-            updateData.buddies_to_unlink = removed;
-          }
+        // Calculate buddy changes
+        const currentBuddies = Array.isArray(formData.buddies)
+          ? formData.buddies
+          : [];
+        const added = currentBuddies.filter(
+          (id) => !initialBuddyIds.includes(id),
+        );
+        const removed = initialBuddyIds.filter(
+          (id) => !currentBuddies.includes(id),
+        );
+
+        if (added.length > 0) {
+          updateData.buddies_to_add = added;
+        }
+        if (removed.length > 0) {
+          updateData.buddies_to_unlink = removed;
         }
 
         // Ensure reservation_id (PK) is passed through for updates
