@@ -99,7 +99,7 @@ app/
 
 ## Authentication Flow
 
-1. User clicks "Continue with Google" on login page
+1. User clicks "Login with Google" on login page
 2. App redirects to Google OAuth via Supabase
 3. After successful authentication, user is redirected to `/auth/callback`
 4. AuthCallback component processes the OAuth response
@@ -151,7 +151,7 @@ npm run reset
 1. Start Supabase: `supabase start`
 2. Start the app: `npm run dev`
 3. Navigate to `http://localhost:3000`
-4. Click "Continue with Google"
+4. Click "Login with Google"
 5. Complete Google OAuth flow
 6. You should be redirected to the Welcome dashboard
 
