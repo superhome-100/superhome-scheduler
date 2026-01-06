@@ -574,27 +574,43 @@
   };
 
   // Handle type change to reset time fields for Open Water
+  // Handle type change to reset time fields for Open Water
   const handleTypeChange = () => {
+    // Only apply defaults if values are missing, to avoid resetting user work
+    // when switching between types (e.g. Pool <-> Classroom).
+
     if (formData.type === "openwater") {
-      // Clear time fields for Open Water
+      // Open Water doesn't use standard start/end times
       formData.startTime = "";
       formData.endTime = "";
     } else if (formData.type === "pool") {
-      // Pool defaults with 30-min logic
-      formData.poolType = "autonomous";
-      const t = getDefaultTimesFor("pool");
-      formData.startTime = t.startTime;
-      formData.endTime = t.endTime;
+      // Preserve existing poolType if set
+      if (!formData.poolType) {
+        formData.poolType = "autonomous";
+      }
+
+      // Preserve existing times if set (e.g. when switching from Classroom)
+      if (!formData.startTime || !formData.endTime) {
+        const t = getDefaultTimesFor("pool");
+        formData.startTime = t.startTime;
+        formData.endTime = t.endTime;
+      }
     } else if (formData.type === "classroom") {
-      // Classroom defaults with 30-min logic
-      const t = getDefaultTimesFor("classroom");
-      formData.startTime = t.startTime;
-      formData.endTime = t.endTime;
+      // Preserve existing times if set (e.g. when switching from Pool)
+      if (!formData.startTime || !formData.endTime) {
+        const t = getDefaultTimesFor("classroom");
+        formData.startTime = t.startTime;
+        formData.endTime = t.endTime;
+      }
     }
-    // Recompute default date based on type and current time cutoff
-    const mappedType: "openwater" | "pool" | "classroom" =
-      (formData.type as any) || "pool";
-    formData.date = getDefaultDateForType(mappedType);
+
+    // Only reset date if it's currently empty.
+    // This allows the user to keep their selected date when switching categories.
+    if (!formData.date) {
+      const mappedType: "openwater" | "pool" | "classroom" =
+        (formData.type as any) || "pool";
+      formData.date = getDefaultDateForType(mappedType);
+    }
   };
 
   // Apply initialType when modal opens (Reservation page)

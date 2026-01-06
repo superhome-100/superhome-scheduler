@@ -871,6 +871,7 @@ export type Database = {
         Returns: {
           admin_note: string
           boat: string
+          boat_count: number
           buoy_name: string
           id: number
           member_names: string[]
