@@ -30,7 +30,10 @@ Deno.serve(async (req: Request) => {
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return json({ error: 'Server not configured' }, { status: 500 })
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
+      return json({ error: 'Server not configured' }, { status: 500 })
+    }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } }
@@ -51,9 +54,12 @@ Deno.serve(async (req: Request) => {
     if (!isAdmin) return json({ error: 'Forbidden' }, { status: 403 })
 
     const body = (await req.json()) as Payload
-    if (!body?.group_id || !body?.boat) return json({ error: 'Invalid payload' }, { status: 400 })
+    // Allow empty string to clear the boat assignment
+    if (!body?.group_id || body.boat === undefined) return json({ error: 'Invalid payload' }, { status: 400 })
 
-    const { error } = await supabase
+    // Use service role key for the update to bypass RLS
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    const { error } = await supabaseAdmin
       .from('buoy_group')
       .update({ boat: body.boat })
       .eq('id', body.group_id)
