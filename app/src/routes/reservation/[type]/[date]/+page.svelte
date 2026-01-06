@@ -18,6 +18,9 @@
     ClassroomReservationView,
     FlattenedReservation,
   } from '$lib/types/reservationViews';
+  import { reservationApi } from "$lib/api/reservationApi";
+  import { reservationCompleteToFlattened } from '$lib/types/reservationViews';
+
 
   let loading = true;
   let error: string | null = null;
@@ -125,124 +128,14 @@
       // Load only reservations for the selected date and type
       // IMPORTANT: Use UTC date-only bounds to avoid timezone skew hiding items
       const dateOnly = dayjs(date).format('YYYY-MM-DD');
-      const from = `${dateOnly} 00:00:00+00`;
-      const to = `${dateOnly} 23:59:59+00`;
-
-      // Always include all nested detail tables so SingleDayView can switch types without refetching
-      const selectColumns = `*,
-          user_profiles!reservations_uid_fkey (nickname, name),
-          res_pool!left(start_time, end_time, lane, pool_type, student_count, note),
-          res_openwater!left(
-            time_period, 
-            depth_m, 
-            buoy, 
-            pulley, 
-            deep_fim_training, 
-            bottom_plate, 
-            large_buoy, 
-            open_water_type, 
-            student_count, 
-            note,
-            group_id
-          ),
-          res_classroom!left(start_time, end_time, room, classroom_type, student_count, note)`;
-
-      let query = supabase
-        .from('reservations')
-        .select(selectColumns)
-        .gte('res_date', from)
-        .lte('res_date', to);
-
-      // Do NOT filter by res_type here; we need all reservations for the date so
-      // SingleDayView can toggle between Pool/Open Water/Classroom without missing data.
-      // RLS still applies server-side to enforce visibility rules.
-
-      const { data, error: fetchError } = await query.order('res_date', {
-        ascending: true,
+      const start_date = `${dateOnly} 00:00:00+00`;
+      const end_date = `${dateOnly} 23:59:59+00`;
+      const { success, data } = await reservationApi.getReservations({
+        start_date,
+        end_date,
       });
-
-      if (fetchError) throw fetchError;
-
-      reservations = (data || []).map((reservation): FlattenedReservation => {
-        const base = reservation as CompleteReservation;
-        const userProfile = (reservation as any).user_profiles as
-          | { nickname?: string | null; name?: string | null }
-          | undefined;
-
-        const nickname =
-          userProfile?.nickname && userProfile.nickname.trim() !== ""
-            ? userProfile.nickname.trim()
-            : "";
-        const fullName =
-          userProfile?.name && userProfile.name.trim() !== ""
-            ? userProfile.name.trim()
-            : "";
-
-        const common: BaseReservationView = {
-          reservation_id: (base as any).reservation_id,
-          uid: base.uid,
-          res_date: base.res_date,
-          res_type: base.res_type,
-          res_status: base.res_status,
-          title: (base as any).title ?? null,
-          description: (base as any).description ?? null,
-          user_profiles: {
-            nickname: nickname || null,
-            name: fullName || null,
-          },
-        };
-
-        if (base.res_type === 'pool' && base.res_pool) {
-          const view: PoolReservationView = {
-            ...common,
-            res_type: 'pool',
-            start_time: base.res_pool.start_time,
-            end_time: base.res_pool.end_time,
-            lane: base.res_pool.lane ?? null,
-            pool_type: base.res_pool.pool_type ?? null,
-            student_count: base.res_pool.student_count ?? null,
-            note: base.res_pool.note ?? null,
-          };
-          return view;
-        }
-
-        if (base.res_type === 'open_water' && base.res_openwater) {
-          const view: OpenWaterReservationView = {
-            ...common,
-            res_type: 'open_water',
-            group_id: base.res_openwater.group_id ?? null,
-            time_period: base.res_openwater.time_period,
-            depth_m: base.res_openwater.depth_m ?? null,
-            buoy: base.res_openwater.buoy ?? null,
-            pulley: base.res_openwater.pulley ?? null,
-            deep_fim_training: base.res_openwater.deep_fim_training ?? null,
-            bottom_plate: base.res_openwater.bottom_plate ?? null,
-            large_buoy: base.res_openwater.large_buoy ?? null,
-            open_water_type: base.res_openwater.open_water_type ?? null,
-            student_count: base.res_openwater.student_count ?? null,
-            note: base.res_openwater.note ?? null,
-          };
-          return view;
-        }
-
-        if (base.res_type === 'classroom' && base.res_classroom) {
-          const view: ClassroomReservationView = {
-            ...common,
-            res_type: 'classroom',
-            start_time: base.res_classroom.start_time,
-            end_time: base.res_classroom.end_time,
-            room: base.res_classroom.room ?? null,
-            classroom_type: base.res_classroom.classroom_type ?? null,
-            student_count: base.res_classroom.student_count ?? null,
-            note: base.res_classroom.note ?? null,
-          };
-          return view;
-        }
-
-        // Fallback: return base fields only if detail tables are missing
-        return common as BaseReservationView;
-      });
-
+      if (!success) return;
+      reservations = (data || []).map(reservationCompleteToFlattened);
     } catch (err) {
       console.error('Error loading reservations:', err);
       error = err instanceof Error ? err.message : 'Failed to load reservations';

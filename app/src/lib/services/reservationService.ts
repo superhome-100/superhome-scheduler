@@ -60,11 +60,17 @@ interface OpenWaterReservationDetails {
   note?: string | null;
 }
 
+interface MinimalUserProfile {
+  nickname?: string | null;
+  name?: string | null;
+};
+
 // Complete reservation with details
 interface CompleteReservation extends BaseReservation {
   res_pool?: PoolReservationDetails;
   res_classroom?: ClassroomReservationDetails;
   res_openwater?: OpenWaterReservationDetails;
+  user_profiles?: MinimalUserProfile;
 }
 
 // Create reservation data
@@ -102,8 +108,6 @@ interface UpdateReservationData {
   buddies_to_add?: string[];
   // Admin note
   admin_note?: string;  
-  // Admin note
-  admin_note?: string;
 }
 
 // Query options
@@ -343,10 +347,10 @@ class ReservationService {
         .from('reservations')
         .select(`
           *,
-          admin_notes,
           res_pool!left(start_time, end_time, lane, pool_type, student_count, note),
           res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, group_id, note),
-          res_classroom!left(start_time, end_time, room, classroom_type, student_count, note)
+          res_classroom!left(start_time, end_time, room, classroom_type, student_count, note),
+          user_profiles!reservations_uid_fkey (nickname, name)
         `);
 
       // Apply filters
@@ -415,10 +419,10 @@ class ReservationService {
         .from('reservations')
         .select(`
           *,
-          admin_notes,
           res_pool!left(start_time, end_time, lane, pool_type, student_count, note),
           res_openwater!left(time_period, depth_m, buoy, pulley, deep_fim_training, bottom_plate, large_buoy, open_water_type, student_count, group_id, note),
-          res_classroom!left(start_time, end_time, room, classroom_type, student_count, note)
+          res_classroom!left(start_time, end_time, room, classroom_type, student_count, note),
+          user_profiles!reservations_uid_fkey(nickname, name)
         `)
         .eq('uid', uid)
         .eq('res_date', res_date)
