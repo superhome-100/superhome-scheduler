@@ -12,7 +12,7 @@ export const settingsService = {
       .eq('settings_name', settingsName)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching settings:', error);

@@ -30,17 +30,9 @@
   })();
 
   const handleTypeChange = () => {
-    if (formData.type === "openwater") {
-      // Clear time fields for Open Water
-      formData.startTime = "";
-      formData.endTime = "";
-    }
-    // If after cutoff and switching to Pool/Classroom, ensure date respects min
-    if (formData.type !== "openwater") {
-      if (formData.date && formData.date < currentMinDate) {
-        formData.date = currentMinDate;
-      }
-    }
+    // We strictly avoid resetting fields here to allow users to switch back and forth
+    // without losing data. Date validation/min-date enforcement is handled by the
+    // input constraints and form validation logic.
     dispatch("typeChange");
   };
 
