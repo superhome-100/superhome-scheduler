@@ -36,6 +36,7 @@ interface Buoy {
 interface GroupResult {
   buoy_name: string;
   open_water_type: string;
+  boat?: string | null;
   uids: string[];
 }
 
@@ -171,6 +172,31 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
   const dayEnd = new Date(dayStart);
   dayEnd.setUTCDate(dayStart.getUTCDate() + 1);
 
+  // 0. Fetch existing boat assignments to preserve them
+  // We want to keep the boat if we re-create a group on the same buoy/type
+  const { data: existingGroupsRows } = await supabase
+    .from('buoy_group')
+    .select('buoy_name, open_water_type, boat')
+    .eq('res_date', res_date)
+    .eq('time_period', time_period);
+  
+  const existingBoats = new Map<string, string>();
+  if (existingGroupsRows) {
+    existingGroupsRows.forEach((g: any) => {
+      if (g.boat) {
+        // Key by buoy_name + type (or just buoy_name if type is null/shared)
+        // Since boat follows the group, and we group by buoy+type, this is specific enough.
+        // Fallback: If type varies, at least key by buoy if possible, but our groups are specific.
+        const key = `${g.buoy_name}__${g.open_water_type || ''}`;
+        existingBoats.set(key, g.boat);
+      }
+    });
+  }
+
+  const getPreservedBoat = (buoyName: string, type: string) => {
+    return existingBoats.get(`${buoyName}__${type || ''}`) || null;
+  };
+
   // 1. Fetch Reservations (now including equipment columns)
   const { data: reservations, error: resErr } = await supabase
     .from('res_openwater')
@@ -302,6 +328,7 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
       groups.push({
         buoy_name: buoyName,
         open_water_type: res.open_water_type,
+        boat: getPreservedBoat(buoyName, res.open_water_type),
         uids: [res.uid]
       });
       assigned.add(res.uid);
@@ -344,6 +371,7 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
     groups.push({
       buoy_name: buoyName,
       open_water_type: type,
+      boat: getPreservedBoat(buoyName, type),
       uids: members.map(m => m.uid)
     });
   }
@@ -372,6 +400,7 @@ async function processAssignment(supabase: any, res_date: string, time_period: s
       groups.push({
         buoy_name: buoyName,
         open_water_type: type,
+        boat: getPreservedBoat(buoyName, type),
         uids: currentGroup.map(r => r.uid)
       });
       assignedBuoyNames.add(buoyName); // Mark as used
