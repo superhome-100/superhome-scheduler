@@ -102,7 +102,7 @@
   // Admin-specific data for buoy/boat management
   let loadingReservations = false;
   let buoyGroups: BuoyGroupLite[] = [];
-  let loadingBuoyGroups = false;
+  let loadingBuoyGroups = true; // because it prevents doing initial assignemnt
   let availableBoats: string[] = ["Boat 1", "Boat 2", "Boat 3", "Boat 4"];
   let availableBuoys: Buoy[] = [];
   // Fast lookup: uid -> period -> { buoy_name, boat }
@@ -282,6 +282,7 @@
     isAdmin &&
     selectedCalendarType === ReservationType.openwater &&
     selectedDate &&
+    !loadingBuoyGroups &&
     !assignmentsLoading &&
     !autoAssigning &&
     lastAutoAssignDate !== selectedDate &&
