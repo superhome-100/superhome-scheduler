@@ -27,6 +27,7 @@
     FlattenedReservation,
     OpenWaterReservationView,
   } from "../../types/reservationViews";
+  import { reservationCompleteToFlattened } from "../../types/reservationViews";
 
   import { settingsService } from "../../services/settingsService";
   import { callFunction } from "../../utils/functions";
@@ -71,7 +72,11 @@
     const seq = ++assignmentsLoadSeq;
     assignmentsLoading = true;
     try {
-      await Promise.all([loadBuoyGroups(), loadAssignmentMap()]);
+      await Promise.all([
+        loadReservations(),
+        loadBuoyGroups(),
+        loadAssignmentMap(),
+      ]);
       // Only apply results if this is the latest request
       if (seq === assignmentsLoadSeq) {
         assignmentVersion++;
@@ -95,6 +100,7 @@
 
   // ... (keeping admin variables) ...
   // Admin-specific data for buoy/boat management
+  let loadingReservations = false;
   let buoyGroups: BuoyGroupLite[] = [];
   let loadingBuoyGroups = false;
   let availableBoats: string[] = ["Boat 1", "Boat 2", "Boat 3", "Boat 4"];
@@ -155,7 +161,7 @@
         // 1. Try to find a matching reservation from the prop.
         // Match by UID and either matching group_id OR a null group_id (stale prop fallback).
         const joined = (openWaterReservations || []).find(
-          (r) => r.uid === uid && (r.group_id === bg.id || r.group_id === null),
+          (r) => r.uid === uid && (r.group_id === bg.id || r.group_id === null)
         );
 
         if (joined) {
@@ -210,7 +216,7 @@
           student_count: null,
           note: null,
         } as OpenWaterReservationView;
-      },
+      }
     );
 
     return {
@@ -232,7 +238,7 @@
     }
 
     const unassigned = (openWaterReservations || []).filter(
-      (r) => !assignedUids.has(r.uid),
+      (r) => !assignedUids.has(r.uid)
     );
 
     if (unassigned.length > 0) {
@@ -305,7 +311,7 @@
           callFunction("auto-assign-buoy", {
             res_date: selectedDate,
             time_period: "AM",
-          }),
+          })
         );
       }
       if (pm) {
@@ -313,7 +319,7 @@
           callFunction("auto-assign-buoy", {
             res_date: selectedDate,
             time_period: "PM",
-          }),
+          })
         );
       }
       if (tasks.length > 0) {
@@ -331,7 +337,7 @@
     e: CustomEvent<{
       reservation: OpenWaterReservationView;
       displayName?: string | null;
-    }>,
+    }>
   ) {
     if (!isAdmin) return;
     const res = e.detail?.reservation;
@@ -351,7 +357,7 @@
   }
 
   async function confirmStatusUpdate(
-    newStatus: "pending" | "confirmed" | "rejected",
+    newStatus: "pending" | "confirmed" | "rejected"
   ) {
     if (!statusDialogReservation || statusDialogSubmitting) return;
     statusDialogSubmitting = true;
@@ -361,7 +367,7 @@
       const result = await reservationApi.updateReservationStatus(
         uid,
         res_date,
-        newStatus,
+        newStatus
       );
       if (!result.success) {
         statusDialogError =
@@ -374,7 +380,7 @@
       reservations = reservations.map((r) =>
         r.reservation_id === reservation_id
           ? { ...r, res_status: newStatus }
-          : r,
+          : r
       );
 
       closeStatusDialog();
@@ -390,7 +396,7 @@
 
   async function quickUpdateStatus(
     res: FlattenedReservation,
-    newStatus: "pending" | "confirmed" | "rejected",
+    newStatus: "pending" | "confirmed" | "rejected"
   ) {
     if (!isAdmin) return;
     statusDialogReservation = res;
@@ -429,7 +435,7 @@
       initializedCalendarType = true;
       console.log(
         "SingleDayView: Set selectedCalendarType to initialType:",
-        selectedCalendarType,
+        selectedCalendarType
       );
     } else {
       // Fallback to URL parameter if no initialType provided
@@ -441,7 +447,7 @@
         initializedCalendarType = true;
         console.log(
           "SingleDayView: Set selectedCalendarType from URL:",
-          selectedCalendarType,
+          selectedCalendarType
         );
       }
     }
@@ -478,7 +484,7 @@
       await svcUpdateBuoy(groupId, buoyName);
       // Update local state
       buoyGroups = buoyGroups.map((bg) =>
-        bg.id === groupId ? { ...bg, buoy_name: buoyName } : bg,
+        bg.id === groupId ? { ...bg, buoy_name: buoyName } : bg
       );
     } catch (error) {
       console.error("Error updating buoy assignment:", error);
@@ -492,7 +498,7 @@
       await svcUpdateNote(groupId, note);
       // Update local state
       buoyGroups = buoyGroups.map((bg) =>
-        bg.id === groupId ? { ...bg, admin_note: note } : bg,
+        bg.id === groupId ? { ...bg, admin_note: note } : bg
       );
     } catch (error) {
       console.error("Error updating buoy group note:", error);
@@ -532,7 +538,7 @@
     (r) =>
       r.res_type === "open_water" &&
       r.res_status !== "rejected" &&
-      r.res_status !== "cancelled",
+      r.res_status !== "cancelled"
   ) as OpenWaterReservationView[];
 
   // Build a fast uid -> display name map from the loaded reservations themselves
@@ -568,13 +574,13 @@
   }) as FlattenedReservation[];
 
   $: dayPendingReservations = dayTypeReservations.filter(
-    (r) => r.res_status === "pending",
+    (r) => r.res_status === "pending"
   );
   $: dayApprovedReservations = dayTypeReservations.filter(
-    (r) => r.res_status === "confirmed",
+    (r) => r.res_status === "confirmed"
   );
   $: dayDeniedReservations = dayTypeReservations.filter(
-    (r) => r.res_status === "rejected",
+    (r) => r.res_status === "rejected"
   );
 
   function openDayList() {
@@ -602,7 +608,7 @@
 
       const result = await reservationApi.bulkUpdateStatus(
         reservationsToApprove,
-        "confirmed",
+        "confirmed"
       );
 
       if (!result.success) {
@@ -678,12 +684,12 @@
           (window as any).__POOL_DEBUG_ALL === true;
 
         const dayPool = (dayReservations || []).filter(
-          (r: any) => String(r?.res_type) === "pool",
+          (r: any) => String(r?.res_type) === "pool"
         );
         const coaching = dayPool.filter((r: any) => {
           const child = poolChild(r);
           const pt = String(
-            child?.pool_type ?? r?.pool_type ?? "",
+            child?.pool_type ?? r?.pool_type ?? ""
           ).toLowerCase();
           return pt.includes("coach") || pt.includes("course");
         });
@@ -729,11 +735,11 @@
           console.log("[PoolDayView dbg] ALL dayReservations", dayReservations);
           console.log(
             "[PoolDayView dbg] ALL filteredReservations",
-            filteredReservations,
+            filteredReservations
           );
           console.log(
             "[PoolDayView dbg] ALL approvedPlottedPoolReservations",
-            approvedPlottedPoolReservations,
+            approvedPlottedPoolReservations
           );
         }
       } catch (e) {
@@ -765,22 +771,22 @@
   }
 
   $: pendingAM = dayPendingReservations.filter(
-    (r) => getReservationPeriod(r) === "AM",
+    (r) => getReservationPeriod(r) === "AM"
   );
   $: pendingPM = dayPendingReservations.filter(
-    (r) => getReservationPeriod(r) === "PM",
+    (r) => getReservationPeriod(r) === "PM"
   );
   $: approvedAM = dayApprovedReservations.filter(
-    (r) => getReservationPeriod(r) === "AM",
+    (r) => getReservationPeriod(r) === "AM"
   );
   $: approvedPM = dayApprovedReservations.filter(
-    (r) => getReservationPeriod(r) === "PM",
+    (r) => getReservationPeriod(r) === "PM"
   );
   $: deniedAM = dayDeniedReservations.filter(
-    (r) => getReservationPeriod(r) === "AM",
+    (r) => getReservationPeriod(r) === "AM"
   );
   $: deniedPM = dayDeniedReservations.filter(
-    (r) => getReservationPeriod(r) === "PM",
+    (r) => getReservationPeriod(r) === "PM"
   );
 
   // Only show approved Pool reservations with defined times (lane may be provisional in UI)
@@ -831,6 +837,33 @@
   // 🔧 ADMIN-SPECIFIC: Data Loading Functions -->
   // ============================================ -->
 
+  const loadReservations = async () => {
+    if (!$authStore.user) return;
+
+    try {
+      loadingReservations = true;
+      // Load only reservations for the selected date and type
+      // IMPORTANT: Use UTC date-only bounds to avoid timezone skew hiding items
+      const dateOnly = dayjs(selectedDate).format("YYYY-MM-DD");
+      const start_date = `${dateOnly} 00:00:00+00`;
+      const end_date = `${dateOnly} 23:59:59+00`;
+      
+      const { success, data } = await reservationApi.getReservations({
+        start_date,
+        end_date,
+      });
+      if (!success) return;
+      
+      reservations = (data || []).map(reservationCompleteToFlattened);
+    } catch (err) {
+      console.error("Error loading reservations:", err);
+      error =
+        err instanceof Error ? err.message : "Failed to load reservations";
+    } finally {
+      loadingReservations = false;
+    }
+  };
+
   // Load buoy groups for the selected date (admin uses admin RPC; users use public RPC)
   const loadBuoyGroups = async () => {
     if (!selectedDate) return;
@@ -874,9 +907,9 @@
       const allUids: string[] = Array.from(
         new Set(
           [...am, ...pm].flatMap((g: any) =>
-            Array.isArray(g.member_uids) ? (g.member_uids as string[]) : [],
-          ),
-        ),
+            Array.isArray(g.member_uids) ? (g.member_uids as string[]) : []
+          )
+        )
       );
       if (allUids.length > 0) {
         try {
@@ -898,7 +931,7 @@
           // Non-fatal: keep whatever names we have
           console.warn(
             "Failed to backfill user names for Open Water groups",
-            e,
+            e
           );
         }
       }
@@ -930,7 +963,7 @@
           ? g.member_uids
           : null;
         const member_names: (string | null)[] | null = Array.isArray(
-          g.member_names,
+          g.member_names
         )
           ? g.member_names
           : null;
@@ -997,7 +1030,7 @@
           "get_openwater_assignment_map",
           {
             p_res_date: selectedDate,
-          },
+          }
         );
         if (error) throw error;
         (data ?? []).forEach((row: any) => {
@@ -1114,7 +1147,7 @@
       await svcUpdateBoat(groupId, boatName);
       // Update local state
       buoyGroups = buoyGroups.map((bg) =>
-        bg.id === groupId ? { ...bg, boat: boatName } : bg,
+        bg.id === groupId ? { ...bg, boat: boatName } : bg
       );
     } catch (error) {
       console.error("Error updating boat assignment:", error);
@@ -1193,7 +1226,9 @@
           {availableBoats}
           availableBuoys={adminAvailableBuoys}
           buoyGroups={buoyGroupsWithReservations}
-          loading={assignmentsLoading || loadingBuoyGroups}
+          loading={assignmentsLoading ||
+            loadingBuoyGroups ||
+            loadingReservations}
           readOnly={!isAdmin}
           currentUserId={$authStore.user?.id}
           {selectedDate}

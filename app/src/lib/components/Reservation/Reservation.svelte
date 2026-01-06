@@ -9,7 +9,6 @@
   import ReservationDetailsModal from '../ReservationDetailsModal/ReservationDetailsModal.svelte';
   import ReservationCalendar from './ReservationCalendar.svelte';
   import FloatingActionButton from './FloatingActionButton.svelte';
-  import { transformReservationForModal } from './reservationUtils';
   import { transformReservationToUnified } from '../../utils/reservationTransform';
   import { createEventDispatcher } from 'svelte';
   import { ReservationType } from '../../types/reservations';
