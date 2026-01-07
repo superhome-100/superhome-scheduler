@@ -13,6 +13,20 @@
     created_at: string;
   }> = [];
 
+  let filterTxt = "";
+
+  $: filteredUsers = users.filter(
+    (u) =>
+      filterTxt === "" ||
+      (u.name &&
+        u.name.toLocaleLowerCase().indexOf(filterTxt.toLocaleLowerCase()) !==
+          -1) ||
+      (u.nickname &&
+        u.nickname
+          .toLocaleLowerCase()
+          .indexOf(filterTxt.toLocaleLowerCase()) !== -1)
+  );
+
   const handleRefresh = () => {
     dispatch("refresh");
   };
@@ -54,6 +68,12 @@
           <span class="inline sm:hidden">Users</span>
         </div>
       </h2>
+      <input
+        type="text"
+        class="badge"
+        bind:value={filterTxt}
+        placeholder="Filter..."
+      />
       <button
         class="btn btn-ghost btn-xs sm:btn-sm gap-2 text-base-content/70 hover:text-base-content px-2 sm:px-3 py-1 whitespace-nowrap shrink-0"
         on:click={handleRefresh}
@@ -99,7 +119,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each users as user}
+        {#each filteredUsers as user}
           <tr
             class="hover:bg-base-200/50 border-b border-base-200 last:border-b-0"
           >
@@ -114,7 +134,7 @@
                 </div>
                 <span
                   class="text-[#00294C] font-medium text-xs sm:text-sm truncate"
-                  >{user.name || "Unknown"}</span
+                  >{user.name ?? "Unknown"}</span
                 >
               </div>
             </td>
@@ -133,7 +153,7 @@
                 on:save={(e) =>
                   updateSubscriberType(
                     e.detail.uid,
-                    e.detail.price_template_name,
+                    e.detail.price_template_name
                   )}
               />
             </td>
@@ -154,7 +174,7 @@
             <td class="text-center">
               <button
                 class="btn btn-xs sm:btn-sm min-w-[60px] sm:min-w-[80px] {user.privileges.includes(
-                  'admin',
+                  'admin'
                 )
                   ? 'btn-primary'
                   : 'btn-secondary'}"
