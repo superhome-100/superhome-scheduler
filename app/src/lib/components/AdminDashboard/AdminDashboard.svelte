@@ -186,7 +186,7 @@
       const { data: usersData, error: usersError } = await supabase
         .from("user_profiles")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("name", { ascending: true });
 
       if (usersError) {
         console.error("AdminDashboard: Users error:", usersError);

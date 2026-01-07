@@ -323,16 +323,14 @@
             {/if}
             <div class="flex flex-col leading-tight min-w-0">
               <span class="font-medium text-gray-800 truncate">
-                {#if !readOnly && typeof reservation.depth_m === "number" && !Number.isNaN(reservation.depth_m)}
-                  {reservation.depth_m} m -
-                {/if}
                 {getReservationDisplayName(reservation, index)}
               </span>
-              {#if reservation.open_water_type}
-                <span class="text-[10px] text-gray-500 truncate">
-                  {reservation.open_water_type}
-                </span>
-              {/if}
+              <span class="text-[10px] text-gray-500 truncate">
+                {#if !readOnly && typeof reservation.depth_m === "number" && !Number.isNaN(reservation.depth_m)}
+                  {reservation.depth_m} m ⬇ 
+                {/if}
+                {reservation.open_water_type.replace("_", " ")}
+              </span>
             </div>
           </div>
           <div class="flex items-center gap-1">
