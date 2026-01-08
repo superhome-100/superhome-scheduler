@@ -25,8 +25,11 @@
   import BodyContent from "../Layout/BodyContent.svelte";
   import { priceTemplatesApi } from "../../api/priceTemplatesApi";
   import BuoyConfigList from "./BuoyConfigList.svelte";
+  import type { Database } from "../../database.types";
 
-  let users: any[] = [];
+  type UserProfileAuth = Database["public"]["Views"]["user_profiles_auth"]["Row"];
+
+  let users: UserProfileAuth[] = [];
   let reservations: any[] = [];
   let pendingReservations: any[] = [];
   let loading = true;
@@ -184,7 +187,7 @@
 
       // Load users
       const { data: usersData, error: usersError } = await supabase
-        .from("user_profiles")
+        .from<UserProfileAuth>("user_profiles_auth")
         .select("*")
         .order("name", { ascending: true });
 
