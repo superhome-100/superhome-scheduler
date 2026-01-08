@@ -2,10 +2,15 @@
   import { createEventDispatcher } from "svelte";
   import NicknameCell from "./NicknameCell.svelte";
   import UserSubscriberTypeCell from "./UserSubscriberTypeCell.svelte";
+  import type { Database } from "../../database.types";
+  import "./UserManagement.css";
+
+  type UserProfileAuth =
+    Database["public"]["Views"]["user_profiles_auth"]["Row"];
 
   const dispatch = createEventDispatcher();
 
-  export let users: any[] = [];
+  export let users: UserProfileAuth[] = [];
   export let stats: any = {};
   export let priceTemplates: Array<{
     name: string;
@@ -102,7 +107,7 @@
           >
           <th
             class="text-[#00294C] font-semibold border-b-2 border-base-300 text-left"
-            >Subscriber Type</th
+            >Subscriber<br />Type</th
           >
           <th
             class="text-[#00294C] font-semibold border-b-2 border-base-300 text-center"
@@ -116,6 +121,10 @@
             class="text-[#00294C] font-semibold border-b-2 border-base-300 text-center"
             >LogIn</th
           >
+          <th
+            class="text-[#00294C] font-semibold border-b-2 border-base-300 text-center"
+            >Last Login</th
+          >
         </tr>
       </thead>
       <tbody>
@@ -126,11 +135,19 @@
             <td class="text-left">
               <div class="flex items-center gap-2 sm:gap-4">
                 <div class="avatar placeholder">
-                  <div
-                    class="bg-primary text-primary-content rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-xs sm:text-sm font-semibold"
-                  >
-                    {user.name?.charAt(0) || "U"}
-                  </div>
+                  {#if user.avatar_url}
+                    <img
+                      src={user.avatar_url}
+                      class="admin_avatar"
+                      alt="avatar"
+                    />
+                  {:else}
+                    <div
+                      class="bg-primary text-primary-content rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-xs sm:text-sm font-semibold"
+                    >
+                      {user.name?.charAt(0) || "U"}
+                    </div>
+                  {/if}
                 </div>
                 <span
                   class="text-[#00294C] font-medium text-xs sm:text-sm truncate"
@@ -185,13 +202,32 @@
               </button>
             </td>
             <td class="text-center">
+              <div class="tooltip-container">
               {#if user.auth_provider === "google"}
                 <div class="badge badge-outline badge-primary">Google</div>
               {:else if user.auth_provider === "facebook"}
                 <div class="badge badge-outline badge-accent">Facebook</div>
-              {:else}
+              {:else if user.auth_provider === null}
                 <div class="badge">-</div>
+              {:else}
+                <div class="badge">{user.auth_provider}</div>
               {/if}
+              <div class="tooltip-text">{user.email}</div>
+              </div>
+            </td>
+            <td class="text-center">
+              <div class="badge">
+                {#if user.last_sign_in_at}
+                  <div class="tooltip-container">
+                    {new Date(user.last_sign_in_at).toLocaleDateString()}
+                    <div class="tooltip-text">
+                      {new Date(user.last_sign_in_at)}
+                    </div>
+                  </div>
+                {:else}
+                  never
+                {/if}
+              </div>
             </td>
           </tr>
         {/each}

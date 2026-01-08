@@ -20,6 +20,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   }
 });
 
+
 // Helper: retry a PostgREST call once if the JWT has expired.
 // Usage:
 //   const { data, error } = await withAuthRetry(() =>
