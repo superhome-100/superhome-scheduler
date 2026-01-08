@@ -1,3 +1,10 @@
+.avatar {
+  height: 40px;
+  width: 40px;
+  object-fit: cover; /* ensures image fills the square without distortion */
+  border-radius: 50%; /* makes it circular */
+}
+
 /* Table container with proper scrolling */
 .table-container {
   border: 1px solid hsl(var(--b3));
@@ -27,12 +34,12 @@
 /* Column width distribution - adjusted for 6 columns */
 .table th:nth-child(1),
 .table td:nth-child(1) {
-  width: 60%;
+  width: 170px;
 }
 
 .table th:nth-child(2),
 .table td:nth-child(2) {
-  width: 40%;
+  width: 120px;
 }
 
 .table th:nth-child(3),
@@ -205,9 +212,13 @@
     min-height: 1.25rem;
   }
   
-  .avatar .w-8 {
-    width: 1.5rem;
-    height: 1.5rem;
+  .avatar {
+    height: 32px;
+    width: 32px;
+  }
+
+  .filter {
+    width: 100px;
   }
 }
 
@@ -242,13 +253,6 @@
   color: #6b7280 !important;
 }
 
-.admin_avatar {
-  height: 40px;
-  width: 40px;
-  object-fit: cover; /* ensures image fills the square without distortion */
-  border-radius: 50%; /* makes it circular */
-}
-
 .tooltip-container {
   position: relative; /* required */
   display: inline-block; /* optional, prevents full-width div */
@@ -260,7 +264,7 @@
   position: absolute;
   bottom: 100%; /* above the div */
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, 65%);
   background-color: #333;
   color: #fff;
   padding: 4px 8px;
