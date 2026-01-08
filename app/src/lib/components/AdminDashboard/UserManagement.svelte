@@ -54,9 +54,7 @@
 <div
   class="card bg-base-100 shadow-sm border border-base-300 rounded-xl p-6 mb-8"
 >
-  <div
-    class="sticky top-0 z-20 bg-base-100/95 backdrop-blur-sm -mx-6 px-6 py-2 mb-6 border-b border-base-200 lg:relative lg:top-auto lg:p-0 lg:border-none lg:bg-transparent lg:backdrop-blur-none lg:mb-8"
-  >
+  <div>
     <div
       class="header-row flex justify-between items-center px-2 flex-nowrap w-full"
     >
@@ -74,8 +72,9 @@
         </div>
       </h2>
       <input
+        name="filter"
         type="text"
-        class="badge"
+        class="badge filter"
         bind:value={filterTxt}
         placeholder="Filter..."
       />
@@ -134,11 +133,11 @@
           >
             <td class="text-left">
               <div class="flex items-center gap-2 sm:gap-4">
-                <div class="avatar placeholder">
+                <div class="placeholder">
                   {#if user.avatar_url}
                     <img
                       src={user.avatar_url}
-                      class="admin_avatar"
+                      class="avatar"
                       alt="avatar"
                     />
                   {:else}
