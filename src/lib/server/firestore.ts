@@ -74,7 +74,6 @@ export async function getXataUserDocWithFirebaseToken(headers: Headers) {
 	return user;
 }
 
-
 // export function listenToDateSetting(date: Date, cb: (setting: DateSetting) => void) {
 // 	const dateSetting = doc(firestore, `date_settings_${stage}/${dayjs(date).format('YYYY-MM-DD')}`);
 // 	return onSnapshot(dateSetting, (next) => {

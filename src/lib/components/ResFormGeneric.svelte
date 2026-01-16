@@ -277,7 +277,7 @@
 							{/if}
 						{/each}
 					</ul>
-					{#if !viewOnly }
+					{#if !viewOnly}
 						<button
 							class="flex dark:text-white w-full max-w-[80px]"
 							type="button"

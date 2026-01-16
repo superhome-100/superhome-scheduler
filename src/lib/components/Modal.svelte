@@ -325,7 +325,12 @@
 	let onOpened: (event: CustomEvent) => void = toVoid;
 	let onClosed: (event: CustomEvent) => void = toVoid;
 
-	const open = (NewComponent: ComponentType<SvelteComponent>, newProps: Record<string, any> = {}, options: Partial<ModalState> = {}, callback: ModalCallback = {}) => {
+	const open = (
+		NewComponent: ComponentType<SvelteComponent>,
+		newProps: Record<string, any> = {},
+		options: Partial<ModalState> = {},
+		callback: ModalCallback = {}
+	) => {
 		Component = bind(NewComponent, newProps);
 		state = { ...defaultState, ...options };
 		updateStyleTransition();

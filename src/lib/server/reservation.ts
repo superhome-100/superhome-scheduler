@@ -344,7 +344,12 @@ export async function submitReservation(formData: AppFormData) {
 	return { records };
 }
 
-async function throwIfUpdateIsInvalid(sub: Reservation, orig: Reservation, ignore: string[], isAMFull: boolean) {
+async function throwIfUpdateIsInvalid(
+	sub: Reservation,
+	orig: Reservation,
+	ignore: string[],
+	isAMFull: boolean
+) {
 	const settings = await initSettings();
 
 	if (!settings.getOpenForBusiness(sub.date)) {
@@ -369,7 +374,9 @@ async function throwIfUpdateIsInvalid(sub: Reservation, orig: Reservation, ignor
 	// check if course and type ow, retrieve if day is ow am is full
 	if (sub.resType === ReservationType.course && sub.category === ReservationCategory.openwater) {
 		if (isAMFull && sub.numStudents > orig.numStudents && sub.owTime === OWTime.AM) {
-			throw new ValidationError('The morning open water session is full for this date cannot increase the number of students.');
+			throw new ValidationError(
+				'The morning open water session is full for this date cannot increase the number of students.'
+			);
 		}
 	}
 
@@ -493,9 +500,13 @@ export async function modifyReservation(formData: AppFormData) {
 	let { create, modify, cancel } = await createBuddyEntriesForUpdate(sub, orig);
 	if (settingDate?.ow_am_full && sub.owTime === OWTime.AM) {
 		if (create.length > 0) {
-			throw new ValidationError('The morning open water session is full for this date cannot add a buddy.');
+			throw new ValidationError(
+				'The morning open water session is full for this date cannot add a buddy.'
+			);
 		} else if (modify.length > 0 && (sub.date !== orig.date || orig.owTime !== sub.owTime)) {
-			throw new ValidationError('The morning open water session is full for this date cannot change to that date or time.');
+			throw new ValidationError(
+				'The morning open water session is full for this date cannot change to that date or time.'
+			);
 		}
 	}
 

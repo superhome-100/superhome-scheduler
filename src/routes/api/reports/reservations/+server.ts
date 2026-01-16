@@ -10,8 +10,8 @@ const xata = getXataClient();
 export async function GET({ request, url }: RequestEvent) {
 	try {
 		const xataUser = await getXataUserDocWithFirebaseToken(request.headers);
-		if (!xataUser || xataUser.status !== 'active') throw new Error('User not allowed to access this resource');
-
+		if (!xataUser || xataUser.status !== 'active')
+			throw new Error('User not allowed to access this resource');
 
 		const queryParams = url.searchParams;
 		const startDate = queryParams.get('startDate');

@@ -17,7 +17,11 @@ interface AdminUpdateResult {
 	record: any;
 }
 
-const adminUpdateGeneric = async ({ request }: { request: Request }): Promise<AdminUpdateResult> => {
+const adminUpdateGeneric = async ({
+	request
+}: {
+	request: Request;
+}): Promise<AdminUpdateResult> => {
 	const data = await request.formData();
 	console.log('adminUpdateGeneric', data);
 	const category = data.get('category') as string;
