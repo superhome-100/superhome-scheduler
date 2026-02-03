@@ -1,4 +1,4 @@
-import ObjectsToCsv from 'objects-to-csv';
+import Papa from 'papaparse';
 import JSZip from 'jszip';
 import { supabaseServiceRole } from '$lib/server/supabase';
 import type { Notification } from '$types';
@@ -22,7 +22,7 @@ export async function getBackUpZip() {
 
 	for (const t of tables) {
 		const records = await fetchAllRows(supabaseServiceRole, t) as object[];
-		const csv = new ObjectsToCsv(records);
+		const csv = Papa.unparse(records);
 		const csvStr = await csv.toString();
 		zip.file(t + '.csv', csvStr);
 	}

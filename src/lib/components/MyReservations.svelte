@@ -3,7 +3,7 @@
 	import { minuteOfDay, beforeCancelCutoff } from '$lib/reservationTimes';
 	import { timeStrToMin } from '$lib/datetimeUtils';
 	import { user } from '$lib/stores';
-	import { getContext, onMount } from 'svelte';
+	import { getContext, onDestroy, onMount } from 'svelte';
 	import Modal from './Modal.svelte';
 	import CancelDialog from './CancelDialog.svelte';
 	import RsvTabs from './RsvTabs.svelte';
@@ -15,6 +15,7 @@
 	import { getUserPastReservations } from '$lib/api';
 
 	import { incomingReservations, syncMyIncomingReservations } from '$lib/stores';
+	import { listenOnDateUpdate } from '$lib/firestore';
 
 	export let resPeriod: ReservationPeriod = 'upcoming';
 
@@ -165,6 +166,21 @@
 	const totalThisMonth = (rsvs: Reservation[]): number => {
 		return rsvs.reduce((t, rsv) => (rsv.price ? t + rsv.price : t), 0);
 	};
+
+	let firestoreRefreshUnsub: () => void;
+	$: handleRouteChange();
+
+	function handleRouteChange() {
+		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
+		// Place your route change detection logic here
+		firestoreRefreshUnsub = listenOnDateUpdate(undefined, undefined, () => {
+			syncMyIncomingReservations();
+		});
+	}
+
+	onDestroy(() => {
+		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
+	});
 
 	onMount(async () => {
 		if (resPeriod === 'past') {

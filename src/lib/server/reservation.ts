@@ -24,7 +24,7 @@ import { beforeCancelCutoff, beforeResCutoff } from '$lib/reservationTimes';
 
 import _ from 'lodash';
 import dayjs from 'dayjs';
-import ObjectsToCsv from 'objects-to-csv';
+import Papa from 'papaparse';
 import { supabaseServiceRole } from './supabase';
 
 
@@ -60,7 +60,7 @@ export async function getReservationsCsv() {
 		return { ...rsv, owTime, numStudents };
 	});
 
-	const csv = new ObjectsToCsv(
+	const csv = Papa.unparse(
 		recordsEx.map((ent) => {
 			return {
 				..._.omit(ent, ['Users']),
