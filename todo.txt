@@ -1,0 +1,21 @@
+add feature to store email first in the db
+
+setup firebase auth
+login page 
+
+auth store
+
+
+should respect existing uid implemented in xata
+
+  add firebase auth uid column
+  note: it is currently using id of xata as rec_**
+
+  how to map current users w/ potential google login
+
+
+check session integration
+
+# TODO:mate
+
+- increase JWT expiration to a week or something
