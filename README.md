@@ -25,6 +25,12 @@ supabase start
 supabase db reset
 ```
 
+```sh
+supabase login
+supabase link --project-ref yzbmkdautiurjjmeliak
+supabase db push # --include-seed
+```
+
 ## ssh
 
 ```sh

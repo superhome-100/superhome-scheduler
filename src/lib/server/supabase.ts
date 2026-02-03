@@ -1,5 +1,5 @@
 import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { env } from '$env/dynamic/private';
+import { PRIVATE_SUPABASE_SERVICE_KEY } from '$env/static/private';
 
 import { createClient, type SupabaseClient as SupabaseClientExt } from '@supabase/supabase-js';
 import type { Database, Enums } from '../supabase.types';
@@ -15,7 +15,7 @@ export type SupabaseClient = SupabaseClientExt<Database>;
 
 export const supabaseServiceRole = createClient<Database>(
 	PUBLIC_SUPABASE_URL,
-	env.PRIVATE_SUPABASE_SERVICE_KEY,
+	PRIVATE_SUPABASE_SERVICE_KEY,
 );
 
 const isPermitted = (

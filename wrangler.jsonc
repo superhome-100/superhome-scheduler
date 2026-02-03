@@ -1,7 +1,6 @@
 {
     "$schema": "./node_modules/wrangler/config-schema.json",
-    // Top-level configuration
-    "name": "superhome",
+    "name": "superhome-scheduler",
     "main": ".svelte-kit/cloudflare/_worker.js",
     "compatibility_date": "2026-02-03",
     "compatibility_flags": [
@@ -14,5 +13,11 @@
     "assets": {
         "directory": ".svelte-kit/cloudflare",
         "binding": "ASSETS"
+    },
+    "observability": {
+        "logs": {
+            "enabled": true,
+            "invocation_logs": true
+        }
     }
 }
