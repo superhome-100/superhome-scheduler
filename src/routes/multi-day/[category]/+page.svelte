@@ -17,6 +17,7 @@
 	import LoadingBar from '$lib/components/LoadingBar.svelte';
 	import { listenOnDateUpdate } from '$lib/firestore';
 	import { onDestroy } from 'svelte';
+	import { page } from '$app/stores';
 
 	export let data: {
 		category: ReservationCategory;
@@ -117,7 +118,7 @@
 	};
 
 	let firestoreRefreshUnsub: () => void;
-	$: handleRouteChange();
+	$: $page, handleRouteChange();
 
 	function handleRouteChange() {
 		if (firestoreRefreshUnsub) firestoreRefreshUnsub();

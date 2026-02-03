@@ -43,11 +43,14 @@ export class SupabaseEventSource {
         }
     }
 
-    subscribe(event: EventType, fn: Subscriber): Unsubscribe {
-        const set = this.subscribers.get(event)!
-        set.add(fn)
+    subscribe(fn: Subscriber, ...event: EventType[]): Unsubscribe {
+        const sets: Set<Subscriber>[] = event.map(e => {
+            const set = this.subscribers.get(e)!
+            set.add(fn)
+            return set
+        });
         return () => {
-            set.delete(fn)
+            sets.forEach(s => s.delete(fn))
         }
     }
 

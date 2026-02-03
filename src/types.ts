@@ -131,6 +131,7 @@ export type DateReservationSummary = {
 		AM: number;
 		PM: number;
 		total: number;
+		ow_am_full: boolean;
 	};
 	classroom: number;
 };

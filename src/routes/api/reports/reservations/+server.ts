@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import { supabaseServiceRole, checkAuthorisation } from '$lib/server/supabase';
 import dayjs, { type Dayjs } from 'dayjs';
+import { ow_am_full } from '$lib/firestore';
 
 import type { DateReservationSummary } from '$types';
 
@@ -21,15 +22,23 @@ export async function GET({ url, locals: { user } }: RequestEvent) {
 			currentDate = currentDate.add(1, 'day');
 		}
 
-		const reservationsResponse = await supabaseServiceRole
+		const startStr = dayjs(startDate).format('YYYY-MM-DD')
+		const endStr = dayjs(endDate).format('YYYY-MM-DD')
+
+		const { data: reservations } = await supabaseServiceRole
 			.from('ReservationsReport')
 			.select('*')
-			.gte('date', dayjs(startDate).format('YYYY-MM-DD'))
-			.lte('date', dayjs(endDate).format('YYYY-MM-DD'))
-		if (reservationsResponse.error) {
-			throw Error(`${reservationsResponse}`);
-		}
-		const reservations = reservationsResponse.data;
+			.gte('date', startStr)
+			.lte('date', endStr)
+			.throwOnError()
+
+		const { data: daySettings } = await supabaseServiceRole
+			.from('DaySettings')
+			.select('date, value')
+			.gte('date', startStr)
+			.lte('date', endStr)
+			.eq('key', ow_am_full)
+			.throwOnError()
 
 		const summary: Record<string, DateReservationSummary> = {};
 
@@ -39,9 +48,10 @@ export async function GET({ url, locals: { user } }: RequestEvent) {
 				openwater: {
 					AM: 0,
 					PM: 0,
-					total: 0
+					total: 0,
+					ow_am_full: false
 				},
-				classroom: 0
+				classroom: 0,
 			};
 		}
 
@@ -68,6 +78,11 @@ export async function GET({ url, locals: { user } }: RequestEvent) {
 				day.openwater.total += count;
 			}
 		}
+
+		for (const daySetting of daySettings) {
+			summary[daySetting.date].openwater.ow_am_full = daySetting.value === true;
+		}
+
 		return json({ status: 'success', summary });
 	} catch (error) {
 		return json({ status: 'error', error });
