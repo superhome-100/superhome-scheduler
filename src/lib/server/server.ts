@@ -39,18 +39,10 @@ export async function getBuoys() {
 }
 
 export async function getUserActiveNotifications(userId: string): Promise<Notification[]> {
-	const { data: notifications } = await supabaseServiceRole
-		.from('Notifications')
-		.select('*')
-		.throwOnError();
-	const { data: receipts } = await supabaseServiceRole
-		.from('NotificationReceipts')
-		.select('*')
-		.eq('user', userId)
-		.throwOnError();
-	return notifications.filter(
-		(ntf) => receipts.filter((rpt) => rpt.notification === ntf.id).length == 0
-	);
+	const { data } = await supabaseServiceRole
+		.rpc("get_unread_notifications", { "p_user_id": userId })
+		.throwOnError()
+	return data
 }
 
 export async function insertNotificationReceipt(notificationId: string, userId: string) {

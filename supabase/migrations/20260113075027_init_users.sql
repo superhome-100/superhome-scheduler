@@ -15,7 +15,6 @@ create table "public"."Users" (
   "metadata" jsonb null,
   "authId" uuid null,
   "authProvider" text null,
-  "pushSubscripton" jsonb null,
 
   constraint users_pkey primary key ("id"),
   constraint users_email_key unique ("email"),
@@ -173,3 +172,24 @@ as
     "status"
   from "public"."Users"
 ;
+
+---
+
+create table "public"."UserSessions" (
+  "sessionId" uuid primary key references "auth"."sessions" ("id") on delete cascade,
+  "userId" text not null,
+  "createdAt" timestamp with time zone not null default now(),
+  "updatedAt" timestamp with time zone not null default now(),
+  "pushSubscription" jsonb null,
+
+  constraint user_sessions_user_id_fkey foreign KEY ("userId") references "public"."Users" ("id") on delete cascade
+) TABLESPACE pg_default;
+
+alter table "public"."UserSessions" enable row level security;
+
+---
+
+CREATE TRIGGER "trigger_set_updatedAt_to_now_on_UserSessions"
+BEFORE UPDATE ON "public"."UserSessions"
+FOR EACH ROW
+EXECUTE FUNCTION set_updatedAt_to_now();

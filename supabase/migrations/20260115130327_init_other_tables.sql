@@ -210,30 +210,48 @@ create table "public"."Notifications" (
     "id" text not null default gen_random_uuid()::text,
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
-    "message" text null,
-    "checkboxMessage" text null,
+    "message" text not null,
+    "checkboxMessage" text not null,
 
     constraint Notifications_pkey primary key ("id")
 ) TABLESPACE pg_default;
 
 alter table "public"."Notifications" enable row level security;
 
-
 ---
 
 create table "public"."NotificationReceipts" (
-    "id" text not null default gen_random_uuid()::text,
+    "notification" text not null /* link: Notifications */,
+    "user" text not null /* link: Users */,
     "createdAt" timestamp with time zone not null default now(),
-    "updatedAt" timestamp with time zone not null default now(),
-    "user" text null /* link: Users */,
-    "notification" text null /* link: Notifications */,
 
-    constraint NotificationReceipts_pkey primary key ("id"),
+    constraint NotificationReceipts_pkey primary key ("notification", "user"),
     constraint NotificationReceipts_user_key foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete cascade,
     constraint NotificationReceipts_notification_key foreign KEY ("notification") references "public"."Notifications" ("id") on update cascade on delete cascade
 ) TABLESPACE pg_default;
 
 alter table "public"."NotificationReceipts" enable row level security;
 
+---
+
+-- for: api/notifications
+CREATE OR REPLACE FUNCTION public.get_unread_notifications(p_user_id text)
+RETURNS SETOF "Notifications" 
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT n.*
+  FROM public."Notifications" n
+  WHERE NOT EXISTS (
+    SELECT 1 
+    FROM public."NotificationReceipts" nr 
+    WHERE nr.notification = n.id 
+    AND nr."user" = p_user_id
+  );
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_unread_notifications(text) TO authenticated;
 
 ---

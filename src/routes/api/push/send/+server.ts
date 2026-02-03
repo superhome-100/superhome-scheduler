@@ -21,7 +21,7 @@ export async function GET({ locals: { user } }: RequestEvent) {
 
 		await pushNotificationService.send(user, 'notification test');
 
-		return json({ success: true });
+		return json({ status: 'success' });
 	} catch (error) {
 		return json({ status: 'error', error });
 	}

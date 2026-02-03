@@ -15,7 +15,8 @@
 
 	export let rsv: Reservation | null;
 	export let date: string = rsv?.date || PanglaoDate().toString();
-	export let category: ReservationCategory = rsv?.category || ReservationCategory.pool;
+	export let category: ReservationCategory =
+		(rsv?.category as ReservationCategory) || ReservationCategory.pool;
 	export let viewOnly = false;
 	export let showBuddyFields = true;
 	export let restrictModify = false;
@@ -29,7 +30,7 @@
 
 	let disabled = viewOnly || restrictModify;
 
-	let status: ReservationStatus = rsv?.status || ReservationStatus.pending;
+	let status: ReservationStatus = (rsv?.status as ReservationStatus) || ReservationStatus.pending;
 	let comments = rsv?.comments || null;
 
 	$: maxBuddies =
@@ -108,7 +109,7 @@
 				let record = $users[id];
 				if (
 					record.status !== 'disabled' &&
-					record.id !== $user.id &&
+					record.id !== $user?.id &&
 					!currentBuddies.includes(record.nickname)
 				) {
 					let nameFrag = record.nickname.slice(0, buddyName.length).toLowerCase();

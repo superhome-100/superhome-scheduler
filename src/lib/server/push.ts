@@ -2,6 +2,7 @@ import { PUBLIC_VAPID_KEY } from '$env/static/public';
 import { PRIVATE_VAPID_KEY } from '$env/static/private';
 import webpush, { type PushSubscription } from 'web-push';
 import type { User } from '$types';
+import { supabaseServiceRole } from './supabase';
 
 webpush.setVapidDetails(
     'mailto:superhome.scheduler@gmail.com',
@@ -11,15 +12,25 @@ webpush.setVapidDetails(
 
 export const pushNotificationService = {
     async send(user: User, message: string, url: string = '/') {
-        const subscription = user.pushSubscripton as PushSubscription | null | undefined;
-        if (!subscription)
-            return false;
-        const payload = JSON.stringify({
-            title: 'Superhome Scheduler',
-            body: message,
-            url
-        });
-        await webpush.sendNotification(subscription, payload);
-        return true;
+        const { data } = await supabaseServiceRole
+            .from("UserSessions")
+            .select("sessionId, pushSubscription")
+            .eq("userId", user.id)
+            .throwOnError()
+
+        data.map(d => {
+            if (d.pushSubscription) {
+                return (async (subscription) => {
+                    const payload = JSON.stringify({
+                        title: 'Superhome Scheduler',
+                        body: message,
+                        url
+                    });
+                    await webpush.sendNotification(subscription, payload);
+                })(d.pushSubscription as unknown as PushSubscription).catch(reason => {
+                    console.error(`couldn't send notification`, { user: user.id, session: d.sessionId }, reason)
+                })
+            }
+        })
     }
 };

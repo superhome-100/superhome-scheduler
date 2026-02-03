@@ -142,24 +142,18 @@ export type Database = {
 			NotificationReceipts: {
 				Row: {
 					createdAt: string;
-					id: string;
-					notification: string | null;
-					updatedAt: string;
-					user: string | null;
+					notification: string;
+					user: string;
 				};
 				Insert: {
 					createdAt?: string;
-					id?: string;
-					notification?: string | null;
-					updatedAt?: string;
-					user?: string | null;
+					notification: string;
+					user: string;
 				};
 				Update: {
 					createdAt?: string;
-					id?: string;
-					notification?: string | null;
-					updatedAt?: string;
-					user?: string | null;
+					notification?: string;
+					user?: string;
 				};
 				Relationships: [
 					{
@@ -187,24 +181,24 @@ export type Database = {
 			};
 			Notifications: {
 				Row: {
-					checkboxMessage: string | null;
+					checkboxMessage: string;
 					createdAt: string;
 					id: string;
-					message: string | null;
+					message: string;
 					updatedAt: string;
 				};
 				Insert: {
-					checkboxMessage?: string | null;
+					checkboxMessage: string;
 					createdAt?: string;
 					id?: string;
-					message?: string | null;
+					message: string;
 					updatedAt?: string;
 				};
 				Update: {
-					checkboxMessage?: string | null;
+					checkboxMessage?: string;
 					createdAt?: string;
 					id?: string;
-					message?: string | null;
+					message?: string;
 					updatedAt?: string;
 				};
 				Relationships: [];
@@ -455,7 +449,6 @@ export type Database = {
 					name: string;
 					nickname: string;
 					privileges: Database['public']['Enums']['user_privilege'];
-					pushSubscripton: Json | null;
 					status: Database['public']['Enums']['user_status'];
 					updatedAt: string;
 				};
@@ -469,7 +462,6 @@ export type Database = {
 					name: string;
 					nickname: string;
 					privileges?: Database['public']['Enums']['user_privilege'];
-					pushSubscripton?: Json | null;
 					status?: Database['public']['Enums']['user_status'];
 					updatedAt?: string;
 				};
@@ -483,11 +475,49 @@ export type Database = {
 					name?: string;
 					nickname?: string;
 					privileges?: Database['public']['Enums']['user_privilege'];
-					pushSubscripton?: Json | null;
 					status?: Database['public']['Enums']['user_status'];
 					updatedAt?: string;
 				};
 				Relationships: [];
+			};
+			UserSessions: {
+				Row: {
+					createdAt: string;
+					pushSubscription: Json | null;
+					sessionId: string;
+					updatedAt: string;
+					userId: string;
+				};
+				Insert: {
+					createdAt?: string;
+					pushSubscription?: Json | null;
+					sessionId: string;
+					updatedAt?: string;
+					userId: string;
+				};
+				Update: {
+					createdAt?: string;
+					pushSubscription?: Json | null;
+					sessionId?: string;
+					updatedAt?: string;
+					userId?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'user_sessions_user_id_fkey';
+						columns: ['userId'];
+						isOneToOne: false;
+						referencedRelation: 'Users';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'user_sessions_user_id_fkey';
+						columns: ['userId'];
+						isOneToOne: false;
+						referencedRelation: 'UsersMinimal';
+						referencedColumns: ['id'];
+					}
+				];
 			};
 		};
 		Views: {
@@ -520,6 +550,22 @@ export type Database = {
 			};
 		};
 		Functions: {
+			get_unread_notifications: {
+				Args: { p_user_id: string };
+				Returns: {
+					checkboxMessage: string;
+					createdAt: string;
+					id: string;
+					message: string;
+					updatedAt: string;
+				}[];
+				SetofOptions: {
+					from: '*';
+					to: 'Notifications';
+					isOneToOne: false;
+					isSetofReturn: true;
+				};
+			};
 			is_active: { Args: never; Returns: boolean };
 			is_admin: { Args: never; Returns: boolean };
 		};
