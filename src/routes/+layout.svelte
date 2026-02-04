@@ -7,7 +7,6 @@
 	import { page } from '$app/stores';
 	import { ensureUserProfile } from '$lib/user';
 	import { supabase_es } from '$lib/client/supabase_event_source';
-	import { pushService } from '$lib/client/push';
 
 	export let data; // has data = { settings } parsed from xata
 	const { user, supabase } = data;
@@ -29,6 +28,7 @@
 		syncUsers
 	} from '$lib/stores';
 	import { getUserNotifications } from '$lib/api';
+	import { pushService } from '$lib/client/push';
 
 	const publicRoutes = ['/privacy'];
 

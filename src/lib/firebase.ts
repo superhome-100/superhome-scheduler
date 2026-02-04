@@ -78,8 +78,5 @@ const loginWithFacebook = async () => {
 	}
 };
 
-const isGoogleLinked = () => {
-	return window?.localStorage.getItem('is_google_linked') === 'true';
-};
 
-export { auth, firestore, app, loginWithGoogle, loginWithFacebook, isGoogleLinked };
+export { auth, firestore, app, loginWithGoogle, loginWithFacebook };

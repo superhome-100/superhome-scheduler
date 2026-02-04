@@ -9,14 +9,21 @@
 
 //const self = globalThis.self as unknown as ServiceWorkerGlobalScope;
 
-self.addEventListener('push', (event) => {
-	const data = event.data ? event.data.json() : { title: 'Notification', body: 'New message!' };
+self.addEventListener('push', (event: any) => {
+	if (!(self.Notification && self.Notification.permission === 'granted')) {
+		return;
+	}
+
+	// Parse the payload sent from your server
+	const data = event.data?.json() ?? { title: 'Superhome Scheduler', body: 'New Notification!', data: { url: '/' } };
 
 	const options = {
 		body: data.body,
-		icon: '/favicon.png', // Path to your static icon
-		// badge: '/badge.png',
-		data: { url: data.url }
+		icon: '/android-chrome-192x192.png',
+		badge: '/android-chrome-512x512.png',
+		data: {
+			url: data.data?.url || '/' // Pass the URL to the notification object
+		}
 	};
 
 	event.waitUntil(
@@ -24,10 +31,21 @@ self.addEventListener('push', (event) => {
 	);
 });
 
-// Handle notification click
-self.addEventListener('notificationclick', (event) => {
+// 2. HANDLER: This wakes up when the user clicks the notification
+self.addEventListener('notificationclick', (event: any) => {
 	event.notification.close();
+	const urlToOpen = event.notification.data.url;
+
 	event.waitUntil(
-		clients.openWindow(event.notification.data.url || '/')
+		clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+			for (let client of windowClients) {
+				if (client.url === urlToOpen && 'focus' in client) {
+					return client.focus();
+				}
+			}
+			if (clients.openWindow) {
+				return clients.openWindow(urlToOpen);
+			}
+		})
 	);
 });

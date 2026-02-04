@@ -22,7 +22,8 @@
 	import { page } from '$app/state';
 	import { signOut } from '$lib/user';
 	import { onMount } from 'svelte';
-	import { flagOWAmAsFull } from '$lib/firestore';
+	import { subscription } from '$lib/client/push';
+	import { pushService } from '$lib/client/push';
 
 	export let day = '';
 	const schedulerDoc =
@@ -101,6 +102,15 @@
 		}
 	});
 
+	const updateSubscription = async (e) => {
+		if (e.detail.checked) {
+			const swr = await navigator.serviceWorker.ready;
+			pushService.subscribe(swr);
+		} else {
+			pushService.unsubscribe();
+		}
+	};
+
 	const updateAdminMode = async (e) => {
 		if (e.detail.checked) {
 			$viewMode = 'admin';
@@ -152,28 +162,29 @@
 		<SidebarWrapper divClass="overflow-y-auto py-4 px-3 rounded">
 			<SidebarGroup>
 				{#if $user}
-					<SidebarItem label="Logout" on:click={userLogout} />
-				{/if}
-				{#if $user && $user.privileges === 'admin'}
-					<div class="ms-4">
-						<Toggle checked={$viewMode === 'admin'} on:change={updateAdminMode} />
-						<span>Admin Mode</span>
-					</div>
-					{#if $viewMode === 'admin'}
-						<SidebarDropdownWrapper label="Download DBs">
-							<SidebarItem
-								label="Reservations"
-								{spanClass}
-								on:click={() => downloadDatabase('Reservations')}
-							/>
-							<SidebarItem label="all" {spanClass} on:click={() => downloadDatabase('all')} />
-							<SidebarItem
-								label="mate"
-								{spanClass}
-								on:click={() => flagOWAmAsFull(new Date(), true)}
-							/>
-						</SidebarDropdownWrapper>
-					{/if}
+					<SidebarDropdownWrapper label="Profile">
+						<SidebarItem label="Logout" on:click={userLogout} />
+						<div class="ms-4">
+							<Toggle checked={!!$subscription} on:change={updateSubscription} />
+							<span>Notifications</span>
+						</div>
+						{#if $user && $user.privileges === 'admin'}
+							<div class="ms-4">
+								<Toggle checked={$viewMode === 'admin'} on:change={updateAdminMode} />
+								<span>Admin Mode</span>
+							</div>
+							{#if $viewMode === 'admin'}
+								<SidebarDropdownWrapper label="Download DBs">
+									<SidebarItem
+										label="Reservations"
+										{spanClass}
+										on:click={() => downloadDatabase('Reservations')}
+									/>
+									<SidebarItem label="all" {spanClass} on:click={() => downloadDatabase('all')} />
+								</SidebarDropdownWrapper>
+							{/if}
+						{/if}
+					</SidebarDropdownWrapper>
 				{/if}
 				<SidebarItem
 					label="My Reservations"
