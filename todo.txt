@@ -15,7 +15,3 @@ should respect existing uid implemented in xata
 
 
 check session integration
-
-# TODO:mate
-
-- increase JWT expiration to a week or something
