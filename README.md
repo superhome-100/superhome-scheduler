@@ -75,6 +75,8 @@ Client-side code consists of three pages: `root`, `multi-day`, and `single-day`.
 
 ### Remarks
 
+- Missing OW Full, need to be locked manually again.
+
 ### Changes
 
 - ViewMode is stored locally only, not on the server anymore
@@ -85,3 +87,4 @@ Client-side code consists of three pages: `root`, `multi-day`, and `single-day`.
   - "rec_ci00btdgttaab0qrfgmg",
   - "rec_ci02dltgttaab0qrnp2g"
     were deleted deleted due to overlapping startTime and endTime.
+  - "rec_d618j2cj2gacb777o2t0" time modified due to overlapping startTime and endTime, record preserved

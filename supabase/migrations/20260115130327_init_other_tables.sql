@@ -1,4 +1,5 @@
 ---
+---
 
 create type "public"."reservation_status" as enum (
     'canceled',
@@ -96,6 +97,7 @@ as
 ;
 
 ---
+---
 
 create table "public"."Settings" (
     "id" text not null default gen_random_uuid()::text,
@@ -111,7 +113,14 @@ create table "public"."Settings" (
 
 alter table "public"."Settings" enable row level security;
 
+---
 
+CREATE TRIGGER "trigger_set_updatedAt_to_now_on_Settings"
+BEFORE UPDATE ON "public"."Settings"
+FOR EACH ROW
+EXECUTE FUNCTION set_updatedAt_to_now();
+
+---
 ---
 
 create table "public"."Buoys" (
@@ -130,7 +139,14 @@ create table "public"."Buoys" (
 
 alter table "public"."Buoys" enable row level security;
 
+---
 
+CREATE TRIGGER "trigger_set_updatedAt_to_now_on_Buoys"
+BEFORE UPDATE ON "public"."Buoys"
+FOR EACH ROW
+EXECUTE FUNCTION set_updatedAt_to_now();
+
+---
 ---
 
 create table "public"."Boats" (
@@ -144,7 +160,14 @@ create table "public"."Boats" (
 
 alter table "public"."Boats" enable row level security;
 
+---
 
+CREATE TRIGGER "trigger_set_updatedAt_to_now_on_Boats"
+BEFORE UPDATE ON "public"."Boats"
+FOR EACH ROW
+EXECUTE FUNCTION set_updatedAt_to_now();
+
+---
 ---
 
 create table "public"."PriceTemplates" (
@@ -167,7 +190,14 @@ create table "public"."PriceTemplates" (
 
 alter table "public"."PriceTemplates" enable row level security;
 
+---
 
+CREATE TRIGGER "trigger_set_updatedAt_to_now_on_PriceTemplates"
+BEFORE UPDATE ON "public"."PriceTemplates"
+FOR EACH ROW
+EXECUTE FUNCTION set_updatedAt_to_now();
+
+---
 ---
 
 create table "public"."UserPriceTemplates" (
@@ -186,7 +216,14 @@ create table "public"."UserPriceTemplates" (
 
 alter table "public"."UserPriceTemplates" enable row level security;
 
+---
 
+CREATE TRIGGER "trigger_set_updatedAt_to_now_on_UserPriceTemplates"
+BEFORE UPDATE ON "public"."UserPriceTemplates"
+FOR EACH ROW
+EXECUTE FUNCTION set_updatedAt_to_now();
+
+---
 ---
 
 create table "public"."BuoyGroupings" (
@@ -203,7 +240,14 @@ create table "public"."BuoyGroupings" (
 
 alter table "public"."BuoyGroupings" enable row level security;
 
+---
 
+CREATE TRIGGER "trigger_set_updatedAt_to_now_on_BuoyGroupings"
+BEFORE UPDATE ON "public"."BuoyGroupings"
+FOR EACH ROW
+EXECUTE FUNCTION set_updatedAt_to_now();
+
+---
 ---
 
 create table "public"."Notifications" (
@@ -218,6 +262,14 @@ create table "public"."Notifications" (
 
 alter table "public"."Notifications" enable row level security;
 
+---
+
+CREATE TRIGGER "trigger_set_updatedAt_to_now_on_Notifications"
+BEFORE UPDATE ON "public"."Notifications"
+FOR EACH ROW
+EXECUTE FUNCTION set_updatedAt_to_now();
+
+---
 ---
 
 create table "public"."NotificationReceipts" (
@@ -254,4 +306,5 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.get_unread_notifications(text) TO authenticated;
 
+---
 ---

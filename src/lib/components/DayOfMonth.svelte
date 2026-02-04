@@ -23,11 +23,10 @@
 					<div
 						class="mx-auto first-of-type:mt-2 first-of-type:mb-1 flex items-center justify-center text-sm rounded-xl h-6 w-10 md:w-16 px-1 rsv {category}"
 					>
-						<span
-							class="hidden md:inline"
-							style="color: {summary.openwater.ow_am_full ? 'red' : ''}">AM</span
-						>
-						+{summary.openwater.AM}
+						<span style="color: {summary.openwater.ow_am_full ? 'red' : ''}">
+							<span class="hidden md:inline">AM</span>
+							+{summary.openwater.AM}
+						</span>
 					</div>
 					<div
 						class="mx-auto first-of-type:mt-2 first-of-type:mb-1 flex items-center justify-center text-sm rounded-xl h-6 w-10 md:w-16 px-1 rsv {category}"

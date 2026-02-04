@@ -35,20 +35,28 @@ AFTER INSERT OR UPDATE OR DELETE ON "public"."BuoyGroupings"
 FOR EACH ROW
 EXECUTE FUNCTION "public"."broadcast_table_changes"();
 
+---
+
 CREATE TRIGGER "Broadcast changes of table: DaySettings"
 AFTER INSERT OR UPDATE OR DELETE ON "public"."DaySettings"
 FOR EACH ROW
 EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
 
 CREATE TRIGGER "Broadcast changes of table: Users"
 AFTER INSERT OR UPDATE OR DELETE ON "public"."Users"
 FOR EACH ROW
 EXECUTE FUNCTION "public"."broadcast_table_changes"();
 
+---
+
 CREATE TRIGGER "Broadcast changes of table: Settings"
 AFTER INSERT OR UPDATE OR DELETE ON "public"."Settings"
 FOR EACH ROW
 EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
 
 CREATE TRIGGER "Broadcast changes of table: Reservations"
 AFTER INSERT OR UPDATE OR DELETE ON "public"."Reservations"

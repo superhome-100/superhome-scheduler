@@ -1,3 +1,6 @@
+---
+---
+
 create type "public"."user_status" as enum ('active', 'disabled');
 create type "public"."user_privilege" as enum ('normal', 'admin');
 
@@ -193,3 +196,6 @@ CREATE TRIGGER "trigger_set_updatedAt_to_now_on_UserSessions"
 BEFORE UPDATE ON "public"."UserSessions"
 FOR EACH ROW
 EXECUTE FUNCTION set_updatedAt_to_now();
+
+---
+---

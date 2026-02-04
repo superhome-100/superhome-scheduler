@@ -1,3 +1,6 @@
+---
+---
+
 create table "public"."DaySettings" (
   "date" date not null,
   "key" text not null,
@@ -27,3 +30,6 @@ to authenticated
 using (
   TRUE
 );
+
+---
+---

@@ -27,8 +27,9 @@ export const pushNotificationService = {
                         url
                     });
                     await webpush.sendNotification(subscription, payload);
+                    console.log('push sent', { user: user.id, session: d.sessionId });
                 })(d.pushSubscription as unknown as PushSubscription).catch(reason => {
-                    console.error(`couldn't send notification`, { user: user.id, session: d.sessionId }, reason)
+                    console.error(`couldn't send notification`, { user: user.id, session: d.sessionId }, reason);
                 })
             }
         })
