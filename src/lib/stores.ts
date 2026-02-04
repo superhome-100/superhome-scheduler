@@ -59,13 +59,13 @@ export const updateOWState = (
 };
 
 export const syncBuoys = async () => {
-	const res = await getBuoys();
-	buoys.set(res.buoys);
+	const buoysArr = await getBuoys();
+	buoys.set(buoysArr);
 };
 
 export const syncUsers = async () => {
-	const res = await getUsers();
-	users.set(res?.usersById ?? {});
+	const usersById = await getUsers();
+	users.set(usersById);
 };
 
 export const syncMyIncomingReservations = async () => {

@@ -8,15 +8,22 @@ import {
 	type UserMinimal
 } from '$types';
 import { getYYYYMMDD } from './datetimeUtils';
-import type { Tables } from './supabase.types';
 
 export const getBuoys = async () => {
 	const response = await fetch('/api/getBuoys');
-	const data = (await response.json()) as {
-		status: 'success' | 'error';
+	const resp = (await response.json()) as {
+		status: 'success';
 		buoys: Buoy[];
+	} | {
+		status: 'error';
+		error: string;
 	};
-	return data;
+	if (resp.status === 'success') {
+		return resp.buoys
+	} else {
+		console.error('getUsers', resp)
+		return []
+	}
 };
 
 export const getBoatAssignmentsByDate = async (date: string) => {
@@ -60,23 +67,42 @@ export const getUsers = async () => {
 	try {
 		const response = await fetch('/api/getUsers');
 
-		const data = (await response.json()) as {
-			status: 'success' | 'error';
-			usersById?: {
+		const resp = (await response.json()) as {
+			status: 'success';
+			usersById: {
 				[uid: string]: UserMinimal;
 			};
-			error?: string;
+		} | {
+			status: 'error';
+			error: string;
 		};
-		return data;
+		if (resp.status === 'success') {
+			return resp.usersById
+		} else {
+			console.error('getUsers', resp)
+			return {}
+		}
 	} catch (error) {
 		console.error(error);
+		return {}
 	}
 };
 
 export const getUserNotifications = async () => {
 	const response = await fetch('/api/notifications');
-	const notifications = (await response.json()) as Notification[];
-	return notifications;
+	const resp = (await response.json()) as {
+		status: 'success';
+		notifications: Notification[];
+	} | {
+		status: 'error';
+		error: string;
+	};
+	if (resp.status === 'success') {
+		return resp.notifications
+	} else {
+		console.error('getUserNotifications', resp)
+		return []
+	}
 };
 
 export const getOWAdminComments = async (date: string) => {

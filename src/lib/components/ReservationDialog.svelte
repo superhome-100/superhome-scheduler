@@ -27,6 +27,7 @@
 	};
 </script>
 
+<!-- svelte-ignore a11y-no-static-element-interactions -->
 <div on:click={showDialog} on:keypress={showDialog}>
 	<ReservationButton />
 </div>

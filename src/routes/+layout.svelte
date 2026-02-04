@@ -17,7 +17,7 @@
 	import Popup from '$lib/components/Popup.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Notification from '$lib/components/Notification.svelte';
-	import type { User } from '$lib/stores';
+	import type { UserEx } from '$types';
 	import {
 		notifications,
 		settings,
@@ -43,7 +43,7 @@
 			isLoading = true;
 			await Promise.allSettled([
 				supabase_es.init(supabase),
-				ensureUserProfile(user).then(async (u: User | null) => {
+				ensureUserProfile(user).then(async (u: UserEx | null) => {
 					if (u) {
 						$notifications = await getUserNotifications();
 						await pushService.init();

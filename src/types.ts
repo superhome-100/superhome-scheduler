@@ -1,4 +1,4 @@
-import type { Tables, TablesInsert, TablesUpdate } from '$lib/supabase.types';
+import type { Enums, Tables, TablesInsert, TablesUpdate } from '$lib/supabase.types';
 
 export type RequireKeys<T, K extends keyof T> = Omit<T, K> & { [P in K]-?: NonNullable<T[P]>; };
 
@@ -7,6 +7,12 @@ export type User = Tables<'Users'>;
 export type UserMinimal = RequireKeys<Tables<'UsersMinimal'>, 'id' | 'nickname' | 'status'>;
 
 export type UserEx = Tables<'Users'> & { avatar_url: string | null, last_sign_in_at: string | null };
+
+export type UserStatusT = Enums<'user_status'>;
+export enum UserStatus {
+	active = 'active',
+	disabled = 'disabled',
+}
 
 export type Buoys = Tables<'Buoys'>;
 

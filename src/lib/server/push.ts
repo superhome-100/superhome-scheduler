@@ -12,11 +12,11 @@ webpush.setVapidDetails(
 );
 
 export const pushNotificationService = {
-    async send(user: User, message: string, url: string = '/') {
+    async send(userId: string, message: string, url: string = '/') {
         const { data } = await supabaseServiceRole
             .from("UserSessions")
             .select("sessionId, pushSubscription")
-            .eq("userId", user.id)
+            .eq("userId", userId)
             .not("pushSubscription", "is", null)
             .throwOnError()
 
@@ -28,10 +28,10 @@ export const pushNotificationService = {
                     data: { url }
                 });
                 const resp = await webpush.sendNotification(subscription, payload);
-                console.log('push sent', { user: user.id, session: d.sessionId }, resp);
+                console.log('push sent', { user: userId, session: d.sessionId }, resp);
                 return resp;
             })(d.pushSubscription as unknown as PushSubscription).catch(reason => {
-                console.error(`couldn't send notification`, { user: user.id, session: d.sessionId }, reason);
+                console.error(`couldn't send notification`, { user: userId, session: d.sessionId }, reason);
                 return reason;
             })
         }))

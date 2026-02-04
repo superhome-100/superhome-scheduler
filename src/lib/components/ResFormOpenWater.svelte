@@ -2,7 +2,7 @@
 	import { canSubmit, reservations, buoys } from '$lib/stores';
 	import { adminView, buoyDesc, isMyReservation, resTypeModDisabled } from '$lib/utils';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
-	import type { Reservation } from '$types';
+	import type { OWReservation, Reservation } from '$types';
 	import { ReservationCategory, ReservationType } from '$types';
 	import { PanglaoDate } from '$lib/datetimeUtils';
 	import InputLabel from './tiny_components/InputLabel.svelte';
@@ -12,7 +12,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 
-	export let rsv: Reservation | null = null;
+	export let rsv: OWReservation | null = null;
 	export let date: string = rsv?.date || PanglaoDate().toString();
 	export let dateFn: null | ((arg0: string) => string) = null;
 	export let category: ReservationCategory = ReservationCategory.openwater;
@@ -27,7 +27,7 @@
 
 	let resType: ReservationType =
 		rsv == null ? ReservationType.autonomous : (rsv?.resType as ReservationType);
-	let maxDepth = rsv?.maxDepth || undefined;
+	let maxDepth = rsv?.maxDepth;
 	let owTime = rsv?.owTime || 'AM';
 	let numStudents = rsv?.resType !== ReservationType.course ? 1 : rsv.numStudents;
 	let pulley = rsv?.pulley;
@@ -39,6 +39,7 @@
 	let allowAutoAdjust = rsv?.allowAutoAdjust ?? true;
 
 	function checkSubmit() {
+		if (!maxDepth) throw Error('maxDepth <= 1');
 		$canSubmit = maxDepth > 1;
 	}
 	checkSubmit();

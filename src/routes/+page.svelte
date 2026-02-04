@@ -6,18 +6,46 @@
 	import { minValidDateStr } from '$lib/reservationTimes';
 	import { Settings } from '$lib/client/settings';
 	import { user } from '$lib/stores';
+	import type { User, UserEx } from '$types';
 
 	let modalOpened = false;
 	const onOpen = () => (modalOpened = true);
 	const onClose = () => (modalOpened = false);
+
+	const getActivationLink = (user: UserEx) => {
+		return (
+			window.location.origin +
+			'/api/admin/activateUser/' +
+			encodeURIComponent(user.email ?? user.id)
+		);
+	};
+	const openWhatsApp = (user: UserEx) => {
+		const phoneNumber = '639763854480';
+		const message = encodeURIComponent(
+			'Hello, Please activate my account: ' + getActivationLink(user)
+		);
+		const url = `https://wa.me/${phoneNumber}?text=${message}`;
+		window.open(url, '_blank', 'noopener,noreferrer');
+	};
+	const copyToClipboard = (user: UserEx) => {
+		const link = getActivationLink(user);
+		navigator.clipboard.writeText(link);
+	};
 </script>
 
 {#if $user != null}
-	<span class="flex items-center justify-between mr-2">
-		<span />
-		<span class="text-lg font-semibold">{($user?.name || '').split(' ')[0]}'s Reservations</span>
-		<Modal><ReservationDialog dateFn={(cat) => minValidDateStr(Settings, cat)} /></Modal>
-	</span>
+	<div class="flex w-full">
+		<div
+			class="text-lg font-semibold flex-grow text-center align-middle justify-center flex items-center"
+		>
+			{($user.name || '').split(' ')[0]}'s Reservations
+		</div>
+		<div class="flex-shrink-0" style="flex-basis: 48px;">
+			{#if $user.status !== 'disabled'}
+				<Modal><ReservationDialog dateFn={(cat) => minValidDateStr(Settings, cat)} /></Modal>
+			{/if}
+		</div>
+	</div>
 	<Tabs disableNav={modalOpened}>
 		<TabList>
 			<Tab>Upcoming</Tab>
@@ -35,6 +63,20 @@
 			</Modal>
 		</TabPanel>
 	</Tabs>
+	{#if $user.status === 'disabled'}
+		<div
+			class="text-lg font-semibold flex-grow text-center align-middle justify-center flex items-center"
+		>
+			<div>
+				Welcome back. This account is currently disabled.<br />
+				Contact the administrators. <br /><br />
+				Via <button on:click={() => openWhatsApp($user)}> WhatsApp </button><br /><br />
+				Or
+				<button on:click={() => copyToClipboard($user)}> copy this link to your clipboard </button> and
+				send to them.
+			</div>
+		</div>
+	{/if}
 {:else}
 	<h1>loading data...</h1>
 {/if}

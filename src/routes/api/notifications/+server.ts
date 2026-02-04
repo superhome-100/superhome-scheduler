@@ -6,7 +6,7 @@ export async function GET({ locals: { user } }: RequestEvent) {
 	try {
 		checkAuthorisation(user);
 		const notifications = await getUserActiveNotifications(user.id);
-		return json(notifications);
+		return json({ status: 'success', notifications });
 	} catch (error) {
 		console.error('Error in notifications', error);
 		if (error instanceof AuthError) {

@@ -1,20 +1,21 @@
-<script>
+<script lang="ts">
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-french-toast';
 	import { enhance } from '$app/forms';
 	import ResFormPool from './ResFormPool.svelte';
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
-	import { reservations, syncMyIncomingReservations } from '$lib/stores';
+	import { syncMyIncomingReservations } from '$lib/stores';
 	import { cleanUpFormDataBuddyFields } from '$lib/utils';
+	import { ReservationCategory } from '$types';
 
-	export let category = 'openwater';
+	export let category = ReservationCategory.openwater;
 	export let dateFn;
 	export let hasForm = false;
 	export let onSubmit = () => null;
 
 	let error = '';
-	let date;
+	let date: string;
 	const { close, hideModal, showModal } = getContext('simple-modal');
 
 	const submitReservation = async ({ formData, cancel }) => {
