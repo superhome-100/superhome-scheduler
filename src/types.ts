@@ -4,7 +4,7 @@ export type RequireKeys<T, K extends keyof T> = Omit<T, K> & { [P in K]-?: NonNu
 
 export type User = Tables<'Users'>;
 
-export type UserMinimal = Tables<'UsersMinimal'>;
+export type UserMinimal = RequireKeys<Tables<'UsersMinimal'>, 'id' | 'nickname' | 'status'>;
 
 export type UserEx = Tables<'Users'> & { avatar_url: string | null, last_sign_in_at: string | null };
 
