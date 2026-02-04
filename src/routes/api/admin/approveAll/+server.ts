@@ -9,7 +9,7 @@ export async function POST({ request, locals: { user } }) {
 
 		const data = await request.json();
 		await doTransaction(data.category, data.date, async () => {
-			await approveAllPendingReservations(data.category, data.date);
+			await approveAllPendingReservations(user, data.category, data.date);
 		});
 		return json({ status: 'success' });
 	} catch (error) {

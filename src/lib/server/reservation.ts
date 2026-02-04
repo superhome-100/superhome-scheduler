@@ -338,10 +338,13 @@ export async function submitReservation(
 	await checkEventFull(sub.date, sub.owTime);
 
 	const entries = createBuddyEntriesForSubmit(sub);
-	await supabaseServiceRole
+	const { data } = await supabaseServiceRole
 		.from('Reservations')
 		.insert(entries)
+		.select("*")
 		.throwOnError();
+
+	await pushNotificationService.sendReservationCreated(actor, data);
 }
 
 async function throwIfUpdateIsInvalid(
@@ -562,7 +565,6 @@ export async function modifyReservation(actor: User, formData: AppFormData) {
 			modify[0].status = orig.status;
 		}
 	}
-	const modrecs: Tables<'Reservations'>[] = [];
 	const errors: Error[] = [];
 	for (const m of modify) {
 		const { data, error } = await supabaseServiceRole
@@ -572,7 +574,7 @@ export async function modifyReservation(actor: User, formData: AppFormData) {
 			.select('*')
 			.single();
 		if (error) errors.push(error);
-		else modrecs.push(data);
+		else pushNotificationService.sendReservationModified(actor, [data]);
 	}
 
 	if (create.length > 0) {
@@ -581,22 +583,24 @@ export async function modifyReservation(actor: User, formData: AppFormData) {
 			.insert(create)
 			.select('*');
 		if (error) errors.push(error);
-		else if (createrecs === null) errors.push(Error(`createrecs is null for ${create}`));
+		else if (createrecs) pushNotificationService.sendReservationCreated(actor, createrecs);
 	}
 
 	if (cancel.length > 0) {
-		const { error } = await supabaseServiceRole
+		const { data, error } = await supabaseServiceRole
 			.from('Reservations')
 			.update({ status: ReservationStatus.canceled })
+			.select("*")
 			.in("id", cancel);
 		if (error) errors.push(error);
+		else if (data) pushNotificationService.sendReservationStatus(actor, data);
 	}
 
 	if (errors.length > 0)
 		throw Error(`Error during modifying reservation ${id} ${sub}: ${JSON.stringify(errors)}`);
 }
 
-export async function adminUpdate(formData: AppFormData) {
+export async function adminUpdate(actor: User, formData: AppFormData) {
 	let rsv: Partial<Tables<'Reservations'>> = {};
 
 	let id = formData.get('id');
@@ -628,9 +632,7 @@ export async function adminUpdate(formData: AppFormData) {
 		.single()
 		.throwOnError();
 
-	await pushNotificationService.send(existing.user, `${existing.category} reservation: ${rsv.status}!`, `for ${existing.date} - ${existing.startTime}`)
-
-	return { record: data };
+	await pushNotificationService.sendReservationStatus(actor, [data]);
 }
 
 async function throwIfInvalidCancellation(data: Tables<'Reservations'>) {
@@ -690,28 +692,34 @@ export async function cancelReservation(actor: User, formData: AppFormData) {
 				if (error) errors.push({ id: m.id, error });
 				else modrecs.push(data);
 			}
+			pushNotificationService.sendReservationModified(actor, modrecs);
 		}
 
 		cancel = cancel.concat(existing.filter((rsv) => !save.includes(rsv.user)).map((rsv) => rsv.id));
 	}
 	{
-		const { error } = await supabaseServiceRole
+		const { data, error } = await supabaseServiceRole
 			.from('Reservations')
 			.update({ status: ReservationStatus.canceled })
+			.select('*')
 			.in('id', cancel);
 		if (error) errors.push({ id, error });
+		else if (data) pushNotificationService.sendReservationStatus(actor, data);
 	}
 	if (errors.length)
 		throw Error(`Error during cancelling reservations: ${JSON.stringify(errors)}`);
 }
 
-export async function approveAllPendingReservations(category: ReservationType, date: string) {
+export async function approveAllPendingReservations(actor: User, category: ReservationType, date: string) {
 	console.info('Approving all pending reservations for', category, date);
-	await supabaseServiceRole
+	const { data } = await supabaseServiceRole
 		.from('Reservations')
 		.update({ status: ReservationStatus.confirmed })
+		.select('*')
 		.eq('date', date)
 		.eq('category', category)
 		.eq('status', ReservationStatus.pending)
 		.throwOnError();
+
+	await pushNotificationService.sendReservationStatus(actor, data)
 }

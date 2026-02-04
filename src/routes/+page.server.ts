@@ -15,24 +15,18 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { AuthError, checkAuthorisation } from '$lib/server/supabase';
 import type { OWTime } from '$types';
 
-interface AdminUpdateResult {
-	record: any;
-}
-
 const adminUpdateGeneric = async ({
 	request,
 	locals: { user }
-}: RequestEvent): Promise<AdminUpdateResult | ActionFailure<{ error: string }>> => {
+}: RequestEvent): Promise<void | ActionFailure<{ error: string }>> => {
 	try {
 		checkAuthorisation(user, 'admin');
 		const data = await request.formData();
 		console.log('adminUpdateGeneric', data);
 		const category = data.get('category') as string;
-		let record =
-			await doTransaction(category, data.get('date') as string, async () => {
-				return await adminUpdate(data);
-			});
-		return record;
+		await doTransaction(category, data.get('date') as string, async () => {
+			await adminUpdate(user, data);
+		});
 	} catch (e) {
 		console.error('error adminUpdateGeneric', e);
 		if (e instanceof AuthError) {
