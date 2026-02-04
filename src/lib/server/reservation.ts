@@ -26,6 +26,7 @@ import _ from 'lodash';
 import dayjs from 'dayjs';
 import Papa from 'papaparse';
 import { supabaseServiceRole } from './supabase';
+import { pushNotificationService } from './push';
 
 
 export async function getReservationsCsv() {
@@ -626,6 +627,9 @@ export async function adminUpdate(formData: AppFormData) {
 		.select('*')
 		.single()
 		.throwOnError();
+
+	await pushNotificationService.send(existing.user, `${existing.category} reservation: ${rsv.status}!`, `for ${existing.date} - ${existing.startTime}`)
+
 	return { record: data };
 }
 

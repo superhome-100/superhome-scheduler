@@ -168,7 +168,7 @@
 							<Toggle checked={!!$subscription} on:change={updateSubscription} />
 							<span>Notifications</span>
 						</div>
-						{#if $user && $user.privileges === 'admin'}
+						{#if $user.privileges === 'admin'}
 							<div class="ms-4">
 								<Toggle checked={$viewMode === 'admin'} on:change={updateAdminMode} />
 								<span>Admin Mode</span>

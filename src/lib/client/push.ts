@@ -42,12 +42,13 @@ export const pushService = {
                 subscription.set(undefined);
                 subscription.set(null);
                 return;
-            }
-            const permission = await Notification.requestPermission();
-            if (permission !== "granted") {
-                subscription.set(undefined);
-                subscription.set(null);
-                return;
+            } else if (permissionStatus === 'default') {
+                const permission = await Notification.requestPermission();
+                if (permission !== "granted") {
+                    subscription.set(undefined);
+                    subscription.set(null);
+                    return;
+                }
             }
             const sub = await swr.pushManager.subscribe({
                 userVisibleOnly: true,

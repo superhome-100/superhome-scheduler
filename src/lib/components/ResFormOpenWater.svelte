@@ -27,7 +27,7 @@
 
 	let resType: ReservationType =
 		rsv == null ? ReservationType.autonomous : (rsv?.resType as ReservationType);
-	let maxDepth = rsv?.maxDepth;
+	let maxDepth = rsv?.maxDepth || undefined;
 	let owTime = rsv?.owTime || 'AM';
 	let numStudents = rsv?.resType !== ReservationType.course ? 1 : rsv.numStudents;
 	let pulley = rsv?.pulley;
@@ -39,7 +39,6 @@
 	let allowAutoAdjust = rsv?.allowAutoAdjust ?? true;
 
 	function checkSubmit() {
-		if (!maxDepth) throw Error('maxDepth <= 1');
 		$canSubmit = maxDepth > 1;
 	}
 	checkSubmit();

@@ -29,6 +29,7 @@
 	} from '$lib/stores';
 	import { getUserNotifications } from '$lib/api';
 	import { pushService } from '$lib/client/push';
+	import Refresher from '$lib/components/Refresher.svelte';
 
 	const publicRoutes = ['/privacy'];
 
@@ -63,6 +64,11 @@
 			isLoading = false;
 		}
 	}
+
+	const onRefresh = async () => {
+		window.location.reload();
+	};
+
 	if ($page.route.id && !publicRoutes.includes($page.route.id)) {
 		onMount(async () => {
 			await initApp();
@@ -75,30 +81,32 @@
 	console.log('layout', $page.route.id, $page.params['day']);
 </script>
 
-{#if $page.route.id && !publicRoutes.includes($page.route.id)}
-	<Nprogress />
-	<Sidebar day={$page.params['day'] || ''} />
+<Refresher {onRefresh}>
+	{#if $page.route.id && !publicRoutes.includes($page.route.id)}
+		<Nprogress />
+		<Sidebar day={$page.params['day'] || ''} />
 
-	{#if !$authStore.loading}
-		<div id="app" class="flex px-1 mx-auto w-full">
-			<main class="lg:ml-72 w-full mx-auto">
-				<slot />
-			</main>
-		</div>
+		{#if !$authStore.loading}
+			<div id="app" class="flex px-1 mx-auto w-full">
+				<main class="lg:ml-72 w-full mx-auto">
+					<slot />
+				</main>
+			</div>
+		{/if}
+
+		<Toaster />
+
+		<Popup />
+
+		<Modal
+			closeOnEsc={false}
+			closeOnOuterClick={false}
+			closeButton={false}
+			styleWindow={{ width: 'fit-content', 'min-width': '300px' }}
+		>
+			<Notification />
+		</Modal>
+	{:else}
+		<slot />
 	{/if}
-
-	<Toaster />
-
-	<Popup />
-
-	<Modal
-		closeOnEsc={false}
-		closeOnOuterClick={false}
-		closeButton={false}
-		styleWindow={{ width: 'fit-content', 'min-width': '300px' }}
-	>
-		<Notification />
-	</Modal>
-{:else}
-	<slot />
-{/if}
+</Refresher>

@@ -1,9 +1,8 @@
 import { PUBLIC_VAPID_SUBJECT } from '$env/static/public';
 import { PUBLIC_VAPID_KEY } from '$env/static/public';
 import { PRIVATE_VAPID_KEY } from '$env/static/private';
-import webpush, { type PushSubscription } from 'web-push';
-import type { User } from '$types';
 import { supabaseServiceRole } from './supabase';
+import webpush, { type PushSubscription } from 'web-push';
 
 webpush.setVapidDetails(
     PUBLIC_VAPID_SUBJECT,
@@ -12,7 +11,13 @@ webpush.setVapidDetails(
 );
 
 export const pushNotificationService = {
-    async send(userId: string, message: string, url: string = '/') {
+    /**
+     * Message will look like:
+     * #1: <title>
+     * #2: From Superhome
+     * #3: <message>
+     */
+    async send(userId: string, title: string, message: string, url: string = '/') {
         const { data } = await supabaseServiceRole
             .from("UserSessions")
             .select("sessionId, pushSubscription")
@@ -23,7 +28,7 @@ export const pushNotificationService = {
         return await Promise.allSettled(data.map(d => {
             return (async (subscription) => {
                 const payload = JSON.stringify({
-                    title: 'Superhome Scheduler',
+                    title,
                     body: message,
                     data: { url }
                 });
