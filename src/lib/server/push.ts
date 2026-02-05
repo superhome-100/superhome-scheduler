@@ -4,6 +4,8 @@ import { PRIVATE_VAPID_KEY } from '$env/static/private';
 import { supabaseServiceRole } from './supabase';
 import webpush, { type PushSubscription } from 'web-push';
 import type { Reservation, User } from '$types';
+import { dayjs } from '$lib/datetimeUtils';
+
 
 webpush.setVapidDetails(
     PUBLIC_VAPID_SUBJECT,
@@ -37,7 +39,7 @@ export const pushNotificationService = {
                     const resp = await webpush.sendNotification(subscription, payload);
                     console.log('push sent', { user: userId, session: d.sessionId }, resp);
                     return resp;
-                })(d.pushSubscription as unknown as PushSubscription).catch(reason => {
+                })(d.pushSubscription as unknown as PushSubscription).catch((reason) => {
                     console.error(`couldn't send notification`, { user: userId, session: d.sessionId }, reason);
                     return reason;
                 })
@@ -59,14 +61,14 @@ export const pushNotificationService = {
         await Promise.allSettled(rsvs
             .filter(r => r.user !== actor.id)
             .map(async (rsv) => this.sendSafe(rsv.user,
-                `${rsv.category} reservation: ${fn(rsv)}!`,
-                `for ${rsv.date} - ${rsv.startTime}`,
+                `${upperFirst(rsv.category)} ${shortDateTime(rsv)}: ${fn(rsv)}!`,
+                reservationDetails(rsv),
                 rsv.id
             )))
     },
 
     async sendReservationStatus(actor: User, rsvs: Reservation[]) {
-        await this.sendReservationFn(actor, rsvs, r => r.status);
+        await this.sendReservationFn(actor, rsvs, r => `[${r.status}]`);
     },
 
     async sendReservationCreated(actor: User, rsvs: Reservation[]) {
@@ -76,4 +78,20 @@ export const pushNotificationService = {
     async sendReservationModified(actor: User, rsvs: Reservation[]) {
         await this.sendReservationFn(actor, rsvs, () => 'modified');
     }
+};
+
+const upperFirst = (s: string) => s.length > 0 ? s[0].toUpperCase() + s.substring(1) : '';
+
+const shortDateTime = (rsv: Reservation) => dayjs(rsv.date + 'T' + rsv.startTime).format('DD/MMM hh:mm');
+
+const reservationDetails = (rsv: Reservation) => {
+    const d: string[] = [
+        `${rsv.resType} : [${rsv.status}]`,
+    ];
+    if (rsv.maxDepth) d.push(`depth: ${rsv.maxDepth}m`);
+    if (rsv.numStudents) d.push(`students: ${rsv.numStudents}`);
+    if (rsv.buddies.length > 0) d.push(`buddies: ${rsv.buddies.length}`);
+    if (rsv.comments) d.push('', 'Comment: ' + rsv.comments);
+    d.push(`at: ${rsv.date}: ${rsv.startTime.substring(0, 5)} - ${rsv.endTime.substring(0, 5)}`)
+    return d.join(',\n');
 };

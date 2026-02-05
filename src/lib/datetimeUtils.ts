@@ -5,6 +5,8 @@ import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+export { dayjs };
+
 export const month2idx: { [key: string]: number } = {
 	January: 0,
 	February: 1,

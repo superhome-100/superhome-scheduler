@@ -344,7 +344,7 @@ export async function submitReservation(
 		.select("*")
 		.throwOnError();
 
-	await pushNotificationService.sendReservationCreated(actor, data);
+	pushNotificationService.sendReservationCreated(actor, data);
 }
 
 async function throwIfUpdateIsInvalid(
@@ -632,7 +632,7 @@ export async function adminUpdate(actor: User, formData: AppFormData) {
 		.single()
 		.throwOnError();
 
-	await pushNotificationService.sendReservationStatus(actor, [data]);
+	pushNotificationService.sendReservationStatus(actor, [data]);
 }
 
 async function throwIfInvalidCancellation(data: Tables<'Reservations'>) {
@@ -721,5 +721,5 @@ export async function approveAllPendingReservations(actor: User, category: Reser
 		.eq('status', ReservationStatus.pending)
 		.throwOnError();
 
-	await pushNotificationService.sendReservationStatus(actor, data)
+	pushNotificationService.sendReservationStatus(actor, data)
 }

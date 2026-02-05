@@ -25,9 +25,10 @@
 
 	date = rsv?.date || (dateFn && dateFn(category)) || date;
 
+	const previousMaxDepthKey = 'previousMaxDepth';
 	let resType: ReservationType =
 		rsv == null ? ReservationType.autonomous : (rsv?.resType as ReservationType);
-	let maxDepth = rsv?.maxDepth || undefined;
+	let maxDepth = rsv?.maxDepth ?? (Number(localStorage.getItem(previousMaxDepthKey)) || undefined);
 	let owTime = rsv?.owTime || 'AM';
 	let numStudents = rsv?.resType !== ReservationType.course ? 1 : rsv.numStudents;
 	let pulley = rsv?.pulley;
@@ -42,6 +43,10 @@
 		$canSubmit = maxDepth > 1;
 	}
 	checkSubmit();
+
+	$: ((d) => {
+		localStorage.setItem(previousMaxDepthKey, `${d}`);
+	})(maxDepth);
 
 	$: showBuddyFields = [
 		ReservationType.autonomous,

@@ -21,6 +21,7 @@ self.addEventListener('push', (event: any) => {
 		body: data.body,
 		icon: '/android-chrome-192x192.png',
 		badge: '/android-chrome-512x512.png',
+		tag: data.tag,
 		data: {
 			url: data.data?.url || '/' // Pass the URL to the notification object
 		}
