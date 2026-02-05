@@ -1,5 +1,5 @@
 <script>
-	export let resistance = 0.3;
+	export let resistance = 0.1;
 	export let onRefresh = () => {};
 
 	let startY = 0;
@@ -76,9 +76,12 @@
 
 <style>
 	.refresher {
-		height: 100%;
+		min-height: 100vh;
+		min-height: 100dvh;
 		width: 100%;
 		position: relative;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.refresher-indicator {
@@ -99,7 +102,11 @@
 	}
 
 	.refresher-content-wrapper {
-		transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+		/* transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); */
+		flex: 1 0 auto; /* Grow to fill, do not shrink, auto basis */
+		width: 100%;
+		display: flex;
+		flex-direction: column;
 	}
 
 	@keyframes spin {
