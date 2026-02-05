@@ -6,12 +6,13 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
 	import { minValidDateStr } from '$lib/reservationTimes';
-	import { getYYYYMMDD, idx2month } from '$lib/datetimeUtils';
+	import { getYYYYMM, getYYYYMMDD, idx2month } from '$lib/datetimeUtils';
 	import { view, loginState, stateLoaded } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants';
 	import { Settings } from '$lib/client/settings';
 	import type { ReservationCategory, DateReservationSummary } from '$types';
 	import { getReservationSummary } from '$lib/api';
+	import { pushState } from '$app/navigation';
 
 	import dayjs from 'dayjs';
 	import LoadingBar from '$lib/components/LoadingBar.svelte';
@@ -21,13 +22,14 @@
 
 	export let data: {
 		category: ReservationCategory;
+		month: string;
 	};
 
 	let categories = [...CATEGORIES];
 
 	$view = 'multi-day';
 
-	let now = dayjs();
+	let now = dayjs(data.month + '-01');
 	let refreshTs = Date.now();
 	let isLoading = false;
 
@@ -55,10 +57,12 @@
 
 	function prevMonth() {
 		now = now.subtract(1, 'month');
+		pushState(`/multi-day/${data.category}/${getYYYYMM(now)}`, { showModal: false });
 	}
 
 	function nextMonth() {
 		now = now.add(1, 'month');
+		pushState(`/multi-day/${data.category}/${getYYYYMM(now)}`, { showModal: false });
 	}
 
 	let modalOpened = false;

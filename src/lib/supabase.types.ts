@@ -257,7 +257,7 @@ export type Database = {
 					bottomPlate: boolean | null;
 					buddies: string[];
 					buoy: string | null;
-					category: string;
+					category: Database['public']['Enums']['reservation_category'];
 					comments: string | null;
 					createdAt: string;
 					date: string;
@@ -286,7 +286,7 @@ export type Database = {
 					bottomPlate?: boolean | null;
 					buddies?: string[];
 					buoy?: string | null;
-					category: string;
+					category: Database['public']['Enums']['reservation_category'];
 					comments?: string | null;
 					createdAt?: string;
 					date: string;
@@ -315,7 +315,7 @@ export type Database = {
 					bottomPlate?: boolean | null;
 					buddies?: string[];
 					buoy?: string | null;
-					category?: string;
+					category?: Database['public']['Enums']['reservation_category'];
 					comments?: string | null;
 					createdAt?: string;
 					date?: string;
@@ -523,7 +523,7 @@ export type Database = {
 		Views: {
 			ReservationsReport: {
 				Row: {
-					category: string | null;
+					category: Database['public']['Enums']['reservation_category'] | null;
 					count: number | null;
 					date: string | null;
 					owTime: string | null;
@@ -570,6 +570,7 @@ export type Database = {
 			is_admin: { Args: never; Returns: boolean };
 		};
 		Enums: {
+			reservation_category: 'classroom' | 'openwater' | 'pool';
 			reservation_status: 'canceled' | 'confirmed' | 'pending' | 'rejected';
 			reservation_type:
 				| 'autonomous'
@@ -709,6 +710,7 @@ export const Constants = {
 	},
 	public: {
 		Enums: {
+			reservation_category: ['classroom', 'openwater', 'pool'],
 			reservation_status: ['canceled', 'confirmed', 'pending', 'rejected'],
 			reservation_type: [
 				'autonomous',

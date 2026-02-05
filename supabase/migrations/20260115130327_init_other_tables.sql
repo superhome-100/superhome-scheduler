@@ -7,6 +7,13 @@ create type "public"."reservation_status" as enum (
     'pending',
     'rejected'
 );
+
+create type "public"."reservation_category" as enum (
+    'classroom',
+    'openwater',
+    'pool'
+);
+
 create type "public"."reservation_type" as enum (
     'autonomous',
     'autonomousPlatform',
@@ -23,19 +30,19 @@ create table "public"."Reservations" (
     "id" text not null default gen_random_uuid()::text,
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
-    "owTime" text null,
-    "resType" public.reservation_type not null,
-    "numStudents" bigint null,
-    "maxDepth" bigint null,
-    "comments" text null,
     "user" text not null /* link: Users */,
+    "status" public.reservation_status not null default 'pending'::reservation_status,
+    "date" date not null,
     "startTime" time not null,
     "endTime" time not null,
-    "category" text not null,
-    "date" date not null,
-    "owner" bool not null default true,
+    "category" public.reservation_category not null,
+    "resType" public.reservation_type not null,
+    "owTime" text null,
+    "comments" text null,
     "buddies" text[] not null default '{}'::text[],
-    "status" public.reservation_status not null default 'pending'::reservation_status,
+    "numStudents" bigint null,
+    "maxDepth" bigint null,
+    "owner" bool not null default true,
     "pulley" bool null,
     "extraBottomWeight" bool null,
     "bottomPlate" bool null,
@@ -44,9 +51,9 @@ create table "public"."Reservations" (
     "O2OnBuoy" bool null,
     "buoy" text null default 'auto',
     "room" text null default 'auto',
-    "price" bigint null,
     "shortSession" bool not null default false,
     "allowAutoAdjust" bool not null default true,
+    "price" bigint null,
 
     CONSTRAINT Reservations_pkey primary KEY ("id"),
     CONSTRAINT Reservations_user_key foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete set null,

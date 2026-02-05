@@ -17,9 +17,10 @@
 
 	import { getCategoryDatePath } from '$lib/url';
 	import { approveAllPendingReservations } from '$lib/api';
+	import { getYYYYMM } from '$lib/datetimeUtils.js';
 
 	export let data;
-	const { supabase } = data;
+	const { supabase, day } = data;
 
 	const category = 'openwater';
 
@@ -42,11 +43,11 @@
 	$view = 'single-day';
 
 	function prevDay() {
-		const prev = dayjs(data.day).subtract(1, 'day');
+		const prev = dayjs(day).subtract(1, 'day');
 		goto(getCategoryDatePath('openwater', prev.format('YYYY-MM-DD')));
 	}
 	function nextDay() {
-		const next = dayjs(data.day).add(1, 'day');
+		const next = dayjs(day).add(1, 'day');
 		goto(getCategoryDatePath('openwater', next.format('YYYY-MM-DD')));
 	}
 
@@ -63,7 +64,7 @@
 	}
 
 	const toggleBuoyLock = async (lock: boolean) => {
-		const day = data.day;
+		const day = day;
 		const fn = async () => {
 			const response = await fetch('/api/lockBuoyAssignments', {
 				method: 'POST',
@@ -101,10 +102,10 @@
 		if (unsubscribe) unsubscribe();
 		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
 		// Place your route change detection logic here
-		unsubscribe = listenToDateSetting(supabase, new Date(data.day), (setting) => {
+		unsubscribe = listenToDateSetting(supabase, new Date(day), (setting) => {
 			isAmFull = !!setting.ow_am_full;
 		});
-		firestoreRefreshUnsub = listenOnDateUpdate(new Date(data.day), 'openwater', () => {
+		firestoreRefreshUnsub = listenOnDateUpdate(new Date(day), 'openwater', () => {
 			refreshTs = Date.now();
 		});
 	}
@@ -126,7 +127,7 @@
 				{#each categories as cat}
 					{#if cat !== category}
 						<li>
-							<a class="text-xl active:bg-gray-300" href={getCategoryDatePath(cat, data.day)}>
+							<a class="text-xl active:bg-gray-300" href={getCategoryDatePath(cat, day)}>
 								{cat}
 							</a>
 						</li>
@@ -142,7 +143,7 @@
 				<Chevron direction="right" svgClass="h-8 w-8" />
 			</span>
 			<span class="text-2xl ml-2">
-				{dayjs(data.day).format('MMMM DD, YYYY dddd')}
+				{dayjs(day).format('MMMM DD, YYYY dddd')}
 			</span>
 		</div>
 		<span class="mr-2">
@@ -154,7 +155,7 @@
 				}}
 				><ReservationDialog
 					{category}
-					dateFn={() => data.day}
+					dateFn={() => day}
 					onUpdate={() => {
 						refreshTs = Date.now();
 					}}
@@ -166,7 +167,7 @@
 	<div class="flex justify-between">
 		<a
 			class="inline-flex items-center border border-solid border-transparent hover:border-black rounded-lg pl-1.5 pr-4 py-0 hover:text-white hover:bg-gray-700"
-			href="/multi-day/openwater"
+			href="/multi-day/openwater/{getYYYYMM(day)}"
 		>
 			<span><Chevron direction="left" /></span>
 			<span class="xs:text-xl pb-1 whitespace-nowrap">month view</span>
@@ -192,7 +193,7 @@
 				<button
 					class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
 					on:click={() => {
-						flagOWAmAsFull(new Date(data.day), !isAmFull);
+						flagOWAmAsFull(new Date(day), !isAmFull);
 					}}
 				>
 					mark morning as {isAmFull ? 'not' : ''} full
@@ -200,7 +201,7 @@
 				<button
 					class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
 					on:click={async () => {
-						await approveAllPendingReservations(ReservationCategory.openwater, data.day);
+						await approveAllPendingReservations(ReservationCategory.openwater, day);
 					}}
 				>
 					Approve All
@@ -216,7 +217,7 @@
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
 			<DayOpenWater
-				date={data.day}
+				date={day}
 				{isAmFull}
 				{refreshTs}
 				onUpdateReservations={(rsvs) => {

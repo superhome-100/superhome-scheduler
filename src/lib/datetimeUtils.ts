@@ -107,3 +107,4 @@ export function isValidProSafetyCutoff(reservationDate: string) {
 }
 
 export const getYYYYMMDD = (date: Date | string | Dayjs) => dayjs(date).format('YYYY-MM-DD');
+export const getYYYYMM = (date: Date | string | Dayjs) => dayjs(date).format('YYYY-MM');

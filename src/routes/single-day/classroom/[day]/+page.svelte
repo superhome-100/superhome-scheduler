@@ -17,9 +17,10 @@
 
 	import { getCategoryDatePath } from '$lib/url';
 	import { approveAllPendingReservations } from '$lib/api';
+	import { getYYYYMM } from '$lib/datetimeUtils.js';
 
 	export let data;
-	const { supabase } = data;
+	const { supabase, day } = data;
 
 	const category = 'classroom';
 
@@ -30,11 +31,11 @@
 	$view = 'single-day';
 
 	function prevDay() {
-		const prev = dayjs(data.day).subtract(1, 'day');
+		const prev = dayjs(day).subtract(1, 'day');
 		goto(getCategoryDatePath(category, prev.format('YYYY-MM-DD')));
 	}
 	function nextDay() {
-		const next = dayjs(data.day).add(1, 'day');
+		const next = dayjs(day).add(1, 'day');
 		goto(getCategoryDatePath(category, next.format('YYYY-MM-DD')));
 	}
 
@@ -60,10 +61,10 @@
 		if (unsubscribe) unsubscribe();
 		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
 		// Place your route change detection logic here
-		unsubscribe = listenToDateSetting(supabase, new Date(data.day), (setting) => {
+		unsubscribe = listenToDateSetting(supabase, new Date(day), (setting) => {
 			isAmFull = !!setting.ow_am_full;
 		});
-		firestoreRefreshUnsub = listenOnDateUpdate(new Date(data.day), 'classroom', () => {
+		firestoreRefreshUnsub = listenOnDateUpdate(new Date(day), 'classroom', () => {
 			refreshTs = Date.now();
 		});
 	}
@@ -74,8 +75,8 @@
 	});
 
 	const resInfo = () => {
-		const resources = Settings.getClassrooms(data.day);
-		const name = Settings.getClassroomLabel(data.day);
+		const resources = Settings.getClassrooms(day);
+		const name = Settings.getClassroomLabel(day);
 		return { resources, name };
 	};
 </script>
@@ -91,7 +92,7 @@
 				{#each categories as cat}
 					{#if cat !== category}
 						<li>
-							<a class="text-xl active:bg-gray-300" href={getCategoryDatePath(cat, data.day)}>
+							<a class="text-xl active:bg-gray-300" href={getCategoryDatePath(cat, day)}>
 								{cat}
 							</a>
 						</li>
@@ -107,7 +108,7 @@
 				<Chevron direction="right" svgClass="h-8 w-8" />
 			</span>
 			<span class="text-2xl ml-2">
-				{dayjs(data.day).format('MMMM DD, YYYY dddd')}
+				{dayjs(day).format('MMMM DD, YYYY dddd')}
 			</span>
 		</div>
 		<span class="mr-2">
@@ -119,7 +120,7 @@
 				}}
 				><ReservationDialog
 					{category}
-					dateFn={() => data.day}
+					dateFn={() => day}
 					onUpdate={() => {
 						refreshTs = Date.now();
 					}}
@@ -131,7 +132,7 @@
 	<div class="flex justify-between">
 		<a
 			class="inline-flex items-center border border-solid border-transparent hover:border-black rounded-lg pl-1.5 pr-4 py-0 hover:text-white hover:bg-gray-700"
-			href="/multi-day/classroom"
+			href="/multi-day/classroom/{getYYYYMM(day)}"
 		>
 			<span><Chevron direction="left" /></span>
 			<span class="xs:text-xl pb-1 whitespace-nowrap">month view</span>
@@ -141,7 +142,7 @@
 			<button
 				class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
 				on:click={async () => {
-					await approveAllPendingReservations(ReservationCategory.classroom, data.day);
+					await approveAllPendingReservations(ReservationCategory.classroom, day);
 				}}
 			>
 				Approve All
@@ -155,7 +156,7 @@
 		on:swipe={swipeHandler}
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			<DayHourly {category} {refreshTs} resInfo={resInfo()} date={data.day} />
+			<DayHourly {category} {refreshTs} resInfo={resInfo()} date={day} />
 		</Modal>
 	</div>
 {/if}

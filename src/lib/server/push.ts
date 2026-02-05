@@ -63,7 +63,8 @@ export const pushNotificationService = {
             .map(async (rsv) => this.sendSafe(rsv.user,
                 `${upperFirst(rsv.category)} ${shortDateTime(rsv)}: ${fn(rsv)}!`,
                 reservationDetails(rsv),
-                rsv.id
+                rsv.id,
+                `/single-day/${rsv.category}/${rsv.date}`
             )))
     },
 

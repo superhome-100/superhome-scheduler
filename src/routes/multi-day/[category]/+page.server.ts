@@ -1,5 +1,6 @@
-export function load({ params: { category } }) {
-	// The Solution: Immediate Destructuring
-	// To fix this, you must extract the values you need from params at the very top of your function (synchronously). This ensures SvelteKit "sees" the dependency immediately.
-	return { category };
+import { getYYYYMM } from "$lib/datetimeUtils.js";
+import { redirect } from "@sveltejs/kit";
+
+export function load({ url }) {
+    throw redirect(307, url.pathname + "/" + getYYYYMM(new Date()));
 }
