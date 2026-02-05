@@ -21,7 +21,7 @@ create table "public"."Users" (
 
   constraint users_pkey primary key ("id"),
   constraint users_email_key unique ("email"),
-  constraint users_nickname_key unique ("nickname"),
+  -- constraint users_nickname_key unique ("nickname"), probleatic in case of "sync_auth_user_to_users"
   constraint users_auth_id_key unique ("authId"),
   constraint users_auth_uid_fkey foreign KEY ("authId") references "auth"."users" ("id") on update cascade on delete set default
 ) TABLESPACE pg_default;
@@ -111,11 +111,11 @@ BEGIN
       NEW.raw_user_meta_data->>'name',
       NEW.raw_user_meta_data->>'preferred_username',
       NEW.email),
-    COALESCE(
+    REPLACE(COALESCE(
       NEW.raw_user_meta_data->>'preferred_username',
       NEW.raw_user_meta_data->>'name',
       NEW.raw_user_meta_data->>'full_name',
-      NEW.email),
+      NEW.email), ' ', ''),
     NEW.id,
     NEW.raw_app_meta_data->>'provider'
   )
@@ -129,10 +129,13 @@ BEGIN
           NEW.email),
         "nickname" = COALESCE(
           "Users"."nickname",
-          NEW.raw_user_meta_data->>'preferred_username',
-          NEW.raw_user_meta_data->>'name',
-          NEW.raw_user_meta_data->>'full_name',
-          NEW.email),
+          REPLACE(
+            COALESCE(
+              NEW.raw_user_meta_data->>'preferred_username',
+              NEW.raw_user_meta_data->>'name',
+              NEW.raw_user_meta_data->>'full_name',
+              NEW.email), 
+            ' ', '')),
         "updatedAt" = NOW()
     ;
   RETURN NEW;
