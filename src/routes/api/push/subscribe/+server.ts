@@ -1,13 +1,11 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
-import { checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
+import { checkAuthorisation, sessionToSessionId, supabaseServiceRole } from '$lib/server/supabase';
 
 export async function POST({ request, locals: { user, session } }: RequestEvent) {
 	try {
 		checkAuthorisation(user);
-		const base64 = session!.access_token.split('.')[1]
-		const jsStr = Buffer.from(base64.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
-		const sessionId = JSON.parse(jsStr).session_id;
+		const sessionId = sessionToSessionId(session!)
 
 		const pushSubscription = await request.json();
 

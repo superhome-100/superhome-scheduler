@@ -8,7 +8,8 @@ export type UserMinimal = RequireKeys<Tables<'UsersMinimal'>, 'id' | 'nickname' 
 
 export type UserEx = Tables<'Users'> & {
 	avatar_url: string | null,
-	last_sign_in_at: string | null
+	last_sign_in_at: string | null,
+	has_push: boolean
 };
 
 export type UserStatusT = Enums<'user_status'>;

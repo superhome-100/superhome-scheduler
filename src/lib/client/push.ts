@@ -4,7 +4,7 @@ import { PUBLIC_VAPID_KEY } from '$env/static/public';
 export const subscription = writable<PushSubscription | null | undefined>(undefined); // undefined = loading, null = not subbed
 
 export const pushService = {
-    async init() {
+    async init(server_has_push: boolean) {
         try {
             const permissionStatus = Notification.permission;
             if (permissionStatus === 'denied') {
@@ -15,11 +15,13 @@ export const pushService = {
                 // You can show your "Enable" button.
                 subscription.set(undefined);
             } else if (permissionStatus === 'granted') {
-                // Permission is good, but check getSubscription() to see if 
-                // the Push Service token is still valid.
-                const reg = await navigator.serviceWorker.ready;
-                const sub = await reg.pushManager.getSubscription();
-                subscription.set(sub);
+                if (server_has_push) {
+                    // Permission is good, but check getSubscription() to see if 
+                    // the Push Service token is still valid.
+                    const reg = await navigator.serviceWorker.ready;
+                    const sub = await reg.pushManager.getSubscription();
+                    subscription.set(sub);
+                }
             }
         }
         catch (e) {

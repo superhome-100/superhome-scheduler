@@ -3,6 +3,7 @@ import type { Database } from '$lib/supabase.types';
 import { createServerClient } from '@supabase/ssr';
 import { getSettingsManager } from '$lib/server/settings';
 import type { Handle } from '@sveltejs/kit';
+import { sessionToSessionId } from '$lib/server/supabase';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const { pathname, search } = new URL(event.url);
@@ -84,11 +85,18 @@ export const handle: Handle = async ({ event, resolve }) => {
 			console.error("couldn't get user", user_error);
 			return { session, auth_user, user: null };
 		}
+		const sessionId = sessionToSessionId(session)
+		const { data: uSession } = await event.locals.supabase
+			.from("UserSessions")
+			.select("sessionId")
+			.eq("sessionId", sessionId)
+			.single();
 		return {
 			session, auth_user, user: {
 				...user,
 				avatar_url: auth_user?.user_metadata?.avatar_url ?? null,
-				last_sign_in_at: auth_user?.last_sign_in_at ?? null
+				last_sign_in_at: auth_user?.last_sign_in_at ?? null,
+				has_push: !!uSession
 			}
 		};
 	};

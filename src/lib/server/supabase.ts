@@ -1,7 +1,7 @@
 import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 import { PRIVATE_SUPABASE_SERVICE_KEY } from '$env/static/private';
 
-import { createClient, type SupabaseClient as SupabaseClientExt } from '@supabase/supabase-js';
+import { createClient, type Session, type SupabaseClient as SupabaseClientExt } from '@supabase/supabase-js';
 import type { Database, Enums } from '../supabase.types';
 import type { User } from '$types';
 
@@ -42,4 +42,10 @@ export function checkAuthorisation(
 		throw new AuthError(403,
 			`Auth Error: user(${user.id}) is ${user.privileges} but required ${requiredPrivilege}`
 		);
+}
+
+export function sessionToSessionId(session: Session): string {
+	const base64 = session.access_token.split('.')[1]
+	const jsStr = Buffer.from(base64.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
+	return JSON.parse(jsStr).session_id;
 }

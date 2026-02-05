@@ -1,5 +1,5 @@
 <script>
-	export let resistance = 0.1;
+	export let resistance = 0.05;
 	export let onRefresh = () => {};
 
 	let startY = 0;

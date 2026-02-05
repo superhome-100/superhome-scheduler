@@ -47,7 +47,7 @@
 				ensureUserProfile(user).then(async (u: UserEx | null) => {
 					if (u) {
 						$notifications = await getUserNotifications();
-						await pushService.init();
+						await pushService.init(u.has_push);
 					}
 				}),
 				syncBuoys(),
