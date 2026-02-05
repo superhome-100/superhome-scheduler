@@ -201,4 +201,16 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
+
+-- better would be active users but doesn't really matter
+create policy "Enable users to select UserSessions"
+on "public"."UserSessions"
+as PERMISSIVE
+for SELECT
+to authenticated
+using (
+  TRUE
+);
+
+---
 ---
