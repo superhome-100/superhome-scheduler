@@ -6,7 +6,10 @@ export type User = Tables<'Users'>;
 
 export type UserMinimal = RequireKeys<Tables<'UsersMinimal'>, 'id' | 'nickname' | 'status'>;
 
-export type UserEx = Tables<'Users'> & { avatar_url: string | null, last_sign_in_at: string | null };
+export type UserEx = Tables<'Users'> & {
+	avatar_url: string | null,
+	last_sign_in_at: string | null
+};
 
 export type UserStatusT = Enums<'user_status'>;
 export enum UserStatus {

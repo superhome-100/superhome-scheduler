@@ -5,13 +5,23 @@ import { supabaseServiceRole } from './supabase';
 import webpush, { type PushSubscription } from 'web-push';
 import type { Reservation, User } from '$types';
 import { dayjs } from '$lib/datetimeUtils';
-
+import { LRUCache } from 'lru-cache'
+import type { Json } from '$lib/supabase.types';
 
 webpush.setVapidDetails(
     PUBLIC_VAPID_SUBJECT,
     PUBLIC_VAPID_KEY,
     PRIVATE_VAPID_KEY
 );
+
+
+const userIdToPushCache = new LRUCache<string, {
+    sessionId: string;
+    pushSubscription: Json;
+}[]>({
+    max: 1000,
+    ttl: 1000 * 5 // ms
+})
 
 export const pushNotificationService = {
     /**
@@ -22,14 +32,9 @@ export const pushNotificationService = {
      */
     async send(userId: string, title: string, message: string, tag: string | undefined, url: string = '/') {
         try {
-            const { data } = await supabaseServiceRole
-                .from("UserSessions")
-                .select("sessionId, pushSubscription")
-                .eq("userId", userId)
-                .not("pushSubscription", "is", null)
-                .throwOnError()
+            const pss = await this._getPushSubscriptions(userId);
 
-            return await Promise.allSettled(data.map(d => {
+            return await Promise.allSettled(pss.map(d => {
                 return (async (subscription) => {
                     const payload = JSON.stringify({
                         title,
@@ -47,6 +52,19 @@ export const pushNotificationService = {
         } catch (e) {
             console.error("pushNotificationService.send", e)
         }
+    },
+
+    async _getPushSubscriptions(userId: string) {
+        let pss = userIdToPushCache.get(userId);
+        if (pss) return pss;
+        const { data } = await supabaseServiceRole
+            .from("UserSessions")
+            .select("sessionId, pushSubscription")
+            .eq("userId", userId)
+            .not("pushSubscription", "is", null)
+            .throwOnError()
+        userIdToPushCache.set(userId, data);
+        return data;
     },
 
     async sendSafe(userId: string, title: string, message: string, tag: string | undefined, url: string = '/') {
