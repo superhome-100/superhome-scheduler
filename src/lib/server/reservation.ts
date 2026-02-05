@@ -344,7 +344,7 @@ export async function submitReservation(
 		.select("*")
 		.throwOnError();
 
-	pushNotificationService.sendReservationCreated(actor, data);
+	await pushNotificationService.sendReservationCreated(actor, data);
 }
 
 async function throwIfUpdateIsInvalid(
@@ -574,7 +574,7 @@ export async function modifyReservation(actor: User, formData: AppFormData) {
 			.select('*')
 			.single();
 		if (error) errors.push(error);
-		else pushNotificationService.sendReservationModified(actor, [data]);
+		else await pushNotificationService.sendReservationModified(actor, [data]);
 	}
 
 	if (create.length > 0) {
@@ -583,7 +583,7 @@ export async function modifyReservation(actor: User, formData: AppFormData) {
 			.insert(create)
 			.select('*');
 		if (error) errors.push(error);
-		else if (createrecs) pushNotificationService.sendReservationCreated(actor, createrecs);
+		else if (createrecs) await pushNotificationService.sendReservationCreated(actor, createrecs);
 	}
 
 	if (cancel.length > 0) {
@@ -593,7 +593,7 @@ export async function modifyReservation(actor: User, formData: AppFormData) {
 			.select("*")
 			.in("id", cancel);
 		if (error) errors.push(error);
-		else if (data) pushNotificationService.sendReservationStatus(actor, data);
+		else if (data) await pushNotificationService.sendReservationStatus(actor, data);
 	}
 
 	if (errors.length > 0)
@@ -632,7 +632,7 @@ export async function adminUpdate(actor: User, formData: AppFormData) {
 		.single()
 		.throwOnError();
 
-	pushNotificationService.sendReservationStatus(actor, [data]);
+	await pushNotificationService.sendReservationStatus(actor, [data]);
 }
 
 async function throwIfInvalidCancellation(data: Tables<'Reservations'>) {
@@ -692,7 +692,7 @@ export async function cancelReservation(actor: User, formData: AppFormData) {
 				if (error) errors.push({ id: m.id, error });
 				else modrecs.push(data);
 			}
-			pushNotificationService.sendReservationModified(actor, modrecs);
+			await pushNotificationService.sendReservationModified(actor, modrecs);
 		}
 
 		cancel = cancel.concat(existing.filter((rsv) => !save.includes(rsv.user)).map((rsv) => rsv.id));
@@ -704,7 +704,7 @@ export async function cancelReservation(actor: User, formData: AppFormData) {
 			.select('*')
 			.in('id', cancel);
 		if (error) errors.push({ id, error });
-		else if (data) pushNotificationService.sendReservationStatus(actor, data);
+		else if (data) await pushNotificationService.sendReservationStatus(actor, data);
 	}
 	if (errors.length)
 		throw Error(`Error during cancelling reservations: ${JSON.stringify(errors)}`);
@@ -721,5 +721,5 @@ export async function approveAllPendingReservations(actor: User, category: Reser
 		.eq('status', ReservationStatus.pending)
 		.throwOnError();
 
-	pushNotificationService.sendReservationStatus(actor, data)
+	await pushNotificationService.sendReservationStatus(actor, data)
 }

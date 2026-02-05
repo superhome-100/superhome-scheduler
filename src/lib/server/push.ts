@@ -51,6 +51,7 @@ export const pushNotificationService = {
             }))
         } catch (e) {
             console.error("pushNotificationService.send", e)
+            return [];
         }
     },
 
@@ -79,9 +80,9 @@ export const pushNotificationService = {
         await Promise.allSettled(rsvs
             .filter(r => r.user !== actor.id)
             .map(async (rsv) => this.sendSafe(rsv.user,
-                `${upperFirst(rsv.category)} ${shortDateTime(rsv)}: ${fn(rsv)}!`,
+                `${upperFirst(rsv.category)} ${shortDateTime(rsv)}: ${fn(rsv)}`,
                 reservationDetails(rsv),
-                `/single-day/${rsv.category}/${rsv.date}`
+                '/', // `/single-day/${rsv.category}/${rsv.date}`
             )))
     },
 
