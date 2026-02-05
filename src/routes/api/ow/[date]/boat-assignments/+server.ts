@@ -11,11 +11,12 @@ export async function GET({ params, locals: { user } }: RequestEvent) {
 			.from('Boats')
 			.select('*')
 			.eq('id', date)
-			.single()
 			.throwOnError();
 
-		const assignments = boatAssignments?.assignments ? JSON.parse(boatAssignments.assignments) : {};
-
+		let assignments = {};
+		if (boatAssignments.length > 0 && boatAssignments[0].assignments) {
+			assignments = boatAssignments[0].assignments;
+		}
 		return json({ status: 'success', assignments });
 	} catch (error) {
 		if (error instanceof AuthError) {

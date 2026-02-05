@@ -185,6 +185,7 @@ export type Database = {
 					createdAt: string;
 					id: string;
 					message: string;
+					status: Database['public']['Enums']['notification_status'];
 					updatedAt: string;
 				};
 				Insert: {
@@ -192,6 +193,7 @@ export type Database = {
 					createdAt?: string;
 					id?: string;
 					message: string;
+					status?: Database['public']['Enums']['notification_status'];
 					updatedAt?: string;
 				};
 				Update: {
@@ -199,6 +201,7 @@ export type Database = {
 					createdAt?: string;
 					id?: string;
 					message?: string;
+					status?: Database['public']['Enums']['notification_status'];
 					updatedAt?: string;
 				};
 				Relationships: [];
@@ -557,6 +560,7 @@ export type Database = {
 					createdAt: string;
 					id: string;
 					message: string;
+					status: Database['public']['Enums']['notification_status'];
 					updatedAt: string;
 				}[];
 				SetofOptions: {
@@ -570,6 +574,7 @@ export type Database = {
 			is_admin: { Args: never; Returns: boolean };
 		};
 		Enums: {
+			notification_status: 'active' | 'inactive';
 			reservation_category: 'classroom' | 'openwater' | 'pool';
 			reservation_status: 'canceled' | 'confirmed' | 'pending' | 'rejected';
 			reservation_type:
@@ -710,6 +715,7 @@ export const Constants = {
 	},
 	public: {
 		Enums: {
+			notification_status: ['active', 'inactive'],
 			reservation_category: ['classroom', 'openwater', 'pool'],
 			reservation_status: ['canceled', 'confirmed', 'pending', 'rejected'],
 			reservation_type: [

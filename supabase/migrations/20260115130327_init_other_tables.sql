@@ -257,10 +257,16 @@ EXECUTE FUNCTION set_updatedAt_to_now();
 ---
 ---
 
+create type "public"."notification_status" as enum (
+    'active',
+    'inactive'
+);
+
 create table "public"."Notifications" (
     "id" text not null default gen_random_uuid()::text,
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
+    "status" public.notification_status not null default 'active'::notification_status,
     "message" text not null,
     "checkboxMessage" text not null,
 
@@ -303,7 +309,8 @@ SET search_path = ''
 AS $$
   SELECT n.*
   FROM public."Notifications" n
-  WHERE NOT EXISTS (
+  WHERE n.status = 'active' -- only active notifications
+    AND NOT EXISTS (
     SELECT 1 
     FROM public."NotificationReceipts" nr 
     WHERE nr.notification = n.id 
