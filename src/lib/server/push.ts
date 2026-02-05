@@ -30,7 +30,7 @@ export const pushNotificationService = {
      * #2: From Superhome
      * #3: <message>
      */
-    async send(userId: string, title: string, message: string, tag: string | undefined, url: string = '/') {
+    async send(userId: string, title: string, message: string, url: string = '/') {
         try {
             const pss = await this._getPushSubscriptions(userId);
 
@@ -67,9 +67,9 @@ export const pushNotificationService = {
         return data;
     },
 
-    async sendSafe(userId: string, title: string, message: string, tag: string | undefined, url: string = '/') {
+    async sendSafe(userId: string, title: string, message: string, url: string = '/') {
         try {
-            await this.send(userId, title, message, tag, url);
+            await this.send(userId, title, message, url);
         } catch (e) {
             console.error("pushNotificationService.send", e)
         }
@@ -81,7 +81,6 @@ export const pushNotificationService = {
             .map(async (rsv) => this.sendSafe(rsv.user,
                 `${upperFirst(rsv.category)} ${shortDateTime(rsv)}: ${fn(rsv)}!`,
                 reservationDetails(rsv),
-                rsv.id,
                 `/single-day/${rsv.category}/${rsv.date}`
             )))
     },
