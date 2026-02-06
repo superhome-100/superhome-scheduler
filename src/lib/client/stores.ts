@@ -6,6 +6,7 @@ import { getYYYYMMDD, PanglaoDate } from '$lib/datetimeUtils';
 import { defaultDateSettings, getDateSetting, type DateSetting } from '$lib/firestore';
 import { getSettingsManager } from '$lib/settings';
 import { type SettingsManager } from '$lib/settingsManager';
+import { deepEqual } from '$lib/utils';
 
 type CoreStore = { supabase: SupabaseClient, user: UserEx | null };
 
@@ -81,8 +82,11 @@ function subscribeCoreWithEventAndParam<T, P>(
         safeCb();
     });
     const unsubP = paramStore.subscribe(async (pN: P) => {
-        param = pN;
-        safeCb();
+        const isEq = deepEqual(param, pN)
+        if (!isEq) {
+            param = pN;
+            safeCb();
+        }
     });
     const unsubSupa = supabase_es.subscribe(safeCb, event, ...events);
     return () => {
