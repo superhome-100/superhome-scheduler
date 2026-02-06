@@ -4,12 +4,16 @@ import { convertFromXataToAppType } from '$lib/server/reservation';
 import { supabaseServiceRole, checkAuthorisation, AuthError } from '$lib/server/supabase';
 import dayjs from 'dayjs';
 import { ReservationStatus } from '$types';
+import type { Enums } from '$lib/supabase.types';
 
 interface RequestData {
 	date: string;
 	category: string;
 }
 
+/**
+ * @deprecated unused, direct access to supabase now
+ */
 export async function POST({ request, locals: { user } }: RequestEvent) {
 	try {
 		checkAuthorisation(user);
@@ -19,7 +23,7 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 			.from('Reservations')
 			.select('*, Users(nickname)')
 			.eq('date', dayjs(date).format('YYYY-MM-DD'))
-			.eq('category', category)
+			.eq('category', category as Enums<'reservation_category'>)
 			.in('status', [ReservationStatus.confirmed, ReservationStatus.pending])
 			.throwOnError();
 

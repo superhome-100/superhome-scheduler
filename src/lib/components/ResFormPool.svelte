@@ -2,15 +2,16 @@
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 	import { startTimes, endTimes, minuteOfDay } from '$lib/reservationTimes';
 	import { timeStrToMin, datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
-	import { canSubmit, user } from '$lib/stores';
-	import { Settings } from '$lib/client/settings';
+	import { canSubmit } from '$lib/stores';
 	import { adminView, resTypeModDisabled } from '$lib/utils';
 	import { ReservationType } from '$types';
 	import type { Reservation } from '$types';
 	import InputLabel from './tiny_components/InputLabel.svelte';
+	import { storedSettings } from '$lib/client/stores';
+	import { type SettingsManager } from '$lib/settings';
 
-	const lanes = () => Settings.getPoolLanes();
-	const rooms = () => Settings.getClassrooms();
+	let lanes = $storedSettings.getPoolLanes();
+	let rooms = $storedSettings.getClassrooms();
 
 	export let rsv: Reservation | null = null;
 	export let category = 'pool';
@@ -27,20 +28,20 @@
 
 	date = !rsv || !rsv?.date ? (date ? date : dateFn(category)) : rsv.date;
 
-	const getStartTimes = (date: string, category: string) => {
-		let startTs = startTimes(Settings, date, category);
+	const getStartTimes = (sm: SettingsManager, date: string, category: string) => {
+		let startTs = startTimes(sm, date, category);
 		let today = PanglaoDate();
 		if (!disabled && date === datetimeToLocalDateStr(today)) {
 			let now = minuteOfDay(today);
 			startTs = startTs.filter((time) => timeStrToMin(time) > now);
 			if (startTs.length == 0) {
-				startTs = startTimes(Settings, date, category);
+				startTs = startTimes(sm, date, category);
 			}
 		}
 		return startTs;
 	};
-	let chosenStart = rsv == null ? getStartTimes(date, category)[0] : rsv.startTime;
-	let chosenEnd = rsv == null ? getStartTimes(date, category)[1] : rsv.endTime;
+	let chosenStart = rsv == null ? getStartTimes($storedSettings, date, category)[0] : rsv.startTime;
+	let chosenEnd = rsv == null ? getStartTimes($storedSettings, date, category)[1] : rsv.endTime;
 	let autoOrCourse =
 		rsv == null ? (resType == null ? ReservationType.autonomous : resType) : rsv.resType;
 	let numStudents = rsv == null || rsv.resType !== ReservationType.course ? 1 : rsv.numStudents;
@@ -62,7 +63,7 @@
 			a fixed assignment could make it impossible to auto-assign the remaining reservations -->
 				<select id="formLane" name="lane" class="w-full" value={rsv?.lanes[0]}>
 					<option value="auto">Auto</option>
-					{#each lanes() as lane}
+					{#each lanes as lane}
 						<option value={lane}>{lane}</option>
 					{/each}
 				</select>
@@ -72,7 +73,7 @@
 			<InputLabel forInput="formRoom" label="Room">
 				<select id="formRoom" name="room" class="w-full" value={rsv.room}>
 					<option value="auto">Auto</option>
-					{#each rooms() as room}
+					{#each rooms as room}
 						<option value={room}>{room}</option>
 					{/each}
 				</select>
@@ -81,7 +82,7 @@
 
 		<InputLabel forInput="formStart" label="Start Time">
 			<select id="formStart" class="w-full" {disabled} bind:value={chosenStart} name="startTime">
-				{#each getStartTimes(date, category) as t}
+				{#each getStartTimes($storedSettings, date, category) as t}
 					<option value={t}>{t}</option>
 				{/each}
 			</select>
@@ -89,7 +90,7 @@
 
 		<InputLabel forInput="formEnd" label="End Time">
 			<select id="formEnd" class="w-full" {disabled} name="endTime" value={chosenEnd}>
-				{#each endTimes(Settings, date, category) as t}
+				{#each endTimes($storedSettings, date, category) as t}
 					{#if validEndTime(chosenStart, t)}
 						<option value={t}>{t}</option>
 					{/if}

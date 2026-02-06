@@ -1,7 +1,7 @@
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$env/static/public';
 import type { Database } from '$lib/supabase.types';
 import { createServerClient } from '@supabase/ssr';
-import { getSettingsManager } from '$lib/server/settings';
+import { getSettingsManager } from '$lib/settings';
 import type { Handle } from '@sveltejs/kit';
 import { sessionToSessionId } from '$lib/server/supabase';
 
@@ -105,7 +105,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.session = session;
 	event.locals.auth_user = auth_user;
 	event.locals.user = user;
-	event.locals.settings = await getSettingsManager();
+	event.locals.settings = await getSettingsManager(event.locals.supabase);
 
 	// event.locals avaiable in actions and +layout.server.ts
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { user, users, reservations } from '$lib/stores';
+	import { storedUser as user } from '$lib/client/stores';
+	import { storedUsers as users } from '$lib/client/stores';
 	import { toast } from 'svelte-french-toast';
 	import { getContext } from 'svelte';
 	import { popup } from '$lib/components/Popup.svelte';

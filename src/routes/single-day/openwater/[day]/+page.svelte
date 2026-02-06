@@ -1,33 +1,37 @@
 <script lang="ts">
-	import { page } from '$app/stores';
 	import { swipe } from 'svelte-gestures';
 	import { goto } from '$app/navigation';
 	import DayOpenWater from '$lib/components/DayOpenWaterV2.svelte';
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import { loginState, stateLoaded, view, viewMode } from '$lib/stores';
+	import { viewMode } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants';
 	import { toast } from 'svelte-french-toast';
 	import dayjs from 'dayjs';
 	import { ReservationCategory, type Reservation } from '$types';
-
-	import { flagOWAmAsFull, listenToDateSetting, listenOnDateUpdate } from '$lib/firestore';
-	import { onDestroy } from 'svelte';
-
 	import { getCategoryDatePath } from '$lib/url';
-	import { approveAllPendingReservations } from '$lib/api';
-	import { getYYYYMM } from '$lib/datetimeUtils.js';
+	import { approveAllPendingReservations, flagOWAmAsFull, lockBuoyAssignments } from '$lib/api';
+	import { getYYYYMM, getYYYYMMDD } from '$lib/datetimeUtils.js';
+	import {
+		storedDaySettings,
+		storedDayReservations,
+		storedDayReservations_param,
+		storedUser
+	} from '$lib/client/stores.js';
+	import { ow_am_full } from '$lib/firestore.js';
 
 	export let data;
-	const { supabase, day } = data;
+	const { day, settingsManager } = data;
+	storedDayReservations_param.set({ day });
 
 	const category = 'openwater';
 
 	let categories = [...CATEGORIES];
 
-	let refreshTs = Date.now();
-	let reservations: Reservation[] = [];
+	$: reservations = $storedDayReservations.filter(
+		(r) => r.category == ReservationCategory.openwater
+	);
 
 	$: groupsHaveBeenAssignedBuoy = reservations.every((rsv) => rsv.buoy !== 'auto');
 	$: groupsAreAutoAssigned = reservations.every((rsv) => rsv.buoy === 'auto');
@@ -39,8 +43,6 @@
 			return 'bg-root-bg-light dark:bg-root-bg-dark';
 		}
 	};
-
-	$view = 'single-day';
 
 	function prevDay() {
 		const prev = dayjs(day).subtract(1, 'day');
@@ -64,59 +66,18 @@
 	}
 
 	const toggleBuoyLock = async (lock: boolean) => {
-		const day = day;
-		const fn = async () => {
-			const response = await fetch('/api/lockBuoyAssignments', {
-				method: 'POST',
-				headers: { 'Content-type': 'application/json' },
-				body: JSON.stringify({
-					lock,
-					date: day
-				})
-			});
-			let data = await response.json();
-			if (data.status === 'success') {
-				refreshTs = Date.now();
-				reservations = data.reservations;
-				return Promise.resolve();
-			} else {
-				console.error(data.error);
-				return Promise.reject();
-			}
-		};
 		// @ts-ignore
-		toast.promise(fn(), {
+		toast.promise(lockBuoyAssignments(day, lock), {
 			error: 'buoy lock failed'
 		});
 	};
 	const lockBuoys = async () => toggleBuoyLock(true);
 	const unlockBuoys = async () => toggleBuoyLock(false);
 
-	let isAmFull = false;
-
-	let unsubscribe: () => void;
-	let firestoreRefreshUnsub: () => void;
-	$: $page, handleRouteChange();
-
-	function handleRouteChange() {
-		if (unsubscribe) unsubscribe();
-		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
-		// Place your route change detection logic here
-		unsubscribe = listenToDateSetting(supabase, new Date(day), (setting) => {
-			isAmFull = !!setting.ow_am_full;
-		});
-		firestoreRefreshUnsub = listenOnDateUpdate(new Date(day), 'openwater', () => {
-			refreshTs = Date.now();
-		});
-	}
-
-	onDestroy(() => {
-		if (unsubscribe) unsubscribe();
-		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
-	});
+	$: isAmFull = $storedDaySettings[ow_am_full];
 </script>
 
-{#if $stateLoaded && $loginState === 'in'}
+{#if $storedUser}
 	<div class="[&>*]:mx-auto flex items-center justify-between">
 		<div class="dropdown h-8 mb-4">
 			<label tabindex="0" class="border border-gray-200 dark:border-gray-700 btn btn-fsh-dropdown"
@@ -151,15 +112,7 @@
 				on:open={() => (modalOpened = true)}
 				on:close={() => {
 					modalOpened = false;
-					refreshTs = Date.now();
-				}}
-				><ReservationDialog
-					{category}
-					dateFn={() => day}
-					onUpdate={() => {
-						refreshTs = Date.now();
-					}}
-				/></Modal
+				}}><ReservationDialog {category} dateFn={() => day} /></Modal
 			>
 		</span>
 	</div>
@@ -193,7 +146,7 @@
 				<button
 					class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
 					on:click={() => {
-						flagOWAmAsFull(new Date(day), !isAmFull);
+						flagOWAmAsFull(getYYYYMMDD(day), !isAmFull);
 					}}
 				>
 					mark morning as {isAmFull ? 'not' : ''} full
@@ -216,14 +169,7 @@
 		on:swipe={swipeHandler}
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			<DayOpenWater
-				date={day}
-				{isAmFull}
-				{refreshTs}
-				onUpdateReservations={(rsvs) => {
-					reservations = rsvs;
-				}}
-			/>
+			<DayOpenWater date={day} {settingsManager} />
 		</Modal>
 	</div>
 {/if}

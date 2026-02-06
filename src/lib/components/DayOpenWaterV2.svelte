@@ -1,22 +1,12 @@
 <script lang="ts">
-	import {
-		adminComments,
-		viewMode,
-		owUpdateStates,
-		buoys,
-		syncBuoys,
-		reservations as reservationsStore
-	} from '$lib/stores';
-	import { getContext, onMount } from 'svelte';
+	import { viewMode } from '$lib/stores';
+	import { getContext } from 'svelte';
 	import AdminComment from '$lib/components/AdminComment.svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
-	import { Settings } from '$lib/client/settings';
 	import LoadingBar from '$lib/components/LoadingBar.svelte';
-	import { getOWAdminComments, getReservationsByDate, getBoatAssignmentsByDate } from '$lib/api';
 	import {
 		type Buoy,
 		type Submission,
-		type Reservation,
 		ReservationCategory,
 		type OWReservation,
 		type ReservationWithUser
@@ -25,22 +15,25 @@
 	import { buoyDesc } from '$lib/utils';
 	import { setBuoyToReservations } from '$lib/autoAssign';
 	import dayjs from 'dayjs';
+	import {
+		isLoading,
+		storedBoatAssignments,
+		storedBuoys,
+		storedDayReservations,
+		storedDaySettings,
+		storedOWAdminComments
+	} from '$lib/client/stores';
+	import { ow_am_full } from '$lib/firestore';
+	import type { SettingsManager } from '$lib/settingsManager';
 
 	export let date = dayjs().format('YYYY-MM-DD');
-	export let isAmFull = false;
-	export let refreshTs = Date.now();
+	export let settingsManager: SettingsManager;
+	$: isAmFull = $storedDaySettings[ow_am_full];
 
-	export let onUpdateReservations: (reservations: Reservation[]) => void;
-
-	// local ts detect if timestamp was updated
-	let isLoading = false;
-	let adminCommentsLastUpdate = 0;
-	let reservationsLastUpdate = 0;
-
-	let reservations: Reservation[] = [];
-	let boatAssignments: {
-		[buoyId: string]: string | null;
-	} = {};
+	$: reservations = $storedDayReservations.filter(
+		(r) => r.category === ReservationCategory.openwater
+	);
+	$: boatAssignments = $storedBoatAssignments;
 
 	const { open } = getContext('simple-modal');
 
@@ -48,10 +41,7 @@
 		open(RsvTabs, {
 			rsvs,
 			hasForm: true,
-			disableModify: $viewMode === 'admin',
-			onSubmit: () => {
-				refreshAll();
-			}
+			disableModify: $viewMode === 'admin'
 		});
 	};
 
@@ -59,32 +49,7 @@
 		open(AdminComment, { date, buoy });
 	};
 
-	$: boats = Settings.getBoats(date);
-
-	const loadAdminComments = async () => {
-		if (date) {
-			$adminComments[date] = await getOWAdminComments(date);
-			$adminComments = { ...$adminComments };
-		} else {
-			$adminComments[date] = [];
-		}
-	};
-
-	const loadReservations = async () => {
-		const data = await getReservationsByDate(date, ReservationCategory.openwater);
-		if (data.reservations) {
-			reservations = data.reservations;
-			$reservationsStore = reservations;
-		}
-		onUpdateReservations(reservations);
-	};
-
-	const loadBoatAssignments = async () => {
-		const res = await getBoatAssignmentsByDate(date);
-		if (res.status === 'success') {
-			boatAssignments = res.assignments || {};
-		}
-	};
+	$: boats = settingsManager.getBoats(date);
 
 	const saveAssignments = async (e) => {
 		e.target.blur();
@@ -108,58 +73,13 @@
 		if (data.status === 'success') {
 			boatAssignments = JSON.parse(data.record.assignments);
 		}
-		initialize();
 	};
 
-	const refreshAll = async () => {
-		adminCommentsLastUpdate = 0;
-		reservationsLastUpdate = 0;
-		reservationsLastUpdate = 0;
-		isLoading = true;
-		await Promise.all([
-			loadAdminComments(),
-			loadReservations(),
-			loadBoatAssignments(),
-			syncBuoys()
-		]);
-		initialize();
-		isLoading = false;
-	};
-	const initialize = async () => {
-		isLoading = true;
-		if (reservations && $buoys?.length) {
-			const amReservations = setBuoyToReservations(
-				$buoys,
-				reservations.filter((r) => r.owTime === 'AM') as OWReservation[]
-			);
-			const pmReservations = setBuoyToReservations(
-				$buoys,
-				reservations.filter((r) => r.owTime === 'PM') as OWReservation[]
-			);
-			const comments = $adminComments[date] || [];
-			buoyGroupings = [...$buoys]
-				.map((v) => {
-					const amComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'AM');
-					const pmComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'PM');
-					const buoyAmReservation = amReservations.filter((r) => r._buoy === v.name);
-					const buoyPmReservation = pmReservations.filter((r) => r._buoy === v.name);
-					return {
-						id: `group_${v.name}`,
-						buoy: v,
-						boat: boatAssignments?.[v.name!] || null,
-						amReservations: buoyAmReservation,
-						pmReservations: pmReservations.filter((r) => r._buoy === v.name),
-						amAdminComment: amComment?.comment ?? undefined,
-						pmAdminComment: pmComment?.comment ?? undefined,
-						// only AM headcount is necessary
-						amHeadCount: getHeadCount(buoyAmReservation),
-						pmHeadCount: getHeadCount(buoyPmReservation)
-					};
-				})
-				.sort((a, b) => +(a.boat || 0) - +(b.boat || 0))
-				.filter((v) => v.amReservations.length > 0 || v.pmReservations.length > 0);
-		}
-		isLoading = false;
+	const getHeadCount = (rsvs: Submission[]) => {
+		return rsvs.reduce(
+			(acc, rsv) => acc + (rsv.resType === 'course' ? (rsv.numStudents ?? 0) + 1 : 1),
+			0
+		);
 	};
 
 	type BuoyGrouping = {
@@ -173,44 +93,44 @@
 		amHeadCount: number;
 		pmHeadCount: number;
 	};
-	let buoyGroupings: BuoyGrouping[] = [];
-
-	const getHeadCount = (rsvs: Submission[]) => {
-		return rsvs.reduce(
-			(acc, rsv) => acc + (rsv.resType === 'course' ? (rsv.numStudents ?? 0) + 1 : 1),
-			0
+	$: buoyGroupings = (() => {
+		if (!reservations || !$storedBuoys.length) return [];
+		const amReservations = setBuoyToReservations(
+			$storedBuoys,
+			reservations.filter((r) => r.owTime === 'AM') as OWReservation[]
 		);
-	};
+		const pmReservations = setBuoyToReservations(
+			$storedBuoys,
+			reservations.filter((r) => r.owTime === 'PM') as OWReservation[]
+		);
+		const comments = $storedOWAdminComments || [];
+		return $storedBuoys
+			.map((v) => {
+				const amComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'AM');
+				const pmComment = comments.find((c) => c.buoy === v.name && c.am_pm === 'PM');
+				const buoyAmReservation = amReservations.filter((r) => r._buoy === v.name);
+				const buoyPmReservation = pmReservations.filter((r) => r._buoy === v.name);
+				return {
+					id: `group_${v.name}`,
+					buoy: v,
+					boat: boatAssignments?.[v.name!] || null,
+					amReservations: buoyAmReservation,
+					pmReservations: pmReservations.filter((r) => r._buoy === v.name),
+					amAdminComment: amComment?.comment ?? undefined,
+					pmAdminComment: pmComment?.comment ?? undefined,
+					// only AM headcount is necessary
+					amHeadCount: getHeadCount(buoyAmReservation),
+					pmHeadCount: getHeadCount(buoyPmReservation)
+				};
+			})
+			.sort((a, b) => +(a.boat || 0) - +(b.boat || 0))
+			.filter((v) => v.amReservations.length > 0 || v.pmReservations.length > 0);
+	})();
 
 	$: isAdmin = $viewMode === 'admin';
-
-	onMount(async () => {
-		if (date) {
-			await refreshAll();
-		}
-	});
-
-	$: {
-		(date || refreshTs) && refreshAll();
-	}
-
-	owUpdateStates.subscribe(async (states) => {
-		isLoading = true;
-		const updates: Promise<void>[] = [];
-		if (states[date]?.adminComments !== adminCommentsLastUpdate) {
-			adminCommentsLastUpdate = states[date]?.adminComments || 0;
-			updates.push(loadAdminComments());
-		}
-		if (states[date]?.reservations !== reservationsLastUpdate) {
-			reservationsLastUpdate = states[date]?.reservations || 0;
-			updates.push(loadReservations());
-		}
-		await Promise.all(updates);
-		initialize();
-	});
 </script>
 
-{#if isLoading}
+{#if $isLoading}
 	<LoadingBar />
 {/if}
 {#if isAmFull}
@@ -218,7 +138,7 @@
 		Morning session is full please book in the afternoon instead.
 	</header>
 {/if}
-{#if Settings.getOpenForBusiness(date) === false}
+{#if settingsManager.getOpenForBusiness(date) === false}
 	<div class="font-semibold text-3xl text-center">Closed</div>
 {:else}
 	<section class="w-full relative block">

@@ -1,6 +1,7 @@
 import { PUBLIC_SUPABASE_PUBLISHABLE_KEY, PUBLIC_SUPABASE_URL } from '$env/static/public';
 import { createBrowserClient, createServerClient, isBrowser } from '@supabase/ssr';
 import type { LayoutLoad } from './$types';
+import { getSettingsManager } from '$lib/settingsManager';
 
 // data: from +layout.server.ts
 export const load: LayoutLoad = async ({ fetch, data, depends }) => {
@@ -25,6 +26,7 @@ export const load: LayoutLoad = async ({ fetch, data, depends }) => {
 
 	return {
 		settings: data.settings,
+		settingsManager: getSettingsManager(data.settings),
 		supabase,
 		session: data.session,
 		user: data.user,

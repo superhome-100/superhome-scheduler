@@ -1,11 +1,9 @@
 <script lang="ts">
-	import { adminComments, updateOWState } from '$lib/stores';
-	import { datetimeToLocalDateStr } from '$lib/datetimeUtils';
-	import { OWTime } from '$types';
+	import { OWTime, type BuoyGroupings } from '$types';
 	import { enhance } from '$app/forms';
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-french-toast';
-	import type { BuoyGroupings } from '$lib/server/xata.codegen';
+	import { storedOWAdminComments } from '$lib/client/stores';
 
 	export let date: string;
 	export let buoy: string;
@@ -13,19 +11,15 @@
 	const { close } = getContext('simple-modal');
 
 	const getThisRsvAdminComments = (
-		date: string,
 		buoy: string,
 		owTime: string,
-		adminComments: Record<string, BuoyGroupings[]>
+		adminComments: BuoyGroupings[]
 	) => {
-		if (adminComments[date]) {
-			for (let ac of adminComments[date]) {
-				if (ac.buoy == buoy && ac.am_pm == owTime) {
-					return ac.comment;
-				}
+		for (let ac of adminComments) {
+			if (ac.buoy == buoy && ac.am_pm == owTime) {
+				return ac.comment;
 			}
 		}
-		return '';
 	};
 
 	$: owTime = OWTime.AM;
@@ -35,20 +29,6 @@
 		return async ({ result, update }) => {
 			switch (result.type) {
 				case 'success':
-					const acRec = result.data.record;
-					const date = datetimeToLocalDateStr(acRec.date);
-					for (let i = 0; i < $adminComments[date].length; i++) {
-						if ($adminComments[date][i].id == acRec.id) {
-							$adminComments[date].splice(i, 1);
-							break;
-						}
-					}
-					if (acRec.comment) {
-						$adminComments[date].push(acRec);
-					}
-					$adminComments = { ...$adminComments };
-
-					updateOWState(date, 'adminComments');
 					break;
 				default:
 					console.error(result);
@@ -84,7 +64,7 @@
 					id="adminComments"
 					name="admin_comments"
 					class="w-44 xs:w-52 flex-1 text-gray-700 dark:text-white"
-					value={getThisRsvAdminComments(date, buoy, owTime, $adminComments)}
+					value={getThisRsvAdminComments(buoy, owTime, $storedOWAdminComments)}
 					tabindex="4"
 				/>
 			</div>

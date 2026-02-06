@@ -17,7 +17,8 @@
 	import UserIcon from '$lib/components/UserIcon.svelte';
 	import Toggle from '$lib/components/Toggle.svelte';
 	import { sineIn } from 'svelte/easing';
-	import { user, view, viewMode, viewModeStorageKey } from '$lib/stores';
+	import { viewMode } from '$lib/stores';
+	import { storedUser as user } from '$lib/client/stores';
 	import { toast } from 'svelte-french-toast';
 	import { page } from '$app/state';
 	import { signOut } from '$lib/user';
@@ -28,6 +29,7 @@
 	export let day = '';
 	const schedulerDoc =
 		'https://docs.google.com/document/d/1FQ828hDuuPRnQ7QWYMykSv9bT3Lmxi0amLsFyTjnyuM/edit?usp=share_link';
+	const viewModeStorageKey = 'superhome-scheduler.viewMode';
 
 	let drawerHidden = true;
 	$: activateClickOutside = !drawerHidden && width < breakPoint;
@@ -98,7 +100,7 @@
 	onMount(() => {
 		const stored = localStorage.getItem(viewModeStorageKey);
 		if (stored) {
-			$viewMode = stored === 'admin' ? 'admin' : 'normal';
+			$viewMode = stored === 'admin' && $user?.privileges === 'admin' ? 'admin' : 'normal';
 		}
 	});
 
@@ -186,32 +188,24 @@
 						{/if}
 					</SidebarDropdownWrapper>
 				{/if}
-				<SidebarItem
-					label="My Reservations"
-					href="/"
-					on:click={toggleSide}
-					active={activeUrl === `/`}
-				/>
+				<SidebarItem label="My Reservations" href="/" on:click={toggleSide} />
 				<SidebarDropdownWrapper isOpen={true} label="Calendars">
 					<SidebarItem
 						label="Pool"
-						href="/{$view}/pool/{day}"
+						href="/multi-day/pool/{day}"
 						{spanClass}
 						on:click={toggleSide}
-						active={activeUrl === '/' + $view + '/pool'}
 					/>
 					<SidebarItem
 						label="Open Water"
-						href="/{$view}/openwater/{day}"
+						href="/multi-day/openwater/{day}"
 						{spanClass}
 						on:click={toggleSide}
-						active={activeUrl === '/' + $view + '/openwater'}
 					/><SidebarItem
 						label="Classroom"
-						href="/{$view}/classroom/{day}"
+						href="/multi-day/classroom/{day}"
 						{spanClass}
 						on:click={toggleSide}
-						active={activeUrl === '/' + $view + '/classroom'}
 					/>
 				</SidebarDropdownWrapper>
 				<SidebarItem label="How to use this app" target="_blank" href={schedulerDoc} />

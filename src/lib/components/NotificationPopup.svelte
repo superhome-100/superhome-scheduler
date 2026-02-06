@@ -1,5 +1,5 @@
 <script>
-	import { user } from '$lib/stores';
+	import { storedUser as user } from '$lib/client/stores';
 	import { enhance } from '$app/forms';
 	import { getContext } from 'svelte';
 

@@ -1,18 +1,20 @@
 import { datetimeToLocalDateStr } from './datetimeUtils';
-import { user, users, viewMode } from './stores';
+import { viewMode } from './stores';
+import { storedUsers as users, storedUser as user } from '$lib/client/stores';
 import { get } from 'svelte/store';
 import { assignHourlySpaces } from './autoAssign';
-import { ReservationType, type Buoy } from '$types';
+import { ReservationCategory, ReservationType, type Buoy, type Reservation, type ReservationWithUser } from '$types';
+import type { SettingsManager } from './settingsManager';
 
-interface Reservation {
-	user: string;
-	resType: string;
-	numStudents?: number;
-	category: string;
-	status: 'pending' | 'confirmed';
-	date: string;
-	maxDepth?: number;
-}
+// interface Reservation {
+// 	user: string;
+// 	resType: string;
+// 	numStudents?: number;
+// 	category: string;
+// 	status: 'pending' | 'confirmed';
+// 	date: string;
+// 	maxDepth?: number;
+// }
 
 export function cleanUpFormDataBuddyFields(formData: FormData): void {
 	const resType = formData.get('resType') as string;
@@ -33,7 +35,7 @@ export function cleanUpFormDataBuddyFields(formData: FormData): void {
 	formData.set('buddies', JSON.stringify(buddies));
 }
 
-export const displayTag = (rsv: Reservation, admin: boolean): string => {
+export const displayTag = (rsv: ReservationWithUser, admin: boolean): string => {
 	let tag = rsv.Users?.nickname ?? get(users)[rsv.user].nickname;
 	if (rsv.resType === 'course') {
 		tag += ' +' + rsv.numStudents;
@@ -49,13 +51,13 @@ export const badgeColor = (rsvs: Reservation[]): string => {
 	return approved ? 'bg-[#00FF00]' : 'bg-[#FFFF00]';
 };
 
-export function getDaySchedule(rsvs: Reservation[], datetime: Date | string, category: string) {
+export function getDaySchedule(sm: SettingsManager, rsvs: Reservation[], datetime: Date | string, category: string) {
 	const today = datetimeToLocalDateStr(datetime);
 	rsvs = rsvs.filter(
 		(v) =>
 			['pending', 'confirmed'].includes(v.status) && v.category === category && v.date === today
 	);
-	return assignHourlySpaces(rsvs, today, category);
+	return assignHourlySpaces(sm, rsvs, today, category as ReservationCategory);
 }
 
 export const adminView = (viewOnly: boolean): boolean => {

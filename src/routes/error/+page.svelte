@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { user } from '$lib/stores';
+	import { storedUser as user } from '$lib/client/stores';
 	import { goto } from '$app/navigation';
 
 	$: {

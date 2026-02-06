@@ -10,20 +10,11 @@ export interface DateSetting {
 	[ow_am_full]: boolean;
 }
 
-const defaultDateSettings: DateSetting = {
+export const defaultDateSettings: DateSetting = {
 	[ow_am_full]: false
 };
 
 export const ow_am_full_default = false;
-
-
-export async function flagOWAmAsFull(date: Date, state: boolean) {
-	await fetch(`/api/admin/setting/${getYYYYMMDD(date)}/${ow_am_full}/set`, {
-		method: 'PUT',
-		body: JSON.stringify(state)
-	});
-}
-
 
 export async function getDateSetting(supabase: SupabaseClient<Database>, date: Date | string): Promise<[DateSetting, number]> {
 	const dt = getYYYYMMDD(date);

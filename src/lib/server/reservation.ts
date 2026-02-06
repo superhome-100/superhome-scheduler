@@ -10,7 +10,7 @@ import type { Tables, TablesInsert, TablesUpdate } from '$lib/supabase.types';
 import { ReservationCategory, ReservationStatus, ReservationType, OWTime } from '$types';
 import { timeStrToMin, isValidProSafetyCutoff } from '$lib/datetimeUtils';
 import { getTimeOverlapSupabaseFilter } from '$utils/reservation-queries';
-import { initSettings, type SettingsManager } from './settings';
+import { type SettingsManager } from '../settings';
 import { getDateSetting } from '$lib/firestore';
 import {
 	getStartTime,
@@ -140,7 +140,7 @@ export async function getReservationsSince(minDateStr: string) {
 	return reservations;
 }
 
-export function categoryIsBookable(
+function categoryIsBookable(
 	settings: SettingsManager,
 	sub: TablesUpdate<'Reservations'>
 ): boolean {
@@ -165,8 +165,7 @@ export function categoryIsBookable(
 	return isBookable;
 }
 
-async function getOverlappingReservations(sub: Reservation) {
-	const settings = await initSettings();
+async function getOverlappingReservations(settings: SettingsManager, sub: Reservation) {
 	const { data } = await supabaseServiceRole
 		.from('Reservations')
 		.select('*')
@@ -177,14 +176,12 @@ async function getOverlappingReservations(sub: Reservation) {
 	return await convertFromXataToAppType(data);
 }
 
-async function getUserOverlappingReservations(sub: Reservation, userIds: string[]) {
-	let overlapping = await getOverlappingReservations(sub);
+async function getUserOverlappingReservations(settings: SettingsManager, sub: Reservation, userIds: string[]) {
+	let overlapping = await getOverlappingReservations(settings, sub);
 	return overlapping.filter((rsv) => userIds.includes(rsv.user));
 }
 
-async function throwIfSubmissionIsInvalid(sub: Submission) {
-	const settings = await initSettings();
-
+async function throwIfSubmissionIsInvalid(settings: SettingsManager, sub: Submission) {
 	if (!settings.getOpenForBusiness(sub.date)) {
 		throw new ValidationError('We are closed on this date; please choose a different date');
 	}
@@ -217,7 +214,7 @@ async function throwIfSubmissionIsInvalid(sub: Submission) {
 		);
 	}
 
-	let allOverlappingRsvs = await getOverlappingReservations(sub);
+	let allOverlappingRsvs = await getOverlappingReservations(settings, sub);
 
 	let userOverlappingRsvs = allOverlappingRsvs.filter((rsv) => userIds.includes(rsv.user));
 	if (userOverlappingRsvs.length > 0) {
@@ -334,7 +331,7 @@ export async function submitReservation(
 	settings: SettingsManager
 ) {
 	const sub = unpackSubmitForm(actor.id, formData, settings);
-	await throwIfSubmissionIsInvalid(sub);
+	await throwIfSubmissionIsInvalid(settings, sub);
 	await checkEventFull(sub.date, sub.owTime);
 
 	const entries = createBuddyEntriesForSubmit(sub);
@@ -348,13 +345,12 @@ export async function submitReservation(
 }
 
 async function throwIfUpdateIsInvalid(
+	settings: SettingsManager,
 	sub: ReservationModifyingFormUnpacked,
 	orig: Tables<'Reservations'>,
 	ignore: string[],
 	isAMFull: boolean
 ) {
-	const settings = await initSettings();
-
 	if (!settings.getOpenForBusiness(sub.date)) {
 		throw new ValidationError('We are closed on this date; please choose a different date');
 	}
@@ -367,7 +363,7 @@ async function throwIfUpdateIsInvalid(
 
 	throwIfPastUpdateTime(settings, orig, sub);
 
-	let allOverlappingRsvs = await getOverlappingReservations(sub);
+	let allOverlappingRsvs = await getOverlappingReservations(settings, sub);
 
 	// check that the submitter and associated buddies do not have existing
 	// reservations that will overlap with the updated reservation
@@ -387,6 +383,7 @@ async function throwIfUpdateIsInvalid(
 }
 
 async function createBuddyEntriesForUpdate(
+	settings: SettingsManager,
 	sub: ReservationModifyingFormUnpacked,
 	orig: Reservation
 ): Promise<{
@@ -414,7 +411,7 @@ async function createBuddyEntriesForUpdate(
 		} = sub;
 
 		if (orig.buddies.length > 0) {
-			let buddyRsvs = await getUserOverlappingReservations(orig, orig.buddies);
+			let buddyRsvs = await getUserOverlappingReservations(settings, orig, orig.buddies);
 			rsvIdByUserId = buddyRsvs.reduce((obj: typeof rsvIdByUserId, rsv: Reservation) => {
 				obj[rsv.user!] = rsv.id!;
 				return obj;
@@ -456,6 +453,7 @@ async function createBuddyEntriesForUpdate(
 }
 
 async function unpackModifyForm(
+	settings: SettingsManager,
 	formData: AppFormData,
 	orig: Reservation
 ): Promise<ReservationModifyingFormUnpacked> {
@@ -464,7 +462,6 @@ async function unpackModifyForm(
 			? ReservationStatus.pending
 			: ReservationStatus.confirmed;
 
-	const settings = await initSettings();
 	const brc = beforeResCutoff(
 		settings,
 		orig.date,
@@ -522,7 +519,7 @@ const checkEventFull = async (date: Date | string, owTime: string) => {
 	}
 }
 
-export async function modifyReservation(actor: User, formData: AppFormData) {
+export async function modifyReservation(actor: User, formData: AppFormData, settings: SettingsManager) {
 	const id = formData.get('id');
 	const { data } = await supabaseServiceRole
 		.from('Reservations')
@@ -533,13 +530,13 @@ export async function modifyReservation(actor: User, formData: AppFormData) {
 	if (!(data.user === actor.id || actor.privileges === 'admin'))
 		throw Error(`unathorised reservation modification ${id} by ${actor.id}`);
 	let [orig] = await convertFromXataToAppType([data]);
-	let sub = await unpackModifyForm(formData, orig);
+	let sub = await unpackModifyForm(settings, formData, orig);
 	const [settingDate] = await getDateSetting(supabaseServiceRole, sub.date);
 
 	// check if additional buddy entries need to be created
 	// check also if AM open water schedule is full
 	// do allow creating of buddy if am schedule is full
-	let { create, modify, cancel } = await createBuddyEntriesForUpdate(sub, orig);
+	let { create, modify, cancel } = await createBuddyEntriesForUpdate(settings, sub, orig);
 	if (settingDate?.ow_am_full && sub.owTime === OWTime.AM) {
 		if (create.length > 0) {
 			throw new ValidationError(
@@ -553,7 +550,7 @@ export async function modifyReservation(actor: User, formData: AppFormData) {
 	}
 
 	let existing = [...modify.map((rsv) => rsv.id!), ...cancel];
-	await throwIfUpdateIsInvalid(sub, orig, existing, settingDate?.ow_am_full ?? false);
+	await throwIfUpdateIsInvalid(settings, sub, orig, existing, settingDate?.ow_am_full ?? false);
 
 	if (orig.buoy !== 'auto') {
 		modify[0].buoy = orig.buoy;
@@ -635,8 +632,7 @@ export async function adminUpdate(actor: User, formData: AppFormData) {
 	await pushNotificationService.sendReservationStatus(actor, [data]);
 }
 
-async function throwIfInvalidCancellation(data: Tables<'Reservations'>) {
-	const settings = await initSettings();
+async function throwIfInvalidCancellation(settings: SettingsManager, data: Tables<'Reservations'>) {
 	if (!data.startTime) throw Error(`startTime is required now ${data}`); // old code was silently fail
 	if (
 		!beforeCancelCutoff(settings, data.date, data.startTime, data.category as ReservationCategory)
@@ -647,7 +643,7 @@ async function throwIfInvalidCancellation(data: Tables<'Reservations'>) {
 	}
 }
 
-export async function cancelReservation(actor: User, formData: AppFormData) {
+export async function cancelReservation(actor: User, formData: AppFormData, settings: SettingsManager) {
 	let id = formData.get('id');
 	let buddiesToCancel = JSON.parse(formData.get('cancelBuddies'));
 	const { data } = await supabaseServiceRole
@@ -660,14 +656,14 @@ export async function cancelReservation(actor: User, formData: AppFormData) {
 		throw Error(`unathorised reservation cancellation ${id} by ${actor.id}`);
 	let [sub] = await convertFromXataToAppType([data]);
 
-	await throwIfInvalidCancellation(sub);
+	await throwIfInvalidCancellation(settings, sub);
 
 	let save = sub.buddies.filter((id: string) => !buddiesToCancel.includes(id));
 	let cancel = [sub.id];
 	const errors: { id: string; error: Error }[] = [];
 
 	if (sub.buddies.length > 0) {
-		let existing = await getUserOverlappingReservations(sub, sub.buddies);
+		let existing = await getUserOverlappingReservations(settings, sub, sub.buddies);
 		let modify = existing
 			.filter((rsv) => save.includes(rsv.user))
 			.map((rsv) => {

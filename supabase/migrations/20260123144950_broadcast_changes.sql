@@ -30,6 +30,20 @@ $$ LANGUAGE plpgsql;
 
 ---
 
+CREATE TRIGGER "Broadcast changes of table: Boats"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."Boats"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
+
+CREATE TRIGGER "Broadcast changes of table: Buoys"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."Buoys"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
+
 CREATE TRIGGER "Broadcast changes of table: BuoyGroupings"
 AFTER INSERT OR UPDATE OR DELETE ON "public"."BuoyGroupings"
 FOR EACH ROW
@@ -39,6 +53,13 @@ EXECUTE FUNCTION "public"."broadcast_table_changes"();
 
 CREATE TRIGGER "Broadcast changes of table: DaySettings"
 AFTER INSERT OR UPDATE OR DELETE ON "public"."DaySettings"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
+
+CREATE TRIGGER "Broadcast changes of table: Notifications"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."Notifications"
 FOR EACH ROW
 EXECUTE FUNCTION "public"."broadcast_table_changes"();
 

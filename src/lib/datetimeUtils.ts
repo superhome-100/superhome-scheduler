@@ -106,5 +106,13 @@ export function isValidProSafetyCutoff(reservationDate: string) {
 	return now.isBefore(cutoff);
 }
 
-export const getYYYYMMDD = (date: Date | string | Dayjs) => dayjs(date).format('YYYY-MM-DD');
-export const getYYYYMM = (date: Date | string | Dayjs) => dayjs(date).format('YYYY-MM');
+export const getYYYYMMDD = (date?: Date | string | Dayjs) => dayjs(date ?? PanglaoDate()).format('YYYY-MM-DD');
+export const getYYYYMM = (date?: Date | string | Dayjs) => dayjs(date ?? PanglaoDate()).format('YYYY-MM');
+
+export const firstLastDayOfMonth = (date?: Date) => {
+	const now = date ?? new Date();
+	return {
+		startDay: new Date(now.getFullYear(), now.getMonth(), 1),
+		endDay: new Date(now.getFullYear(), now.getMonth() + 1, 0)
+	}
+}

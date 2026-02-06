@@ -2,6 +2,9 @@ import { getOWReservationAdminComments } from '$lib/server/ow';
 import { AuthError, checkAuthorisation } from '$lib/server/supabase';
 import { json, type RequestEvent } from '@sveltejs/kit';
 
+/**
+ * @deprecated unused, direct access to supabase now
+ */
 export async function GET({ params, locals: { user } }: RequestEvent) {
 	try {
 		checkAuthorisation(user);

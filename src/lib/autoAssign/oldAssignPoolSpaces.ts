@@ -1,7 +1,7 @@
 import { inc, startTimes } from '$lib/reservationTimes';
 import { timeStrToMin } from '$lib/datetimeUtils';
-import { Settings } from '$lib/client/settings';
 import { getNumberOfOccupants } from '$utils/reservations';
+import type { SettingsManager } from '$lib/settingsManager';
 
 interface Reservation {
 	id: string;
@@ -57,12 +57,12 @@ const sorted = (rsvs: Reservation[]): Reservation[] =>
 		a.resType === 'course'
 			? -1
 			: b.resType === 'course'
-			? 1
-			: a.buddies.length > b.buddies.length
-			? -1
-			: b.buddies.length > a.buddies.length
-			? 1
-			: 0
+				? 1
+				: a.buddies.length > b.buddies.length
+					? -1
+					: b.buddies.length > a.buddies.length
+						? 1
+						: 0
 	);
 
 function sortByPriority(rsvs: Reservation[]): { pre: Reservation[]; un: Reservation[] } {
@@ -251,6 +251,7 @@ function insertUnAssigned(
 }
 
 export function oldAssignPoolSpaces(
+	sm: SettingsManager,
 	rsvs: Reservation[],
 	dateStr: string
 ): {
@@ -259,18 +260,18 @@ export function oldAssignPoolSpaces(
 	code?: string;
 	rsv?: Reservation;
 } {
-	const incT = inc(Settings, dateStr);
-	const sTs = startTimes(Settings, dateStr, 'pool');
+	const incT = inc(sm, dateStr);
+	const sTs = startTimes(sm, dateStr, 'pool');
 	const nTimes = sTs.length;
 	const minTime = timeStrToMin(sTs[0]);
 	const laneWidth = 1;
-	const nSpaces = laneWidth * Settings.getPoolLanes(dateStr).length;
+	const nSpaces = laneWidth * sm.getPoolLanes(dateStr).length;
 	const spacesByTimes: (Reservation | null)[][] = Array(nSpaces)
 		.fill(null)
 		.map(() => Array(nTimes).fill(null));
 
 	const { pre, un } = sortByPriority(rsvs);
-	const resourceNames = Settings.getPoolLanes(dateStr);
+	const resourceNames = sm.getPoolLanes(dateStr);
 
 	let result: {
 		status: string;

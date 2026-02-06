@@ -1,16 +1,20 @@
 <script lang="ts">
-	import { canSubmit, reservations, buoys } from '$lib/stores';
+	import { canSubmit } from '$lib/stores';
 	import { adminView, buoyDesc, isMyReservation, resTypeModDisabled } from '$lib/utils';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 	import type { OWReservation, Reservation } from '$types';
 	import { ReservationCategory, ReservationType } from '$types';
 	import { PanglaoDate } from '$lib/datetimeUtils';
 	import InputLabel from './tiny_components/InputLabel.svelte';
-	import { listenToDateSetting } from '$lib/firestore';
-	import type { Unsubscribe } from 'firebase/firestore';
+	import { ow_am_full } from '$lib/firestore';
 	import { displayTag } from '../../lib/utils';
 	import { onMount } from 'svelte';
-	import { page } from '$app/state';
+	import {
+		storedDaySettings,
+		storedDayReservations,
+		storedDayReservations_param,
+		storedBuoys
+	} from '$lib/client/stores';
 
 	export let rsv: OWReservation | null = null;
 	export let date: string = rsv?.date || PanglaoDate().toString();
@@ -24,6 +28,7 @@
 	let disabled = viewOnly || restrictModify;
 
 	date = rsv?.date || (dateFn && dateFn(category)) || date;
+	storedDayReservations_param.set({ day: date });
 
 	const previousMaxDepthKey = 'previousMaxDepth';
 	let resType: ReservationType =
@@ -53,10 +58,10 @@
 		ReservationType.autonomousPlatform,
 		ReservationType.autonomousPlatformCBS
 	].includes(resType);
-	$: sortedBuoys = $buoys.sort((a, b) => (a.maxDepth > b.maxDepth ? 1 : -1));
+	$: sortedBuoys = $storedBuoys.sort((a, b) => (a.maxDepth > b.maxDepth ? 1 : -1));
 
 	const buoyIsAssignedTo = (buoyName: string, reservations: Reservation[]) => {
-		const filteredReservations = $reservations.filter(
+		const filteredReservations = reservations.filter(
 			(other) => other.owTime === rsv.owTime && other.buoy === buoyName
 		);
 
@@ -94,18 +99,7 @@
 		}
 	};
 
-	let unsubscribe: Unsubscribe;
-	let isAmFull = false;
-
-	const init = async () => {
-		if (unsubscribe) unsubscribe();
-		isAmFull = false;
-		unsubscribe = listenToDateSetting(page.data.supabase, new Date(date), (setting) => {
-			isAmFull = !!setting.ow_am_full;
-		});
-	};
-
-	$: date, init();
+	$: isAmFull = $storedDaySettings[ow_am_full];
 
 	function extractValuesFromComments() {
 		// Remove \r characters from comments
@@ -138,7 +132,6 @@
 	{discipline}
 	{diveTime}
 	{resType}
-	{isAmFull}
 >
 	<svelte:fragment slot="inputExtension">
 		{#if adminView(viewOnly)}
@@ -149,7 +142,7 @@
 						<option value={buoy.name}
 							>{buoy.name + ' - ' + buoyDesc(buoy)} - [{buoyIsAssignedTo(
 								buoy?.name,
-								$reservations
+								$storedDayReservations
 							)}]</option
 						>
 					{/each}

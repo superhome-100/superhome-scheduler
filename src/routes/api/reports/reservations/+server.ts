@@ -6,6 +6,9 @@ import { ow_am_full } from '$lib/firestore';
 
 import type { DateReservationSummary } from '$types';
 
+/**
+ * @deprecated unused, direct access to supabase now
+ */
 export async function GET({ url, locals: { user } }: RequestEvent) {
 	try {
 		checkAuthorisation(user);

@@ -63,13 +63,13 @@ export const actions: Actions = {
 			}
 		}
 	},
-	modifyReservation: async ({ request, locals: { user } }: RequestEvent) => {
+	modifyReservation: async ({ request, locals: { user, settings } }: RequestEvent) => {
 		try {
 			checkAuthorisation(user);
 			const data = await request.formData();
 			const category = data.get('category') as string;
 			await doTransaction(category, data.get('date') as string, async () => {
-				return await modifyReservation(user, data);
+				return await modifyReservation(user, data, settings);
 			});
 		} catch (e) {
 			console.error('error modifyReservation', e);
@@ -84,14 +84,14 @@ export const actions: Actions = {
 			}
 		}
 	},
-	cancelReservation: async ({ request, locals: { user } }: RequestEvent) => {
+	cancelReservation: async ({ request, locals: { user, settings } }: RequestEvent) => {
 		try {
 			checkAuthorisation(user);
 			const data = await request.formData();
 			console.log('cancelReservation', data);
 			const category = data.get('category') as string;
 			await doTransaction(category, data.get('date') as string, async () => {
-				await cancelReservation(user, data);
+				await cancelReservation(user, data, settings);
 			});
 		} catch (e) {
 			console.error('error cancelReservation', e);

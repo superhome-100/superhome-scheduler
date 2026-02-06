@@ -8,6 +8,9 @@ interface RequestBody {
 	maxDateStr: string;
 }
 
+/**
+ * @deprecated unused, direct access to supabase now
+ */
 export async function POST({ request, locals: { user } }: RequestEvent) {
 	try {
 		checkAuthorisation(user);

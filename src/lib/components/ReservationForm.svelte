@@ -5,7 +5,6 @@
 	import ResFormPool from './ResFormPool.svelte';
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
-	import { syncMyIncomingReservations } from '$lib/stores';
 	import { cleanUpFormDataBuddyFields } from '$lib/utils';
 	import { ReservationCategory } from '$types';
 
@@ -28,7 +27,6 @@
 			onSubmit();
 			switch (result.type) {
 				case 'success':
-					syncMyIncomingReservations();
 					toast.success('Reservation submitted!');
 					close();
 					break;

@@ -2,6 +2,9 @@ import { getUserActiveNotifications } from '$lib/server/server';
 import { json, type RequestEvent } from '@sveltejs/kit';
 import { AuthError, checkAuthorisation } from '$lib/server/supabase';
 
+/**
+ * @deprecated unused, direct access to supabase now
+ */
 export async function GET({ locals: { user } }: RequestEvent) {
 	try {
 		checkAuthorisation(user);

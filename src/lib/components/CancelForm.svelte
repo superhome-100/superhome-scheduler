@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { syncMyIncomingReservations, users } from '$lib/stores';
+	import { storedUsers as users } from '$lib/client/stores';
 	import { toast } from 'svelte-french-toast';
 	import { popup } from '$lib/components/Popup.svelte';
 
@@ -42,7 +42,6 @@
 		return async ({ result }: { result: { type: string; data?: ActionData } }) => {
 			switch (result.type) {
 				case 'success':
-					await syncMyIncomingReservations();
 					toast.success('Reservation canceled');
 					break;
 				case 'failure':

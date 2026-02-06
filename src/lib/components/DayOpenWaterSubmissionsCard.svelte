@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Submission } from '$types';
 	import { displayTag, badgeColor } from '$lib/utils';
-	import { user } from '$lib/stores';
+	import { storedUser as user } from '$lib/client/stores';
 	import _ from 'lodash';
 
 	export let submissions: Submission[];

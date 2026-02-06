@@ -1,10 +1,9 @@
-<script>
+<script lang="ts">
 	import { getContext, createEventDispatcher } from 'svelte';
 	import { enhance } from '$app/forms';
 	import ResFormPool from './ResFormPool.svelte';
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
-	import { syncMyIncomingReservations } from '$lib/stores';
 	import { adminView } from '$lib/utils';
 	import { toast } from 'svelte-french-toast';
 
@@ -30,7 +29,6 @@
 		return async ({ result, update }) => {
 			switch (result.type) {
 				case 'success':
-					await syncMyIncomingReservations();
 					toast.success('Reservation updated!');
 					break;
 				default:

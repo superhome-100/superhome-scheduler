@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { BuddyData, Reservation } from '$types';
-	import { ReservationType, OWTime } from '$types';
+	import { ReservationType } from '$types';
 	import { ReservationStatus, ReservationCategory } from '$types';
-	import { canSubmit, user, users } from '$lib/stores';
-	import { Settings } from '$lib/client/settings';
+	import { canSubmit } from '$lib/stores';
+	import { storedUsers as users, storedUser as user, storedSettings } from '$lib/client/stores';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes';
 	import { adminView, isMyReservation } from '$lib/utils';
 	import { PanglaoDate } from '$lib/datetimeUtils';
@@ -22,7 +22,6 @@
 	export let restrictModify = false;
 	export let error = '';
 	export let extendDisabled = false;
-	export let isAmFull = false;
 
 	export let discipline = '';
 	export let diveTime = '';
@@ -207,8 +206,8 @@
 				name="date"
 				id="formDate"
 				class="w-full"
-				min={minValidDateStr(Settings, category)}
-				max={maxValidDateStr(Settings)}
+				min={minValidDateStr($storedSettings, category)}
+				max={maxValidDateStr($storedSettings)}
 				bind:value={date}
 				{disabled}
 			/>

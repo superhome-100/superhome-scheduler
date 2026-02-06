@@ -2,24 +2,21 @@
 	import { datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
 	import { minuteOfDay, beforeCancelCutoff } from '$lib/reservationTimes';
 	import { timeStrToMin } from '$lib/datetimeUtils';
-	import { user } from '$lib/stores';
-	import { getContext, onDestroy, onMount } from 'svelte';
+	import { storedSettings, storedUser as user } from '$lib/client/stores';
+	import { getContext } from 'svelte';
 	import Modal from './Modal.svelte';
 	import CancelDialog from './CancelDialog.svelte';
 	import RsvTabs from './RsvTabs.svelte';
-	import { Settings } from '$lib/client/settings';
 
 	import type { Reservation, ReservationPeriod } from '$types';
 	import { ReservationCategory, ReservationStatus } from '$types';
 	import dayjs from 'dayjs';
-	import { getUserPastReservations } from '$lib/api';
-
-	import { incomingReservations, syncMyIncomingReservations } from '$lib/stores';
-	import { listenOnDateUpdate } from '$lib/firestore';
+	import { storedIncomingReservations, storedPastReservations } from '$lib/client/stores';
+	import type { SettingsManager } from '$lib/settings';
 
 	export let resPeriod: ReservationPeriod = 'upcoming';
 
-	function getResPeriod(rsv: Reservation) {
+	function getResPeriod(rsv: Reservation, sm: SettingsManager) {
 		let view;
 		let today = PanglaoDate();
 		let todayStr = datetimeToLocalDateStr(today);
@@ -31,9 +28,9 @@
 			let rsvMin: number = 0;
 			if (rsv.category === ReservationCategory.openwater) {
 				if (rsv.owTime === 'AM') {
-					rsvMin = timeStrToMin(Settings.getOpenwaterAmEndTime(rsv.date));
+					rsvMin = timeStrToMin(sm.getOpenwaterAmEndTime(rsv.date));
 				} else if (rsv.owTime === 'PM') {
-					rsvMin = timeStrToMin(Settings.getOpenwaterPmEndTime(rsv.date));
+					rsvMin = timeStrToMin(sm.getOpenwaterPmEndTime(rsv.date));
 				}
 			} else {
 				rsvMin = timeStrToMin(rsv.endTime);
@@ -120,15 +117,16 @@
 	const groupRsvs = (
 		resPeriod: ReservationPeriod,
 		allRsvs: Reservation[],
-		userPastRsvs: Reservation[]
+		userPastRsvs: Reservation[],
+		sm: SettingsManager
 	): ReservationsByMonth[] => {
 		let rsvs: Reservation[] = [];
 		if (resPeriod === 'upcoming') {
 			rsvs = allRsvs.filter((rsv) => {
-				return rsv?.user === $user?.id && getResPeriod(rsv) === resPeriod;
+				return rsv?.user === $user?.id && getResPeriod(rsv, sm) === resPeriod;
 			});
 		} else if (resPeriod === 'past') {
-			rsvs = userPastRsvs.filter((rsv) => getResPeriod(rsv) === resPeriod);
+			rsvs = userPastRsvs.filter((rsv) => getResPeriod(rsv, sm) === resPeriod);
 		}
 
 		const sorted = sortChronologically(rsvs, resPeriod);
@@ -152,10 +150,14 @@
 		}
 	};
 
-	let loadingPastReservations = false;
-	let pastReservations: any[] = [];
+	let loadingPastReservations = false; //TODO:mate
 
-	$: rsvGroups = groupRsvs(resPeriod, $incomingReservations, pastReservations);
+	$: rsvGroups = groupRsvs(
+		resPeriod,
+		$storedIncomingReservations,
+		$storedPastReservations,
+		$storedSettings
+	);
 
 	const statusTextColor: { [key: string]: string } = {
 		[ReservationStatus.confirmed]: 'text-status-confirmed',
@@ -166,33 +168,6 @@
 	const totalThisMonth = (rsvs: Reservation[]): number => {
 		return rsvs.reduce((t, rsv) => (rsv.price ? t + rsv.price : t), 0);
 	};
-
-	let firestoreRefreshUnsub: () => void;
-	$: handleRouteChange();
-
-	function handleRouteChange() {
-		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
-		// Place your route change detection logic here
-		firestoreRefreshUnsub = listenOnDateUpdate(undefined, undefined, () => {
-			syncMyIncomingReservations();
-		});
-	}
-
-	onDestroy(() => {
-		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
-	});
-
-	onMount(async () => {
-		if (resPeriod === 'past') {
-			loadingPastReservations = true;
-			const maxDateStr = datetimeToLocalDateStr(new Date());
-			const { userPastReservations } = await getUserPastReservations(maxDateStr);
-			pastReservations = userPastReservations || [];
-			loadingPastReservations = false;
-		} else {
-			syncMyIncomingReservations();
-		}
-	});
 </script>
 
 {#if $user}
@@ -222,7 +197,7 @@
 								{rsv.status}
 							</div>
 						</td>
-						{#if beforeCancelCutoff(Settings, rsv.date, rsv.startTime, rsv.category)}
+						{#if beforeCancelCutoff($storedSettings, rsv.date, rsv.startTime, rsv.category)}
 							<td
 								on:click|stopPropagation={() => {}}
 								on:keypress|stopPropagation={() => {}}

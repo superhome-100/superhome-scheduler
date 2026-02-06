@@ -1,5 +1,4 @@
 import { getStartEndTimes } from '$lib/reservationTimes';
-import { Settings } from '$lib/client/settings';
 import { ReservationCategory, type Reservation, ReservationType } from '$types';
 import type { Block, Grid } from './hourlyUtils';
 import { rsvsToBlock, createBuddyGroups } from './hourlyUtils';
@@ -253,17 +252,18 @@ export function assignBlockSpacePaths(
 }
 
 export function assignHourlySpaces(
+	sm: SettingsManager,
 	rsvs: Reservation[],
 	dateStr: string,
 	category: ReservationCategory
 ) {
-	const startEndTimes = getStartEndTimes(Settings, dateStr, category);
+	const startEndTimes = getStartEndTimes(sm, dateStr, category);
 	const nStartTimes = startEndTimes.length - 1;
 	let resourceNames: string[];
 	if (category == ReservationCategory.pool) {
-		resourceNames = Settings.getPoolLanes(dateStr);
+		resourceNames = sm.getPoolLanes(dateStr);
 	} else {
-		resourceNames = Settings.getClassrooms(dateStr);
+		resourceNames = sm.getClassrooms(dateStr);
 	}
 	const nSpaces = resourceNames.length;
 

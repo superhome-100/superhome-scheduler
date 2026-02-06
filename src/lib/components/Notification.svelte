@@ -1,28 +1,31 @@
-<script>
+<script lang="ts">
 	import { getContext } from 'svelte';
-	import { notifications } from '$lib/stores';
 	import NotificationPopup from '$lib/components/NotificationPopup.svelte';
+	import { storedNotifications } from '$lib/client/stores';
+	import type { Notifications } from '$types';
 
 	const { open } = getContext('simple-modal');
 
-	const showNotification = (ntf) => {
-		open(
-			NotificationPopup,
-			{
-				ntf
-			},
-			{},
-			{
-				onClosed: () => checkForNotifications($notifications)
-			}
-		);
+	const showNotification = (ntf: Notifications) => {
+		return new Promise((resove) => {
+			open(
+				NotificationPopup,
+				{
+					ntf
+				},
+				{},
+				{
+					onClosed: resove
+				}
+			);
+		});
 	};
 
-	function checkForNotifications(ntfs) {
-		if (ntfs.length > 0) {
-			showNotification(ntfs.pop());
+	async function checkForNotifications(ntfs: Notifications[]) {
+		while (ntfs.length > 0) {
+			await showNotification(ntfs.pop());
 		}
 	}
 
-	$: checkForNotifications($notifications.reverse());
+	$: checkForNotifications($storedNotifications.reverse());
 </script>

@@ -76,14 +76,14 @@ using (
   "authId" = (SELECT auth.uid())
 );
 
--- create policy "Enable active users to view other users"
--- on "public"."Users"
--- as PERMISSIVE
--- for SELECT
--- to authenticated
--- using (
---   (SELECT public.is_active())
--- );
+create policy "Enable active users to view other users"
+on "public"."Users"
+as PERMISSIVE
+for SELECT
+to authenticated
+using (
+  (SELECT public.is_active())
+);
 
 ---
 
@@ -178,6 +178,19 @@ as
     "status"
   from "public"."Users"
 ;
+
+CREATE OR REPLACE FUNCTION public.get_users_minimal()
+RETURNS SETOF "UsersMinimal" 
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT *
+  FROM public."UsersMinimal";
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_users_minimal() TO authenticated;
 
 ---
 

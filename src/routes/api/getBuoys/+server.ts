@@ -3,6 +3,9 @@ import { AuthError, checkAuthorisation } from '$lib/server/supabase';
 import { json } from '@sveltejs/kit';
 import type { RequestEvent, RequestHandler } from '@sveltejs/kit';
 
+/**
+ * @deprecated unused, direct access to supabase now
+ */
 export const GET: RequestHandler = async ({ locals: { user } }: RequestEvent) => {
 	try {
 		checkAuthorisation(user);

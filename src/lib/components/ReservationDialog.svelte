@@ -10,7 +10,6 @@
     loaded by the time the page renders, e.g. immediately after 
     a refresh */
 	export let dateFn: () => string;
-	export let onUpdate: () => void = () => {};
 
 	type ModalContext = {
 		open: (component: any, props?: Record<string, any>) => void;
@@ -21,8 +20,7 @@
 		open(ReservationForm, {
 			category: category,
 			dateFn: dateFn,
-			hasForm: true,
-			onSubmit: onUpdate
+			hasForm: true
 		});
 	};
 </script>

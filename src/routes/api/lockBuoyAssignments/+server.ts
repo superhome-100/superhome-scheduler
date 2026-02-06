@@ -2,7 +2,6 @@ import { assignRsvsToBuoys } from '$lib/autoAssign';
 import { json, type RequestEvent } from '@sveltejs/kit';
 import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import { type OWReservation, ReservationCategory, ReservationStatus } from '$types';
-import { type Tables } from '$lib/supabase.types';
 
 export async function POST({ request, locals: { user } }: RequestEvent) {
 	try {
@@ -41,21 +40,18 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 		} else {
 			rsvs.forEach((rsv) => updates.push({ id: rsv.id, buoy: 'auto' }));
 		}
-		const reservations: Tables<'Reservations'>[] = [];
 		const errors: Error[] = [];
 		for (const u of updates) {
-			const { data, error } = await supabaseServiceRole
+			const { error } = await supabaseServiceRole
 				.from('Reservations')
 				.update(u)
 				.eq("id", u.id!)
-				.select('*')
 				.single();
 			if (error) errors.push(error);
-			else reservations.push(data);
 		}
 		if (errors.length)
 			throw Error(`Error during cancelling reservations: ${JSON.stringify(errors)}`);
-		return json({ status: 'success', reservations });
+		return json({ status: 'success' });
 	} catch (error) {
 		console.error('error lockBuoyAssignments', error);
 		if (error instanceof AuthError) {

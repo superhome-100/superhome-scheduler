@@ -7,9 +7,8 @@
 	import ResFormPool from './ResFormPool.svelte';
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
-	import { syncMyIncomingReservations } from '$lib/stores';
-	import { Settings } from '$lib/client/settings';
 	import { cleanUpFormDataBuddyFields } from '$lib/utils';
+	import { storedSettings } from '$lib/client/stores';
 
 	export let hasForm = false;
 	export let rsv: Submission;
@@ -78,7 +77,6 @@
 		return async ({ result }) => {
 			switch (result.type) {
 				case 'success':
-					await syncMyIncomingReservations();
 					toast.success('Reservation updated!');
 					close();
 					break;
@@ -97,7 +95,7 @@
 		};
 	};
 
-	let restrictModify = !beforeResCutoff(Settings, rsv.date, rsv.startTime, rsv.category);
+	let restrictModify = !beforeResCutoff($storedSettings, rsv.date, rsv.startTime, rsv.category);
 </script>
 
 {#if hasForm}

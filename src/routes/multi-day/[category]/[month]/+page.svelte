@@ -7,18 +7,20 @@
 	import Chevron from '$lib/components/Chevron.svelte';
 	import { minValidDateStr } from '$lib/reservationTimes';
 	import { getYYYYMM, getYYYYMMDD, idx2month } from '$lib/datetimeUtils';
-	import { view, loginState, stateLoaded } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants';
-	import { Settings } from '$lib/client/settings';
-	import type { ReservationCategory, DateReservationSummary } from '$types';
-	import { getReservationSummary } from '$lib/api';
+	import type { ReservationCategory } from '$types';
 	import { pushState } from '$app/navigation';
 
 	import dayjs from 'dayjs';
 	import LoadingBar from '$lib/components/LoadingBar.svelte';
-	import { listenOnDateUpdate } from '$lib/firestore';
-	import { onDestroy } from 'svelte';
-	import { page } from '$app/stores';
+
+	import {
+		isLoading,
+		storedReservationsSummary,
+		storedReservationsSummary_param,
+		storedSettings,
+		storedUser
+	} from '$lib/client/stores';
 
 	export let data: {
 		category: ReservationCategory;
@@ -27,11 +29,7 @@
 
 	let categories = [...CATEGORIES];
 
-	$view = 'multi-day';
-
-	let now = dayjs(data.month + '-01');
-	let refreshTs = Date.now();
-	let isLoading = false;
+	$: now = dayjs(data.month + '-01');
 
 	function getWeeksInMonth(year: number = now.year(), month: number = now.month()) {
 		const startOfMonth = dayjs().year(year).month(month).startOf('month');
@@ -53,7 +51,16 @@
 
 	$: monthDates = getWeeksInMonth(now.get('year'), now.get('month'));
 
-	let datesSummary: Record<string, DateReservationSummary> = {};
+	$: {
+		const firstWeek = monthDates[0];
+		const lastWeek = monthDates[monthDates.length - 1];
+		if (lastWeek.length > 0) {
+			storedReservationsSummary_param.set({
+				startDay: firstWeek[0].toDate(),
+				endDay: lastWeek[lastWeek.length - 1].toDate()
+			});
+		}
+	}
 
 	function prevMonth() {
 		now = now.subtract(1, 'month');
@@ -98,57 +105,14 @@
 			}
 		}
 	}
-
-	const loadSummary = async () => {
-		if (monthDates.length && !isLoading) {
-			isLoading = true;
-			try {
-				const firstWeek = monthDates[0];
-				const lastWeek = monthDates[monthDates.length - 1];
-				const data = await getReservationSummary(
-					firstWeek[0].toDate(),
-					lastWeek[lastWeek.length - 1].toDate()
-				);
-				if (data && data.status === 'success') {
-					datesSummary = {
-						...datesSummary,
-						...data.summary
-					};
-				}
-			} finally {
-				isLoading = false;
-			}
-		}
-	};
-
-	let firestoreRefreshUnsub: () => void;
-	$: $page, handleRouteChange();
-
-	function handleRouteChange() {
-		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
-		// Place your route change detection logic here
-		firestoreRefreshUnsub = listenOnDateUpdate(undefined, undefined, () => {
-			refreshTs = Date.now();
-		});
-	}
-
-	onDestroy(() => {
-		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
-	});
-
-	$: {
-		if ($stateLoaded && monthDates && refreshTs) {
-			loadSummary();
-		}
-	}
 </script>
 
 <svelte:window on:keydown={handleKeypress} />
 
-{#if isLoading}
+{#if $isLoading}
 	<LoadingBar />
 {/if}
-{#if $stateLoaded && $loginState === 'in'}
+{#if $storedUser}
 	<div class="[&>*]:mx-auto flex items-center justify-between">
 		<div class="dropdown h-8 mb-4">
 			<label tabindex="0" class="border border-gray-200 dark:border-gray-700 btn btn-fsh-dropdown"
@@ -179,7 +143,7 @@
 			<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}
 				><ReservationDialog
 					category={data.category}
-					dateFn={(cat) => minValidDateStr(Settings, cat)}
+					dateFn={(cat) => minValidDateStr($storedSettings, cat)}
 				/></Modal
 			>
 		</span>
@@ -212,7 +176,7 @@
 								<DayOfMonth
 									date={date.toDate()}
 									category={data.category}
-									summary={datesSummary[getYYYYMMDD(date)]}
+									summary={$storedReservationsSummary[getYYYYMMDD(date)]}
 								/>
 							</td>
 						{/each}

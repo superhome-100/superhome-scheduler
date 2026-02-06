@@ -5,65 +5,23 @@
 	import { Toaster } from 'svelte-french-toast';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { ensureUserProfile } from '$lib/user';
 	import { supabase_es } from '$lib/client/supabase_event_source';
-
-	export let data; // has data = { settings } parsed from xata
-	const { user, supabase } = data;
-	$settings = data.settings;
-
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import Nprogress from '$lib/components/Nprogress.svelte';
 	import Popup from '$lib/components/Popup.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Notification from '$lib/components/Notification.svelte';
-	import type { UserEx } from '$types';
-	import {
-		notifications,
-		settings,
-		stateLoaded,
-		user as userStore,
-		authStore,
-		syncBuoys,
-		syncUsers
-	} from '$lib/stores';
-	import { getUserNotifications } from '$lib/api';
+	import { storedSettings, storedUser } from '$lib/client/stores';
 	import { pushService } from '$lib/client/push';
 	import Refresher from '$lib/components/Refresher.svelte';
+	import { coreStore } from '$lib/client/stores';
+	import { getSettingsManager } from '$lib/settingsManager';
+
+	export let data;
+	const { user, supabase, settings } = data;
+	storedSettings.set(getSettingsManager(settings));
 
 	const publicRoutes = ['/privacy'];
-
-	let isLoading = false;
-
-	async function initApp() {
-		if (isLoading) {
-			// prevent overloading our server
-			return;
-		}
-		try {
-			isLoading = true;
-			await Promise.allSettled([
-				supabase_es.init(supabase),
-				ensureUserProfile(user).then(async (u: UserEx | null) => {
-					if (u) {
-						$notifications = await getUserNotifications();
-						await pushService.init(u.has_push);
-					}
-				}),
-				syncBuoys(),
-				syncUsers()
-			]).then((results) => {
-				results.forEach(
-					(r) => r.status === 'rejected' && console.error('initApp problem', r.reason)
-				);
-			});
-			$stateLoaded = true;
-		} catch (error) {
-			console.error(error);
-		} finally {
-			isLoading = false;
-		}
-	}
 
 	const onRefresh = async () => {
 		window.location.reload();
@@ -71,8 +29,11 @@
 
 	if ($page.route.id && !publicRoutes.includes($page.route.id)) {
 		onMount(async () => {
-			await initApp();
-			if ($userStore == null) {
+			await supabase_es.init(supabase);
+			coreStore.set({ supabase, user });
+			if ($storedUser) {
+				await pushService.init($storedUser.has_push);
+			} else {
 				goto('/login');
 			}
 		});
@@ -86,13 +47,11 @@
 		<Nprogress />
 		<Sidebar day={$page.params['day'] || ''} />
 
-		{#if !$authStore.loading}
-			<div id="app" class="flex px-1 mx-auto w-full">
-				<main class="lg:ml-72 w-full mx-auto">
-					<slot />
-				</main>
-			</div>
-		{/if}
+		<div id="app" class="flex px-1 mx-auto w-full">
+			<main class="lg:ml-72 w-full mx-auto">
+				<slot />
+			</main>
+		</div>
 
 		<Toaster />
 

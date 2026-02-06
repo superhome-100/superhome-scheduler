@@ -128,6 +128,17 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
+
+create policy "Enable active users to view all Settings"
+on "public"."Settings"
+as PERMISSIVE
+for SELECT
+to authenticated
+using (
+  (SELECT public.is_active())
+);
+
+---
 ---
 
 create table "public"."Buoys" (
@@ -145,6 +156,17 @@ create table "public"."Buoys" (
 ) TABLESPACE pg_default;
 
 alter table "public"."Buoys" enable row level security;
+
+---
+
+create policy "Enable active users to view all Buoys"
+on "public"."Buoys"
+as PERMISSIVE
+for SELECT
+to authenticated
+using (
+  (SELECT public.is_active())
+);
 
 ---
 
@@ -166,6 +188,17 @@ create table "public"."Boats" (
 ) TABLESPACE pg_default;
 
 alter table "public"."Boats" enable row level security;
+
+---
+
+create policy "Enable active users to view all Boats"
+on "public"."Boats"
+as PERMISSIVE
+for SELECT
+to authenticated
+using (
+  (SELECT public.is_active())
+);
 
 ---
 
@@ -249,6 +282,17 @@ alter table "public"."BuoyGroupings" enable row level security;
 
 ---
 
+create policy "Enable active users to view all BuoyGroupings"
+on "public"."BuoyGroupings"
+as PERMISSIVE
+for SELECT
+to authenticated
+using (
+  (SELECT public.is_active())
+);
+
+---
+
 CREATE TRIGGER "trigger_set_updatedAt_to_now_on_BuoyGroupings"
 BEFORE UPDATE ON "public"."BuoyGroupings"
 FOR EACH ROW
@@ -319,6 +363,29 @@ AS $$
 $$;
 
 GRANT EXECUTE ON FUNCTION public.get_unread_notifications(text) TO authenticated;
+
+---
+
+-- for: api/notifications
+CREATE OR REPLACE FUNCTION public.get_user_unread_notifications()
+RETURNS SETOF "Notifications" 
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT n.*
+  FROM public."Notifications" n
+  WHERE n.status = 'active' -- only active notifications
+    AND NOT EXISTS (
+    SELECT 1 
+    FROM public."NotificationReceipts" nr 
+    WHERE nr.notification = n.id 
+    AND nr."user" = (SELECT id FROM "public"."Users" WHERE "authId" = (SELECT auth.uid()))
+  );
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_user_unread_notifications() TO authenticated;
 
 ---
 ---

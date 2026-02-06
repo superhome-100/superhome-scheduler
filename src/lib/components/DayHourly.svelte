@@ -1,23 +1,25 @@
 <script lang="ts">
 	import { startTimes, endTimes } from '$lib/reservationTimes';
-	import { users, viewMode } from '$lib/stores';
+	import { viewMode } from '$lib/stores';
+	import {
+		isLoading,
+		storedDayReservations,
+		storedSettings,
+		storedUsers as users
+	} from '$lib/client/stores';
 	import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils';
 	import { getContext } from 'svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { badgeColor, getDaySchedule } from '$lib/utils';
-	import { Settings } from '$lib/client/settings';
 	import LoadingBar from './LoadingBar.svelte';
-
-	import { getReservationsByDate } from '$lib/api';
-	import { ReservationCategory } from '$types';
+	import { type Reservation } from '$types';
+	import type { SettingsManager } from '$lib/settings';
 
 	export let resInfo;
 	export let category: 'pool' | 'classroom';
 	export let date: string;
-	export let refreshTs = Date.now();
 
-	let reservations: Reservation[] = [];
-	let isLoading = false;
+	$: reservations = $storedDayReservations.filter((r) => r.category === category);
 
 	const { open } = getContext('simple-modal');
 
@@ -26,19 +28,17 @@
 			rsvs: rsvs,
 			hasForm: true,
 			disableModify: $viewMode === 'admin',
-			onSubmit: () => {
-				loadReservations();
-			}
+			onSubmit: () => {}
 		});
 	};
-	$: assignment = getDaySchedule(reservations, date, category);
+	$: assignment = getDaySchedule($storedSettings, reservations, date, category);
 
 	const rowHeight = 3;
 	const blkMgn = 0.25; // dependent on tailwind margin styling
 
-	const slotsPerHr = (date, category) => {
-		let st = startTimes(Settings, date, category);
-		let et = endTimes(Settings, date, category);
+	const slotsPerHr = (date, category, sm: SettingsManager) => {
+		let st = startTimes(sm, date, category);
+		let et = endTimes(sm, date, category);
 		let beg = st[0];
 		let end = et[et.length - 1];
 		let totalMin = timeStrToMin(end) - timeStrToMin(beg);
@@ -46,12 +46,12 @@
 		return sph;
 	};
 
-	$: slotDiv = slotsPerHr(datetimeToLocalDateStr(date), category);
+	$: slotDiv = slotsPerHr(datetimeToLocalDateStr(date), category, $storedSettings);
 
-	const displayTimes = (date, category) => {
+	const displayTimes = (date, category, sm: SettingsManager) => {
 		let dateStr = datetimeToLocalDateStr(date);
-		let st = startTimes(Settings, dateStr, category);
-		let et = endTimes(Settings, dateStr, category);
+		let st = startTimes(sm, dateStr, category);
+		let et = endTimes(sm, dateStr, category);
 		let hrs = [];
 		for (let i = 0; i < st.length; i++) {
 			if (i % slotDiv == 0) {
@@ -104,29 +104,13 @@
 
 	$: innerWidth = 0;
 	$: slotWidthPx = parseInt((innerWidth * 88) / resInfo.resources.length / 100);
-
-	const loadReservations = async () => {
-		isLoading = true;
-		const res = await getReservationsByDate(
-			date,
-			category === 'pool' ? ReservationCategory.pool : ReservationCategory.classroom
-		);
-		if (res.status === 'success') {
-			reservations = res.reservations || [];
-		}
-		isLoading = false;
-	};
-
-	$: {
-		(date || refreshTs) && loadReservations();
-	}
 </script>
 
 <svelte:window bind:innerWidth />
-{#if isLoading}
+{#if $isLoading}
 	<LoadingBar />
 {/if}
-{#if Settings.getOpenForBusiness(datetimeToLocalDateStr(date)) === false}
+{#if $storedSettings.getOpenForBusiness(datetimeToLocalDateStr(date)) === false}
 	<div class="font-semibold text-3xl text-center">Closed</div>
 {:else}
 	{#if assignment.status === 'error'}
@@ -136,7 +120,7 @@
 	<div class="row text-xs sm:text-base">
 		<div class="column w-[12%] m-0 text-center">
 			<div style="height: 1lh" />
-			{#each displayTimes(date, category) as t}
+			{#each displayTimes(date, category, $storedSettings) as t}
 				<div class="font-semibold" style="height: {rowHeight}rem">{t}</div>
 			{/each}
 		</div>

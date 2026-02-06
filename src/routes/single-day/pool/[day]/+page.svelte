@@ -1,34 +1,29 @@
 <script lang="ts">
-	import { page } from '$app/stores';
 	import { swipe } from 'svelte-gestures';
 	import { goto } from '$app/navigation';
-	import { Settings } from '$lib/client/settings';
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import { loginState, stateLoaded, view, viewMode } from '$lib/stores';
+	import { viewMode } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants';
 	import dayjs from 'dayjs';
 	import { ReservationCategory } from '$types';
 
-	import { listenToDateSetting, listenOnDateUpdate } from '$lib/firestore';
-	import { onDestroy } from 'svelte';
 	import DayHourly from '$lib/components/DayHourly.svelte';
 
 	import { getCategoryDatePath } from '$lib/url';
 	import { approveAllPendingReservations } from '$lib/api';
 	import { getYYYYMM } from '$lib/datetimeUtils.js';
+	import { storedDayReservations_param, storedSettings, storedUser } from '$lib/client/stores.js';
+	import type { SettingsManager } from '$lib/settingsManager.js';
 
 	export let data;
-	const { supabase, day } = data;
+	const { day } = data;
+	storedDayReservations_param.set({ day });
 
 	const category = 'pool';
 
 	let categories = [...CATEGORIES];
-
-	let refreshTs = Date.now();
-
-	$view = 'single-day';
 
 	function prevDay() {
 		const prev = dayjs(day).subtract(1, 'day');
@@ -51,37 +46,14 @@
 		}
 	}
 
-	let isAmFull = false;
-
-	let unsubscribe: () => void;
-	let firestoreRefreshUnsub: () => void;
-	$: $page, handleRouteChange();
-
-	function handleRouteChange() {
-		if (unsubscribe) unsubscribe();
-		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
-		// Place your route change detection logic here
-		unsubscribe = listenToDateSetting(supabase, new Date(day), (setting) => {
-			isAmFull = !!setting.ow_am_full;
-		});
-		firestoreRefreshUnsub = listenOnDateUpdate(new Date(day), 'pool', () => {
-			refreshTs = Date.now();
-		});
-	}
-
-	onDestroy(() => {
-		if (unsubscribe) unsubscribe();
-		if (firestoreRefreshUnsub) firestoreRefreshUnsub();
-	});
-
-	const resInfo = () => {
-		const resources = Settings.getPoolLanes(day);
-		const name = Settings.getPoolLabel(day);
+	const resInfo = (sm: SettingsManager) => {
+		const resources = sm.getPoolLanes(day);
+		const name = sm.getPoolLabel(day);
 		return { resources, name };
 	};
 </script>
 
-{#if $stateLoaded && $loginState === 'in'}
+{#if $storedUser}
 	<div class="[&>*]:mx-auto flex items-center justify-between">
 		<div class="dropdown h-8 mb-4">
 			<label tabindex="0" class="border border-gray-200 dark:border-gray-700 btn btn-fsh-dropdown"
@@ -116,15 +88,7 @@
 				on:open={() => (modalOpened = true)}
 				on:close={() => {
 					modalOpened = false;
-					refreshTs = Date.now();
-				}}
-				><ReservationDialog
-					{category}
-					dateFn={() => day}
-					onUpdate={() => {
-						refreshTs = Date.now();
-					}}
-				/></Modal
+				}}><ReservationDialog {category} dateFn={() => day} /></Modal
 			>
 		</span>
 	</div>
@@ -155,7 +119,7 @@
 		on:swipe={swipeHandler}
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			<DayHourly {category} {refreshTs} resInfo={resInfo()} date={day} />
+			<DayHourly {category} resInfo={resInfo($storedSettings)} date={day} />
 		</Modal>
 	</div>
 {/if}

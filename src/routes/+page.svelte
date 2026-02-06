@@ -4,9 +4,8 @@
 	import MyReservations from '$lib/components/MyReservations.svelte';
 	import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs';
 	import { minValidDateStr } from '$lib/reservationTimes';
-	import { Settings } from '$lib/client/settings';
-	import { user } from '$lib/stores';
-	import type { User, UserEx } from '$types';
+	import { storedSettings, storedUser as user } from '$lib/client/stores';
+	import type { UserEx } from '$types';
 
 	let modalOpened = false;
 	const onOpen = () => (modalOpened = true);
@@ -42,7 +41,7 @@
 		</div>
 		<div class="flex-shrink-0" style="flex-basis: 48px;">
 			{#if $user.status !== 'disabled'}
-				<Modal><ReservationDialog dateFn={(cat) => minValidDateStr(Settings, cat)} /></Modal>
+				<Modal><ReservationDialog dateFn={(cat) => minValidDateStr($storedSettings, cat)} /></Modal>
 			{/if}
 		</div>
 	</div>

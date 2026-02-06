@@ -4,6 +4,9 @@ import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 
 // TODO: break this apart into separate functions
+/**
+ * @deprecated unused, direct access to supabase now
+ */
 export async function GET({ locals: { user } }: RequestEvent) {
 	try {
 		checkAuthorisation(user);

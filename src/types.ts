@@ -1,4 +1,7 @@
-import type { Enums, Tables, TablesInsert, TablesUpdate } from '$lib/supabase.types';
+import type { Database, Enums, Tables, TablesInsert, TablesUpdate } from '$lib/supabase.types';
+import { SupabaseClient as SSupabaseClient } from '@supabase/supabase-js';
+
+export type SupabaseClient = SSupabaseClient<Database>;
 
 export type RequireKeys<T, K extends keyof T> = Omit<T, K> & { [P in K]-?: NonNullable<T[P]>; };
 
@@ -18,9 +21,13 @@ export enum UserStatus {
 	disabled = 'disabled',
 }
 
+export type Boats = Tables<'Boats'>;
+
 export type Buoys = Tables<'Buoys'>;
 
 export type BuoyGroupings = Tables<'BuoyGroupings'>;
+
+export type Notifications = Tables<'Notifications'>;
 
 export type Reservation = Tables<'Reservations'>;
 

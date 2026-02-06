@@ -1,10 +1,10 @@
 import { getStartEndTimes } from '$lib/reservationTimes';
-import { Settings } from '$lib/client/settings';
 import { rsvsToBlock, createBuddyGroups } from './hourlyUtils';
 import type { Block, Grid } from './hourlyUtils';
 import { blocksToDisplayData } from './hourlyDisplay';
 import type { Reservation } from '$types';
 import { ReservationCategory } from '$types';
+import type { SettingsManager } from '$lib/settingsManager';
 
 const slotIsAvailable = (sByT: Grid, slot: number, blk: Block) => {
 	for (let i = blk.startTime; i < blk.endTime; i++) {
@@ -84,17 +84,18 @@ const bruteForceAssignAll = (blocks: Block[], nResources: number, nStartTimes: n
 };
 
 export function assignHourlySpaces(
+	sm: SettingsManager,
 	rsvs: Reservation[],
 	dateStr: string,
 	category: ReservationCategory
 ) {
-	let startEndTimes = getStartEndTimes(Settings, dateStr, category);
+	let startEndTimes = getStartEndTimes(sm, dateStr, category);
 	let nStartTimes = startEndTimes.length - 1;
 	let resourceNames: string[];
 	if (category == ReservationCategory.pool) {
-		resourceNames = Settings.getPoolLanes(dateStr);
+		resourceNames = sm.getPoolLanes(dateStr);
 	} else {
-		resourceNames = Settings.getClassrooms(dateStr);
+		resourceNames = sm.getClassrooms(dateStr);
 	}
 	const nResources = resourceNames.length;
 

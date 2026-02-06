@@ -3,13 +3,16 @@ import type { Database } from '$lib/supabase.types'
 import { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js'
 
 const EVENTS = [
-    'Users',
-    'Settings',
-    'DaySettings',
-    'Reservations',
+    'Boats',
+    'Buoys',
     'BuoyGroupings',
+    'DaySettings',
+    'Notifications',
+    'Reservations',
+    'Settings',
+    'Users',
 ] as const;
-type EventType = typeof EVENTS[number];
+export type EventType = typeof EVENTS[number];
 type Payload = unknown
 type Subscriber = () => void | Promise<void>
 type Unsubscribe = () => void

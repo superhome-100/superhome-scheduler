@@ -7,11 +7,14 @@ import tz from 'dayjs/plugin/timezone';
 import { ReservationStatus } from '$types';
 dayjs.extend(tz);
 
-const daysLimit = 60;
+/**
+ * @deprecated unused, direct access to supabase now
+ */
 export async function GET({ locals: { user } }) {
 	try {
 		checkAuthorisation(user);
 
+		const daysLimit = 60;
 		const now = dayjs().tz('Asia/Manila');
 		const inXDays = now.clone().add(daysLimit, 'days');
 

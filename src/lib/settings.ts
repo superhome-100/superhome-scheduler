@@ -1,36 +1,35 @@
-import type { Setting, Settings } from '$types';
+import type { Setting, Settings, SupabaseClient } from '$types';
 import {
 	getSettingsManager as getSettingsManagerConstructor,
 	type SettingsManager as SM
 } from '$lib/settingsManager';
-import { supabaseServiceRole } from './supabase';
 import type { Tables } from '$lib/supabase.types';
 
 let settings: Settings;
 
 // TODO: svelte stores are not meant to be used in server-side code
-export const initSettings = async () => {
+export const initSettings = async (supabase: SupabaseClient) => {
 	if (!settings) {
-		settings = await getSettings();
+		settings = await getSettings(supabase);
 	}
 	return getSettingsManagerConstructor(settings);
 };
 
-export const getSettings = async (): Promise<Settings> => {
+const getSettings = async (supabase: SupabaseClient): Promise<Settings> => {
 	const { data: settingsTbl } =
-		await supabaseServiceRole
+		await supabase
 			.from('Settings')
 			.select('*')
 			.throwOnError();
 	return parseSettingsTbl(settingsTbl);
 };
 
-export const getSettingsManager = async (): Promise<SettingsManager> => {
-	const s = await getSettings();
+export const getSettingsManager = async (supabase: SupabaseClient): Promise<SettingsManager> => {
+	const s = await getSettings(supabase);
 	return await getSettingsManagerConstructor(s);
 };
 
-export function parseSettingsTbl(settingsTbl: Tables<'Settings'>[]): Settings {
+function parseSettingsTbl(settingsTbl: Tables<'Settings'>[]): Settings {
 	let settings: { [key: string]: Setting } = {};
 	let fields = new Set(settingsTbl.map((e) => e.name));
 

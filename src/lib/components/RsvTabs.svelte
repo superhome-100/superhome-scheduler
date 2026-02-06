@@ -3,10 +3,12 @@
 	import { Tab, Tabs, TabList, TabPanel } from '$lib/tabs';
 	import ViewForm from '$lib/components/ViewForm.svelte';
 	import ModifyForm from '$lib/components/ModifyForm.svelte';
-	import { user, users } from '$lib/stores';
+	import { storedSettings, storedUser as user } from '$lib/client/stores';
+	import { storedUsers as users } from '$lib/client/stores';
 	import { beforeResCutoff, beforeCancelCutoff } from '$lib/reservationTimes';
-	import { Settings } from '$lib/client/settings';
-	import type { ReservationWithUser } from '$types';
+
+	import type { Reservation, ReservationWithUser } from '$types';
+	import type { SettingsManager } from '$lib/settings';
 
 	export let rsvs: ReservationWithUser[];
 	export let hasForm: boolean;
@@ -15,9 +17,9 @@
 
 	const { close } = getContext('simple-modal');
 
-	let viewOnly = (rsv) =>
-		!beforeCancelCutoff(Settings, rsv.date, rsv.startTime, rsv.category) ||
-		(!beforeResCutoff(Settings, rsv.date, rsv.startTime, rsv.category) &&
+	let viewOnly = (sm: SettingsManager, rsv: Reservation) =>
+		!beforeCancelCutoff(sm, rsv.date, rsv.startTime, rsv.category) ||
+		(!beforeResCutoff(sm, rsv.date, rsv.startTime, rsv.category) &&
 			['autonomous', 'cbs'].includes(rsv.resType));
 
 	let tabIndex = 0;
@@ -42,7 +44,7 @@
 
 		{#each rsvs as rsv}
 			<TabPanel>
-				{#if !disableModify && !viewOnly(rsv) && $user?.id === rsv.user}
+				{#if !disableModify && !viewOnly($storedSettings, rsv) && $user?.id === rsv.user}
 					<ModifyForm {hasForm} {rsv} />
 				{:else}
 					<ViewForm {hasForm} bind:rsv on:submit={handleAdminSubmit} />
