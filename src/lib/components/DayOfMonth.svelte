@@ -9,12 +9,15 @@
 	export let summary: DateReservationSummary;
 </script>
 
-<div class="overflow-hidden h-full">
+<div
+	class="overflow-hidden h-full {dayjs(date).isSame(dayjs(), 'date') &&
+		'bg-stone-300 dark:bg-stone-600'}"
+>
 	<a class="no-underline" href={getCategoryDatePath(category, date)}>
 		<div class="h-full">
 			<p
 				class="flex justify-center w-6 m-auto {dayjs(date).isSame(dayjs(), 'date') &&
-					'rounded-[50%] bg-stone-300 dark:bg-stone-600'}"
+					'rounded-[50%] bg-stone-100 dark:bg-stone-800'}"
 			>
 				{dayjs(date).get('date')}
 			</p>

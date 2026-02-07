@@ -207,13 +207,13 @@
 								bind:value={grouping.boat}
 								on:input={saveAssignments}
 							>
-								<option value="null" />
+								<option value="null">-</option>
 								{#each boats as boat}
 									<option value={boat}>{boat}</option>
 								{/each}
 							</select>
 						{:else}
-							{grouping.boat || 'UNASSIGNED'}
+							{grouping.boat || '-'}
 						{/if}
 					</div>
 					<div class="grow flex w-auto relative gap-0.5 sm:gap-2">

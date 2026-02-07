@@ -58,7 +58,6 @@
 		}
 	};
 
-	$: activeUrl = page.url.pathname;
 	let spanClass = 'pl-8 self-center text-md text-gray-900 whitespace-nowrap dark:text-white';
 
 	function downloadDatabase(table: string | null = null) {
@@ -98,10 +97,12 @@
 	}
 
 	onMount(() => {
-		const stored = localStorage.getItem(viewModeStorageKey);
-		if (stored) {
-			$viewMode = stored === 'admin' && $user?.privileges === 'admin' ? 'admin' : 'normal';
-		}
+		const sub = user.subscribe((u) => {
+			const stored = localStorage.getItem(viewModeStorageKey);
+			if (stored) {
+				$viewMode = stored === 'admin' && $user?.privileges === 'admin' ? 'admin' : 'normal';
+			}
+		});
 	});
 
 	const updateSubscription = async (e) => {
