@@ -34,7 +34,6 @@ export const signOut = async (supabase: SupabaseClient<Database>): Promise<{ err
 	try {
 		const { error } = await supabase.auth.signOut();
 		if (error) throw error;
-		await ensureUserProfile(null);
 
 		// Redirect to login page
 		if (typeof window !== 'undefined') {
