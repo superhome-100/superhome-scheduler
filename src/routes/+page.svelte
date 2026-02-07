@@ -7,6 +7,9 @@
 	import { storedSettings, storedUser as user } from '$lib/client/stores';
 	import type { UserEx } from '$types';
 
+	// svelte-ignore unused-export-let
+	export let params;
+
 	let modalOpened = false;
 	const onOpen = () => (modalOpened = true);
 	const onClose = () => (modalOpened = false);

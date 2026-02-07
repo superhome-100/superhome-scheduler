@@ -16,9 +16,18 @@
 	import Refresher from '$lib/components/Refresher.svelte';
 	import { coreStore } from '$lib/client/stores';
 	import { getSettingsManager } from '$lib/settingsManager';
+	import * as Sentry from '@sentry/browser';
 
+	// svelte-ignore unused-export-let
+	export let params;
 	export let data;
 	const { user, supabase, settings } = data;
+
+	Sentry.setUser({ id: user?.id });
+	page.subscribe((p) => {
+		Sentry.setTag('route', p.route.id);
+	});
+
 	storedSettings.set(getSettingsManager(settings));
 
 	const publicRoutes = ['/privacy'];
@@ -31,6 +40,7 @@
 		onMount(async () => {
 			await supabase_es.init(supabase);
 			coreStore.set({ supabase, user });
+
 			if ($storedUser) {
 				await pushService.init($storedUser.has_push);
 			} else {

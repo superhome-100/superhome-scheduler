@@ -1,4 +1,6 @@
 <script lang="ts">
+	// svelte-ignore unused-export-let
+	export let params;
 	export let data;
 	const { supabase } = data;
 	import { signInWithGoogle, signInWithFacebook } from '$lib/user.js';

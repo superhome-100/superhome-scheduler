@@ -21,6 +21,8 @@
 	} from '$lib/client/stores.js';
 	import { ow_am_full } from '$lib/firestore.js';
 
+	// svelte-ignore unused-export-let
+	export let params;
 	export let data;
 	const { day, settingsManager } = data;
 	storedDayReservations_param.set({ day });

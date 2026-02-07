@@ -6,7 +6,17 @@ const config = {
 	kit: {
 		adapter: adapter({
 			out: 'build'
-		})
+		}),
+
+		experimental: {
+			tracing: {
+				server: false
+			},
+
+			instrumentation: {
+				server: true
+			}
+		}
 	},
 	preprocess: vitePreprocess()
 };

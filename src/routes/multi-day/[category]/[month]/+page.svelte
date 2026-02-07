@@ -22,6 +22,8 @@
 		storedUser
 	} from '$lib/client/stores';
 
+	// svelte-ignore unused-export-let
+	export let params;
 	export let data: {
 		category: ReservationCategory;
 		month: string;
@@ -29,7 +31,7 @@
 
 	let categories = [...CATEGORIES];
 
-	$: now = dayjs(data.month + '-01');
+	$: now = dayjs(data.month.substring(0, 5) + '-01');
 
 	function getWeeksInMonth(year: number = now.year(), month: number = now.month()) {
 		const startOfMonth = dayjs().year(year).month(month).startOf('month');

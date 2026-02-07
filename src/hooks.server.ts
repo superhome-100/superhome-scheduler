@@ -1,3 +1,5 @@
+import { sequence } from '@sveltejs/kit/hooks';
+import * as Sentry from '@sentry/sveltekit';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$env/static/public';
 import type { Database } from '$lib/supabase.types';
 import { createServerClient } from '@supabase/ssr';
@@ -5,7 +7,7 @@ import { getSettingsManager } from '$lib/settings';
 import type { Handle } from '@sveltejs/kit';
 import { sessionToSessionId } from '$lib/server/supabase';
 
-export const handle: Handle = async ({ event, resolve }) => {
+export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
 	const { pathname, search } = new URL(event.url);
 	if (pathname.startsWith('/__/')) {
 		const redirectUrl = new URL(`https://freedive-superhome.firebaseapp.com${pathname}`);
@@ -77,7 +79,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 			return { session, auth_user: null, user: null };
 		}
 		const { data: user, error: user_error } = await event.locals.supabase
-			.from("Users")
+			.from('Users')
 			.select('*')
 			.eq('authId', auth_user!.id)
 			.single();
@@ -85,14 +87,16 @@ export const handle: Handle = async ({ event, resolve }) => {
 			console.error("couldn't get user", user_error);
 			return { session, auth_user, user: null };
 		}
-		const sessionId = sessionToSessionId(session)
+		const sessionId = sessionToSessionId(session);
 		const { data: uSession } = await event.locals.supabase
-			.from("UserSessions")
-			.select("sessionId")
-			.eq("sessionId", sessionId)
+			.from('UserSessions')
+			.select('sessionId')
+			.eq('sessionId', sessionId)
 			.single();
 		return {
-			session, auth_user, user: {
+			session,
+			auth_user,
+			user: {
 				...user,
 				avatar_url: auth_user?.user_metadata?.avatar_url ?? null,
 				last_sign_in_at: auth_user?.last_sign_in_at ?? null,
@@ -114,4 +118,5 @@ export const handle: Handle = async ({ event, resolve }) => {
 			return name === 'content-range' || name === 'x-supabase-api-version';
 		}
 	});
-};
+});
+export const handleError = Sentry.handleErrorWithSentry();

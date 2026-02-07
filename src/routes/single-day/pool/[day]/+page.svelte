@@ -17,6 +17,8 @@
 	import { storedDayReservations_param, storedSettings, storedUser } from '$lib/client/stores.js';
 	import type { SettingsManager } from '$lib/settingsManager.js';
 
+	// svelte-ignore unused-export-let
+	export let params;
 	export let data;
 	const { day } = data;
 	storedDayReservations_param.set({ day });
