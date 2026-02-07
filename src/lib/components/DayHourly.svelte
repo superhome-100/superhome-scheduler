@@ -19,8 +19,6 @@
 	export let category: 'pool' | 'classroom';
 	export let date: string;
 
-	$: reservations = $storedDayReservations.filter((r) => r.category === category && r.date == date);
-
 	const { open } = getContext('simple-modal');
 
 	const showViewRsvs = (rsvs) => {
@@ -31,7 +29,7 @@
 			onSubmit: () => {}
 		});
 	};
-	$: assignment = getDaySchedule($storedSettings, reservations, date, category);
+	$: assignment = getDaySchedule($storedSettings, $storedDayReservations, date, category);
 
 	const rowHeight = 3;
 	const blkMgn = 0.25; // dependent on tailwind margin styling

@@ -30,8 +30,8 @@ export const getSettingsManager = async (supabase: SupabaseClient): Promise<Sett
 };
 
 function parseSettingsTbl(settingsTbl: Tables<'Settings'>[]): Settings {
-	let settings: { [key: string]: Setting } = {};
-	let fields = new Set(settingsTbl.map((e) => e.name));
+	const settings: { [key: string]: Setting } = {};
+	const fields = new Set(settingsTbl.map((e) => e.name));
 
 	let fixTypes = (e: Tables<'Settings'>) => {
 		let name = e.name!;
