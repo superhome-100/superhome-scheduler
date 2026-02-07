@@ -6,6 +6,7 @@
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { adminView } from '$lib/utils';
 	import { toast } from 'svelte-french-toast';
+	import { storedUser } from '$lib/client/stores';
 
 	export let hasForm = false;
 	export let rsv;
@@ -50,7 +51,7 @@
 			<ResFormClassroom viewOnly {rsv} />
 		{/if}
 		<input type="hidden" name="id" value={rsv.id} />
-		{#if adminView(true)}
+		{#if adminView($storedUser, true)}
 			<div class="w-full flex px-8 gap-2 items-center justify-between">
 				<button formaction="/?/adminUpdateRejected" class="bg-status-rejected px-3 py-1 w-1/3"
 					>Reject</button

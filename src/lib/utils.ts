@@ -1,9 +1,9 @@
 import { datetimeToLocalDateStr } from './datetimeUtils';
 import { viewMode } from './stores';
-import { storedUsers as users, storedUser as user } from '$lib/client/stores';
+import { storedUsers } from '$lib/client/stores';
 import { get } from 'svelte/store';
 import { assignHourlySpaces } from './autoAssign';
-import { ReservationCategory, ReservationType, type Buoy, type Reservation, type ReservationWithUser } from '$types';
+import { ReservationCategory, ReservationType, type Buoy, type Reservation, type ReservationWithUser, type User } from '$types';
 import type { SettingsManager } from './settingsManager';
 
 // interface Reservation {
@@ -36,7 +36,7 @@ export function cleanUpFormDataBuddyFields(formData: FormData): void {
 }
 
 export const displayTag = (rsv: ReservationWithUser, admin: boolean): string => {
-	let tag = rsv.Users?.nickname ?? get(users)[rsv.user].nickname;
+	let tag = rsv.Users?.nickname ?? get(storedUsers)[rsv.user].nickname;
 	if (rsv.resType === 'course') {
 		tag += ' +' + (rsv.numStudents ?? 0);
 	}
@@ -60,12 +60,12 @@ export function getDaySchedule(sm: SettingsManager, rsvs: Reservation[], datetim
 	return assignHourlySpaces(sm, rsvs, today, category as ReservationCategory);
 }
 
-export const adminView = (viewOnly: boolean): boolean => {
-	return get(user)?.privileges === 'admin' && get(viewMode) === 'admin' && viewOnly;
+export const adminView = (user: User | null, viewOnly: boolean): boolean => {
+	return user?.privileges === 'admin' && get(viewMode) === 'admin' && viewOnly;
 };
 
-export const isMyReservation = (rsv: Reservation | null): boolean => {
-	return rsv == null || get(user)?.id === rsv.user;
+export const isMyReservation = (user: User | null, rsv: Reservation | null): boolean => {
+	return rsv == null || user?.id === rsv.user;
 };
 
 export const buoyDesc = (buoy: Buoy): string => {

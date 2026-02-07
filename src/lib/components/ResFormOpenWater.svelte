@@ -13,7 +13,8 @@
 		storedDaySettings,
 		storedDayReservations,
 		storedDayReservations_param,
-		storedBuoys
+		storedBuoys,
+		storedUser
 	} from '$lib/client/stores';
 
 	export let rsv: OWReservation | null = null;
@@ -134,7 +135,7 @@
 	{resType}
 >
 	<svelte:fragment slot="inputExtension">
-		{#if adminView(viewOnly)}
+		{#if adminView($storedUser, viewOnly)}
 			<InputLabel label="Buoy" forInput="formBuoy">
 				<select class="w-full" id="formBuoy" name="buoy" value={rsv?.buoy}>
 					<option value="auto">Auto</option>
@@ -185,7 +186,7 @@
 				{/if}
 			</div>
 		</InputLabel>
-		{#if isMyReservation(rsv) || adminView(viewOnly)}
+		{#if isMyReservation($storedUser, rsv) || adminView($storedUser, viewOnly)}
 			<InputLabel label="Target Depth" forInput="formMaxDepth">
 				<input
 					disabled={viewOnly ||

@@ -7,7 +7,7 @@
 	import { ReservationType } from '$types';
 	import type { Reservation } from '$types';
 	import InputLabel from './tiny_components/InputLabel.svelte';
-	import { storedSettings } from '$lib/client/stores';
+	import { storedSettings, storedUser } from '$lib/client/stores';
 	import { type SettingsManager } from '$lib/settings';
 
 	let lanes = $storedSettings.getPoolLanes();
@@ -57,7 +57,7 @@
 
 <ResFormGeneric {error} {viewOnly} {restrictModify} {showBuddyFields} bind:date bind:category {rsv}>
 	<svelte:fragment slot="inputExtension">
-		{#if adminView(viewOnly) && category === 'pool'}
+		{#if adminView($storedUser, viewOnly) && category === 'pool'}
 			<InputLabel forInput="formLane" label="Lane">
 				<!-- admin lane/room assignments are disabled due to the possibility that
 			a fixed assignment could make it impossible to auto-assign the remaining reservations -->
@@ -69,7 +69,7 @@
 				</select>
 			</InputLabel>
 		{/if}
-		{#if adminView(viewOnly) && category === 'classroom'}
+		{#if adminView($storedUser, viewOnly) && category === 'classroom'}
 			<InputLabel forInput="formRoom" label="Room">
 				<select id="formRoom" name="room" class="w-full" value={rsv.room}>
 					<option value="auto">Auto</option>
