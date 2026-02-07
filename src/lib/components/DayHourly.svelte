@@ -19,7 +19,7 @@
 	export let category: 'pool' | 'classroom';
 	export let date: string;
 
-	$: reservations = $storedDayReservations.filter((r) => r.category === category);
+	$: reservations = $storedDayReservations.filter((r) => r.category === category && r.date == date);
 
 	const { open } = getContext('simple-modal');
 

@@ -31,7 +31,7 @@
 	$: isAmFull = $storedDaySettings[ow_am_full];
 
 	$: reservations = $storedDayReservations.filter(
-		(r) => r.category === ReservationCategory.openwater
+		(r) => r.category === ReservationCategory.openwater && r.date == date
 	);
 	$: boatAssignments = $storedBoatAssignments;
 

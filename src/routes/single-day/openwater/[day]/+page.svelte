@@ -9,7 +9,7 @@
 	import { CATEGORIES } from '$lib/constants';
 	import { toast } from 'svelte-french-toast';
 	import dayjs from 'dayjs';
-	import { ReservationCategory, type Reservation } from '$types';
+	import { ReservationCategory } from '$types';
 	import { getCategoryDatePath } from '$lib/url';
 	import { approveAllPendingReservations, flagOWAmAsFull, lockBuoyAssignments } from '$lib/api';
 	import { getYYYYMM, getYYYYMMDD } from '$lib/datetimeUtils.js';
@@ -30,7 +30,7 @@
 	let categories = [...CATEGORIES];
 
 	$: reservations = $storedDayReservations.filter(
-		(r) => r.category == ReservationCategory.openwater
+		(r) => r.category == ReservationCategory.openwater && r.date == day
 	);
 
 	$: groupsHaveBeenAssignedBuoy = reservations.every((rsv) => rsv.buoy !== 'auto');
