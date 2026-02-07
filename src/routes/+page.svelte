@@ -74,8 +74,8 @@
 				Contact the administrators. <br /><br />
 				Via <button on:click={() => openWhatsApp($user)}> WhatsApp </button><br /><br />
 				Or
-				<button on:click={() => copyToClipboard($user)}> copy this link to your clipboard </button> and
-				send to them.
+				<button on:click={() => copyToClipboard($user)}> click here </button>
+				to copy an activation link for the administrators.
 			</div>
 		</div>
 	{/if}

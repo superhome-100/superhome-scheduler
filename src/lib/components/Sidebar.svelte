@@ -177,13 +177,29 @@
 								<span>Admin Mode</span>
 							</div>
 							{#if $viewMode === 'admin'}
-								<SidebarDropdownWrapper label="Download DBs">
+								<SidebarDropdownWrapper label="Advanced">
 									<SidebarItem
-										label="Reservations"
+										label="Supabase"
+										{spanClass}
+										target="_blank"
+										href="https://supabase.com/dashboard/project/yzbmkdautiurjjmeliak/editor/"
+									/>
+									<SidebarItem
+										label="Sentry Logs"
+										{spanClass}
+										target="_blank"
+										href="https://superhome.sentry.io/explore/logs/"
+									/>
+									<SidebarItem
+										label="Download Reservations"
 										{spanClass}
 										on:click={() => downloadDatabase('Reservations')}
 									/>
-									<SidebarItem label="all" {spanClass} on:click={() => downloadDatabase('all')} />
+									<SidebarItem
+										label="Download DB"
+										{spanClass}
+										on:click={() => downloadDatabase('all')}
+									/>
 								</SidebarDropdownWrapper>
 							{/if}
 						{/if}

@@ -23,7 +23,6 @@
 	export let data;
 	const { user, supabase, settings } = data;
 
-	Sentry.setUser({ id: user?.id });
 	page.subscribe((p) => {
 		Sentry.setTag('route', p.route.id);
 	});
@@ -38,6 +37,7 @@
 
 	if ($page.route.id && !publicRoutes.includes($page.route.id)) {
 		onMount(async () => {
+			Sentry.setUser(user ? { id: user.id } : null);
 			await supabase_es.init(supabase);
 			coreStore.set({ supabase, user });
 

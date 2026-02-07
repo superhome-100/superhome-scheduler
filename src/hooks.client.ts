@@ -18,8 +18,8 @@ Sentry.init({
 	environment: PUBLIC_STAGE ?? 'production',
 	release: `superhome-scheduler.client@${__APP_VERSION__}`,
 	ignoreErrors: [
-		/.*using `window.fetch`\. For best results, use the `fetch` that is passed to your `load` function.*/,
-		"<Page> was created with unknown prop 'form'",
+		/.*use the `fetch` that is passed to your `load` function.*/,
+		/.*<(Page|Layout)> was created with unknown prop.*/,
 	]
 });
 
