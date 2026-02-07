@@ -1,4 +1,4 @@
-import { writable, readable, type Writable, type Readable } from 'svelte/store';
+import { writable, readable, type Readable } from 'svelte/store';
 import { supabase_es, type EventType } from './supabase_event_source';
 import { getYYYYMMDD, PanglaoDate } from '$lib/datetimeUtils';
 import { defaultDateSettings, getDateSetting, type DateSetting } from '$lib/firestore';
@@ -27,6 +27,7 @@ import {
     getUserPastReservations,
     getUsers
 } from '$lib/api';
+import { LRUCache } from 'lru-cache';
 
 type CoreStore = { supabase: SupabaseClient, user: UserEx | null };
 
@@ -80,30 +81,40 @@ function readableWithSubscriptionToCore<T>(
     });
 }
 
-function readableWithSubscriptionToCoreAndParam<T, P>(
+function readableWithSubscriptionToCoreAndParam<T extends object, P>(
     defaultValue: T,
-    paramStore: Writable<P>,
+    paramStore: Readable<P>,
     cb: (cs: CoreStoreWithUser, param: P, prev: T) => Promise<T>,
     event: EventType, ...events: EventType[]
 ): Readable<T> {
     return readable<T>(defaultValue, (set) => {
+        const cache = new LRUCache<string, T>({ max: 50 });
         let coreParam: CoreStoreWithUser | undefined = undefined;
         let param: P | undefined = undefined;
         let value: T = defaultValue;
         const safeCb = async () => {
             if (coreParam?.user && param !== undefined) {
-                await progressTracker.track(async (cp, p, v) => {
-                    try {
-                        value = await cb(cp, p, v);
-                        set(value);
-                    } catch (e) {
-                        console.error('subscribeToCore', e);
-                    }
-                }, coreParam, param, value);
+                const cacheKey = JSON.stringify(param);
+                const cacheVal = cache.get(cacheKey);
+                if (cacheVal !== undefined) {
+                    value = cacheVal;
+                    set(value);
+                } else {
+                    await progressTracker.track(async (cp, p, v) => {
+                        try {
+                            value = await cb(cp, p, v);
+                            cache.set(cacheKey, value);
+                            set(value);
+                        } catch (e) {
+                            console.error('subscribeToCore', e);
+                        }
+                    }, coreParam, param, value);
+                }
             }
         };
         const unsubCs = coreStore.subscribe(async (cpN: CoreStore) => {
             coreParam = cpN as CoreStoreWithUser;
+            cache.clear();
             safeCb();
         });
         const unsubP = paramStore.subscribe(async (pN: P) => {
@@ -113,7 +124,10 @@ function readableWithSubscriptionToCoreAndParam<T, P>(
                 safeCb();
             }
         });
-        const unsubSupa = supabase_es.subscribe(safeCb, event, ...events);
+        const unsubSupa = supabase_es.subscribe(() => {
+            cache.clear();
+            safeCb()
+        }, event, ...events);
         return () => {
             unsubCs();
             unsubP();
@@ -123,6 +137,14 @@ function readableWithSubscriptionToCoreAndParam<T, P>(
 }
 
 //
+
+export const storedCurrentDay = readable<string>(getYYYYMMDD(PanglaoDate()), (set) => {
+    const iid = setInterval(() => {
+        // no need for change detection, svelte can do it because it is a plain string
+        set(getYYYYMMDD(PanglaoDate()));
+    }, 60 * 1000);
+    return () => clearInterval(iid);
+});
 
 export const storedUser = readable<UserEx | null>(null, (set) => coreStore.subscribe((cs) => set(cs?.user)));
 
@@ -139,10 +161,12 @@ export const storedIncomingReservations =
     }, "Reservations");
 
 export const storedPastReservations =
-    readableWithSubscriptionToCore<Reservation[]>([], async ({ supabase, user }) => {
-        const r = await getUserPastReservations(user, supabase, getYYYYMMDD(PanglaoDate())); // TODO:mate day passes
-        return r;
-    }, "Reservations");
+    readableWithSubscriptionToCoreAndParam<Reservation[], string>([],
+        storedCurrentDay,
+        async ({ supabase, user }, currentDay) => {
+            const r = await getUserPastReservations(user, supabase, currentDay);
+            return r;
+        }, "Reservations");
 
 export const storedDayReservations_param = writable<{ day: string }>();
 
