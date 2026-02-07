@@ -1,5 +1,5 @@
-// import { PUBLIC_STAGE } from '$env/static/public';
-// import * as Sentry from '@sentry/sveltekit';
+import { PUBLIC_STAGE } from '$env/static/public';
+import * as Sentry from '@sentry/sveltekit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$env/static/public';
 import type { Database } from '$lib/supabase.types';
@@ -8,24 +8,25 @@ import { getSettingsManager } from '$lib/settings';
 import type { Handle } from '@sveltejs/kit';
 import { sessionToSessionId } from '$lib/server/supabase';
 
+Sentry.initCloudflareSentryHandle({
+	dsn: 'https://f2da7b160a72d4083e99922a3ae707fe@o4510844761931776.ingest.de.sentry.io/4510844770975824',
+
+	// Enable logs to be sent to Sentry
+	enableLogs: true, // PUBLIC_STAGE !== 'dev' TODO:mate
+
+	// integrations: [
+	// 	Sentry.consoleLoggingIntegration({ levels: ["warn", "error"] }),
+	// ],
+
+	environment: PUBLIC_STAGE ?? 'production',
+	release: `superhome-scheduler.server@${__APP_VERSION__}`,
+
+	// uncomment the line below to enable Spotlight (https://spotlightjs.com)
+	// spotlight: import.meta.env.DEV,
+});
+
 export const handle: Handle = sequence(
-	// Sentry.initCloudflareSentryHandle({
-	// 	dsn: 'https://f2da7b160a72d4083e99922a3ae707fe@o4510844761931776.ingest.de.sentry.io/4510844770975824',
-
-	// 	// Enable logs to be sent to Sentry
-	// 	enableLogs: true, // PUBLIC_STAGE !== 'dev' TODO:mate
-
-	// 	integrations: [
-	// 		Sentry.consoleLoggingIntegration({ levels: ["warn", "error"] }),
-	// 	],
-
-	// 	environment: PUBLIC_STAGE ?? 'production',
-	// 	release: `superhome-scheduler.server@${__APP_VERSION__}`,
-
-	// 	// uncomment the line below to enable Spotlight (https://spotlightjs.com)
-	// 	// spotlight: import.meta.env.DEV,
-	// }),
-	// Sentry.sentryHandle(),
+	Sentry.sentryHandle(),
 	async ({ event, resolve }) => {
 		const { pathname, search } = new URL(event.url);
 		if (pathname.startsWith('/__/')) {
@@ -137,5 +138,7 @@ export const handle: Handle = sequence(
 				return name === 'content-range' || name === 'x-supabase-api-version';
 			}
 		});
-	});
-// export const handleError = Sentry.handleErrorWithSentry();
+	}
+);
+
+export const handleError = Sentry.handleErrorWithSentry();
