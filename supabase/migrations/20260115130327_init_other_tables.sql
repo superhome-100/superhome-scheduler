@@ -110,8 +110,8 @@ create table "public"."Settings" (
     "id" text not null default gen_random_uuid()::text,
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
-    "name" text null,
-    "value" text null,
+    "name" text not null,
+    "value" jsonb null,
     "startDate" text not null default 'default',
     "endDate" text not null default 'default',
 
@@ -377,6 +377,7 @@ AS $$
   SELECT n.*
   FROM public."Notifications" n
   WHERE n.status = 'active' -- only active notifications
+    AND EXISTS (SELECT 1 FROM "public"."Users" WHERE "authId" = (SELECT auth.uid())) -- only to active users
     AND NOT EXISTS (
     SELECT 1 
     FROM public."NotificationReceipts" nr 

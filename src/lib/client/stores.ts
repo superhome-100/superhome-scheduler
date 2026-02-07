@@ -30,15 +30,15 @@ type CoreStoreWithUser = RequireKeys<CoreStore, 'user'>;
 
 function subscribeCoreWithEvent<T>(
     set: (value: T) => void,
-    cb: (cs: CoreStoreWithUser) => Promise<T>,
+    cb: (cp: CoreStoreWithUser) => Promise<T>,
     event: EventType, ...events: EventType[]
 ): () => void {
     let core_param: CoreStoreWithUser | undefined = undefined;
     const safeCb = async () => {
         if (core_param?.user) {
-            await progressTracker.track(async (cs) => {
+            await progressTracker.track(async (cp) => {
                 try {
-                    const ret = await cb(cs);
+                    const ret = await cb(cp);
                     set(ret);
                 } catch (e) {
                     console.error('subscribeToCore', e);
@@ -67,9 +67,9 @@ function subscribeCoreWithEventAndParam<T, P>(
     let param: P | undefined = undefined
     const safeCb = async () => {
         if (core_param?.user && param !== undefined) {
-            await progressTracker.track(async (cs, p) => {
+            await progressTracker.track(async (cp, p) => {
                 try {
-                    const ret = await cb(cs, p);
+                    const ret = await cb(cp, p);
                     set(ret);
                 } catch (e) {
                     console.error('subscribeToCore', e);
@@ -77,8 +77,8 @@ function subscribeCoreWithEventAndParam<T, P>(
             }, core_param, param);
         }
     };
-    const unsubCs = coreStore.subscribe(async (csN: CoreStore) => {
-        core_param = csN as CoreStoreWithUser;
+    const unsubCs = coreStore.subscribe(async (cpN: CoreStore) => {
+        core_param = cpN as CoreStoreWithUser;
         safeCb();
     });
     const unsubP = paramStore.subscribe(async (pN: P) => {

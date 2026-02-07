@@ -7,6 +7,7 @@ import type { Reservation, User } from '$types';
 import { dayjs } from '$lib/datetimeUtils';
 import { LRUCache } from 'lru-cache'
 import type { Json } from '$lib/supabase.types';
+import { getRandomElement } from '$lib/utils';
 
 webpush.setVapidDetails(
     PUBLIC_VAPID_SUBJECT,
@@ -80,7 +81,7 @@ export const pushNotificationService = {
         await Promise.allSettled(rsvs
             .filter(r => r.user !== actor.id)
             .map(async (rsv) => this.sendSafe(rsv.user,
-                `${upperFirst(rsv.category)} ${shortDateTime(rsv)}: ${fn(rsv)}`,
+                reservationTitle(rsv, fn),
                 reservationDetails(rsv),
                 `/single-day/${rsv.category}/${rsv.date}`
             )))
@@ -99,18 +100,51 @@ export const pushNotificationService = {
     }
 };
 
-const upperFirst = (s: string) => s.length > 0 ? s[0].toUpperCase() + s.substring(1) : '';
-
-const shortDateTime = (rsv: Reservation) => dayjs(rsv.date + 'T' + rsv.startTime).format('DD/MMM hh:mm');
+const reservationTitle = (rsv: Reservation, fn: (r: Reservation) => string) => {
+    return reservationCategoryIcon(rsv) + `${upperFirst(rsv.category)} ${shortDateTime(rsv)}: ${fn(rsv)}`
+}
 
 const reservationDetails = (rsv: Reservation) => {
     const d: string[] = [
-        `${rsv.resType} : [${rsv.status}]`,
+        `${rsv.resType}: ${rsv.status}` + reservationStatusIcon(rsv)
     ];
     if (rsv.maxDepth) d.push(`depth: ${rsv.maxDepth}m`);
     if (rsv.numStudents) d.push(`students: ${rsv.numStudents}`);
     if (rsv.buddies.length > 0) d.push(`buddies: ${rsv.buddies.length}`);
     if (rsv.comments) d.push('', 'Comment: ' + rsv.comments);
-    d.push(`at: ${rsv.date}: ${rsv.startTime.substring(0, 5)} - ${rsv.endTime.substring(0, 5)}`)
+    if (rsv.category !== 'openwater')
+        d.push(`until: ${rsv.endTime.substring(0, 5)}`);
     return d.join(',\n');
 };
+
+const upperFirst = (s: string) => s.length > 0 ? s[0].toUpperCase() + s.substring(1) : '';
+
+const shortDateTime = (rsv: Reservation) => dayjs(rsv.date + 'T' + rsv.startTime).format('DD/MMM hh:mm');
+
+const reservationStatusIcon = (rsv: Reservation) => {
+    switch (rsv.status) {
+        case 'canceled':
+            return '🙈';
+        case 'confirmed':
+            return '✅';
+        case 'pending':
+            return '⌛️';
+        case 'rejected':
+            return '❌';
+        default:
+            return '';
+    }
+}
+
+const reservationCategoryIcon = (rsv: Reservation) => {
+    switch (rsv.category) {
+        case 'classroom':
+            return '🧑‍🏫';
+        case 'openwater':
+            return getRandomElement<string>(['🌊', '🤿', '🦀', '🦈', '🐋', '🦐', '🦑', '🦞', '🦦', '🦭', '🐡', '🐟', '🐠', '🐬', '🪸', '🐳'])
+        case 'pool':
+            return '🏊‍♀️';
+        default:
+            return '';
+    }
+}

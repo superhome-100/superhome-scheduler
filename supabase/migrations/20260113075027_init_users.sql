@@ -67,14 +67,14 @@ GRANT EXECUTE ON FUNCTION public.is_active() TO authenticated;
 
 ---
 
-create policy "Enable users to view their own data only"
-on "public"."Users"
-as PERMISSIVE
-for SELECT
-to authenticated
-using (
-  "authId" = (SELECT auth.uid())
-);
+-- create policy "Enable users to view their own data only"
+-- on "public"."Users"
+-- as PERMISSIVE
+-- for SELECT
+-- to authenticated
+-- using (
+--   "authId" = (SELECT auth.uid())
+-- );
 
 create policy "Enable active users to view other users"
 on "public"."Users"

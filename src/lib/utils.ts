@@ -111,3 +111,8 @@ export function deepEqual(obj1: unknown, obj2: unknown): boolean {
 
 	return true;
 }
+
+export function getRandomElement<T>(items: T[]): T {
+	const randomIndex = Math.floor(Math.random() * items.length);
+	return items[randomIndex];
+}
