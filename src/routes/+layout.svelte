@@ -11,7 +11,12 @@
 	import Popup from '$lib/components/Popup.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Notification from '$lib/components/Notification.svelte';
-	import { storedSettings, storedUser } from '$lib/client/stores';
+	import {
+		storedDayReservations_param,
+		storedReservationsSummary_param,
+		storedSettings,
+		storedUser
+	} from '$lib/client/stores';
 	import { pushService } from '$lib/client/push';
 	import Refresher from '$lib/components/Refresher.svelte';
 	import { coreStore } from '$lib/client/stores';
@@ -38,6 +43,12 @@
 	if ($page.route.id && !publicRoutes.includes($page.route.id)) {
 		onMount(async () => {
 			Sentry.setUser(user ? { id: user.id } : null);
+			storedDayReservations_param.subscribe((v) =>
+				Sentry.setContext('storedDayReservations_param', v)
+			);
+			storedReservationsSummary_param.subscribe((v) =>
+				Sentry.setContext('storedReservationsSummary_param', v)
+			);
 			await supabase_es.init(supabase);
 			coreStore.set({ supabase, user });
 

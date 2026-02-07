@@ -24,8 +24,10 @@
 	// svelte-ignore unused-export-let
 	export let params;
 	export let data;
-	const { day, settingsManager } = data;
-	storedDayReservations_param.set({ day });
+	const { settingsManager } = data;
+
+	$: day = data.day;
+	$: storedDayReservations_param.set({ day });
 
 	const category = 'openwater';
 

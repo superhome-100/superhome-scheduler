@@ -25,8 +25,8 @@ export default defineConfig({
 		}
 	},
 	build: {
-		sourcemap: (process.env.PUBLIC_STAGE ?? 'production') !== 'production',
-		minify: (process.env.PUBLIC_STAGE ?? 'production') === 'production'
+		sourcemap: (process.env.PUBLIC_STAGE ?? 'production') !== 'production' ? 'inline' : false,
+		minify: (process.env.PUBLIC_STAGE ?? 'production') === 'production' ? 'esbuild' : false
 	},
 	define: {
 		__APP_VERSION__: JSON.stringify(pkg.version)

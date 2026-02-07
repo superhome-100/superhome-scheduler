@@ -19,8 +19,9 @@
 	// svelte-ignore unused-export-let
 	export let params;
 	export let data;
-	const { day } = data;
-	storedDayReservations_param.set({ day });
+
+	$: day = data.day;
+	$: storedDayReservations_param.set({ day });
 
 	const category = 'classroom';
 
