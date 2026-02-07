@@ -36,6 +36,20 @@
 </script>
 
 {#if $user != null}
+	{#if $user.status === 'disabled'}
+		<div class="text-lg font-semibold text-center justify-center">
+			<div>
+				<br />Welcome back. This account is currently disabled.<br />
+				Contact the administrators. <br />
+				Via <button on:click={() => openWhatsApp($user)}> WhatsApp </button><br />
+				Or
+				<button on:click={() => copyToClipboard($user)}> click here </button>
+				to copy an activation link<br />and send it to the administrators.
+			</div>
+		</div>
+		<br />
+		<br />
+	{/if}
 	<div class="flex w-full">
 		<div
 			class="text-lg font-semibold flex-grow text-center align-middle justify-center flex items-center"
@@ -65,20 +79,38 @@
 			</Modal>
 		</TabPanel>
 	</Tabs>
-	{#if $user.status === 'disabled'}
-		<div
-			class="text-lg font-semibold flex-grow text-center align-middle justify-center flex items-center"
-		>
-			<div>
-				Welcome back. This account is currently disabled.<br />
-				Contact the administrators. <br /><br />
-				Via <button on:click={() => openWhatsApp($user)}> WhatsApp </button><br /><br />
-				Or
-				<button on:click={() => copyToClipboard($user)}> click here </button>
-				to copy an activation link for the administrators.
-			</div>
-		</div>
-	{/if}
 {:else}
-	<h1>loading data...</h1>
+	<br />
+	<div class="loader_parent">
+		<div class="loader" />
+	</div>
+	<style>
+		.loader_parent {
+			width: 100%; /* w-full */
+			display: flex;
+			justify-content: center;
+		}
+		.loader {
+			/* Geometric dimensions */
+			width: 50px;
+			height: 50px;
+
+			/* Visual definition */
+			border: 5px solid #f3f3f3; /* Track color */
+			border-top: 5px solid #3498db; /* Indicator color */
+			border-radius: 50%; /* Circular clipping */
+
+			/* Animation properties */
+			animation: spin 1s linear infinite;
+		}
+
+		@keyframes spin {
+			0% {
+				transform: rotate(0deg);
+			}
+			100% {
+				transform: rotate(360deg);
+			}
+		}
+	</style>
 {/if}
