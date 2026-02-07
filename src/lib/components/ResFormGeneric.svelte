@@ -40,23 +40,21 @@
 	$: maxBuddies =
 		category === ReservationCategory.openwater ? 3 : category === ReservationCategory.pool ? 1 : 0; //category === ReservationCategory.classroom
 
-	const initBF = (): BuddyData[] => {
-		let buddyFields: BuddyData[] = [];
-		if (rsv != null && rsv.buddies != null) {
+	$: buddyFields = ((): BuddyData[] => {
+		let bf: BuddyData[] = [];
+		if (rsv != null && rsv.buddies.length > 0) {
 			for (let i = 0; i < rsv.buddies.length; i++) {
-				buddyFields.push({
-					// @ts-ignore - add proper user type to $users
-					name: $users[rsv.buddies[i]].nickname as string,
+				const buddy = rsv.buddies[i] in $users ? $users[rsv.buddies[i]] : null;
+				bf.push({
+					name: buddy?.nickname ?? rsv.buddies[i],
 					userId: rsv.buddies[i],
 					id: i,
 					matches: []
 				});
 			}
 		}
-		return buddyFields;
-	};
-
-	$: buddyFields = initBF();
+		return bf;
+	})();
 
 	$: currentBF = { name: '', matches: [] } as BuddyData;
 
@@ -87,7 +85,8 @@
 		}
 	}
 	const addBuddyField = () => {
-		buddyFields = [...buddyFields, { name: '', matches: [], id: buddyFields.length }];
+		buddyFields.push({ name: '', matches: [], id: buddyFields.length });
+		buddyFields = buddyFields; // propagation
 	};
 
 	const removeBuddyField = (bf: BuddyData) => {
@@ -97,7 +96,7 @@
 				for (let i = 0; i < buddyFields.length; i++) {
 					buddyFields[i].id = i;
 				}
-				buddyFields = [...buddyFields];
+				buddyFields = buddyFields; // propagation
 				break;
 			}
 		}
