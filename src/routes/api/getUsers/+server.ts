@@ -1,3 +1,4 @@
+import { console_error } from '$lib/server/sentry';
 import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import type { Tables } from '$lib/supabase.types';
 import { json } from '@sveltejs/kit';
@@ -25,7 +26,7 @@ export async function GET({ locals: { user } }: RequestEvent) {
 			usersById
 		});
 	} catch (error) {
-		console.error(error);
+		console_error(error);
 		if (error instanceof AuthError) {
 			return json({ status: 'error', error: error.message }, { status: error.code });
 		} else if (error instanceof Error) {

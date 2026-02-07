@@ -2,6 +2,7 @@ import { assignRsvsToBuoys } from '$lib/autoAssign';
 import { json, type RequestEvent } from '@sveltejs/kit';
 import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import { type OWReservation, ReservationCategory, ReservationStatus } from '$types';
+import { console_error } from '$lib/server/sentry';
 
 export async function POST({ request, locals: { user } }: RequestEvent) {
 	try {
@@ -53,7 +54,7 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 			throw Error(`Error during cancelling reservations: ${JSON.stringify(errors)}`);
 		return json({ status: 'success' });
 	} catch (error) {
-		console.error('error lockBuoyAssignments', error);
+		console_error('error lockBuoyAssignments', error);
 		if (error instanceof AuthError) {
 			return json({ status: 'error', error: error.message }, { status: error.code });
 		} else if (error instanceof Error) {

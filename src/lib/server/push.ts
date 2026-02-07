@@ -8,6 +8,7 @@ import { dayjs } from '$lib/datetimeUtils';
 import { LRUCache } from 'lru-cache'
 import type { Json } from '$lib/supabase.types';
 import { getRandomElement } from '$lib/utils';
+import { console_error } from './sentry';
 
 webpush.setVapidDetails(
     PUBLIC_VAPID_SUBJECT,
@@ -46,12 +47,12 @@ export const pushNotificationService = {
                     console.log('push sent', { user: userId, session: d.sessionId }, resp);
                     return resp;
                 })(d.pushSubscription as unknown as PushSubscription).catch((reason) => {
-                    console.error(`couldn't send notification`, { user: userId, session: d.sessionId }, reason);
+                    console_error(`couldn't send notification`, { user: userId, session: d.sessionId }, reason);
                     return reason;
                 })
             }))
         } catch (e) {
-            console.error("pushNotificationService.send", e)
+            console_error("pushNotificationService.send", e)
             return [];
         }
     },
@@ -73,7 +74,7 @@ export const pushNotificationService = {
         try {
             await this.send(userId, title, message, url);
         } catch (e) {
-            console.error("pushNotificationService.send", e)
+            console_error("pushNotificationService.send", e)
         }
     },
 

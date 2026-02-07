@@ -5,6 +5,7 @@ import { supabaseServiceRole, checkAuthorisation, AuthError } from '$lib/server/
 import dayjs from 'dayjs';
 import { ReservationStatus } from '$types';
 import type { Enums } from '$lib/supabase.types';
+import { console_error } from '$lib/server/sentry';
 
 interface RequestData {
 	date: string;
@@ -30,7 +31,7 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 		const reservations = await convertFromXataToAppType(rawRsvs);
 		return json({ status: 'success', reservations });
 	} catch (error) {
-		console.error('Error in getReservationsByDate', error);
+		console_error('Error in getReservationsByDate', error);
 		if (error instanceof AuthError) {
 			return json({ status: 'error', error: error.message }, { status: error.code });
 		} else if (error instanceof Error) {

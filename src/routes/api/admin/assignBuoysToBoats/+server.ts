@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import { supabaseServiceRole, checkAuthorisation, AuthError } from '$lib/server/supabase';
+import { console_error } from '$lib/server/sentry';
 
 interface Assignment {
 	// Add appropriate assignment properties here based on your data structure
@@ -30,7 +31,7 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 
 		return json({ status: 'success', record });
 	} catch (error) {
-		console.error('error assignBuoysToBoats', error);
+		console_error('error assignBuoysToBoats', error);
 		if (error instanceof AuthError) {
 			return json({ status: 'error', error: error.message }, { status: error.code });
 		}

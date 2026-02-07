@@ -14,6 +14,7 @@ import { doTransaction } from '$lib/server/firestore';
 import type { RequestEvent } from '@sveltejs/kit';
 import { AuthError, checkAuthorisation } from '$lib/server/supabase';
 import type { OWTime } from '$types';
+import { console_error } from '$lib/server/sentry';
 
 const adminUpdateGeneric = async ({
 	request,
@@ -28,7 +29,7 @@ const adminUpdateGeneric = async ({
 			await adminUpdate(user, data);
 		});
 	} catch (e) {
-		console.error('error adminUpdateGeneric', e);
+		console_error('error adminUpdateGeneric', e);
 		if (e instanceof AuthError) {
 			return fail(e.code, { error: e.message });
 		} if (e instanceof ValidationError) {
@@ -51,7 +52,7 @@ export const actions: Actions = {
 				await submitReservation(user, data, settings);
 			});
 		} catch (e) {
-			console.error('error submitReservation', e);
+			console_error('error submitReservation', e);
 			if (e instanceof AuthError) {
 				return fail(e.code, { error: e.message });
 			} if (e instanceof ValidationError) {
@@ -72,7 +73,7 @@ export const actions: Actions = {
 				return await modifyReservation(user, data, settings);
 			});
 		} catch (e) {
-			console.error('error modifyReservation', e);
+			console_error('error modifyReservation', e);
 			if (e instanceof AuthError) {
 				return fail(e.code, { error: e.message });
 			} else if (e instanceof ValidationError) {
@@ -94,7 +95,7 @@ export const actions: Actions = {
 				await cancelReservation(user, data, settings);
 			});
 		} catch (e) {
-			console.error('error cancelReservation', e);
+			console_error('error cancelReservation', e);
 			if (e instanceof AuthError) {
 				return fail(e.code, { error: e.message });
 			} if (e instanceof ValidationError) {

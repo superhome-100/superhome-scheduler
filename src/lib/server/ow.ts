@@ -1,6 +1,7 @@
 import { getYYYYMMDD } from '$lib/datetimeUtils';
 import type { Tables } from '$lib/supabase.types';
 import type { OWTime } from '$types';
+import { console_error } from './sentry';
 import { supabaseServiceRole } from './supabase';
 
 interface BuoyGroupingComment {
@@ -27,7 +28,7 @@ export const upsertOWReservationAdminComments = async (data: BuoyGroupingComment
 				})
 				.throwOnError();
 		} catch (error) {
-			console.error('upsertOWReservationAdminComments', error);
+			console_error('upsertOWReservationAdminComments', error);
 		}
 	} else {
 		// delete comment if it exists

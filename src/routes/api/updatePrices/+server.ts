@@ -9,6 +9,7 @@ import {
 import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import { ReservationStatus } from '$types';
 import type { Tables } from '$lib/supabase.types';
+import { console_error } from '$lib/server/sentry';
 
 const unpackTemplate = (uT: {
 	user: string | null;
@@ -121,7 +122,7 @@ export async function GET({ locals: { user, settings } }: RequestEvent) {
 								.update({ price })
 								.eq("id", rsv.id);
 						} catch (e) {
-							console.error(`error updating price for ${rsv.id}: ${e}`);
+							console_error(`error updating price for ${rsv.id}: ${e}`);
 						}
 					}
 				}

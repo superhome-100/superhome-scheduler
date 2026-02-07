@@ -1,4 +1,5 @@
 import { getOWReservationAdminComments } from '$lib/server/ow';
+import { console_error } from '$lib/server/sentry';
 import { AuthError, checkAuthorisation } from '$lib/server/supabase';
 import { json, type RequestEvent } from '@sveltejs/kit';
 
@@ -13,7 +14,7 @@ export async function GET({ params, locals: { user } }: RequestEvent) {
 		const adminComments = await getOWReservationAdminComments(date);
 		return json(adminComments);
 	} catch (error) {
-		console.error('error assignBuoysToBoats', error);
+		console_error('error assignBuoysToBoats', error);
 		if (error instanceof AuthError) {
 			return json({ status: 'error', error: error.message }, { status: error.code });
 		}

@@ -7,6 +7,7 @@ import { createServerClient } from '@supabase/ssr';
 import { getSettingsManager } from '$lib/settings';
 import type { Handle } from '@sveltejs/kit';
 import { sessionToSessionId } from '$lib/server/supabase';
+import { console_error } from '$lib/server/sentry';
 
 Sentry.initCloudflareSentryHandle({
 	dsn: 'https://f2da7b160a72d4083e99922a3ae707fe@o4510844761931776.ingest.de.sentry.io/4510844770975824',
@@ -95,7 +96,7 @@ export const handle: Handle = sequence(
 				error
 			} = await event.locals.supabase.auth.getUser();
 			if (error) {
-				console.error("couldn't get session", error);
+				console_error("couldn't get session", error);
 				return { session, auth_user: null, user: null };
 			}
 			const { data: user, error: user_error } = await event.locals.supabase
@@ -104,7 +105,7 @@ export const handle: Handle = sequence(
 				.eq('authId', auth_user!.id)
 				.single();
 			if (user_error) {
-				console.error("couldn't get user", user_error);
+				console_error("couldn't get user", user_error);
 				return { session, auth_user, user: null };
 			}
 			const sessionId = sessionToSessionId(session);

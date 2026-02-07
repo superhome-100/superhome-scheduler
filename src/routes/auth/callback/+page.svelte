@@ -1,16 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-
-	// Note: we intentionally avoid any slow role checks here to keep callback fast
-	let loading = true;
-	let completed = false;
+	import { replaceState } from '$app/navigation';
 
 	function cleanCallbackUrl() {
 		try {
 			const { pathname, search } = window.location;
 			const clean = pathname + (search || '');
 			if (window.location.hash) {
-				history.replaceState(null, '', clean);
+				replaceState('', clean);
 			}
 		} catch {}
 	}
