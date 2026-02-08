@@ -39,8 +39,6 @@ export type ReservationEx = Tables<'Reservations'> & {
 	user_json: ReservationEx_User, buddies_json: ReservationEx_User[]
 };
 
-export type ReservationWithUser = Tables<'Reservations'> & { Users: { nickname: string } };
-
 export type ReservationPeriod = 'upcoming' | 'past';
 
 /**
@@ -54,7 +52,7 @@ export type ReservationCreationFormUnpacked = RequireKeys<
 export type Submission = ReservationCreationFormUnpacked;
 
 export type OWSubmission = RequireKeys<ReservationCreationFormUnpacked, 'maxDepth'>;
-export type OWReservation = RequireKeys<ReservationWithUser, 'maxDepth' | 'owTime' | 'buoy'>;
+export type OWReservation = RequireKeys<ReservationEx, 'maxDepth' | 'owTime' | 'buoy'>;
 
 /**
  * based on {@link unpackModifyForm}

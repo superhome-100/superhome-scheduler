@@ -8,7 +8,7 @@
 	import CancelDialog from './CancelDialog.svelte';
 	import RsvTabs from './RsvTabs.svelte';
 
-	import type { Reservation, ReservationPeriod } from '$types';
+	import type { Reservation, ReservationEx, ReservationPeriod } from '$types';
 	import { ReservationCategory, ReservationStatus } from '$types';
 	import dayjs from 'dayjs';
 	import { storedIncomingReservations, storedPastReservations } from '$lib/client/stores';
@@ -116,8 +116,8 @@
 
 	const groupRsvs = (
 		resPeriod: ReservationPeriod,
-		allRsvs: Reservation[],
-		userPastRsvs: Reservation[],
+		allRsvs: ReservationEx[],
+		userPastRsvs: ReservationEx[],
 		sm: SettingsManager
 	): ReservationsByMonth[] => {
 		let rsvs: Reservation[] = [];

@@ -2,13 +2,9 @@
 	import { getContext } from 'svelte';
 	import CancelForm from './CancelForm.svelte';
 	import TrashIcon from './TrashIcon.svelte';
+	import type { ReservationEx } from '$types';
 
-	interface Reservation {
-		id: string;
-		[key: string]: any;
-	}
-
-	export let rsv: Reservation;
+	export let rsv: ReservationEx;
 
 	type ModalContext = {
 		open: (component: any, props?: Record<string, any>, options?: { closeButton: boolean }) => void;

@@ -3,7 +3,7 @@ import { viewMode } from './stores';
 import { storedUsers } from '$lib/client/stores';
 import { get } from 'svelte/store';
 import { assignHourlySpaces } from './autoAssign';
-import { ReservationCategory, ReservationType, type Buoy, type Reservation, type ReservationWithUser, type User } from '$types';
+import { ReservationCategory, ReservationType, type Buoy, type Reservation, type ReservationEx, type User } from '$types';
 import type { SettingsManager } from './settingsManager';
 
 // interface Reservation {
@@ -35,8 +35,8 @@ export function cleanUpFormDataBuddyFields(formData: FormData): void {
 	formData.set('buddies', JSON.stringify(buddies));
 }
 
-export const displayTag = (rsv: ReservationWithUser, admin: boolean): string => {
-	let tag = rsv.Users?.nickname ?? get(storedUsers)[rsv.user].nickname;
+export const displayTag = (rsv: ReservationEx, admin: boolean): string => {
+	let tag = rsv.user_json?.nickname ?? get(storedUsers)[rsv.user].nickname;
 	if (rsv.resType === 'course') {
 		tag += ' +' + (rsv.numStudents ?? 0);
 	}

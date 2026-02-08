@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { BuddyData, Reservation } from '$types';
+	import type { BuddyData, ReservationEx } from '$types';
 	import { ReservationType } from '$types';
 	import { ReservationStatus, ReservationCategory } from '$types';
 	import { canSubmit } from '$lib/stores';
@@ -13,7 +13,7 @@
 	import ExclamationCircle from '$lib/components/ExclamationCircle.svelte';
 	import InputLabel from './tiny_components/InputLabel.svelte';
 
-	export let rsv: Reservation | null;
+	export let rsv: ReservationEx | null;
 	export let date: string = rsv?.date || PanglaoDate().toString();
 	export let category: ReservationCategory =
 		(rsv?.category as ReservationCategory) || ReservationCategory.pool;
@@ -39,14 +39,11 @@
 	const initBF = (): BuddyData[] => {
 		let buddyFields: BuddyData[] = [];
 		if (rsv != null) {
-			for (let i = 0; i < rsv.buddies.length; i++) {
-				const buddy =
-					rsv.buddies[i] in users
-						? users[rsv.buddies[i]]
-						: { id: rsv.buddies[i], nickname: '<missing>', status: 'active' };
+			for (let i = 0; i < rsv.buddies_json.length; i++) {
+				const buddy = rsv.buddies_json[i];
 				buddyFields.push({
 					name: buddy.nickname,
-					userId: rsv.buddies[i],
+					userId: buddy.id,
 					id: i,
 					matches: []
 				});

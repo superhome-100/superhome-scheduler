@@ -7,10 +7,10 @@
 	import { storedUsers as users } from '$lib/client/stores';
 	import { beforeResCutoff, beforeCancelCutoff } from '$lib/reservationTimes';
 
-	import type { Reservation, ReservationWithUser } from '$types';
+	import type { Reservation, ReservationEx } from '$types';
 	import type { SettingsManager } from '$lib/settings';
 
-	export let rsvs: ReservationWithUser[];
+	export let rsvs: ReservationEx[];
 	export let hasForm: boolean;
 	export let disableModify = false;
 	export let onSubmit = () => null;
@@ -38,7 +38,7 @@
 	<Tabs bind:tabIndex>
 		<TabList>
 			{#each rsvs as rsv}
-				<Tab>{rsv.Users?.nickname ?? $users[rsv.user].nickname}</Tab>
+				<Tab>{rsv.user_json?.nickname ?? $users[rsv.user].nickname}</Tab>
 			{/each}
 		</TabList>
 

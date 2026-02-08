@@ -9,7 +9,7 @@
 		type Submission,
 		ReservationCategory,
 		type OWReservation,
-		type ReservationWithUser
+		type ReservationEx
 	} from '$types';
 	import DayOpenWaterSubmissionsCard from './DayOpenWaterSubmissionsCard.svelte';
 	import { buoyDesc } from '$lib/utils';
@@ -37,7 +37,7 @@
 
 	const { open } = getContext('simple-modal');
 
-	const showViewRsvs = (rsvs: ReservationWithUser[]) => {
+	const showViewRsvs = (rsvs: ReservationEx[]) => {
 		open(RsvTabs, {
 			rsvs,
 			hasForm: true,

@@ -4,18 +4,9 @@
 	import { storedUsers as users } from '$lib/client/stores';
 	import { toast } from 'svelte-french-toast';
 	import { popup } from '$lib/components/Popup.svelte';
+	import type { ReservationEx } from '$types';
 
-	interface Reservation {
-		id: string;
-		date: string;
-		category: string;
-		startTime: string;
-		endTime: string;
-		owTime: string;
-		buddies: string[];
-	}
-
-	export let rsv: Reservation;
+	export let rsv: ReservationEx;
 	export let hasForm = false;
 
 	type ModalContext = {
@@ -71,10 +62,10 @@
 				<span>Really cancel {rsv.category} reservation on</span>
 				<span>{rsv.date}?</span>
 			</div>
-			{#each rsv.buddies as buddy, i}
+			{#each rsv.buddies_json as buddy, i}
 				<div>
 					<label class="dark:text-white"
-						>Also cancel {$users[buddy].nickname}'s reservation
+						>Also cancel {buddy.nickname}'s reservation
 						<input type="checkbox" name={'buddy-' + i} />
 					</label>
 				</div>
