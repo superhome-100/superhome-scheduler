@@ -120,7 +120,13 @@ const reservationDetails = (rsv: Reservation) => {
 
 const upperFirst = (s: string) => s.length > 0 ? s[0].toUpperCase() + s.substring(1) : '';
 
-const shortDateTime = (rsv: Reservation) => dayjs(rsv.date + 'T' + rsv.startTime).format('DD/MMM hh:mm');
+const shortDateTime = (rsv: Reservation) => {
+    const dt = dayjs(rsv.date + 'T' + rsv.startTime);
+    if (dt.diff(dayjs(), 'hours') < 24) {
+        return 'at Tomorrow❗️'
+    }
+    else return dt.format('DD/MMM hh:mm')
+};
 
 const reservationStatusIcon = (rsv: Reservation) => {
     switch (rsv.status) {
