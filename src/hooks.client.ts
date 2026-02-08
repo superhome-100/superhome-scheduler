@@ -19,7 +19,7 @@ Sentry.init({
 	release: `superhome-scheduler.client@${__APP_VERSION__}`,
 	ignoreErrors: [
 		/.*use the `fetch` that is passed to your `load` function.*/,
-		/.*<(Page|Layout)> was created with unknown prop.*/,
+		/.*> was created with unknown prop.*/,
 	]
 });
 
