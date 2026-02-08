@@ -364,28 +364,28 @@ export type Database = {
 					createdAt: string;
 					endDate: string;
 					id: string;
-					name: string | null;
+					name: string;
 					startDate: string;
 					updatedAt: string;
-					value: string | null;
+					value: string;
 				};
 				Insert: {
 					createdAt?: string;
 					endDate?: string;
 					id?: string;
-					name?: string | null;
+					name: string;
 					startDate?: string;
 					updatedAt?: string;
-					value?: string | null;
+					value: string;
 				};
 				Update: {
 					createdAt?: string;
 					endDate?: string;
 					id?: string;
-					name?: string | null;
+					name?: string;
 					startDate?: string;
 					updatedAt?: string;
-					value?: string | null;
+					value?: string;
 				};
 				Relationships: [];
 			};

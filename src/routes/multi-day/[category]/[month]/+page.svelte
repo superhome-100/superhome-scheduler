@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { swipe } from 'svelte-gestures';
-	import { goto } from '$app/navigation';
 	import DayOfMonth from '$lib/components/DayOfMonth.svelte';
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Modal from '$lib/components/Modal.svelte';

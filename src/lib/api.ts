@@ -10,7 +10,6 @@ import type { Dayjs } from 'dayjs';
 import { dayjs } from './datetimeUtils';
 import { ow_am_full } from './dateSettings';
 
-// TODO:mate used store OKK
 export const getBuoys = async (supabase: SupabaseClient) => {
 	try {
 		const { data } = await supabase
@@ -39,7 +38,6 @@ export const getBoatAssignmentsByDate = async (supabase: SupabaseClient, date: s
 	}
 };
 
-// TODO:mate used store OKK
 export const getUserPastReservations = async (user: User, supabase: SupabaseClient, maxDateStr: string) => {
 	try {
 		const { data } = await supabase
@@ -56,7 +54,6 @@ export const getUserPastReservations = async (user: User, supabase: SupabaseClie
 	}
 };
 
-// TODO:mate used store OKK
 export const getIncomingReservations = async (user: User, supabase: SupabaseClient) => {
 	try {
 		const daysLimit = 60;
@@ -131,7 +128,6 @@ export const getOWAdminComments = async (supabase: SupabaseClient, date: string)
 	}
 };
 
-// TODO:mate used store OKK
 export const getReservationsByDate = async (supabase: SupabaseClient, date: string) => {
 	try {
 		const { data: rawRsvs } = await supabase

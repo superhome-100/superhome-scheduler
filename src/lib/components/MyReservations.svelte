@@ -2,16 +2,18 @@
 	import { datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
 	import { minuteOfDay, beforeCancelCutoff } from '$lib/reservationTimes';
 	import { timeStrToMin } from '$lib/datetimeUtils';
-	import { storedSettings, storedUser as user } from '$lib/client/stores';
 	import { getContext } from 'svelte';
 	import Modal from './Modal.svelte';
 	import CancelDialog from './CancelDialog.svelte';
 	import RsvTabs from './RsvTabs.svelte';
-
 	import type { Reservation, ReservationPeriod } from '$types';
 	import { ReservationCategory, ReservationStatus } from '$types';
 	import dayjs from 'dayjs';
-	import { storedIncomingReservations, storedPastReservations } from '$lib/client/stores';
+	import {
+		storedSettings,
+		storedIncomingReservations,
+		storedPastReservations
+	} from '$lib/client/stores';
 	import type { SettingsManager } from '$lib/settings';
 
 	export let resPeriod: ReservationPeriod = 'upcoming';
@@ -123,7 +125,7 @@
 		let rsvs: Reservation[] = [];
 		if (resPeriod === 'upcoming') {
 			rsvs = allRsvs.filter((rsv) => {
-				return rsv?.user === $user?.id && getResPeriod(rsv, sm) === resPeriod;
+				return getResPeriod(rsv, sm) === resPeriod;
 			});
 		} else if (resPeriod === 'past') {
 			rsvs = userPastRsvs.filter((rsv) => getResPeriod(rsv, sm) === resPeriod);
@@ -150,8 +152,6 @@
 		}
 	};
 
-	let loadingPastReservations = false; //TODO:mate
-
 	$: rsvGroups = groupRsvs(
 		resPeriod,
 		$storedIncomingReservations,
@@ -170,66 +170,62 @@
 	};
 </script>
 
-{#if $user}
-	{#if loadingPastReservations}
-		<div>Loading past reservations...</div>
-	{:else if rsvGroups.length === 0}
-		<div>No reservations found.</div>
-	{/if}
-	<table class="m-auto border-separate border-spacing-y-1">
-		<tbody>
-			{#each rsvGroups as { month, rsvs }}
-				{#each rsvs as rsv (rsv.id)}
-					<tr
-						on:click={() => showViewRsv(rsv)}
-						on:keypress={() => showViewRsv(rsv)}
-						class="[&>td]:w-24 h-10 bg-gradient-to-br {bgColorByCategoryFrom[
-							rsv.category
-						]} {bgColorByCategoryTo[rsv.category]} cursor-pointer"
-					>
-						<td class="rounded-s-xl text-white text-sm font-semibold"
-							>{dayjs(rsv.date).format('D MMM')}</td
-						>
-						<td class="text-white text-sm font-semibold">{catDesc(rsv)}</td>
-						<td class="text-white text-sm font-semibold">{timeDesc(rsv)}</td>
-						<td class="text-white text-sm font-semibold">
-							<div class="align-middle m-auto w-fit rounded-lg {statusTextColor[rsv.status]}">
-								{rsv.status}
-							</div>
-						</td>
-						{#if beforeCancelCutoff($storedSettings, rsv.date, rsv.startTime, rsv.category)}
-							<td
-								on:click|stopPropagation={() => {}}
-								on:keypress|stopPropagation={() => {}}
-								class="rounded-e-xl"
-							>
-								<Modal>
-									<CancelDialog {rsv} />
-								</Modal>
-							</td>
-						{:else}
-							<td class="text-white text-sm font-semibold rounded-e-xl">
-								{#if rsv.price == null}
-									TBD
-								{:else}
-									₱{rsv.price}
-								{/if}
-							</td>
-						{/if}
-					</tr>
-				{/each}
-				{#if resPeriod === 'past'}
-					<tr class="[&>td]:w-24 h-10">
-						<td /><td /><td />
-						<td class="bg-rose-500 text-white text-sm font-semibold rounded-s-xl">
-							{month} Total:
-						</td>
-						<td class="bg-rose-500 text-white text-sm font-semibold rounded-e-xl">
-							₱{totalThisMonth(rsvs)}
-						</td>
-					</tr>
-				{/if}
-			{/each}
-		</tbody>
-	</table>
+{#if rsvGroups.length === 0}
+	<div>No reservations found.</div>
 {/if}
+<table class="m-auto border-separate border-spacing-y-1">
+	<tbody>
+		{#each rsvGroups as { month, rsvs }}
+			{#each rsvs as rsv (rsv.id)}
+				<tr
+					on:click={() => showViewRsv(rsv)}
+					on:keypress={() => showViewRsv(rsv)}
+					class="[&>td]:w-24 h-10 bg-gradient-to-br {bgColorByCategoryFrom[
+						rsv.category
+					]} {bgColorByCategoryTo[rsv.category]} cursor-pointer"
+				>
+					<td class="rounded-s-xl text-white text-sm font-semibold"
+						>{dayjs(rsv.date).format('D MMM')}</td
+					>
+					<td class="text-white text-sm font-semibold">{catDesc(rsv)}</td>
+					<td class="text-white text-sm font-semibold">{timeDesc(rsv)}</td>
+					<td class="text-white text-sm font-semibold">
+						<div class="align-middle m-auto w-fit rounded-lg {statusTextColor[rsv.status]}">
+							{rsv.status}
+						</div>
+					</td>
+					{#if beforeCancelCutoff($storedSettings, rsv.date, rsv.startTime, rsv.category)}
+						<td
+							on:click|stopPropagation={() => {}}
+							on:keypress|stopPropagation={() => {}}
+							class="rounded-e-xl"
+						>
+							<Modal>
+								<CancelDialog {rsv} />
+							</Modal>
+						</td>
+					{:else}
+						<td class="text-white text-sm font-semibold rounded-e-xl">
+							{#if rsv.price == null}
+								TBD
+							{:else}
+								₱{rsv.price}
+							{/if}
+						</td>
+					{/if}
+				</tr>
+			{/each}
+			{#if resPeriod === 'past'}
+				<tr class="[&>td]:w-24 h-10">
+					<td /><td /><td />
+					<td class="bg-rose-500 text-white text-sm font-semibold rounded-s-xl">
+						{month} Total:
+					</td>
+					<td class="bg-rose-500 text-white text-sm font-semibold rounded-e-xl">
+						₱{totalThisMonth(rsvs)}
+					</td>
+				</tr>
+			{/if}
+		{/each}
+	</tbody>
+</table>
