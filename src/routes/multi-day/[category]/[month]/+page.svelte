@@ -78,6 +78,14 @@
 	let modalOpened = false;
 
 	function handleKeypress(e) {
+		const { tagName } = e.target;
+		const isEditable = e.target.isContentEditable;
+
+		// Filter out inputs, textareas, and contenteditable elements
+		if (tagName === 'INPUT' || tagName === 'TEXTAREA' || isEditable) {
+			return;
+		}
+
 		if (!modalOpened) {
 			if (e.keyCode == 37) {
 				// left arrow key
