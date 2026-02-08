@@ -27,9 +27,11 @@
 	export let data;
 	const { user, supabase, settings } = data;
 
-	page.subscribe((p) => {
-		Sentry.setTag('route', p.route.id);
-	});
+	page.subscribe((p) => Sentry.setTag('route', p.route.id));
+	storedDayReservations_param.subscribe((v) => Sentry.setContext('storedDayReservations_param', v));
+	storedReservationsSummary_param.subscribe((v) =>
+		Sentry.setContext('storedReservationsSummary_param', v)
+	);
 
 	storedSettingsW.set(getSettingsManager(settings));
 
@@ -42,12 +44,6 @@
 	if ($page.route.id && !publicRoutes.includes($page.route.id)) {
 		onMount(async () => {
 			Sentry.setUser(user ? { id: user.id } : null);
-			storedDayReservations_param.subscribe((v) =>
-				Sentry.setContext('storedDayReservations_param', v)
-			);
-			storedReservationsSummary_param.subscribe((v) =>
-				Sentry.setContext('storedReservationsSummary_param', v)
-			);
 			await supabase_es.init(supabase);
 			coreStore.set({ supabase, user });
 
