@@ -90,6 +90,33 @@ using (
 
 ---
 
+create or replace view "public"."ReservationsEx" 
+with (security_invoker = true) -- Important for RLS
+as
+  SELECT 
+      r.*,
+      jsonb_build_object(
+        'id', r.user,
+        'nickname', COALESCE(u.nickname, '<unknown>')
+      ) AS user_json,
+      COALESCE(bd.buddies_json, '[]'::jsonb) as buddies_json
+  FROM "Reservations" r
+  LEFT JOIN "Users" u
+    ON r.user = u.id
+  CROSS JOIN LATERAL (
+      SELECT jsonb_agg(
+          jsonb_build_object(
+              'id', u.id,
+              'nickname', u.nickname
+          )
+      ) AS buddies_json
+      FROM "Users" u
+      WHERE u.id = ANY(r.buddies)
+  ) AS bd
+;
+
+---
+
 -- for: api/reports/reservations
 create view "public"."ReservationsReport" 
 with (security_invoker = true) -- Important for RLS

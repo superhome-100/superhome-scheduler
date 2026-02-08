@@ -11,6 +11,7 @@ import type {
     Notifications,
     RequireKeys,
     Reservation,
+    ReservationEx,
     SupabaseClient,
     UserEx,
     UserMinimal
@@ -159,13 +160,13 @@ export const storedUsers =
     }, "Users");
 
 export const storedIncomingReservations =
-    readableWithSubscriptionToCore<Reservation[]>([], async ({ supabase, user }) => {
+    readableWithSubscriptionToCore<ReservationEx[]>([], async ({ supabase, user }) => {
         const r = await getIncomingReservations(user, supabase);
         return r;
     }, "Reservations");
 
 export const storedPastReservations =
-    readableWithSubscriptionToCoreAndParam<Reservation[], string>([],
+    readableWithSubscriptionToCoreAndParam<ReservationEx[], string>([],
         storedCurrentDay,
         async ({ supabase, user }, currentDay) => {
             const r = await getUserPastReservations(user, supabase, currentDay);
@@ -175,7 +176,7 @@ export const storedPastReservations =
 export const storedDayReservations_param = writable<{ day: string }>();
 
 export const storedDayReservations =
-    readableWithSubscriptionToCoreAndParam<Reservation[], { day: string }>([],
+    readableWithSubscriptionToCoreAndParam<ReservationEx[], { day: string }>([],
         storedDayReservations_param,
         async ({ supabase }, { day }) => {
             const r = await getReservationsByDate(supabase, day);

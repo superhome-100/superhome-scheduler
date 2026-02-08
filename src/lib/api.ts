@@ -4,13 +4,13 @@ import {
 	type UserMinimal,
 	type SupabaseClient,
 	ReservationStatus,
-	type User
+	type User,
+	type ReservationEx
 } from '$types';
 import type { Dayjs } from 'dayjs';
 import { dayjs } from './datetimeUtils';
 import { ow_am_full } from './dateSettings';
 
-// TODO:mate used store OKK
 export const getBuoys = async (supabase: SupabaseClient) => {
 	try {
 		const { data } = await supabase
@@ -39,15 +39,15 @@ export const getBoatAssignmentsByDate = async (supabase: SupabaseClient, date: s
 	}
 };
 
-// TODO:mate used store OKK
 export const getUserPastReservations = async (user: User, supabase: SupabaseClient, maxDateStr: string) => {
 	try {
 		const { data } = await supabase
-			.from('Reservations')
+			.from('ReservationsEx')
 			.select('*')
 			.eq('user', user.id)
 			.lte('date', maxDateStr)
 			.eq('status', ReservationStatus.confirmed)
+			.overrideTypes<ReservationEx[]>()
 			.throwOnError();
 		return data;
 	} catch (error) {
@@ -56,7 +56,6 @@ export const getUserPastReservations = async (user: User, supabase: SupabaseClie
 	}
 };
 
-// TODO:mate used store OKK
 export const getIncomingReservations = async (user: User, supabase: SupabaseClient) => {
 	try {
 		const daysLimit = 60;
@@ -72,12 +71,13 @@ export const getIncomingReservations = async (user: User, supabase: SupabaseClie
 		}
 
 		const { data } = await supabase
-			.from('Reservations')
+			.from('ReservationsEx')
 			.select('*')
 			.eq('user', user.id)
 			.gte('date', now.format('YYYY-MM-DD'))
 			.lt('date', inXDays.format('YYYY-MM-DD'))
 			.in("status", [ReservationStatus.confirmed, ReservationStatus.pending])
+			.overrideTypes<ReservationEx[]>()
 			.throwOnError();
 
 		return data;
@@ -131,14 +131,14 @@ export const getOWAdminComments = async (supabase: SupabaseClient, date: string)
 	}
 };
 
-// TODO:mate used store OKK
 export const getReservationsByDate = async (supabase: SupabaseClient, date: string) => {
 	try {
 		const { data: rawRsvs } = await supabase
-			.from('Reservations')
-			.select('*, Users(nickname)')
+			.from('ReservationsEx')
+			.select('*')
 			.eq('date', date)
 			.in('status', [ReservationStatus.confirmed, ReservationStatus.pending])
+			.overrideTypes<ReservationEx[]>()
 			.throwOnError();
 		return rawRsvs;
 	} catch (error) {

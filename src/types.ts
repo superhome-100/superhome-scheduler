@@ -5,6 +5,8 @@ export type SupabaseClient = SSupabaseClient<Database>;
 
 export type RequireKeys<T, K extends keyof T> = Omit<T, K> & { [P in K]-?: NonNullable<T[P]>; };
 
+export type DeepNonNullable<T> = { [P in keyof T]-?: NonNullable<T[P]>; };
+
 export type User = Tables<'Users'>;
 
 export type UserMinimal = RequireKeys<Tables<'UsersMinimal'>, 'id' | 'nickname' | 'status'>;
@@ -30,6 +32,12 @@ export type BuoyGroupings = Tables<'BuoyGroupings'>;
 export type Notifications = Tables<'Notifications'>;
 
 export type Reservation = Tables<'Reservations'>;
+
+export type ReservationEx_User = { id: string, nickname: string };
+
+export type ReservationEx = Tables<'Reservations'> & {
+	user_json: ReservationEx_User, buddies_json: ReservationEx_User[]
+};
 
 export type ReservationWithUser = Tables<'Reservations'> & { Users: { nickname: string } };
 

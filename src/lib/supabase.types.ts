@@ -364,28 +364,28 @@ export type Database = {
 					createdAt: string;
 					endDate: string;
 					id: string;
-					name: string | null;
+					name: string;
 					startDate: string;
 					updatedAt: string;
-					value: string | null;
+					value: string;
 				};
 				Insert: {
 					createdAt?: string;
 					endDate?: string;
 					id?: string;
-					name?: string | null;
+					name: string;
 					startDate?: string;
 					updatedAt?: string;
-					value?: string | null;
+					value: string;
 				};
 				Update: {
 					createdAt?: string;
 					endDate?: string;
 					id?: string;
-					name?: string | null;
+					name?: string;
 					startDate?: string;
 					updatedAt?: string;
-					value?: string | null;
+					value?: string;
 				};
 				Relationships: [];
 			};
@@ -524,6 +524,55 @@ export type Database = {
 			};
 		};
 		Views: {
+			ReservationsEx: {
+				Row: {
+					allowAutoAdjust: boolean | null;
+					bottomPlate: boolean | null;
+					buddies: string[] | null;
+					buddies_json: Json | null;
+					buoy: string | null;
+					category: Database['public']['Enums']['reservation_category'] | null;
+					comments: string | null;
+					createdAt: string | null;
+					date: string | null;
+					endTime: string | null;
+					extraBottomWeight: boolean | null;
+					id: string | null;
+					lanes: string[] | null;
+					largeBuoy: boolean | null;
+					maxDepth: number | null;
+					numStudents: number | null;
+					O2OnBuoy: boolean | null;
+					owner: boolean | null;
+					owTime: string | null;
+					price: number | null;
+					pulley: boolean | null;
+					resType: Database['public']['Enums']['reservation_type'] | null;
+					room: string | null;
+					shortSession: boolean | null;
+					startTime: string | null;
+					status: Database['public']['Enums']['reservation_status'] | null;
+					updatedAt: string | null;
+					user: string | null;
+					user_json: Json | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'reservations_user_key';
+						columns: ['user'];
+						isOneToOne: false;
+						referencedRelation: 'Users';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'reservations_user_key';
+						columns: ['user'];
+						isOneToOne: false;
+						referencedRelation: 'UsersMinimal';
+						referencedColumns: ['id'];
+					}
+				];
+			};
 			ReservationsReport: {
 				Row: {
 					category: Database['public']['Enums']['reservation_category'] | null;
