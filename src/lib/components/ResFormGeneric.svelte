@@ -27,7 +27,7 @@
 	export let diveTime = '';
 	export let resType: ReservationType | null = null;
 
-	const users = $storedUsers;
+	$: users = $storedUsers;
 	let disabled = viewOnly || restrictModify;
 
 	let status: ReservationStatus = (rsv?.status as ReservationStatus) || ReservationStatus.pending;
