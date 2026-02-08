@@ -71,7 +71,7 @@
 	</button>
 
 	<!-- Facebook Login Button -->
-	<button
+	<!-- <button
 		type="button"
 		class="btn bg-[#1A77F2] text-white border-[#005fd8] w-full h-12 text-base font-medium gap-3 mt-2"
 		on:click={handleFacebookLogin}
@@ -88,5 +88,5 @@
 			<path fill="white" d="M8 12h5V8c0-6 4-7 11-6v5c-4 0-5 0-5 3v2h5l-1 6h-4v12h-6V18H8z" />
 		</svg>
 		Login with Facebook
-	</button>
+	</button> -->
 </div>
