@@ -79,10 +79,10 @@
 
 	function handleKeypress(e) {
 		if (!modalOpened) {
-			if (e.keyCode == 37 || e.keyCode == '80') {
+			if (e.keyCode == 37) {
 				// left arrow key
 				prevMonth();
-			} else if (e.keyCode == 39 || e.keyCode == '78') {
+			} else if (e.keyCode == 39) {
 				// right arrow key
 				nextMonth();
 			} else if (e.keyCode == 40) {
