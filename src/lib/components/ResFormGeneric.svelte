@@ -3,12 +3,7 @@
 	import { ReservationType } from '$types';
 	import { ReservationStatus, ReservationCategory } from '$types';
 	import { canSubmit } from '$lib/stores';
-	import {
-		storedUsers as users,
-		storedUser as user,
-		storedSettings,
-		storedUser
-	} from '$lib/client/stores';
+	import { storedUsers, storedUser as user, storedSettings, storedUser } from '$lib/client/stores';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes';
 	import { adminView, isMyReservation } from '$lib/utils';
 	import { PanglaoDate } from '$lib/datetimeUtils';
@@ -32,6 +27,7 @@
 	export let diveTime = '';
 	export let resType: ReservationType | null = null;
 
+	const users = $storedUsers;
 	let disabled = viewOnly || restrictModify;
 
 	let status: ReservationStatus = (rsv?.status as ReservationStatus) || ReservationStatus.pending;
@@ -45,8 +41,8 @@
 		if (rsv != null) {
 			for (let i = 0; i < rsv.buddies.length; i++) {
 				const buddy =
-					rsv.buddies[i] in $users
-						? $users[rsv.buddies[i]]
+					rsv.buddies[i] in users
+						? users[rsv.buddies[i]]
 						: { id: rsv.buddies[i], nickname: '<missing>', status: 'active' };
 				buddyFields.push({
 					name: buddy.nickname,
@@ -112,8 +108,8 @@
 		currentBF.matches = [];
 		if (currentBF.name.length > 0) {
 			let buddyName = currentBF.name.toLowerCase();
-			for (let id in $users) {
-				let record = $users[id];
+			for (let id in users) {
+				let record = users[id];
 				if (
 					record.status !== 'disabled' &&
 					record.id !== $user?.id &&

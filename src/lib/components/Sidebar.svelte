@@ -124,6 +124,13 @@
 	};
 
 	function handleKeypress(e) {
+		const { tagName } = e.target;
+		const isEditable = e.target.isContentEditable;
+
+		// Filter out inputs, textareas, and contenteditable elements
+		if (tagName === 'INPUT' || tagName === 'TEXTAREA' || isEditable) {
+			return;
+		}
 		if (e.keyCode == 80) {
 			// p
 			goto('/multi-day/pool');
@@ -133,6 +140,9 @@
 		} else if (e.keyCode == 67) {
 			//c
 			goto('/multi-day/classroom');
+		} else if (e.keyCode == 77) {
+			//m
+			goto('/');
 		}
 	}
 </script>

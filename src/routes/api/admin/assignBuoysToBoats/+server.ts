@@ -20,16 +20,15 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 		const { date, assignments } = (await request.json()) as RequestData;
 		console.log('assignBuoysToBoats', date, assignments);
 
-		const { data: record } = await supabaseServiceRole
+		await supabaseServiceRole
 			.from('Boats')
 			.upsert({
 				id: date,
 				assignments: JSON.stringify(assignments)
 			})
-			.select('*')
 			.throwOnError();
 
-		return json({ status: 'success', record });
+		return json({ status: 'success' });
 	} catch (error) {
 		console_error('error assignBuoysToBoats', error);
 		if (error instanceof AuthError) {

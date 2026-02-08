@@ -70,8 +70,8 @@
 			body: JSON.stringify({ date, assignments })
 		});
 		let data = await response.json();
-		if (data.status === 'success') {
-			boatAssignments = JSON.parse(data.record.assignments);
+		if (data.status !== 'success') {
+			console.error('saveAssignments', data);
 		}
 	};
 
@@ -93,7 +93,7 @@
 		amHeadCount: number;
 		pmHeadCount: number;
 	};
-	$: buoyGroupings = (() => {
+	$: buoyGroupings = ((): BuoyGrouping[] => {
 		if (!reservations || !$storedBuoys.length) return [];
 		const amReservations = setBuoyToReservations(
 			$storedBuoys,
