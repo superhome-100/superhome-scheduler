@@ -6,7 +6,7 @@
 	import { ReservationCategory, ReservationType } from '$types';
 	import { PanglaoDate } from '$lib/datetimeUtils';
 	import InputLabel from './tiny_components/InputLabel.svelte';
-	import { ow_am_full } from '$lib/firestore';
+	import { ow_am_full } from '$lib/dateSettings';
 	import { displayTag } from '../../lib/utils';
 	import { onMount } from 'svelte';
 	import {

@@ -23,7 +23,7 @@
 		storedDaySettings,
 		storedOWAdminComments
 	} from '$lib/client/stores';
-	import { ow_am_full } from '$lib/firestore';
+	import { ow_am_full } from '$lib/dateSettings';
 	import type { SettingsManager } from '$lib/settingsManager';
 
 	export let date = dayjs().format('YYYY-MM-DD');

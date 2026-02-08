@@ -11,7 +11,7 @@ import { ReservationCategory, ReservationStatus, ReservationType, OWTime } from 
 import { timeStrToMin, isValidProSafetyCutoff } from '$lib/datetimeUtils';
 import { getTimeOverlapSupabaseFilter } from '$utils/reservation-queries';
 import { type SettingsManager } from '../settings';
-import { getDateSetting } from '$lib/firestore';
+import { getDateSetting } from '$lib/dateSettings';
 import {
 	getStartTime,
 	throwIfNoSpaceAvailable,

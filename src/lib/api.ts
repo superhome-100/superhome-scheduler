@@ -8,7 +8,7 @@ import {
 } from '$types';
 import type { Dayjs } from 'dayjs';
 import { dayjs } from './datetimeUtils';
-import { ow_am_full } from './firestore';
+import { ow_am_full } from './dateSettings';
 
 // TODO:mate used store OKK
 export const getBuoys = async (supabase: SupabaseClient) => {

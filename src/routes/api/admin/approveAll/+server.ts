@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { approveAllPendingReservations } from '$lib/server/reservation';
-import { doTransaction } from '$lib/server/firestore';
+import { doTransaction } from '$lib/server/transaction';
 import { AuthError, checkAuthorisation } from '$lib/server/supabase';
 
 export async function POST({ request, locals: { user } }) {

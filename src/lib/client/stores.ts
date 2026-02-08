@@ -1,7 +1,7 @@
 import { writable, readable, type Readable } from 'svelte/store';
 import { supabase_es, type EventType } from './supabase_event_source';
 import { getYYYYMMDD, PanglaoDate } from '$lib/datetimeUtils';
-import { defaultDateSettings, getDateSetting, type DateSetting } from '$lib/firestore';
+import { defaultDateSettings, getDateSetting, type DateSetting } from '$lib/dateSettings';
 import { getSettingsManager } from '$lib/settings';
 import { type SettingsManager } from '$lib/settingsManager';
 import type {

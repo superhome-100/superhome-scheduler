@@ -19,7 +19,7 @@
 		storedDayReservations_param,
 		storedUser
 	} from '$lib/client/stores.js';
-	import { ow_am_full } from '$lib/firestore.js';
+	import { ow_am_full } from '$lib/dateSettings.js';
 
 	// svelte-ignore unused-export-let
 	export let params;

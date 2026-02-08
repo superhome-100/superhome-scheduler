@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import { supabaseServiceRole, checkAuthorisation } from '$lib/server/supabase';
 import dayjs, { type Dayjs } from 'dayjs';
-import { ow_am_full } from '$lib/firestore';
+import { ow_am_full } from '$lib/dateSettings';
 
 import type { DateReservationSummary } from '$types';
 

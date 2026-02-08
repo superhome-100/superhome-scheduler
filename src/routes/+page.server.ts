@@ -10,7 +10,7 @@ import { ValidationError } from '$utils/validation';
 import { fail } from '@sveltejs/kit';
 import { updateNickname } from '$lib/server/user';
 import { upsertOWReservationAdminComments } from '$lib/server/ow';
-import { doTransaction } from '$lib/server/firestore';
+import { doTransaction } from '$lib/server/transaction';
 import type { RequestEvent } from '@sveltejs/kit';
 import { AuthError, checkAuthorisation } from '$lib/server/supabase';
 import type { OWTime } from '$types';
