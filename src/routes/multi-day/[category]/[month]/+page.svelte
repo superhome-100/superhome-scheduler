@@ -31,9 +31,10 @@
 
 	let categories = [...CATEGORIES];
 
-	$: now = dayjs(data.month.substring(0, 5) + '-01');
+	$: category = data.category;
+	$: now = dayjs(data.month.substring(0, 7) + '-01');
 
-	function getWeeksInMonth(year: number = now.year(), month: number = now.month()) {
+	function getWeeksInMonth(year: number, month: number) {
 		const startOfMonth = dayjs().year(year).month(month).startOf('month');
 		const endOfMonth = startOfMonth.endOf('month');
 
@@ -66,34 +67,39 @@
 
 	function prevMonth() {
 		now = now.subtract(1, 'month');
-		pushState(`/multi-day/${data.category}/${getYYYYMM(now)}`, { showModal: false });
+		pushState(`/multi-day/${category}/${getYYYYMM(now)}`, { showModal: false });
 	}
 
 	function nextMonth() {
 		now = now.add(1, 'month');
-		pushState(`/multi-day/${data.category}/${getYYYYMM(now)}`, { showModal: false });
+		pushState(`/multi-day/${category}/${getYYYYMM(now)}`, { showModal: false });
 	}
 
 	let modalOpened = false;
 
 	function handleKeypress(e) {
 		if (!modalOpened) {
-			if (e.keyCode == 37) {
+			if (e.keyCode == 37 || e.keyCode == '80') {
 				// left arrow key
 				prevMonth();
-			} else if (e.keyCode == 39) {
+			} else if (e.keyCode == 39 || e.keyCode == '78') {
 				// right arrow key
 				nextMonth();
 			} else if (e.keyCode == 40) {
 				// down arrow
-				let i = categories.indexOf(data.category);
+				let i = categories.indexOf(category);
 				i = (i + 1) % categories.length;
-				goto(`/multi-day/${categories[i]}`);
+				category = categories[i] as ReservationCategory;
+				pushState(`/multi-day/${category}/${getYYYYMM(now)}`, { showModal: false });
 			} else if (e.keyCode == 38) {
 				// up arrow
-				let i = categories.indexOf(data.category);
+				let i = categories.indexOf(category);
 				i = (categories.length + i - 1) % categories.length;
-				goto(`/multi-day/${categories[i]}`);
+				category = categories[i] as ReservationCategory;
+				pushState(`/multi-day/${category}/${getYYYYMM(now)}`, { showModal: false });
+			} else if (e.keyCode == 84) {
+				// letter 't'
+				now = dayjs();
 			}
 		}
 	}
@@ -118,13 +124,13 @@
 	<div class="[&>*]:mx-auto flex items-center justify-between">
 		<div class="dropdown h-8 mb-4">
 			<label tabindex="0" class="border border-gray-200 dark:border-gray-700 btn btn-fsh-dropdown"
-				>{data.category}</label
+				>{category}</label
 			>
 			<ul tabindex="0" class="dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit">
 				{#each ['pool', 'openwater', 'classroom'] as cat}
-					{#if cat !== data.category}
+					{#if cat !== category}
 						<li>
-							<a class="text-xl active:bg-gray-300" href="/multi-day/{cat}">
+							<a class="text-xl active:bg-gray-300" href="/multi-day/{cat}/{getYYYYMM(now)}">
 								{cat}
 							</a>
 						</li>
@@ -144,7 +150,7 @@
 		<span class="">
 			<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}
 				><ReservationDialog
-					category={data.category}
+					{category}
 					dateFn={(cat) => minValidDateStr($storedSettings, cat)}
 				/></Modal
 			>
@@ -171,13 +177,13 @@
 					<tr>
 						{#each week as date}
 							<td
-								class={`border-${data.category}-bg-to align-top h-20 xs:h-24 border border-solid ${
+								class={`border-${category}-bg-to align-top h-20 xs:h-24 border border-solid ${
 									!date.isSame(now, 'month') && 'opacity-20 border-opacity-20'
 								}`}
 							>
 								<DayOfMonth
 									date={date.toDate()}
-									category={data.category}
+									{category}
 									summary={$storedReservationsSummary[getYYYYMMDD(date)]}
 								/>
 							</td>
