@@ -25,7 +25,7 @@ export default defineConfig({
 		}
 	},
 	build: {
-		sourcemap: (process.env.PUBLIC_STAGE ?? 'production') !== 'production' ? 'inline' : false,
+		sourcemap: (process.env.PUBLIC_STAGE ?? 'production') !== 'production' ? true : false,
 		minify: (process.env.PUBLIC_STAGE ?? 'production') === 'production' ? 'esbuild' : false
 	},
 	define: {
