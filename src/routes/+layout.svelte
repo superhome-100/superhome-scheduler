@@ -14,8 +14,7 @@
 	import {
 		storedDayReservations_param,
 		storedReservationsSummary_param,
-		storedSettings,
-		storedUser
+		storedSettingsW
 	} from '$lib/client/stores';
 	import { pushService } from '$lib/client/push';
 	import Refresher from '$lib/components/Refresher.svelte';
@@ -32,7 +31,7 @@
 		Sentry.setTag('route', p.route.id);
 	});
 
-	storedSettings.set(getSettingsManager(settings));
+	storedSettingsW.set(getSettingsManager(settings));
 
 	const publicRoutes = ['/privacy'];
 
@@ -52,8 +51,8 @@
 			await supabase_es.init(supabase);
 			coreStore.set({ supabase, user });
 
-			if ($storedUser) {
-				await pushService.init($storedUser.has_push);
+			if (user) {
+				await pushService.init(user.has_push ?? false);
 			} else {
 				goto('/login');
 			}

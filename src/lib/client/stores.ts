@@ -4,7 +4,6 @@ import { getYYYYMMDD, PanglaoDate } from '$lib/datetimeUtils';
 import { defaultDateSettings, getDateSetting, type DateSetting } from '$lib/firestore';
 import { getSettingsManager } from '$lib/settings';
 import { type SettingsManager } from '$lib/settingsManager';
-import { deepEqual } from '$lib/utils';
 import type {
     Buoy,
     BuoyGroupings,
@@ -28,6 +27,7 @@ import {
     getUsers
 } from '$lib/api';
 import { LRUCache } from 'lru-cache';
+import { stableStringify } from '$lib/utils';
 
 type CoreStore = { supabase: SupabaseClient, user: UserEx | null };
 
@@ -91,11 +91,11 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
         const cache = new LRUCache<string, T>({ max: 50 });
         let coreParam: CoreStoreWithUser | undefined = undefined;
         let param: P | undefined = undefined;
+        let paramJsn: string | undefined = undefined;
         let value: T = defaultValue;
         const safeCb = async () => {
             if (coreParam?.user && param !== undefined) {
-                const cacheKey = JSON.stringify(param);
-                const cacheVal = cache.get(cacheKey);
+                const cacheVal = cache.get(paramJsn!);
                 if (cacheVal !== undefined) {
                     value = cacheVal;
                     set(value);
@@ -103,7 +103,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
                     await progressTracker.track(async (cp, p, v) => {
                         try {
                             value = await cb(cp, p, v);
-                            cache.set(cacheKey, value);
+                            cache.set(paramJsn!, value);
                             set(value);
                         } catch (e) {
                             console.error('subscribeToCore', e);
@@ -118,9 +118,10 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
             safeCb();
         });
         const unsubP = paramStore.subscribe(async (pN: P) => {
-            const isEq = deepEqual(param, pN)
-            if (!isEq) {
-                param = pN;
+            param = pN;
+            const paramJsnN = stableStringify(pN);
+            if (paramJsn !== paramJsnN) {
+                paramJsn = paramJsnN;
                 safeCb();
             }
         });
@@ -138,6 +139,9 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
 
 //
 
+/**
+ * refreshes in every minute
+ */
 export const storedCurrentDay = readable<string>(getYYYYMMDD(PanglaoDate()), (set) => {
     const iid = setInterval(() => {
         // no need for change detection, svelte can do it because it is a plain string
@@ -227,9 +231,10 @@ export const storedNotifications =
         }, "Notifications");
 
 /**
- * set in src/routes/+layout.svelte and at change
+ * set in src/routes/+layout.svelte and at change, don't use it
  */
-export const storedSettings = writable<SettingsManager>();
+export const storedSettingsW = writable<SettingsManager>();
+export const storedSettings: Readable<SettingsManager> = storedSettingsW;
 /**
  * use 'storedSettings' instead of this
  */
@@ -237,6 +242,6 @@ export const storedSettingsOnline =
     readableWithSubscriptionToCore<SettingsManager>(undefined as unknown as SettingsManager,
         async ({ supabase }) => {
             const r = await getSettingsManager(supabase);
-            storedSettings.set(r); //hacky update but should be fine for now
+            storedSettingsW.set(r); //hacky update but should be fine for now
             return r;
         }, "Settings");

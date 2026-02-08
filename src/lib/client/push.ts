@@ -1,7 +1,8 @@
-import { writable } from 'svelte/store';
+import { type Readable, writable } from 'svelte/store';
 import { PUBLIC_VAPID_KEY } from '$env/static/public';
 
-export const subscription = writable<PushSubscription | null | undefined>(undefined); // undefined = loading, null = not subbed
+const subscriptionW = writable<PushSubscription | null | undefined>(undefined); // undefined = loading, null = not subbed
+export const subscription: Readable<PushSubscription | null | undefined> = subscriptionW
 
 export const pushService = {
     async init(server_has_push: boolean) {
@@ -10,22 +11,22 @@ export const pushService = {
             if (permissionStatus === 'denied') {
                 // User blocked notifications; you cannot ask again programmatically.
                 // Advise them to check iOS Settings -> Notifications.
-                subscription.set(null);
+                subscriptionW.set(null);
             } else if (permissionStatus === 'default') {
                 // You can show your "Enable" button.
-                subscription.set(undefined);
+                subscriptionW.set(undefined);
             } else if (permissionStatus === 'granted') {
                 if (server_has_push) {
                     // Permission is good, but check getSubscription() to see if 
                     // the Push Service token is still valid.
                     const reg = await navigator.serviceWorker.ready;
                     const sub = await reg.pushManager.getSubscription();
-                    subscription.set(sub);
+                    subscriptionW.set(sub);
                 }
             }
         }
         catch (e) {
-            subscription.set(null);
+            subscriptionW.set(null);
             console.error('pushService.init', e)
         }
     },
@@ -33,22 +34,22 @@ export const pushService = {
     async subscribe(swr: ServiceWorkerRegistration) {
         try {
             if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                subscription.set(undefined);
-                subscription.set(null);
+                subscriptionW.set(undefined);
+                subscriptionW.set(null);
                 return;
             }
             const permissionStatus = Notification.permission;
             if (permissionStatus === 'denied') {
                 // User blocked notifications; you cannot ask again programmatically.
                 // Advise them to check iOS Settings -> Notifications.
-                subscription.set(undefined);
-                subscription.set(null);
+                subscriptionW.set(undefined);
+                subscriptionW.set(null);
                 return;
             } else if (permissionStatus === 'default') {
                 const permission = await Notification.requestPermission();
                 if (permission !== "granted") {
-                    subscription.set(undefined);
-                    subscription.set(null);
+                    subscriptionW.set(undefined);
+                    subscriptionW.set(null);
                     return;
                 }
             }
@@ -57,22 +58,22 @@ export const pushService = {
                 applicationServerKey: PUBLIC_VAPID_KEY
             });
             await this._sendToServer(sub);
-            subscription.set(sub);
+            subscriptionW.set(sub);
         }
         catch (e) {
-            subscription.set(null);
-            subscription.set(undefined);
+            subscriptionW.set(null);
+            subscriptionW.set(undefined);
             console.error('pushService.subscribe', e)
         }
     },
 
     async unsubscribe() {
         try {
-            subscription.update(x => { x?.unsubscribe().then(() => console.log('unsubscribed'), r => console.error('unsubscribe error', r)); return undefined; });
+            subscriptionW.update(x => { x?.unsubscribe().then(() => console.log('unsubscribed'), r => console.error('unsubscribe error', r)); return undefined; });
             await this._sendToServer(null);
         }
         catch (e) {
-            subscription.set(undefined);
+            subscriptionW.set(undefined);
             console.error('pushService.unsubscribe', e)
         }
     },
