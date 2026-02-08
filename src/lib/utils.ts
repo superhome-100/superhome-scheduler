@@ -89,7 +89,7 @@ export const buoyDesc = (buoy: Buoy): string => {
 export const resTypeModDisabled = (rsv: Reservation | null): boolean =>
 	rsv != null && rsv.resType != ReservationType.course;
 
-export function getRandomElement<T>(items: T[]): T {
+export function getRandomElement<T>(...items: T[]): T {
 	const randomIndex = Math.floor(Math.random() * items.length);
 	return items[randomIndex];
 }

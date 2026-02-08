@@ -131,7 +131,7 @@ const shortDateTime = (rsv: Reservation) => {
 const reservationStatusIcon = (rsv: Reservation) => {
     switch (rsv.status) {
         case 'canceled':
-            return '🙈';
+            return getRandomElement('🙈', '🙀', '🐣', '😶', '🤧', '🤒');
         case 'confirmed':
             return '✅';
         case 'pending':
@@ -146,9 +146,9 @@ const reservationStatusIcon = (rsv: Reservation) => {
 const reservationCategoryIcon = (rsv: Reservation) => {
     switch (rsv.category) {
         case 'classroom':
-            return '🧑‍🏫';
+            return getRandomElement('🧑‍🏫', '📚', '👩‍🏫', '👨‍🏫');
         case 'openwater':
-            return getRandomElement<string>(['🌊', '🤿', '🦀', '🦈', '🐋', '🦐', '🦑', '🦞', '🦦', '🦭', '🐡', '🐟', '🐠', '🐬', '🪸', '🐳'])
+            return getRandomElement('🌊', '🤿', '🪼', '🦀', '🐢', '🦈', '🐋', '🐙', '🦐', '🦑', '🦞', '🦦', '🦭', '🐡', '🐟', '🐠', '🐬', '🪸', '🐳', '🧜‍♀️', '🧜', '🧜‍♂️', '🦄');
         case 'pool':
             return '🏊‍♀️';
         default:
