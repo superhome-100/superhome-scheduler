@@ -110,6 +110,5 @@ The following form will send push notification to all the users whom has a reser
 	.response-box {
 		padding: 1rem;
 		border: 1px solid #444;
-		background: #f4f4f4;
 	}
 </style>

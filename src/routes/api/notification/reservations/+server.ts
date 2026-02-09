@@ -43,7 +43,7 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 		const matches = data.filter(r => from <= r._dt && r._dt <= until);
 
 		const res = await Promise.allSettled(matches.map(async (r) => {
-			await pushNotificationService.send(r.user, title, body);
+			return await pushNotificationService.send(r.user, title, body);
 		}));
 
 		return json({

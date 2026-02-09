@@ -9,7 +9,6 @@ import {
 import { AuthError, supabaseServiceRole } from '$lib/server/supabase';
 import { ReservationStatus, type Reservation } from '$types';
 import { console_error } from '$lib/server/sentry';
-import { pushNotificationService } from '$lib/server/push';
 
 const unpackTemplate = (uT: {
 	user: string | null;
@@ -101,11 +100,11 @@ export async function GET({ request, locals: { settings } }: RequestEvent) {
 		const authHeader = request.headers.get('X-Cron-Secret');
 
 		if (authHeader !== PRIVATE_CRON_SECRET) {
-			console_error('api/updatePrices', new Error('secret error'))
+			console_error('api/updatePrices', new Error('secret error'));
 			return new Response('Unauthorized', { status: 401 });
 		}
 
-		await pushNotificationService.send('7ff0f2e8-8ce8-480b-b83c-ad1476495716', 'api/updatePrices', authHeader);
+		console.info('api/updatePrices');
 
 		let d = datetimeInPanglaoFromServer();
 		let date = datetimeToDateStr(d);
