@@ -1,14 +1,15 @@
 import type { RequestEvent } from '@sveltejs/kit';
-
+import { PRIVATE_CRON_SECRET } from '$env/static/private';
 import {
 	datetimeToDateStr,
 	datetimeInPanglaoFromServer,
 	timeStrToMin,
 	firstOfMonthStr
 } from '$lib/datetimeUtils';
-import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
+import { AuthError, supabaseServiceRole } from '$lib/server/supabase';
 import { ReservationStatus, type Reservation } from '$types';
 import { console_error } from '$lib/server/sentry';
+import { pushNotificationService } from '$lib/server/push';
 
 const unpackTemplate = (uT: {
 	user: string | null;
@@ -94,13 +95,17 @@ const getStart = (rsv: Reservation) => {
  * - autoPool: Pool autonomous
  * - platformOW: OW autonomous on Platform
  * - platformCBSOW: OW autonomous on Platform + CBS
- *
- * @param param0 
- * @returns 
  */
-export async function GET({ locals: { user, settings } }: RequestEvent) {
+export async function GET({ request, locals: { settings } }: RequestEvent) {
 	try {
-		checkAuthorisation(user, 'admin');
+		const authHeader = request.headers.get('X-Cron-Secret');
+
+		if (authHeader !== PRIVATE_CRON_SECRET) {
+			console_error('api/updatePrices', new Error('secret error'))
+			return new Response('Unauthorized', { status: 401 });
+		}
+
+		await pushNotificationService.send('7ff0f2e8-8ce8-480b-b83c-ad1476495716', 'api/updatePrices', authHeader);
 
 		let d = datetimeInPanglaoFromServer();
 		let date = datetimeToDateStr(d);
@@ -146,7 +151,7 @@ export async function GET({ locals: { user, settings } }: RequestEvent) {
 		}
 		return new Response('prices updated', { status: 200 });
 	} catch (error) {
-		console.log(error);
+		console_error('api/updatePrices', error, request);
 		if (error instanceof AuthError) {
 			return new Response(error.message, { status: error.code });
 		}

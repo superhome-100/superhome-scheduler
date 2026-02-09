@@ -19,5 +19,10 @@
             "enabled": true,
             "invocation_logs": true
         }
+    },
+    "triggers": {
+        "crons": [
+            "*/10 * * * *" //"0 8-20 * * *" TODO:mate
+        ],
     }
 }
