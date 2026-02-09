@@ -74,7 +74,7 @@
 			{#each rsv.buddies as buddy, i}
 				<div>
 					<label class="dark:text-white"
-						>Also cancel {$users[buddy].nickname}'s reservation
+						>Also cancel {$users[buddy]?.nickname ?? '<missing>'}'s reservation
 						<input type="checkbox" name={'buddy-' + i} />
 					</label>
 				</div>

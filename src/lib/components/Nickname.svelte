@@ -37,9 +37,6 @@
 		return async ({ result, update }) => {
 			switch (result.type) {
 				case 'success':
-					if ($user && result.data.id === $user.id) {
-						$user.nickname = result.data.nickname;
-					}
 					toast.success('Display name updated');
 					break;
 				default:

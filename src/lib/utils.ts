@@ -36,7 +36,7 @@ export function cleanUpFormDataBuddyFields(formData: FormData): void {
 }
 
 export const displayTag = (rsv: ReservationWithUser, admin: boolean): string => {
-	let tag = rsv.Users?.nickname ?? get(storedUsers)[rsv.user].nickname;
+	let tag = rsv.Users?.nickname ?? get(storedUsers)[rsv.user]?.nickname ?? '<missing>';
 	if (rsv.resType === 'course') {
 		tag += ' +' + (rsv.numStudents ?? 0);
 	}

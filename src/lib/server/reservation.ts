@@ -65,8 +65,8 @@ export async function getReservationsCsv() {
 		recordsEx.map((ent) => {
 			return {
 				..._.omit(ent, ['Users']),
-				name: ent.Users.name ?? 'no name',
-				nickname: ent.Users.nickname ?? 'no name',
+				name: ent.Users.name ?? '<missing>',
+				nickname: ent.Users.nickname ?? '<missing>',
 			};
 		})
 	);
