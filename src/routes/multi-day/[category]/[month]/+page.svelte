@@ -9,10 +9,8 @@
 	import { CATEGORIES } from '$lib/constants';
 	import type { ReservationCategory } from '$types';
 	import { pushState } from '$app/navigation';
-
 	import dayjs from 'dayjs';
 	import LoadingBar from '$lib/components/LoadingBar.svelte';
-
 	import {
 		isLoading,
 		storedReservationsSummary,
@@ -152,7 +150,9 @@
 			<span on:click={nextMonth} on:keypress={nextMonth} class="cursor-pointer">
 				<Chevron direction="right" svgClass="h-6 w-6" />
 			</span>
-			<span class="text-2xl">{idx2month[now.get('month')]}</span>
+			<span class="text-2xl"
+				>{now.format(now.year() === dayjs().year() ? 'MMMM' : 'MMMM YYYY')}</span
+			>
 		</div>
 		<span class="">
 			<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}

@@ -1,6 +1,6 @@
 import { debounce } from "ts-debounce";
 import type { Database } from '$lib/supabase.types'
-import { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js'
+import { SupabaseClient, RealtimeChannel, REALTIME_SUBSCRIBE_STATES } from '@supabase/supabase-js'
 
 const EVENTS = [
     'Boats',
@@ -21,6 +21,7 @@ type Unsubscribe = () => void
 export class SupabaseEventSource {
     private channel: RealtimeChannel | null = null;
     private readonly subscribers = new Map<EventType, Set<Subscriber>>()
+    private status: REALTIME_SUBSCRIBE_STATES | undefined = undefined;
 
     async init(client: SupabaseClient<Database>) {
         await client.realtime.setAuth(); // Needed for Realtime Authorization
@@ -37,6 +38,15 @@ export class SupabaseEventSource {
         }
         this.channel.subscribe((status, err) => {
             console.log('table_changes subscriber', status, err)
+            const prevStatus = this.status;
+            this.status = status;
+            if (prevStatus !== undefined /* because at first init don't need to trigger */
+                && status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
+                // reconnected
+                for (const e of this.subscribers.keys()) {
+                    this.dispatch(e, undefined)
+                }
+            }
         })
     }
 
@@ -57,7 +67,7 @@ export class SupabaseEventSource {
         }
     }
 
-    private dispatch(event: EventType, payload: Payload) {
+    private dispatch(event: EventType, payload: Payload | undefined) {
         for (const fn of this.subscribers.get(event)!) {
             Promise.resolve().then(fn).catch(e => console.error("SupabaseEventSource subscriber error", event, e, payload))
         }
