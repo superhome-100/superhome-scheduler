@@ -20,9 +20,15 @@
             "invocation_logs": true
         }
     },
+    "services": [
+        {
+            "binding": "SELF",
+            "service": "app"
+        }
+    ],
     "triggers": {
         "crons": [
-            "*/10 * * * *" //"0 8-20 * * *" TODO:mate
+            "*/5 * * * *" //"0 8-20 * * *" TODO:mate
         ],
     }
 }

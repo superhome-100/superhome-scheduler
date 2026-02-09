@@ -202,6 +202,11 @@
 							{#if $viewMode === 'admin'}
 								<SidebarDropdownWrapper label="Advanced">
 									<SidebarItem
+										label="Send Notification"
+										{spanClass}
+										href="/admin/send-notification"
+									/>
+									<SidebarItem
 										label="Supabase"
 										{spanClass}
 										target="_blank"

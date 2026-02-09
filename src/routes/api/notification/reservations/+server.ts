@@ -3,6 +3,8 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import { pushNotificationService } from '$lib/server/push';
 import dayjs from 'dayjs';
+import type { Reservation } from '$types';
+import { getYYYYMMDD } from '$lib/datetimeUtils';
 
 interface RequestBody {
 	title: string;
@@ -15,23 +17,41 @@ interface RequestBody {
 
 export async function POST({ request, locals: { user } }: RequestEvent) {
 	try {
-		checkAuthorisation(user);
+		checkAuthorisation(user, 'admin');
 
-		const req = (await request.json()) as RequestBody;
+		const { title, body, happeningInTheNextHours, category, owTime } = (await request.json()) as RequestBody;
 
-		const now = dayjs();
+		const from = dayjs();
+		const until = from.add(Number(happeningInTheNextHours), "hours");
 
-		// happeningInTheNextHours
-
-		const { data } = await supabaseServiceRole
+		let query = supabaseServiceRole
 			.from("Reservations")
 			.select("*")
+			.gte("date", getYYYYMMDD(from))
+			.lte("date", getYYYYMMDD(until))
+		if (category) {
+			query = query.eq("category", category)
+		}
+		if (owTime) {
+			query = query.eq("owTime", owTime)
+		}
+		type ResX = Reservation & { _dt: dayjs.Dayjs }
+		const { data } = await query
+			.overrideTypes<ResX[]>()
 			.throwOnError();
-		// rsvs = data.forEach(r=>r._dt = '');(r=>r.)
+		data.forEach(rsv => { rsv._dt = dayjs(rsv.date + 'T' + rsv.startTime); });
+		const matches = data.filter(r => from <= r._dt && r._dt <= until);
 
-		// const result = await pushNotificationService.send(data.id, 'title', 'notification test');
+		const res = await Promise.allSettled(matches.map(async (r) => {
+			await pushNotificationService.send(r.user, title, body);
+		}));
 
-		return json({ status: 'success' });
+		return json({
+			status: 'success', data: {
+				success: res.filter(r => r.status === 'fulfilled').length,
+				failed: res.filter(r => r.status === 'rejected').length,
+			}
+		});
 	} catch (error) {
 		return json({ status: 'error', error: error instanceof Error ? error.message : `${error}` });
 	}
