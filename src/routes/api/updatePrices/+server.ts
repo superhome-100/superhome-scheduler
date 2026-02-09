@@ -7,8 +7,7 @@ import {
 	firstOfMonthStr
 } from '$lib/datetimeUtils';
 import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
-import { ReservationStatus } from '$types';
-import type { Tables } from '$lib/supabase.types';
+import { ReservationStatus, type Reservation } from '$types';
 import { console_error } from '$lib/server/sentry';
 
 const unpackTemplate = (uT: {
@@ -62,7 +61,7 @@ async function getOldAndNewRsvs(date: string) {
 	return { oldRsvs, newRsvs };
 }
 
-async function getTemplates(newRsvs: Tables<'Reservations'>[]) {
+async function getTemplates(newRsvs: Reservation[]) {
 	const uIds = Array.from(new Set(newRsvs.map((rsv) => rsv.user)));
 	const { data: userTemplates } = await supabaseServiceRole
 		.from('UserPriceTemplates')
@@ -72,19 +71,36 @@ async function getTemplates(newRsvs: Tables<'Reservations'>[]) {
 	return userTemplates;
 }
 
-const calcNAutoOW = (user: string | null, oldRsvs: Tables<'Reservations'>[]) => {
+const calcNAutoOW = (user: string | null, oldRsvs: Reservation[]) => {
 	return oldRsvs.filter((rsv) => {
 		return rsv.user === user && rsv.resType === 'autonomous' && rsv.category === 'openwater';
 	}).length;
 };
 
-const getStart = (rsv: Tables<'Reservations'>) => {
+const getStart = (rsv: Reservation) => {
 	return timeStrToMin(rsv.startTime);
 };
 
+/**
+ * Between 8 am to 8 pm, evey 1 hour, check reservations that are in completed status, if the price is not Null, set the price, If it's already manually set, leave the existing numbers.
+ * price just need to match the price template that assigned to that use, and follow below rules:
+ * coaching session such as for OW, price = coachOW x Number of students (free for instructor)
+ * autonomous session such as for OW, price = autoOW (x 1).
+ * and for now only below is useful:
+ * - coachOW: OW coaching
+ * - coachPool: Pool coaching
+ * - coachClassroom: Classroom coaching
+ * - autoOW: OW autonomous on Buoy
+ * - autoPool: Pool autonomous
+ * - platformOW: OW autonomous on Platform
+ * - platformCBSOW: OW autonomous on Platform + CBS
+ *
+ * @param param0 
+ * @returns 
+ */
 export async function GET({ locals: { user, settings } }: RequestEvent) {
 	try {
-		checkAuthorisation(user);
+		checkAuthorisation(user, 'admin');
 
 		let d = datetimeInPanglaoFromServer();
 		let date = datetimeToDateStr(d);
@@ -111,9 +127,9 @@ export async function GET({ locals: { user, settings } }: RequestEvent) {
 								price = tmp[rsv.category][rsv.resType];
 							}
 						} else {
-							if (!rsv.numStudents) throw Error(`numStudents error: ${rsv}`);
 							price = tmp[rsv.category][rsv.resType];
 							if (rsv.resType === 'course') {
+								if (!rsv.numStudents) throw Error(`numStudents error: ${rsv.id}`);
 								price *= rsv.numStudents;
 							}
 						}
@@ -122,7 +138,7 @@ export async function GET({ locals: { user, settings } }: RequestEvent) {
 								.update({ price })
 								.eq("id", rsv.id);
 						} catch (e) {
-							console_error(`error updating price for ${rsv.id}: ${e}`);
+							console_error(`error updating price`, e, rsv.id);
 						}
 					}
 				}
