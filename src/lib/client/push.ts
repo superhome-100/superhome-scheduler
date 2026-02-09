@@ -79,7 +79,7 @@ export const pushService = {
     },
 
     async _sendToServer(sub: PushSubscription | null) {
-        const response = await fetch('/api/push/subscribe', {
+        const response = await fetch('/api/notification/subscribe', {
             method: 'POST',
             body: JSON.stringify(sub),
             headers: { 'Content-Type': 'application/json' }

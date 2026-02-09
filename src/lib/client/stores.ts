@@ -29,9 +29,19 @@ import {
 import { LRUCache } from 'lru-cache';
 import { stableStringify } from '$lib/utils';
 
+/**
+ * use 'storedAppVisibility' instead of this
+ */
+export const storedAppVisibilityW = writable<DocumentVisibilityState>();
+export const storedAppVisibility = storedAppVisibilityW as Readable<DocumentVisibilityState>
+
 type CoreStore = { supabase: SupabaseClient, user: UserEx | null };
 
-export const coreStore = writable<CoreStore>(undefined);
+/**
+ * use 'storedCore_params' instead of this
+ */
+export const storedCore_paramsW = writable<CoreStore>(undefined);
+export const storedCore_params = storedCore_paramsW as Readable<CoreStore>;
 
 export const isLoading = writable<boolean>(false);
 
@@ -69,7 +79,7 @@ function readableWithSubscriptionToCore<T>(
                 }, coreParam, value);
             }
         };
-        const unsubCs = coreStore.subscribe(async (cpN: CoreStore) => {
+        const unsubCs = storedCore_params.subscribe(async (cpN: CoreStore) => {
             coreParam = cpN as CoreStoreWithUser;
             safeCb();
         });
@@ -112,7 +122,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
                 }
             }
         };
-        const unsubCs = coreStore.subscribe(async (cpN: CoreStore) => {
+        const unsubCs = storedCore_params.subscribe(async (cpN: CoreStore) => {
             coreParam = cpN as CoreStoreWithUser;
             cache.clear();
             safeCb();
@@ -150,16 +160,18 @@ export const storedCurrentDay = readable<string>(getYYYYMMDD(PanglaoDate()), (se
     return () => clearInterval(iid);
 });
 
-export const storedUser = readable<UserEx | null>(null, (set) => coreStore.subscribe((cs) => set(cs?.user)));
+export const storedUser = readable<UserEx | null>(null, (set) => storedCore_params.subscribe((cs) => set(cs?.user)));
 
 export const storedUsers =
     readableWithSubscriptionToCore<{ [uid: string]: UserMinimal }>({}, async ({ supabase }) => {
+        console.debug("refreshing storedUsers");
         const r = await getUsers(supabase);
         return r;
     }, "Users");
 
 export const storedIncomingReservations =
     readableWithSubscriptionToCore<Reservation[]>([], async ({ supabase, user }) => {
+        console.debug("refreshing storedIncomingReservations");
         const r = await getIncomingReservations(user, supabase);
         return r;
     }, "Reservations");
@@ -168,6 +180,7 @@ export const storedPastReservations =
     readableWithSubscriptionToCoreAndParam<Reservation[], string>([],
         storedCurrentDay,
         async ({ supabase, user }, currentDay) => {
+            console.debug('refreshing storedPastReservations', currentDay);
             const r = await getUserPastReservations(user, supabase, currentDay);
             return r;
         }, "Reservations");
@@ -178,6 +191,7 @@ export const storedDayReservations =
     readableWithSubscriptionToCoreAndParam<Reservation[], { day: string }>([],
         storedDayReservations_param,
         async ({ supabase }, { day }) => {
+            console.debug('refreshing storedDayReservations', day);
             const r = await getReservationsByDate(supabase, day);
             return r;
         }, "Reservations");
@@ -186,6 +200,7 @@ export const storedDaySettings =
     readableWithSubscriptionToCoreAndParam<DateSetting, { day: string }>(defaultDateSettings,
         storedDayReservations_param,
         async ({ supabase }, { day }) => {
+            console.debug('refreshing storedDaySettings', day);
             const [dateSettings] = await getDateSetting(supabase, day);
             return dateSettings;
         }, "DaySettings");
@@ -196,6 +211,7 @@ export const storedReservationsSummary =
     readableWithSubscriptionToCoreAndParam<Record<string, DateReservationSummary>, { startDay: Date, endDay: Date }>({},
         storedReservationsSummary_param,
         async ({ supabase }, { startDay, endDay }) => {
+            console.debug('refreshing storedReservationsSummary', startDay, endDay);
             const r = await getReservationSummary(supabase, startDay, endDay);
             return r;
         }, "Reservations", "DaySettings");
@@ -204,6 +220,7 @@ export const storedOWAdminComments =
     readableWithSubscriptionToCoreAndParam<BuoyGroupings[], { day: string }>([],
         storedDayReservations_param,
         async ({ supabase }, { day }) => {
+            console.debug('refreshing storedOWAdminComments', day);
             const r = await getOWAdminComments(supabase, day);
             return r;
         }, "BuoyGroupings");
@@ -212,6 +229,7 @@ export const storedBuoys =
     readableWithSubscriptionToCore<Buoy[]>([],
         async ({ supabase }) => {
             const r = await getBuoys(supabase);
+            console.debug('refreshing storedBuoys');
             return r;
         }, "Buoys");
 
@@ -219,6 +237,7 @@ export const storedBoatAssignments =
     readableWithSubscriptionToCoreAndParam<Record<string, string>, { day: string }>({},
         storedDayReservations_param,
         async ({ supabase }, { day }) => {
+            console.debug('refreshing storedBoatAssignments', day);
             const r = await getBoatAssignmentsByDate(supabase, day);
             return r;
         }, "Boats");
@@ -234,13 +253,14 @@ export const storedNotifications =
  * set in src/routes/+layout.svelte and at change, don't use it
  */
 export const storedSettingsW = writable<SettingsManager>();
-export const storedSettings: Readable<SettingsManager> = storedSettingsW;
+export const storedSettings = storedSettingsW as Readable<SettingsManager>;
 /**
  * use 'storedSettings' instead of this
  */
 export const storedSettingsOnline =
     readableWithSubscriptionToCore<SettingsManager>(undefined as unknown as SettingsManager,
         async ({ supabase }) => {
+            console.debug('refreshing storedSettingsOnline');
             const r = await getSettingsManager(supabase);
             storedSettingsW.set(r); //hacky update but should be fine for now
             return r;
