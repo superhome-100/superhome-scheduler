@@ -9,7 +9,8 @@
 	};
 
 	let loading = false;
-	let result: { status: string; error?: string } | null = null;
+	let result: { status: 'success'; data: object } | { status: 'error'; error?: string } | null =
+		null;
 
 	async function sendPostRequest() {
 		loading = true;
@@ -35,9 +36,8 @@
 	}
 </script>
 
-The following implementation organizes the input fields into a structured table format using Svelte
-4. This ensures each attribute of the RequestBody interface is mapped to a specific row with its
-corresponding description. Svelte 4 Implementation Svelte
+The following form will send push notification to all the users whom has a reservation in the next
+`happeningInTheNextHours`. <br />Additionally `category` or `owTime` filter can be applied.<br />
 <form on:submit|preventDefault={sendPostRequest}>
 	<table>
 		<thead>
@@ -85,7 +85,8 @@ corresponding description. Svelte 4 Implementation Svelte
 	<div class="response-box">
 		<strong>Status:</strong>
 		{result.status}
-		{#if result.error}<br /><strong>Error:</strong> {result.error}{/if}
+		{#if result.status === 'success'}{JSON.stringify(result.data)}{/if}
+		{#if result.status === 'error'}{JSON.stringify(result.error)}{/if}
 	</div>
 {/if}
 
