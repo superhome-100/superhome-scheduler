@@ -12,18 +12,34 @@ npm install
 
 ## dev
 
+local `.env`:
+
+```.env
+PUBLIC_STAGE=dev
+PRIVATE_CRON_SECRET=secret
+PUBLIC_SUPABASE_URL=http://localhost:54321
+PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
+PRIVATE_SUPABASE_SERVICE_KEY=...
+
+SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=...
+SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET_KEY=...
+
+PUBLIC_VAPID_SUBJECT=mailto:superhome.scheduler@gmail.com
+PUBLIC_VAPID_KEY=BN-bJ5LxmRd9b73raXsfl1FBT9kDNdw-hUO_TRbcbvJCRNvHUcX2YDxmAiYxD4RhtXufKniEZU5tofOgQOtf978
+PRIVATE_VAPID_KEY=...
+
+SENTRY_AUTH_TOKEN=...
+```
+
 ```bash
+supabase start
+supabase db reset
 npm run dev
 ```
 
 ## database
 
 to sync database schema to your local code generated config
-
-```sh
-supabase start
-supabase db reset
-```
 
 ```sh
 supabase login

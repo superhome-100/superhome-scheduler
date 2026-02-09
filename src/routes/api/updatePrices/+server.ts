@@ -1,5 +1,5 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import { PRIVATE_CRON_SECRET } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import {
 	datetimeToDateStr,
 	datetimeInPanglaoFromServer,
@@ -99,7 +99,7 @@ export async function GET({ request, locals: { settings } }: RequestEvent) {
 	try {
 		const authHeader = request.headers.get('X-Cron-Secret');
 
-		if (authHeader !== PRIVATE_CRON_SECRET) {
+		if (authHeader !== env.PRIVATE_CRON_SECRET) {
 			console_error('api/updatePrices', new Error('secret error'));
 			return new Response('Unauthorized', { status: 401 });
 		}
