@@ -70,7 +70,7 @@ The following form will send push notification to all the users whom has a reser
 			</tr>
 			<tr>
 				<td><strong>owTime</strong></td>
-				<td>Override time or specific scheduling parameter.</td>
+				<td>Optional filter for specific reservation types.</td>
 				<td><input type="text" bind:value={payload.owTime} /></td>
 			</tr>
 		</tbody>

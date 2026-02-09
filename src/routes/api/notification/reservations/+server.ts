@@ -4,15 +4,15 @@ import { checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import { pushNotificationService } from '$lib/server/push';
 import dayjs from 'dayjs';
 import type { Reservation } from '$types';
-import { getYYYYMMDD } from '$lib/datetimeUtils';
+import { getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
 
 interface RequestBody {
 	title: string;
 	body: string;
 	// filters
 	happeningInTheNextHours: string;
-	category?: string;
-	owTime?: string;
+	category?: string | null;
+	owTime?: string | null;
 }
 
 export async function POST({ request, locals: { user } }: RequestEvent) {
@@ -21,7 +21,7 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 
 		const { title, body, happeningInTheNextHours, category, owTime } = (await request.json()) as RequestBody;
 
-		const from = dayjs();
+		const from = PanglaoDayJs();
 		const until = from.add(Number(happeningInTheNextHours), "hours");
 
 		let query = supabaseServiceRole
@@ -39,7 +39,7 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 		const { data } = await query
 			.overrideTypes<ResX[]>()
 			.throwOnError();
-		data.forEach(rsv => { rsv._dt = dayjs(rsv.date + 'T' + rsv.startTime); });
+		data.forEach(rsv => { rsv._dt = PanglaoDayJs(rsv.date + 'T' + rsv.startTime); });
 		const matches = data.filter(r => from <= r._dt && r._dt <= until);
 
 		const res = await Promise.allSettled(matches.map(async (r) => {

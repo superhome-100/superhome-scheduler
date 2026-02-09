@@ -44,6 +44,8 @@ export const firstOfMonthStr = (dateStr: string) => {
 
 const PhilippinesTimezoneOffset = -480;
 
+export const PanglaoDayJs = (date?: string | number | dayjs.Dayjs | Date | null | undefined) => dayjs(date).tz('Asia/Manila');
+
 export const PanglaoDate = () => new Date(dayjs().tz('Asia/Manila').$d);
 
 export function datetimeToLocalDateStr(datetime: Date | string) {
