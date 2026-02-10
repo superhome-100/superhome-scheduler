@@ -59,7 +59,7 @@ The following form will send push notification to all the users whom has a reser
 				<td><textarea bind:value={payload.body} required /></td>
 			</tr>
 			<tr>
-				<td><strong>happeningInTheNextHours</strong></td>
+				<td><strong>happening In The Next Hours</strong></td>
 				<td>Time window filter for Reservations.</td>
 				<td><input type="number" bind:value={payload.happeningInTheNextHours} required /></td>
 			</tr>
@@ -115,8 +115,13 @@ The following form will send push notification to all the users whom has a reser
 		padding: 0.5rem;
 		text-align: left;
 	}
+	th:not(:last-child),
+	td:not(:last-child) {
+		width: 150px; /* Or a specific percentage */
+	}
 	input,
-	textarea {
+	textarea,
+	select {
 		width: 100%;
 		box-sizing: border-box;
 	}

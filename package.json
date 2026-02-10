@@ -1,6 +1,6 @@
 {
 	"name": "superhome-scheduler",
-	"version": "0.3.33",
+	"version": "0.3.34",
 	"private": true,
 	"scripts": {
 		"dev": "PUBLIC_STAGE=dev vite dev",
