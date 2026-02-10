@@ -3,7 +3,7 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import { pushNotificationService } from '$lib/server/push';
 import dayjs from 'dayjs';
-import type { Reservation } from '$types';
+import type { Reservation, ReservationCategory } from '$types';
 import { getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
 
 interface RequestBody {
@@ -19,7 +19,16 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 	try {
 		checkAuthorisation(user, 'admin');
 
-		const { title, body, happeningInTheNextHours, category, owTime } = (await request.json()) as RequestBody;
+		const { title,
+			body,
+			happeningInTheNextHours,
+			category,
+			owTime
+		} = (await request.json()) as RequestBody;
+
+		if (!title) throw Error('missing title');
+		if (!body) throw Error('missing body');
+		if (!happeningInTheNextHours) throw Error('missing happeningInTheNextHours');
 
 		const from = PanglaoDayJs();
 		const until = from.add(Number(happeningInTheNextHours), "hours");
@@ -30,7 +39,7 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 			.gte("date", getYYYYMMDD(from))
 			.lte("date", getYYYYMMDD(until))
 		if (category) {
-			query = query.eq("category", category)
+			query = query.eq("category", category as ReservationCategory)
 		}
 		if (owTime) {
 			query = query.eq("owTime", owTime)
@@ -42,15 +51,16 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 		data.forEach(rsv => { rsv._dt = PanglaoDayJs(rsv.date + 'T' + rsv.startTime); });
 		const matches = data.filter(r => from <= r._dt && r._dt <= until);
 
-		const res = await Promise.allSettled(matches.map(async (r) => {
+		const res = await Promise.all(matches.map(async (r) => {
 			return await pushNotificationService.send(r.user, title, body);
 		}));
 
+		const resSum = res.flat().reduce((prev, curr) => {
+			prev.success += curr.success; prev.failure += curr.failure; return prev
+		}, { success: 0, failure: 0 })
+
 		return json({
-			status: 'success', data: {
-				success: res.filter(r => r.status === 'fulfilled').length,
-				failed: res.filter(r => r.status === 'rejected').length,
-			}
+			status: 'success', data: resSum
 		});
 	} catch (error) {
 		return json({ status: 'error', error: error instanceof Error ? error.message : `${error}` });

@@ -25,6 +25,11 @@ const userIdToPushCache = new LRUCache<string, {
     ttl: 1000 * 5 // ms
 })
 
+export interface BulkPushResut {
+    success: number;
+    failure: number;
+}
+
 export const pushNotificationService = {
     /**
      * Message will look like:
@@ -32,11 +37,10 @@ export const pushNotificationService = {
      * #2: From Superhome
      * #3: <message>
      */
-    async send(userId: string, title: string, message: string, url: string = '/') {
+    async send(userId: string, title: string, message: string, url: string = '/'): Promise<BulkPushResut[]> {
         try {
             const pss = await this._getPushSubscriptions(userId);
-
-            return await Promise.allSettled(pss.map(d => {
+            return await Promise.all(pss.map(d => {
                 return (async (subscription) => {
                     const payload = JSON.stringify({
                         title,
@@ -44,16 +48,16 @@ export const pushNotificationService = {
                         data: { url }
                     });
                     const resp = await webpush.sendNotification(subscription, payload);
-                    console.log('push sent', { user: userId, session: d.sessionId }, resp);
-                    return resp;
+                    console.info('push sent', { user: userId, session: d.sessionId }, resp);
+                    return { success: 1, failure: 0 };
                 })(d.pushSubscription as unknown as PushSubscription).catch((reason) => {
                     console_error(`couldn't send notification`, { user: userId, session: d.sessionId }, reason);
-                    return reason;
+                    return { success: 0, failure: 1 };
                 })
             }))
         } catch (e) {
             console_error("pushNotificationService.send", e)
-            return [];
+            return [{ success: 0, failure: 1 }];
         }
     },
 
@@ -72,7 +76,7 @@ export const pushNotificationService = {
 
     async sendSafe(userId: string, title: string, message: string, url: string = '/') {
         try {
-            await this.send(userId, title, message, url);
+            return await this.send(userId, title, message, url);
         } catch (e) {
             console_error("pushNotificationService.send", e)
         }

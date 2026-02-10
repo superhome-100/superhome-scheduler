@@ -66,12 +66,25 @@ The following form will send push notification to all the users whom has a reser
 			<tr>
 				<td><strong>category</strong></td>
 				<td>Optional filter for specific reservation types.</td>
-				<td><input type="text" bind:value={payload.category} /></td>
+				<td>
+					<select bind:value={payload.category}>
+						<option value="">all</option>
+						<option value="openwater">openwater</option>
+						<option value="pool">pool</option>
+						<option value="classroom">classroom</option>
+					</select>
+				</td>
 			</tr>
 			<tr>
 				<td><strong>owTime</strong></td>
 				<td>Optional filter for specific reservation types.</td>
-				<td><input type="text" bind:value={payload.owTime} /></td>
+				<td>
+					<select bind:value={payload.owTime}>
+						<option value="">-</option>
+						<option value="AM">AM</option>
+						<option value="PM">PM</option>
+					</select>
+				</td>
 			</tr>
 		</tbody>
 	</table>
