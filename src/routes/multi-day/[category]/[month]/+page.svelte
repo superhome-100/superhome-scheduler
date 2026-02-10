@@ -5,7 +5,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
 	import { minValidDateStr } from '$lib/reservationTimes';
-	import { getYYYYMM, getYYYYMMDD, idx2month } from '$lib/datetimeUtils';
+	import { getYYYYMM, getYYYYMMDD } from '$lib/datetimeUtils';
 	import { CATEGORIES } from '$lib/constants';
 	import type { ReservationCategory } from '$types';
 	import { pushState } from '$app/navigation';

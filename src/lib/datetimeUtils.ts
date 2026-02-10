@@ -7,44 +7,14 @@ dayjs.extend(timezone);
 
 export { dayjs };
 
-export const month2idx: { [key: string]: number } = {
-	January: 0,
-	February: 1,
-	March: 2,
-	April: 3,
-	May: 4,
-	June: 5,
-	July: 6,
-	August: 7,
-	September: 8,
-	October: 9,
-	November: 10,
-	December: 11
-};
+export const PanglaoDayJs = (date?: string | number | dayjs.Dayjs | Date | null | undefined) => dayjs(date).tz('Asia/Manila');
 
-export const idx2month = [
-	'January',
-	'February',
-	'March',
-	'April',
-	'May',
-	'June',
-	'July',
-	'August',
-	'September',
-	'October',
-	'November',
-	'December'
-];
+export const PanglaoDate = () => PanglaoDayJs().toDate();
 
 export const firstOfMonthStr = (dateStr: string) => {
 	let m = /([0-9]+-[0-9]+-)[0-9]+/.exec(dateStr);
 	return m[1] + '01';
 };
-
-export const PanglaoDayJs = (date?: string | number | dayjs.Dayjs | Date | null | undefined) => dayjs(date).tz('Asia/Manila');
-
-export const PanglaoDate = () => new Date(dayjs().tz('Asia/Manila').$d);
 
 export function datetimeToLocalDateStr(datetime: Date | string) {
 	return dayjs(datetime).locale('en-US').format('YYYY-MM-DD');
