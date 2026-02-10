@@ -39,7 +39,7 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 
 		let query = supabaseServiceRole
 			.from("Reservations")
-			.select("*")
+			.select("*, Users(id, nickname)")
 			.gte("date", fromStr)
 			.lte("date", untilStr)
 			.notIn("status", [ReservationStatus.canceled, ReservationStatus.rejected])
@@ -57,20 +57,28 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 		const matches = data.filter(r => from <= r._dt && r._dt <= until);
 
 		const res = await Promise.all(matches.map(async (r) => {
-			return await pushNotificationService.send(r.user, title, body);
+			const res = await pushNotificationService.send(r.user, title, body);
+			return {
+				...res, user: `${r.Users.nickname}(${r.Users.id})`
+			}
 		}));
 
 		const resSum = res.reduce((prev, curr) => {
 			if (curr.success > 0) {
-				prev.notifiedUsers.push(curr.userId);
+				prev.notifiedUsers.push(curr.user);
 			}
 			prev.success += curr.success;
 			prev.failure.push(...curr.failure);
 			if (curr.success === 0) {
-				prev.skippedUserNotEnabledNotification += 1
+				prev.skippedUser.push(curr.user)
 			}
 			return prev;
-		}, { notifiedUsers: [] as string[], success: 0, failure: [] as Error[], skippedUserNotEnabledNotification: 0 })
+		}, {
+			notifiedUsers: [] as string[],
+			success: 0,
+			failure: [] as Error[],
+			skippedUser: [] as string[]
+		})
 
 		console.info('api/notification/reservations sent', requestJson, { from, until }, resSum);
 
@@ -78,6 +86,6 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 			status: 'success', data: resSum
 		});
 	} catch (error) {
-		return json({ status: 'error', error: error instanceof Error ? error.message : `${error}` });
+		return json({ status: 'error', error: error instanceof Error ? error.message : `${error} ` });
 	}
 }

@@ -26,7 +26,6 @@ const userIdToPushCache = new LRUCache<string, {
 })
 
 export type BulkPushResut = {
-    userId: string;
     success: number;
     failure: Error[];
 };
@@ -60,10 +59,10 @@ export const pushNotificationService = {
                 prev.success += curr.success
                 prev.failure.push(...curr.failure)
                 return prev
-            }, { userId, success: 0, failure: [] as Error[] });
+            }, { success: 0, failure: [] as Error[] });
         } catch (e) {
             console_error("pushNotificationService.send", e)
-            return { userId, success: 0, failure: [e as Error] };
+            return { success: 0, failure: [e as Error] };
         }
     },
 
