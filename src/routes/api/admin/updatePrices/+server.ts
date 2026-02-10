@@ -7,48 +7,29 @@ import {
 	getYYYYMMDD
 } from '$lib/datetimeUtils';
 import { AuthError, supabaseServiceRole } from '$lib/server/supabase';
-import { ReservationStatus, type Reservation, type ReservationWithPrices } from '$types';
+import { ReservationStatus, type ReservationWithPrices } from '$types';
 import { console_error } from '$lib/server/sentry';
-import type { Tables } from '$lib/supabase.types';
 import { getSettingsManager } from '$lib/settings';
 
-const unpackTemplate = (uT: {
-	user: string;
-	PriceTemplates: Tables<'PriceTemplates'>;
-}) => {
+const unpackTemplate = (r: ReservationWithPrices) => {
 	return {
 		pool: {
-			course: uT.PriceTemplates.coachPool,
-			autonomous: uT.PriceTemplates.autoPool
+			course: r.priceTemplate.coachPool,
+			autonomous: r.priceTemplate.autoPool
 		},
 		classroom: {
-			course: uT.PriceTemplates.coachClassroom
+			course: r.priceTemplate.coachClassroom
 		},
 		openwater: {
-			course: uT.PriceTemplates.coachOW,
-			autonomous: uT.PriceTemplates.autoOW,
-			cbs: uT.PriceTemplates.cbsOW,
-			proSafety: uT.PriceTemplates.proSafetyOW,
-			autonomousPlatform: uT.PriceTemplates.platformOW,
-			autonomousPlatformCBS: uT.PriceTemplates.platformCBSOW,
-			competitionSetupCBS: uT.PriceTemplates['comp-setupOW']
+			course: r.priceTemplate.coachOW,
+			autonomous: r.priceTemplate.autoOW,
+			cbs: r.priceTemplate.cbsOW,
+			proSafety: r.priceTemplate.proSafetyOW,
+			autonomousPlatform: r.priceTemplate.platformOW,
+			autonomousPlatformCBS: r.priceTemplate.platformCBSOW,
+			competitionSetupCBS: r.priceTemplate['comp-setupOW']
 		}
 	};
-};
-
-async function getTemplates(newRsvs: Reservation[]) {
-	const uIds = Array.from(new Set(newRsvs.map((rsv) => rsv.user)));
-	const { data: userTemplates } = await supabaseServiceRole
-		.from('UserPriceTemplates')
-		.select('user, PriceTemplates(*)')
-		.in('user', uIds)
-		.throwOnError();
-	return userTemplates;
-}
-const calcNAutoOW = (user: string | null, oldRsvs: Reservation[]) => {
-	return oldRsvs.filter((rsv) => {
-		return rsv.user === user && rsv.resType === 'autonomous' && rsv.category === 'openwater';
-	}).length;
 };
 
 /**
@@ -69,7 +50,7 @@ const calcNAutoOW = (user: string | null, oldRsvs: Reservation[]) => {
  */
 export async function GET({ request }: RequestEvent) {
 	try {
-		const authHeader = env.PRIVATE_CRON_SECRET//TODO:mate: request.headers.get('X-Cron-Secret');
+		const authHeader = request.headers.get('X-Cron-Secret');
 		if (authHeader !== env.PRIVATE_CRON_SECRET) {
 			console_error('api/admin/updatePrices', new Error('secret error'));
 			return new Response('Unauthorized', { status: 401 });
@@ -77,10 +58,11 @@ export async function GET({ request }: RequestEvent) {
 
 		const now = PanglaoDayJs()
 		const nowDay = getYYYYMMDD(PanglaoDayJs());
-		// need to use supabaseServiceRole because this code run from scheduled worker without user
-		let maxChgbl = (await getSettingsManager(supabaseServiceRole)).getMaxChargeableOWPerMonth(nowDay);
+		// need to use supabaseServiceRole because this code run from scheduled worker without user so 
+		// `locals:{supabase}` is not working here
+		const maxChargeableOWPerMonth = (await getSettingsManager(supabaseServiceRole)).getMaxChargeableOWPerMonth(nowDay);
 
-		console.info('api/admin/updatePrices', { now, nowDay, maxChgbl });
+		console.info('api/admin/updatePrices', { now, nowDay, maxChargeableOWPerMonth });
 
 		const { data: reservations } = await supabaseServiceRole
 			.from('ReservationsWithPrices')
@@ -93,46 +75,49 @@ export async function GET({ request }: RequestEvent) {
 			.overrideTypes<ReservationWithPrices[]>()
 			.throwOnError();
 
-		const oldRsvs = reservations.filter((rsv) => rsv.price != null);
-		const newRsvs = reservations.filter((rsv) => rsv.price == null);
-		if (newRsvs.length > 0) {
-			let userTemplates = await getTemplates(newRsvs);
+		const pastReservations = reservations
+			.filter(r => fromPanglaoDateTimeStringToDayJs(r.date, r.startTime) < now)
+		const pastReservationsByUser = Object
+			.groupBy(pastReservations, ({ user }) => user);
 
-			for (let uT of userTemplates) {
-				const tmp = unpackTemplate(uT);
-				let nAutoOW = calcNAutoOW(uT.user, oldRsvs);
-				const rsvs = newRsvs.filter((rsv) => rsv.user === uT.user);
-				for (let rsv of rsvs) {
-					let rsvStart = fromPanglaoDateTimeStringToDayJs(`${rsv.date}T${rsv.startTime}`);
-					if (rsvStart <= now) {
-						let price;
-						if (rsv.category === 'openwater' && rsv.resType === 'autonomous') {
-							nAutoOW++;
-							if (nAutoOW > maxChgbl) {
-								price = 0;
-							} else {
-								price = tmp[rsv.category][rsv.resType];
-							}
-						} else {
-							const categoryPrice = tmp[rsv.category];
-							if (!(rsv.resType in categoryPrice))
-								throw Error(`assert ${rsv.id}: ${rsv.resType} !in ${categoryPrice}`);
-							price = categoryPrice[rsv.resType];
-							if (rsv.resType === 'course') {
-								if (!rsv.numStudents) throw Error(`numStudents error: ${rsv.id}`);
-								price *= rsv.numStudents;
-							}
-						}
-						try {
-							await supabaseServiceRole.from('Reservations')
-								.update({ price })
-								.eq("id", rsv.id);
-						} catch (e) {
-							console_error(`error updating price`, e, rsv.id);
-						}
+		const errors = [];
+		for (const uRsvs of Object.values(pastReservationsByUser)) {
+			const oldRsvs = uRsvs!.filter((rsv) => rsv.price != null);
+			const newRsvs = uRsvs!.filter((rsv) => rsv.price == null);
+			let numberOfAutoOW = oldRsvs.filter((rsv) =>
+				rsv.resType === 'autonomous' && rsv.category === 'openwater').length;
+			for (const rsv of newRsvs) {
+				let price: number | undefined = undefined;
+				const tmp = unpackTemplate(rsv);
+				if (rsv.category === 'openwater' && rsv.resType === 'autonomous') {
+					numberOfAutoOW++;
+					if (numberOfAutoOW > maxChargeableOWPerMonth) {
+						price = 0;
+					} else {
+						price = tmp[rsv.category][rsv.resType];
+					}
+				} else {
+					const categoryPrice = tmp[rsv.category];
+					if (!(rsv.resType in categoryPrice))
+						throw Error(`assert ${rsv.id}: ${rsv.resType} !in ${categoryPrice}`);
+					price = categoryPrice[rsv.resType] as number;
+					if (rsv.resType === 'course') {
+						if (!rsv.numStudents) throw Error(`numStudents error: ${rsv.id}`);
+						price *= rsv.numStudents;
 					}
 				}
+				try {
+					await supabaseServiceRole.from('Reservations')
+						.update({ price })
+						.eq("id", rsv.id);
+				} catch (e) {
+					errors.push(e);
+					console_error(`error updating price`, e, rsv.id, price);
+				}
 			}
+		}
+		if (errors.length) {
+			return new Response(`${JSON.stringify(errors)}`, { status: 500 });
 		}
 		return new Response('prices updated', { status: 200 });
 	} catch (error) {

@@ -1,7 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase.types";
+import fetchRetry, { type FetchLibrary } from 'fetch-retry';
 
-
+export const fetchRetryForSupabase = (fetchFn: FetchLibrary) => fetchRetry(fetchFn, {
+    retries: 3, // Number of retry attempts
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000), // Exponential backoff
+    retryOn: [520], // Retry only on Cloudflare errors
+})
 
 export async function fetchAllRows<T>(
     supabase: SupabaseClient<Database>,

@@ -8,6 +8,7 @@ import { getSettingsManager } from '$lib/settings';
 import type { Handle } from '@sveltejs/kit';
 import { sessionToSessionId } from '$lib/server/supabase';
 import { console_error } from '$lib/server/sentry';
+import { fetchRetryForSupabase } from '$lib/supabase';
 
 Sentry.initCloudflareSentryHandle({
 	dsn: 'https://f2da7b160a72d4083e99922a3ae707fe@o4510844761931776.ingest.de.sentry.io/4510844770975824',
@@ -33,6 +34,9 @@ export const handle: Handle = sequence(
 			PUBLIC_SUPABASE_URL,
 			PUBLIC_SUPABASE_PUBLISHABLE_KEY,
 			{
+				global: {
+					fetch: fetchRetryForSupabase(event.fetch)
+				},
 				cookies: {
 					getAll() {
 						return event.cookies.getAll();

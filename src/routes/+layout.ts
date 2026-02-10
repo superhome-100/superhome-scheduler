@@ -2,6 +2,7 @@ import { PUBLIC_SUPABASE_PUBLISHABLE_KEY, PUBLIC_SUPABASE_URL } from '$env/stati
 import { createBrowserClient, createServerClient, isBrowser } from '@supabase/ssr';
 import type { LayoutLoad } from './$types';
 import { getSettingsManager } from '$lib/settingsManager';
+import { fetchRetryForSupabase } from '$lib/supabase';
 
 // data: from +layout.server.ts
 export const load: LayoutLoad = async ({ fetch, data, depends }) => {
@@ -9,13 +10,13 @@ export const load: LayoutLoad = async ({ fetch, data, depends }) => {
 	const supabase = isBrowser()
 		? createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
 			global: {
-				fetch
+				fetch: fetchRetryForSupabase(fetch)
 			}
 		})
 		: // the best would be if it is PUBLIC and RLS does it's job but that's not gonna happen now
 		createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
 			global: {
-				fetch
+				fetch: fetchRetryForSupabase(fetch)
 			},
 			cookies: {
 				getAll() {
