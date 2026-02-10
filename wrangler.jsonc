@@ -28,7 +28,7 @@
     ],
     "triggers": {
         "crons": [ // use UTC times
-            "0 16-4 * * *" // 8am-8pm
+            "0 0-12 * * *" // 8am-8pm
         ],
     }
 }

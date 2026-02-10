@@ -7,6 +7,10 @@ export const subscription: Readable<PushSubscription | null | undefined> = subsc
 export const pushService = {
     async init(server_has_push: boolean) {
         try {
+            if (!('Notification' in window)) {
+                subscriptionW.set(undefined);
+                return;
+            }
             const permissionStatus = Notification.permission;
             if (permissionStatus === 'denied') {
                 // User blocked notifications; you cannot ask again programmatically.
