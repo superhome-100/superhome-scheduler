@@ -4,7 +4,7 @@ import { PRIVATE_VAPID_KEY } from '$env/static/private';
 import { supabaseServiceRole } from './supabase';
 import webpush, { type PushSubscription } from 'web-push';
 import type { Reservation, User } from '$types';
-import { dayjs, PanglaoDayJs, fromPanglaoDateTimeStringToDayJs } from '$lib/datetimeUtils';
+import { dayjs, fromPanglaoDateTimeStringToDayJs } from '$lib/datetimeUtils';
 import { LRUCache } from 'lru-cache'
 import type { Json } from '$lib/supabase.types';
 import { getRandomElement } from '$lib/utils';
@@ -25,10 +25,11 @@ const userIdToPushCache = new LRUCache<string, {
     ttl: 1000 * 5 // ms
 })
 
-export interface BulkPushResut {
+export type BulkPushResut = {
+    userId: string;
     success: number;
-    failure: number;
-}
+    failure: Error[];
+};
 
 export const pushNotificationService = {
     /**
@@ -37,10 +38,10 @@ export const pushNotificationService = {
      * #2: From Superhome
      * #3: <message>
      */
-    async send(userId: string, title: string, message: string, url: string = '/'): Promise<BulkPushResut[]> {
+    async send(userId: string, title: string, message: string, url: string = '/'): Promise<BulkPushResut> {
         try {
             const pss = await this._getPushSubscriptions(userId);
-            return await Promise.all(pss.map(d => {
+            const uRes = await Promise.all(pss.map(d => {
                 return (async (subscription) => {
                     const payload = JSON.stringify({
                         title,
@@ -49,15 +50,20 @@ export const pushNotificationService = {
                     });
                     const resp = await webpush.sendNotification(subscription, payload);
                     console.info('push sent', { user: userId, session: d.sessionId }, resp);
-                    return { user: userId, session: d.sessionId, success: 1, failure: 0 };
+                    return { success: 1, failure: [] as Error[] };
                 })(d.pushSubscription as unknown as PushSubscription).catch((reason) => {
                     console_error(`couldn't send notification`, { user: userId, session: d.sessionId }, reason);
-                    return { success: 0, failure: 1 };
+                    return { success: 0, failure: [reason as Error] };
                 })
             }))
+            return uRes.reduce<BulkPushResut>((prev, curr) => {
+                prev.success += curr.success
+                prev.failure.push(...curr.failure)
+                return prev
+            }, { userId, success: 0, failure: [] as Error[] });
         } catch (e) {
             console_error("pushNotificationService.send", e)
-            return [{ success: 0, failure: 1 }];
+            return { userId, success: 0, failure: [e as Error] };
         }
     },
 

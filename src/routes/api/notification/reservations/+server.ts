@@ -3,7 +3,7 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import { pushNotificationService } from '$lib/server/push';
 import dayjs from 'dayjs';
-import type { Reservation, ReservationCategory } from '$types';
+import { ReservationStatus, type Reservation, type ReservationCategory } from '$types';
 import { fromPanglaoDateTimeStringToDayJs, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
 
 interface RequestBody {
@@ -42,6 +42,7 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 			.select("*")
 			.gte("date", fromStr)
 			.lte("date", untilStr)
+			.notIn("status", [ReservationStatus.canceled, ReservationStatus.rejected])
 		if (category) {
 			query = query.eq("category", category as ReservationCategory)
 		}
@@ -59,9 +60,17 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 			return await pushNotificationService.send(r.user, title, body);
 		}));
 
-		const resSum = res.flat().reduce((prev, curr) => {
-			prev.success += curr.success; prev.failure += curr.failure; return prev
-		}, { success: 0, failure: 0 })
+		const resSum = res.reduce((prev, curr) => {
+			if (curr.success > 0) {
+				prev.notifiedUsers.push(curr.userId);
+			}
+			prev.success += curr.success;
+			prev.failure.push(...curr.failure);
+			if (curr.success === 0) {
+				prev.skippedUserNotEnabledNotification += 1
+			}
+			return prev;
+		}, { notifiedUsers: [] as string[], success: 0, failure: [] as Error[], skippedUserNotEnabledNotification: 0 })
 
 		console.info('api/notification/reservations sent', requestJson, { from, until }, resSum);
 
