@@ -3,12 +3,15 @@ import { env } from '$env/dynamic/private';
 import {
 	datetimeToDateStr,
 	timeStrToMin,
-	firstOfMonthStr
+	firstOfMonthStr,
+	dayjs,
+	fromPanglaoDateTimeStringToDayJs,
+	PanglaoDayJs,
+	getYYYYMMDD
 } from '$lib/datetimeUtils';
 import { AuthError, supabaseServiceRole } from '$lib/server/supabase';
 import { ReservationStatus, type Reservation } from '$types';
 import { console_error } from '$lib/server/sentry';
-import { datetimeInPanglaoFromServer } from '$lib/server/datetimeUtils';
 
 const unpackTemplate = (uT: {
 	user: string | null;
@@ -97,19 +100,18 @@ const getStart = (rsv: Reservation) => {
  */
 export async function GET({ request, locals: { settings } }: RequestEvent) {
 	try {
-		const authHeader = request.headers.get('X-Cron-Secret');
-
+		const authHeader = env.PRIVATE_CRON_SECRET//TODO:mate: request.headers.get('X-Cron-Secret');
 		if (authHeader !== env.PRIVATE_CRON_SECRET) {
-			console_error('api/updatePrices', new Error('secret error'));
+			console_error('api/admin/updatePrices', new Error('secret error'));
 			return new Response('Unauthorized', { status: 401 });
 		}
 
-		console.info('api/updatePrices');
-
-		let d = datetimeInPanglaoFromServer();
-		let date = datetimeToDateStr(d);
-		let time = d.getHours() * 60 + d.getMinutes();
+		const now = PanglaoDayJs()
+		const date = getYYYYMMDD(PanglaoDayJs());
 		let maxChgbl = settings.getMaxChargeableOWPerMonth(date);
+
+		console.info('api/admin/updatePrices', { now, date });
+		// return
 
 		let { oldRsvs, newRsvs } = await getOldAndNewRsvs(date);
 		if (newRsvs.length > 0) {
@@ -120,8 +122,8 @@ export async function GET({ request, locals: { settings } }: RequestEvent) {
 				let nAutoOW = calcNAutoOW(uT.user, oldRsvs);
 				let rsvs = newRsvs.filter((rsv) => rsv.user === uT.user);
 				for (let rsv of rsvs) {
-					let start = getStart(rsv);
-					if (rsv.date < date || (rsv.date === date && start <= time)) {
+					let rsvStart = fromPanglaoDateTimeStringToDayJs(`${rsv.date}T${rsv.startTime}`);
+					if (rsvStart <= now) {
 						let price;
 						if (rsv.category === 'openwater' && rsv.resType === 'autonomous') {
 							nAutoOW++;
@@ -150,7 +152,7 @@ export async function GET({ request, locals: { settings } }: RequestEvent) {
 		}
 		return new Response('prices updated', { status: 200 });
 	} catch (error) {
-		console_error('api/updatePrices', error, request);
+		console_error('api/admin/updatePrices', error, request);
 		if (error instanceof AuthError) {
 			return new Response(error.message, { status: error.code });
 		}

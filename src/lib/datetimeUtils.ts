@@ -7,6 +7,8 @@ dayjs.extend(timezone);
 
 export { dayjs };
 
+export const fromPanglaoDateTimeStringToDayJs = (date: string) => dayjs(date).tz('Asia/Manila', true);
+
 export const PanglaoDayJs = (date?: string | number | dayjs.Dayjs | Date | null | undefined) => dayjs(date).tz('Asia/Manila');
 
 export const PanglaoDate = () => PanglaoDayJs().toDate();
@@ -18,13 +20,6 @@ export const firstOfMonthStr = (dateStr: string) => {
 
 export function datetimeToLocalDateStr(datetime: Date | string) {
 	return dayjs(datetime).locale('en-US').format('YYYY-MM-DD');
-}
-
-export function datetimeToDateStr(dt: Date) {
-	let year = dt.getFullYear();
-	let month = dt.getMonth() + 1;
-	let day = dt.getDate();
-	return year + '-' + month.toString().padStart(2, '0') + '-' + day.toString().padStart(2, '0');
 }
 
 export const minToTimeStr = (min: number) =>

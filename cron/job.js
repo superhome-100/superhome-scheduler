@@ -9,7 +9,7 @@
 worker_default.scheduled = async (event, env, ctx) => {
 	// You can use example.com or any other origin as long as it's a fully-qualified URL.
 	// Replace /_cron with any path of your choosing, preferably one with some secret key so outsiders cannot trigger your cron jobs arbitrarily.
-	const req = new Request('https://internal/api/updatePrices', {
+	const req = new Request('https://internal/api/admin/updatePrices', {
 		method: 'GET',
 		headers: {
 			'X-Cron-Secret': env.PRIVATE_CRON_SECRET
