@@ -6,8 +6,6 @@ import {
     REALTIME_CHANNEL_STATES,
     REALTIME_SUBSCRIBE_STATES
 } from '@supabase/supabase-js'
-import { storedCore_params } from "./stores";
-
 
 const EVENTS = [
     'Boats',

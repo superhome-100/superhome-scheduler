@@ -32,4 +32,11 @@ using (
 );
 
 ---
+
+CREATE TRIGGER "Broadcast changes of table: DaySettings"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."DaySettings"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
 ---

@@ -78,6 +78,13 @@ using (
 
 ---
 
+CREATE TRIGGER "Broadcast changes of table: Users"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."Users"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
+
 CREATE OR REPLACE FUNCTION public.sync_auth_user_to_users()
   RETURNS trigger
   LANGUAGE plpgsql
@@ -215,6 +222,13 @@ to authenticated
 using (
   TRUE
 );
+
+---
+
+-- CREATE TRIGGER "Broadcast changes of table: UserSessions"
+-- AFTER INSERT OR UPDATE OR DELETE ON "public"."UserSessions"
+-- FOR EACH ROW
+-- EXECUTE FUNCTION "public"."broadcast_table_changes"();
 
 ---
 ---

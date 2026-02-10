@@ -56,7 +56,7 @@ create table "public"."Reservations" (
     "price" bigint null,
 
     CONSTRAINT Reservations_pkey primary KEY ("id"),
-    CONSTRAINT Reservations_user_key foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete set null,
+    CONSTRAINT Reservations_user_key foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete restrict,
     CONSTRAINT "Reservations:cannot have overlapping same user,date,[time)"
         EXCLUDE USING gist (
             "user" WITH =,
@@ -87,6 +87,13 @@ to authenticated
 using (
   (SELECT public.is_active())
 );
+
+---
+
+CREATE TRIGGER "Broadcast changes of table: Reservations"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."Reservations"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
 
 ---
 
@@ -139,6 +146,13 @@ using (
 );
 
 ---
+
+CREATE TRIGGER "Broadcast changes of table: Settings"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."Settings"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
 ---
 
 create table "public"."Buoys" (
@@ -176,6 +190,13 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
+
+CREATE TRIGGER "Broadcast changes of table: Buoys"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."Buoys"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
 ---
 
 create table "public"."Boats" (
@@ -208,6 +229,13 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
+
+CREATE TRIGGER "Broadcast changes of table: Boats"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."Boats"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
 ---
 
 create table "public"."PriceTemplates" (
@@ -238,6 +266,13 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
+
+-- CREATE TRIGGER "Broadcast changes of table: PriceTemplates"
+-- AFTER INSERT OR UPDATE OR DELETE ON "public"."PriceTemplates"
+-- FOR EACH ROW
+-- EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
 ---
 
 create table "public"."UserPriceTemplates" (
@@ -250,8 +285,8 @@ create table "public"."UserPriceTemplates" (
     "endDate" text null default 'default',
 
     constraint UserPriceTemplates_pkey primary key ("id"),
-    constraint UserPriceTemplates_user_key foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete set null,
-    constraint UserPriceTemplates_priceTemplate_key foreign KEY ("priceTemplate") references "public"."PriceTemplates" ("id") on update cascade on delete cascade
+    constraint UserPriceTemplates_user_key foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete restrict,
+    constraint UserPriceTemplates_priceTemplate_key foreign KEY ("priceTemplate") references "public"."PriceTemplates" ("id") on update cascade on delete restrict
 ) TABLESPACE pg_default;
 
 alter table "public"."UserPriceTemplates" enable row level security;
@@ -262,6 +297,13 @@ CREATE TRIGGER "trigger_set_updatedAt_to_now_on_UserPriceTemplates"
 BEFORE UPDATE ON "public"."UserPriceTemplates"
 FOR EACH ROW
 EXECUTE FUNCTION set_updatedAt_to_now();
+
+---
+
+-- CREATE TRIGGER "Broadcast changes of table: UserPriceTemplates"
+-- AFTER INSERT OR UPDATE OR DELETE ON "public"."UserPriceTemplates"
+-- FOR EACH ROW
+-- EXECUTE FUNCTION "public"."broadcast_table_changes"();
 
 ---
 ---
@@ -299,6 +341,13 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
+
+CREATE TRIGGER "Broadcast changes of table: BuoyGroupings"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."BuoyGroupings"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
 ---
 
 create type "public"."notification_status" as enum (
@@ -327,6 +376,13 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
+
+CREATE TRIGGER "Broadcast changes of table: Notifications"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."Notifications"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
 ---
 
 create table "public"."NotificationReceipts" (
@@ -340,6 +396,13 @@ create table "public"."NotificationReceipts" (
 ) TABLESPACE pg_default;
 
 alter table "public"."NotificationReceipts" enable row level security;
+
+---
+
+-- CREATE TRIGGER "Broadcast changes of table: NotificationReceipts"
+-- AFTER INSERT OR UPDATE OR DELETE ON "public"."NotificationReceipts"
+-- FOR EACH ROW
+-- EXECUTE FUNCTION "public"."broadcast_table_changes"();
 
 ---
 
