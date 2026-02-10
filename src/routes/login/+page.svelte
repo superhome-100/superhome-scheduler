@@ -47,7 +47,7 @@
 	<!-- Google Login Button -->
 	<button
 		type="button"
-		class="btn bg-white text-black border-[#e5e5e5] w-full h-12 text-base font-medium gap-3"
+		class="btn bg-blue-500 text-black border-[#e5e5e5] w-full h-24 text-base font-medium gap-3"
 		on:click={handleGoogleLogin}
 		disabled={false}
 		aria-label="Sign in with Google"
@@ -74,7 +74,7 @@
 		<!-- Facebook Login Button -->
 		<button
 			type="button"
-			class="btn bg-[#1A77F2] text-white border-[#005fd8] w-full h-12 text-base font-medium gap-3 mt-2"
+			class="btn bg-[#1A77F2] text-white border-[#005fd8] w-full h-24 text-base font-medium gap-3 mt-2"
 			on:click={handleFacebookLogin}
 			disabled={false}
 			aria-label="Sign in with Facebook"
