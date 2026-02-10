@@ -4,8 +4,7 @@ import { checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import { pushNotificationService } from '$lib/server/push';
 import dayjs from 'dayjs';
 import type { Reservation, ReservationCategory } from '$types';
-import { getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
-import { dayJsInPanglaoFromServer } from '$lib/server/datetimeUtils';
+import { fromPanglaoDateTimeStringToDayJs, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
 
 interface RequestBody {
 	title: string;
@@ -33,7 +32,7 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 		if (!body) throw Error('missing body');
 		if (!happeningInTheNextHours) throw Error('missing happeningInTheNextHours');
 
-		const from = dayJsInPanglaoFromServer();
+		const from = PanglaoDayJs();
 		const until = from.add(Number(happeningInTheNextHours), "hours");
 		const fromStr = getYYYYMMDD(from);
 		const untilStr = getYYYYMMDD(until);
@@ -53,7 +52,7 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 		const { data } = await query
 			.overrideTypes<ResX[]>()
 			.throwOnError();
-		data.forEach(rsv => { rsv._dt = PanglaoDayJs(rsv.date + 'T' + rsv.startTime); });
+		data.forEach(rsv => { rsv._dt = fromPanglaoDateTimeStringToDayJs(rsv.date, rsv.startTime); });
 		const matches = data.filter(r => from <= r._dt && r._dt <= until);
 
 		const res = await Promise.all(matches.map(async (r) => {

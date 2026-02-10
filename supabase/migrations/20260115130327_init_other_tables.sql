@@ -242,16 +242,16 @@ create table "public"."PriceTemplates" (
     "id" text not null default gen_random_uuid()::text,
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
-    "coachOW" bigint null,
-    "coachPool" bigint null,
-    "coachClassroom" bigint null,
-    "autoOW" bigint null,
-    "autoPool" bigint null,
-    "cbsOW" bigint null default 0,
-    "proSafetyOW" bigint null default 0,
-    "platformOW" bigint null default 0,
-    "platformCBSOW" bigint null default 0,
-    "comp-setupOW" bigint null default 0,
+    "coachOW" bigint not null,
+    "coachPool" bigint not null,
+    "coachClassroom" bigint not null,
+    "autoOW" bigint not null,
+    "autoPool" bigint not null,
+    "cbsOW" bigint not null,
+    "proSafetyOW" bigint not null,
+    "platformOW" bigint not null,
+    "platformCBSOW" bigint not null,
+    "comp-setupOW" bigint not null,
 
     constraint PriceTemplates_pkey primary key ("id")
 ) TABLESPACE pg_default;
@@ -279,13 +279,12 @@ create table "public"."UserPriceTemplates" (
     "id" text not null default gen_random_uuid()::text,
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
-    "user" text null /* link: Users */,
+    "user" text not null /* link: Users */,
     "priceTemplate" text not null /* link: PriceTemplates */,
-    "startDate" text null default 'default',
-    "endDate" text null default 'default',
 
     constraint UserPriceTemplates_pkey primary key ("id"),
-    constraint UserPriceTemplates_user_key foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete restrict,
+    constraint UserPriceTemplates_user_unique unique ("user"),
+    constraint UserPriceTemplates_user_fkey foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete restrict,
     constraint UserPriceTemplates_priceTemplate_key foreign KEY ("priceTemplate") references "public"."PriceTemplates" ("id") on update cascade on delete restrict
 ) TABLESPACE pg_default;
 
@@ -304,6 +303,18 @@ EXECUTE FUNCTION set_updatedAt_to_now();
 -- AFTER INSERT OR UPDATE OR DELETE ON "public"."UserPriceTemplates"
 -- FOR EACH ROW
 -- EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
+
+create view "public"."ReservationsWithPrices" 
+with (security_invoker = true) -- Important for RLS
+as
+  select r.*
+        , to_jsonb(pt.*) as "priceTemplate"
+  from public."Reservations" r
+  left join public."UserPriceTemplates" up on r."user" = up."user" -- same as inner
+  left join public."PriceTemplates" pt on up."priceTemplate" = pt."id" -- same as inner
+;
 
 ---
 ---

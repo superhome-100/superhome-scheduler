@@ -125,11 +125,15 @@ const reservationDetails = (rsv: Reservation) => {
 const upperFirst = (s: string) => s.length > 0 ? s[0].toUpperCase() + s.substring(1) : '';
 
 const shortDateTime = (rsv: Reservation) => {
-    const dt = fromPanglaoDateTimeStringToDayJs(rsv.date + 'T' + rsv.startTime);
-    if (dt.diff(dayjs(), 'hours') < 24) {
-        return 'at Tomorrow❗️'
+    const rsvStart = fromPanglaoDateTimeStringToDayJs(rsv.date, rsv.startTime);
+    const now = dayjs()
+    if (rsvStart.isSame(now, 'day')) {
+        return 'Today❗️'
     }
-    else return dt.format('DD/MMM hh:mm')
+    if (rsvStart.isSame(now.add(1, 'day'), 'day')) {
+        return 'Tomorrow❗️'
+    }
+    return rsvStart.format('DD/MMM hh:mm')
 };
 
 const reservationStatusIcon = (rsv: Reservation) => {

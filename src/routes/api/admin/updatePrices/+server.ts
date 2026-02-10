@@ -1,35 +1,20 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import {
-	datetimeToDateStr,
-	timeStrToMin,
 	firstOfMonthStr,
-	dayjs,
 	fromPanglaoDateTimeStringToDayJs,
 	PanglaoDayJs,
 	getYYYYMMDD
 } from '$lib/datetimeUtils';
 import { AuthError, supabaseServiceRole } from '$lib/server/supabase';
-import { ReservationStatus, type Reservation } from '$types';
+import { ReservationStatus, type Reservation, type ReservationWithPrices } from '$types';
 import { console_error } from '$lib/server/sentry';
+import type { Tables } from '$lib/supabase.types';
+import { getSettingsManager } from '$lib/settings';
 
 const unpackTemplate = (uT: {
-	user: string | null;
-	PriceTemplates: {
-		autoOW: number | null;
-		autoPool: number | null;
-		cbsOW: number | null;
-		coachClassroom: number | null;
-		coachOW: number | null;
-		coachPool: number | null;
-		'comp-setupOW': number | null;
-		createdAt: string;
-		id: string;
-		platformCBSOW: number | null;
-		platformOW: number | null;
-		proSafetyOW: number | null;
-		updatedAt: string;
-	};
+	user: string;
+	PriceTemplates: Tables<'PriceTemplates'>;
 }) => {
 	return {
 		pool: {
@@ -51,19 +36,6 @@ const unpackTemplate = (uT: {
 	};
 };
 
-async function getOldAndNewRsvs(date: string) {
-	const { data: reservations } = await supabaseServiceRole
-		.from('Reservations')
-		.select('*')
-		.gte('date', firstOfMonthStr(date))
-		.lte('date', date)
-		.eq('status', ReservationStatus.confirmed)
-		.throwOnError();
-	let oldRsvs = reservations.filter((rsv) => rsv.price != null);
-	let newRsvs = reservations.filter((rsv) => rsv.price == null);
-	return { oldRsvs, newRsvs };
-}
-
 async function getTemplates(newRsvs: Reservation[]) {
 	const uIds = Array.from(new Set(newRsvs.map((rsv) => rsv.user)));
 	const { data: userTemplates } = await supabaseServiceRole
@@ -73,19 +45,15 @@ async function getTemplates(newRsvs: Reservation[]) {
 		.throwOnError();
 	return userTemplates;
 }
-
 const calcNAutoOW = (user: string | null, oldRsvs: Reservation[]) => {
 	return oldRsvs.filter((rsv) => {
 		return rsv.user === user && rsv.resType === 'autonomous' && rsv.category === 'openwater';
 	}).length;
 };
 
-const getStart = (rsv: Reservation) => {
-	return timeStrToMin(rsv.startTime);
-};
-
 /**
- * Between 8 am to 8 pm, evey 1 hour, check reservations that are in completed status, if the price is not Null, set the price, If it's already manually set, leave the existing numbers.
+ * Between 8 am to 8 pm, evey 1 hour, check reservations that are in completed status, if the price is not Null, set the price, 
+ * If it's already manually set, leave the existing numbers.
  * price just need to match the price template that assigned to that use, and follow below rules:
  * coaching session such as for OW, price = coachOW x Number of students (free for instructor)
  * autonomous session such as for OW, price = autoOW (x 1).
@@ -97,8 +65,9 @@ const getStart = (rsv: Reservation) => {
  * - autoPool: Pool autonomous
  * - platformOW: OW autonomous on Platform
  * - platformCBSOW: OW autonomous on Platform + CBS
+ * - there is a maximum chargable settings, see code
  */
-export async function GET({ request, locals: { settings } }: RequestEvent) {
+export async function GET({ request }: RequestEvent) {
 	try {
 		const authHeader = env.PRIVATE_CRON_SECRET//TODO:mate: request.headers.get('X-Cron-Secret');
 		if (authHeader !== env.PRIVATE_CRON_SECRET) {
@@ -107,20 +76,32 @@ export async function GET({ request, locals: { settings } }: RequestEvent) {
 		}
 
 		const now = PanglaoDayJs()
-		const date = getYYYYMMDD(PanglaoDayJs());
-		let maxChgbl = settings.getMaxChargeableOWPerMonth(date);
+		const nowDay = getYYYYMMDD(PanglaoDayJs());
+		// need to use supabaseServiceRole because this code run from scheduled worker without user
+		let maxChgbl = (await getSettingsManager(supabaseServiceRole)).getMaxChargeableOWPerMonth(nowDay);
 
-		console.info('api/admin/updatePrices', { now, date });
-		// return
+		console.info('api/admin/updatePrices', { now, nowDay, maxChgbl });
 
-		let { oldRsvs, newRsvs } = await getOldAndNewRsvs(date);
+		const { data: reservations } = await supabaseServiceRole
+			.from('ReservationsWithPrices')
+			.select('*')
+			.gte('date', firstOfMonthStr(nowDay))
+			.lte('date', nowDay)
+			.eq('status', ReservationStatus.confirmed)
+			.order("date")
+			.order("startTime")
+			.overrideTypes<ReservationWithPrices[]>()
+			.throwOnError();
+
+		const oldRsvs = reservations.filter((rsv) => rsv.price != null);
+		const newRsvs = reservations.filter((rsv) => rsv.price == null);
 		if (newRsvs.length > 0) {
 			let userTemplates = await getTemplates(newRsvs);
 
 			for (let uT of userTemplates) {
-				let tmp = unpackTemplate(uT);
+				const tmp = unpackTemplate(uT);
 				let nAutoOW = calcNAutoOW(uT.user, oldRsvs);
-				let rsvs = newRsvs.filter((rsv) => rsv.user === uT.user);
+				const rsvs = newRsvs.filter((rsv) => rsv.user === uT.user);
 				for (let rsv of rsvs) {
 					let rsvStart = fromPanglaoDateTimeStringToDayJs(`${rsv.date}T${rsv.startTime}`);
 					if (rsvStart <= now) {
@@ -133,7 +114,10 @@ export async function GET({ request, locals: { settings } }: RequestEvent) {
 								price = tmp[rsv.category][rsv.resType];
 							}
 						} else {
-							price = tmp[rsv.category][rsv.resType];
+							const categoryPrice = tmp[rsv.category];
+							if (!(rsv.resType in categoryPrice))
+								throw Error(`assert ${rsv.id}: ${rsv.resType} !in ${categoryPrice}`);
+							price = categoryPrice[rsv.resType];
 							if (rsv.resType === 'course') {
 								if (!rsv.numStudents) throw Error(`numStudents error: ${rsv.id}`);
 								price *= rsv.numStudents;

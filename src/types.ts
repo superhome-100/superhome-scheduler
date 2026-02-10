@@ -156,3 +156,5 @@ export type DateReservationSummary = {
 
 export type Notification = Tables<'Notifications'>;
 export type BuoyGrouping = Tables<'BuoyGroupings'>;
+
+export type ReservationWithPrices = Tables<'Reservations'> & { priceTemplate: Tables<'PriceTemplates'> };
