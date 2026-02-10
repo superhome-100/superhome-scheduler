@@ -42,8 +42,6 @@ export const firstOfMonthStr = (dateStr: string) => {
 	return m[1] + '01';
 };
 
-const PhilippinesTimezoneOffset = -480;
-
 export const PanglaoDayJs = (date?: string | number | dayjs.Dayjs | Date | null | undefined) => dayjs(date).tz('Asia/Manila');
 
 export const PanglaoDate = () => new Date(dayjs().tz('Asia/Manila').$d);
@@ -57,12 +55,6 @@ export function datetimeToDateStr(dt: Date) {
 	let month = dt.getMonth() + 1;
 	let day = dt.getDate();
 	return year + '-' + month.toString().padStart(2, '0') + '-' + day.toString().padStart(2, '0');
-}
-
-// the server's local time is always UTC regardless of its physical location
-export function datetimeInPanglaoFromServer() {
-	let d = new Date();
-	return new Date(d.getTime() - PhilippinesTimezoneOffset * 60000);
 }
 
 export const minToTimeStr = (min: number) =>

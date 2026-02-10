@@ -2,13 +2,13 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import {
 	datetimeToDateStr,
-	datetimeInPanglaoFromServer,
 	timeStrToMin,
 	firstOfMonthStr
 } from '$lib/datetimeUtils';
 import { AuthError, supabaseServiceRole } from '$lib/server/supabase';
 import { ReservationStatus, type Reservation } from '$types';
 import { console_error } from '$lib/server/sentry';
+import { datetimeInPanglaoFromServer } from '$lib/server/datetimeUtils';
 
 const unpackTemplate = (uT: {
 	user: string | null;

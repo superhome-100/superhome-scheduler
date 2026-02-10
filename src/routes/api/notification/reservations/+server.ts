@@ -5,6 +5,7 @@ import { pushNotificationService } from '$lib/server/push';
 import dayjs from 'dayjs';
 import type { Reservation, ReservationCategory } from '$types';
 import { getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
+import { dayJsInPanglaoFromServer } from '$lib/server/datetimeUtils';
 
 interface RequestBody {
 	title: string;
@@ -19,25 +20,29 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 	try {
 		checkAuthorisation(user, 'admin');
 
-		const { title,
+		const requestJson = (await request.json()) as RequestBody;
+		const {
+			title,
 			body,
 			happeningInTheNextHours,
 			category,
 			owTime
-		} = (await request.json()) as RequestBody;
+		} = requestJson;
 
 		if (!title) throw Error('missing title');
 		if (!body) throw Error('missing body');
 		if (!happeningInTheNextHours) throw Error('missing happeningInTheNextHours');
 
-		const from = PanglaoDayJs();
+		const from = dayJsInPanglaoFromServer();
 		const until = from.add(Number(happeningInTheNextHours), "hours");
+		const fromStr = getYYYYMMDD(from);
+		const untilStr = getYYYYMMDD(until);
 
 		let query = supabaseServiceRole
 			.from("Reservations")
 			.select("*")
-			.gte("date", getYYYYMMDD(from))
-			.lte("date", getYYYYMMDD(until))
+			.gte("date", fromStr)
+			.lte("date", untilStr)
 		if (category) {
 			query = query.eq("category", category as ReservationCategory)
 		}
@@ -58,6 +63,8 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 		const resSum = res.flat().reduce((prev, curr) => {
 			prev.success += curr.success; prev.failure += curr.failure; return prev
 		}, { success: 0, failure: 0 })
+
+		console.info('api/notification/reservations sent', requestJson, { from, until }, resSum);
 
 		return json({
 			status: 'success', data: resSum
