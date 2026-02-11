@@ -489,7 +489,7 @@
 		on:mouseup={handleOuterMouseup}
 		bind:this={background}
 		transition:currentTransitionBg|global={state.transitionBgProps}
-		style={cssBg}
+		style="{cssBg}; top:{scrollY}px"
 	>
 		<div
 			class={state.classWindowWrap}

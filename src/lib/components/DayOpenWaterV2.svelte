@@ -25,7 +25,7 @@
 	import type { SettingsManager } from '$lib/settingsManager';
 
 	export let date: string;
-	export let reservations: Reservation[];
+	export let reservations: ReservationEx[];
 	export let settingsManager: SettingsManager;
 
 	$: isAmFull = $storedDaySettings[ow_am_full];
