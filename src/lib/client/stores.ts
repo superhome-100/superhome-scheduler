@@ -101,6 +101,7 @@ function readableWithSubscriptionToCore<T>(
             cacheVal = undefined;
             safeCb();
         }, event, ...events);
+        safeCb();
         return () => {
             // console.log("store.unsub", variableName)
             unsubCs();
@@ -164,6 +165,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
             cache.clear();
             safeCb()
         }, event, ...events);
+        safeCb();
         return () => {
             // console.log("store.unsub", variableName);
             unsubCs();
