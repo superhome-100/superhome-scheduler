@@ -7,6 +7,7 @@ create table "public"."DaySettings" (
   "value" jsonb not null,
   "createdAt" timestamp with time zone not null default now(),
   "updatedAt" timestamp with time zone not null default now(),
+  
   constraint DaySettings_pkey primary key ("date", "key")
 ) TABLESPACE pg_default;
 
@@ -30,6 +31,13 @@ to authenticated
 using (
   TRUE
 );
+
+---
+
+CREATE TRIGGER "Broadcast changes of table: DaySettings"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."DaySettings"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
 
 ---
 ---

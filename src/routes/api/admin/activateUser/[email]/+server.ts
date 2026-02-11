@@ -14,7 +14,7 @@ export async function GET({ params, locals: { user } }: RequestEvent) {
 			.from("Users")
 			.update({ status: UserStatus.active })
 			.select("*")
-			.or(`email.eq.${email},id.eq.${email}`)
+			.eq("email", email)
 			.single()
 			.throwOnError();
 
@@ -23,6 +23,6 @@ export async function GET({ params, locals: { user } }: RequestEvent) {
 		if (error instanceof AuthError) {
 			return json({ status: 'error', error: error.message }, { status: error.code });
 		}
-		return json({ status: 'error', error });
+		return json({ status: 'error', error }, { status: 500 });
 	}
 }

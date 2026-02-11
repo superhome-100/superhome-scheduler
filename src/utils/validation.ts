@@ -193,7 +193,7 @@ function simulateBuddyGroup(sub: Submission) {
 
 export const throwIfUserIsDisabled = async (userIds: string[]) => {
 	const users = await getUsersById(userIds);
-	users.map((user) => {
+	users.forEach((user) => {
 		if (user == null) throw new Error('invalid user Id');
 		if (user.status === 'disabled') {
 			throw new ValidationError(

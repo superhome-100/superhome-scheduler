@@ -38,7 +38,7 @@ export type Database = {
 				Insert: {
 					assignments?: string | null;
 					createdAt?: string;
-					id?: string;
+					id: string;
 					updatedAt?: string;
 				};
 				Update: {
@@ -65,7 +65,7 @@ export type Database = {
 					comment?: string | null;
 					createdAt?: string;
 					date?: string;
-					id: string;
+					id?: string;
 					updatedAt?: string;
 				};
 				Update: {
@@ -208,48 +208,48 @@ export type Database = {
 			};
 			PriceTemplates: {
 				Row: {
-					autoOW: number | null;
-					autoPool: number | null;
-					cbsOW: number | null;
-					coachClassroom: number | null;
-					coachOW: number | null;
-					coachPool: number | null;
-					'comp-setupOW': number | null;
+					autoOW: number;
+					autoPool: number;
+					cbsOW: number;
+					coachClassroom: number;
+					coachOW: number;
+					coachPool: number;
+					'comp-setupOW': number;
 					createdAt: string;
 					id: string;
-					platformCBSOW: number | null;
-					platformOW: number | null;
-					proSafetyOW: number | null;
+					platformCBSOW: number;
+					platformOW: number;
+					proSafetyOW: number;
 					updatedAt: string;
 				};
 				Insert: {
-					autoOW?: number | null;
-					autoPool?: number | null;
-					cbsOW?: number | null;
-					coachClassroom?: number | null;
-					coachOW?: number | null;
-					coachPool?: number | null;
-					'comp-setupOW'?: number | null;
+					autoOW: number;
+					autoPool: number;
+					cbsOW: number;
+					coachClassroom: number;
+					coachOW: number;
+					coachPool: number;
+					'comp-setupOW': number;
 					createdAt?: string;
-					id?: string;
-					platformCBSOW?: number | null;
-					platformOW?: number | null;
-					proSafetyOW?: number | null;
+					id: string;
+					platformCBSOW: number;
+					platformOW: number;
+					proSafetyOW: number;
 					updatedAt?: string;
 				};
 				Update: {
-					autoOW?: number | null;
-					autoPool?: number | null;
-					cbsOW?: number | null;
-					coachClassroom?: number | null;
-					coachOW?: number | null;
-					coachPool?: number | null;
-					'comp-setupOW'?: number | null;
+					autoOW?: number;
+					autoPool?: number;
+					cbsOW?: number;
+					coachClassroom?: number;
+					coachOW?: number;
+					coachPool?: number;
+					'comp-setupOW'?: number;
 					createdAt?: string;
 					id?: string;
-					platformCBSOW?: number | null;
-					platformOW?: number | null;
-					proSafetyOW?: number | null;
+					platformCBSOW?: number;
+					platformOW?: number;
+					proSafetyOW?: number;
 					updatedAt?: string;
 				};
 				Relationships: [];
@@ -362,60 +362,51 @@ export type Database = {
 			Settings: {
 				Row: {
 					createdAt: string;
-					endDate: string;
+					endDate: string | null;
 					id: string;
-					name: string;
-					startDate: string;
+					name: Database['public']['Enums']['setting_name'];
+					startDate: string | null;
 					updatedAt: string;
-					value: string;
+					value: Json;
 				};
 				Insert: {
 					createdAt?: string;
-					endDate?: string;
+					endDate?: string | null;
 					id?: string;
-					name: string;
-					startDate?: string;
+					name: Database['public']['Enums']['setting_name'];
+					startDate?: string | null;
 					updatedAt?: string;
-					value: string;
+					value: Json;
 				};
 				Update: {
 					createdAt?: string;
-					endDate?: string;
+					endDate?: string | null;
 					id?: string;
-					name?: string;
-					startDate?: string;
+					name?: Database['public']['Enums']['setting_name'];
+					startDate?: string | null;
 					updatedAt?: string;
-					value?: string;
+					value?: Json;
 				};
 				Relationships: [];
 			};
 			UserPriceTemplates: {
 				Row: {
 					createdAt: string;
-					endDate: string | null;
-					id: string;
 					priceTemplate: string;
-					startDate: string | null;
 					updatedAt: string;
-					user: string | null;
+					user: string;
 				};
 				Insert: {
 					createdAt?: string;
-					endDate?: string | null;
-					id?: string;
 					priceTemplate: string;
-					startDate?: string | null;
 					updatedAt?: string;
-					user?: string | null;
+					user: string;
 				};
 				Update: {
 					createdAt?: string;
-					endDate?: string | null;
-					id?: string;
 					priceTemplate?: string;
-					startDate?: string | null;
 					updatedAt?: string;
-					user?: string | null;
+					user?: string;
 				};
 				Relationships: [
 					{
@@ -426,16 +417,16 @@ export type Database = {
 						referencedColumns: ['id'];
 					},
 					{
-						foreignKeyName: 'userpricetemplates_user_key';
+						foreignKeyName: 'userpricetemplates_user_fkey';
 						columns: ['user'];
-						isOneToOne: false;
+						isOneToOne: true;
 						referencedRelation: 'Users';
 						referencedColumns: ['id'];
 					},
 					{
-						foreignKeyName: 'userpricetemplates_user_key';
+						foreignKeyName: 'userpricetemplates_user_fkey';
 						columns: ['user'];
-						isOneToOne: false;
+						isOneToOne: true;
 						referencedRelation: 'UsersMinimal';
 						referencedColumns: ['id'];
 					}
@@ -460,7 +451,7 @@ export type Database = {
 					authProvider?: string | null;
 					createdAt?: string;
 					email?: string | null;
-					id: string;
+					id?: string;
 					metadata?: Json | null;
 					name: string;
 					nickname: string;
@@ -582,6 +573,54 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			ReservationsWithPrices: {
+				Row: {
+					allowAutoAdjust: boolean | null;
+					bottomPlate: boolean | null;
+					buddies: string[] | null;
+					buoy: string | null;
+					category: Database['public']['Enums']['reservation_category'] | null;
+					comments: string | null;
+					createdAt: string | null;
+					date: string | null;
+					endTime: string | null;
+					extraBottomWeight: boolean | null;
+					id: string | null;
+					lanes: string[] | null;
+					largeBuoy: boolean | null;
+					maxDepth: number | null;
+					numStudents: number | null;
+					O2OnBuoy: boolean | null;
+					owner: boolean | null;
+					owTime: string | null;
+					price: number | null;
+					priceTemplate: Json | null;
+					pulley: boolean | null;
+					resType: Database['public']['Enums']['reservation_type'] | null;
+					room: string | null;
+					shortSession: boolean | null;
+					startTime: string | null;
+					status: Database['public']['Enums']['reservation_status'] | null;
+					updatedAt: string | null;
+					user: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'reservations_user_key';
+						columns: ['user'];
+						isOneToOne: false;
+						referencedRelation: 'Users';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'reservations_user_key';
+						columns: ['user'];
+						isOneToOne: false;
+						referencedRelation: 'UsersMinimal';
+						referencedColumns: ['id'];
+					}
+				];
+			};
 			UsersMinimal: {
 				Row: {
 					id: string | null;
@@ -665,6 +704,31 @@ export type Database = {
 				| 'competitionSetupCBS'
 				| 'course'
 				| 'proSafety';
+			setting_name:
+				| 'boats'
+				| 'cancelationCutOffTime'
+				| 'cbsAvailable'
+				| 'classroomBookable'
+				| 'classroomLabel'
+				| 'classrooms'
+				| 'maxChargeableOWPerMonth'
+				| 'maxClassroomEndTime'
+				| 'maxPoolEndTime'
+				| 'minClassroomStartTime'
+				| 'minPoolStartTime'
+				| 'openForBusiness'
+				| 'openwaterAmBookable'
+				| 'openwaterAmEndTime'
+				| 'openwaterAmStartTime'
+				| 'openwaterPmBookable'
+				| 'openwaterPmEndTime'
+				| 'openwaterPmStartTime'
+				| 'poolBookable'
+				| 'poolLabel'
+				| 'poolLanes'
+				| 'reservationCutOffTime'
+				| 'reservationIncrement'
+				| 'reservationLeadTimeDays';
 			user_privilege: 'normal' | 'admin';
 			user_status: 'active' | 'disabled';
 		};
@@ -806,6 +870,32 @@ export const Constants = {
 				'competitionSetupCBS',
 				'course',
 				'proSafety'
+			],
+			setting_name: [
+				'boats',
+				'cancelationCutOffTime',
+				'cbsAvailable',
+				'classroomBookable',
+				'classroomLabel',
+				'classrooms',
+				'maxChargeableOWPerMonth',
+				'maxClassroomEndTime',
+				'maxPoolEndTime',
+				'minClassroomStartTime',
+				'minPoolStartTime',
+				'openForBusiness',
+				'openwaterAmBookable',
+				'openwaterAmEndTime',
+				'openwaterAmStartTime',
+				'openwaterPmBookable',
+				'openwaterPmEndTime',
+				'openwaterPmStartTime',
+				'poolBookable',
+				'poolLabel',
+				'poolLanes',
+				'reservationCutOffTime',
+				'reservationIncrement',
+				'reservationLeadTimeDays'
 			],
 			user_privilege: ['normal', 'admin'],
 			user_status: ['active', 'disabled']

@@ -1,6 +1,11 @@
 import { debounce } from "ts-debounce";
 import type { Database } from '$lib/supabase.types'
-import { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js'
+import {
+    SupabaseClient,
+    RealtimeChannel,
+    REALTIME_CHANNEL_STATES,
+    REALTIME_SUBSCRIBE_STATES
+} from '@supabase/supabase-js'
 
 const EVENTS = [
     'Boats',
@@ -21,8 +26,23 @@ type Unsubscribe = () => void
 export class SupabaseEventSource {
     private channel: RealtimeChannel | null = null;
     private readonly subscribers = new Map<EventType, Set<Subscriber>>()
+    private _channelStatus: REALTIME_SUBSCRIBE_STATES | undefined = undefined;
 
+    get channelStatus(): REALTIME_SUBSCRIBE_STATES | undefined {
+        return this._channelStatus;
+    }
+
+    /**
+     * @returns `true` if reconnected, `false` otherwise
+     */
     async init(client: SupabaseClient<Database>) {
+        if (this.channel) {
+            if (this.channel.state === REALTIME_CHANNEL_STATES.joined
+                || this.channel.state === REALTIME_CHANNEL_STATES.joining) {
+                return false;
+            }
+            await client.removeChannel(this.channel);
+        }
         await client.realtime.setAuth(); // Needed for Realtime Authorization
         this.channel = client.channel("table_changes", {
             config: { private: true }
@@ -37,7 +57,17 @@ export class SupabaseEventSource {
         }
         this.channel.subscribe((status, err) => {
             console.log('table_changes subscriber', status, err)
+            this._channelStatus = status;
         })
+        return true;
+    }
+
+    async destroy(client: SupabaseClient<Database>) {
+        if (this.channel) {
+            const channel = this.channel;
+            this.channel = null;
+            await client.removeChannel(channel);
+        }
     }
 
     constructor() {
@@ -57,14 +87,16 @@ export class SupabaseEventSource {
         }
     }
 
-    private dispatch(event: EventType, payload: Payload) {
-        for (const fn of this.subscribers.get(event)!) {
-            Promise.resolve().then(fn).catch(e => console.error("SupabaseEventSource subscriber error", event, e, payload))
+    notifyAll() {
+        for (const e of this.subscribers.keys()) {
+            this.dispatch(e, undefined)
         }
     }
 
-    async destroy(client: SupabaseClient) {
-        await client.removeChannel(this.channel!)
+    private dispatch(event: EventType, payload: Payload | undefined) {
+        for (const fn of this.subscribers.get(event)!) {
+            Promise.resolve().then(fn).catch(e => console.error("SupabaseEventSource subscriber error", event, e, payload))
+        }
     }
 }
 

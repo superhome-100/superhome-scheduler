@@ -4,7 +4,7 @@ import { PRIVATE_VAPID_KEY } from '$env/static/private';
 import { supabaseServiceRole } from './supabase';
 import webpush, { type PushSubscription } from 'web-push';
 import type { Reservation, User } from '$types';
-import { dayjs } from '$lib/datetimeUtils';
+import { dayjs, fromPanglaoDateTimeStringToDayJs } from '$lib/datetimeUtils';
 import { LRUCache } from 'lru-cache'
 import type { Json } from '$lib/supabase.types';
 import { getRandomElement } from '$lib/utils';
@@ -25,6 +25,11 @@ const userIdToPushCache = new LRUCache<string, {
     ttl: 1000 * 5 // ms
 })
 
+export type BulkPushResut = {
+    success: number;
+    failure: Error[];
+};
+
 export const pushNotificationService = {
     /**
      * Message will look like:
@@ -32,11 +37,10 @@ export const pushNotificationService = {
      * #2: From Superhome
      * #3: <message>
      */
-    async send(userId: string, title: string, message: string, url: string = '/') {
+    async send(userId: string, title: string, message: string, url: string = '/'): Promise<BulkPushResut> {
         try {
             const pss = await this._getPushSubscriptions(userId);
-
-            return await Promise.allSettled(pss.map(d => {
+            const uRes = await Promise.all(pss.map(d => {
                 return (async (subscription) => {
                     const payload = JSON.stringify({
                         title,
@@ -44,16 +48,21 @@ export const pushNotificationService = {
                         data: { url }
                     });
                     const resp = await webpush.sendNotification(subscription, payload);
-                    console.log('push sent', { user: userId, session: d.sessionId }, resp);
-                    return resp;
+                    console.info('push sent', { user: userId, session: d.sessionId }, resp);
+                    return { success: 1, failure: [] as Error[] };
                 })(d.pushSubscription as unknown as PushSubscription).catch((reason) => {
                     console_error(`couldn't send notification`, { user: userId, session: d.sessionId }, reason);
-                    return reason;
+                    return { success: 0, failure: [reason as Error] };
                 })
             }))
+            return uRes.reduce<BulkPushResut>((prev, curr) => {
+                prev.success += curr.success
+                prev.failure.push(...curr.failure)
+                return prev
+            }, { success: 0, failure: [] as Error[] });
         } catch (e) {
             console_error("pushNotificationService.send", e)
-            return [];
+            return { success: 0, failure: [e as Error] };
         }
     },
 
@@ -72,7 +81,7 @@ export const pushNotificationService = {
 
     async sendSafe(userId: string, title: string, message: string, url: string = '/') {
         try {
-            await this.send(userId, title, message, url);
+            return await this.send(userId, title, message, url);
         } catch (e) {
             console_error("pushNotificationService.send", e)
         }
@@ -121,11 +130,15 @@ const reservationDetails = (rsv: Reservation) => {
 const upperFirst = (s: string) => s.length > 0 ? s[0].toUpperCase() + s.substring(1) : '';
 
 const shortDateTime = (rsv: Reservation) => {
-    const dt = dayjs(rsv.date + 'T' + rsv.startTime);
-    if (dt.diff(dayjs(), 'hours') < 24) {
-        return 'at Tomorrow❗️'
+    const rsvStart = fromPanglaoDateTimeStringToDayJs(rsv.date, rsv.startTime);
+    const now = dayjs()
+    if (rsvStart.isSame(now, 'day')) {
+        return 'Today❗️'
     }
-    else return dt.format('DD/MMM hh:mm')
+    if (rsvStart.isSame(now.add(1, 'day'), 'day')) {
+        return 'Tomorrow❗️'
+    }
+    return rsvStart.format('DD/MMM hh:mm')
 };
 
 const reservationStatusIcon = (rsv: Reservation) => {

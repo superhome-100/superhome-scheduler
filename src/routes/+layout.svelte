@@ -14,11 +14,12 @@
 	import {
 		storedDayReservations_param,
 		storedReservationsSummary_param,
-		storedSettingsW
+		storedSettingsW,
+		storedAppVisibilityW,
+		storedCore_paramsW
 	} from '$lib/client/stores';
 	import { pushService } from '$lib/client/push';
 	import Refresher from '$lib/components/Refresher.svelte';
-	import { coreStore } from '$lib/client/stores';
 	import { getSettingsManager } from '$lib/settingsManager';
 	import * as Sentry from '@sentry/browser';
 
@@ -44,9 +45,26 @@
 	if ($page.route.id && !publicRoutes.includes($page.route.id)) {
 		onMount(async () => {
 			Sentry.setUser(user ? { id: user.id } : null);
-			await supabase_es.init(supabase);
-			coreStore.set({ supabase, user });
-
+			storedAppVisibilityW.set('visible');
+			document.addEventListener('visibilitychange', () => {
+				// by default (no tab change) this value is visible and no event is fired
+				console.log('visibilitychange', document.visibilityState);
+				storedAppVisibilityW.set(document.visibilityState);
+				if (document.visibilityState === 'visible') {
+					supabase_es
+						.init(supabase)
+						.then((isReconnected) => {
+							if (isReconnected) {
+								console.log('supabase_es.notifyAll');
+								supabase_es.notifyAll();
+							}
+						})
+						.catch((reason) => console.error('supabase_es.init', reason));
+				}
+			});
+			await supabase_es.init(supabase).catch((reason) => console.error('supabase_es.init', reason));
+			// fence: do not reorder
+			storedCore_paramsW.set({ supabase, user });
 			if (user) {
 				await pushService.init(user.has_push ?? false);
 			} else {
@@ -61,7 +79,7 @@
 <Refresher {onRefresh}>
 	{#if $page.route.id && !publicRoutes.includes($page.route.id)}
 		<Nprogress />
-		<Sidebar day={$page.params['day'] || ''} />
+		<Sidebar />
 
 		<div id="app" class="flex px-1 mx-auto w-full">
 			<main class="lg:ml-72 w-full mx-auto">

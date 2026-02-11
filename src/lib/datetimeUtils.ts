@@ -7,60 +7,21 @@ dayjs.extend(timezone);
 
 export { dayjs };
 
-export const month2idx: { [key: string]: number } = {
-	January: 0,
-	February: 1,
-	March: 2,
-	April: 3,
-	May: 4,
-	June: 5,
-	July: 6,
-	August: 7,
-	September: 8,
-	October: 9,
-	November: 10,
-	December: 11
-};
+export const fromPanglaoDateTimeStringToDayJs = (date: string, time?: string) =>
+	dayjs(date + (time ? `T${time}` : '')).tz('Asia/Manila', true);
 
-export const idx2month = [
-	'January',
-	'February',
-	'March',
-	'April',
-	'May',
-	'June',
-	'July',
-	'August',
-	'September',
-	'October',
-	'November',
-	'December'
-];
+export const PanglaoDayJs = (date?: string | number | dayjs.Dayjs | Date | null | undefined) =>
+	dayjs(date).tz('Asia/Manila');
+
+export const PanglaoDate = () => PanglaoDayJs().toDate();
 
 export const firstOfMonthStr = (dateStr: string) => {
 	let m = /([0-9]+-[0-9]+-)[0-9]+/.exec(dateStr);
 	return m[1] + '01';
 };
 
-const PhilippinesTimezoneOffset = -480;
-
-export const PanglaoDate = () => new Date(dayjs().tz('Asia/Manila').$d);
-
 export function datetimeToLocalDateStr(datetime: Date | string) {
 	return dayjs(datetime).locale('en-US').format('YYYY-MM-DD');
-}
-
-export function datetimeToDateStr(dt: Date) {
-	let year = dt.getFullYear();
-	let month = dt.getMonth() + 1;
-	let day = dt.getDate();
-	return year + '-' + month.toString().padStart(2, '0') + '-' + day.toString().padStart(2, '0');
-}
-
-// the server's local time is always UTC regardless of its physical location
-export function datetimeInPanglaoFromServer() {
-	let d = new Date();
-	return new Date(d.getTime() - PhilippinesTimezoneOffset * 60000);
 }
 
 export const minToTimeStr = (min: number) =>

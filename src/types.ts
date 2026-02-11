@@ -94,7 +94,7 @@ export type Buoy = Required<Tables<'Buoys'>>;
 
 export interface BuddyData {
 	name: string;
-	userId?: string;
+	userId: string | null;
 	id?: number;
 	matches?: any[];
 }
@@ -103,35 +103,6 @@ export type AppFormData = {
 	has(name: string): boolean
 	get(name: string): string
 };
-
-// if there are new setting type add it here
-export enum SettingTypes {
-	boats = 'boats',
-	cancelationCutOffTime = 'cancelationCutOffTime',
-	cbsAvailable = 'cbsAvailable',
-	classroomBookable = 'classroomBookable',
-	classroomLabel = 'classroomLabel',
-	classrooms = 'classrooms',
-	maxChargeableOWPerMonth = 'maxChargeableOWPerMonth',
-	maxClassroomEndTime = 'maxClassroomEndTime',
-	maxPoolEndTime = 'maxPoolEndTime',
-	minClassroomStartTime = 'minClassroomStartTime',
-	minPoolStartTime = 'minPoolStartTime',
-	openForBusiness = 'openForBusiness',
-	openwaterAmBookable = 'openwaterAmBookable',
-	openwaterAmEndTime = 'openwaterAmEndTime',
-	openwaterAmStartTime = 'openwaterAmStartTime',
-	openwaterPmBookable = 'openwaterPmBookable',
-	openwaterPmEndTime = 'openwaterPmEndTime',
-	openwaterPmStartTime = 'openwaterPmStartTime',
-	poolBookable = 'poolBookable',
-	poolLabel = 'poolLabel',
-	poolLanes = 'poolLanes',
-	refreshIntervalSeconds = 'refreshIntervalSeconds',
-	reservationCutOffTime = 'reservationCutOffTime',
-	reservationIncrement = 'reservationIncrement',
-	reservationLeadTimeDays = 'reservationLeadTimeDays'
-}
 
 export type Setting = {
 	default: string | string[] | boolean | number;
@@ -145,7 +116,7 @@ export type Setting = {
 };
 
 export type Settings = {
-	[key in SettingTypes]: Setting;
+	[key in Enums<'setting_name'>]: Setting;
 };
 
 export type DateReservationSummary = {
@@ -162,3 +133,5 @@ export type DateReservationSummary = {
 
 export type Notification = Tables<'Notifications'>;
 export type BuoyGrouping = Tables<'BuoyGroupings'>;
+
+export type ReservationWithPrices = Tables<'Reservations'> & { priceTemplate: Tables<'PriceTemplates'> };

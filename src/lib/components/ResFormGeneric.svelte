@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { BuddyData, ReservationEx } from '$types';
+	import type { BuddyData, Reservation } from '$types';
 	import { ReservationType } from '$types';
 	import { ReservationStatus, ReservationCategory } from '$types';
 	import { canSubmit } from '$lib/stores';
@@ -12,6 +12,7 @@
 	import DeleteIcon from '$lib/components/DeleteIcon.svelte';
 	import ExclamationCircle from '$lib/components/ExclamationCircle.svelte';
 	import InputLabel from './tiny_components/InputLabel.svelte';
+	import { onDestroy, onMount } from 'svelte';
 
 	export let rsv: ReservationEx | null;
 	export let date: string = rsv?.date || PanglaoDate().toString();
@@ -27,7 +28,6 @@
 	export let diveTime = '';
 	export let resType: ReservationType | null = null;
 
-	$: users = $storedUsers;
 	let disabled = viewOnly || restrictModify;
 
 	let status: ReservationStatus = (rsv?.status as ReservationStatus) || ReservationStatus.pending;
@@ -35,6 +35,12 @@
 
 	$: maxBuddies =
 		category === ReservationCategory.openwater ? 3 : category === ReservationCategory.pool ? 1 : 0; //category === ReservationCategory.classroom
+
+	const fallbackBuddy = (id: string): UserMinimal => ({
+		id,
+		nickname: '<loading...>',
+		status: 'active'
+	});
 
 	const initBF = (): BuddyData[] => {
 		let buddyFields: BuddyData[] = [];
@@ -54,7 +60,26 @@
 
 	$: buddyFields = initBF();
 
-	$: currentBF = { name: '', matches: [] } as BuddyData;
+	let unsubStoredUsers = () => {};
+	onMount(() => {
+		unsubStoredUsers = storedUsers.subscribe((sus) => {
+			for (let i = 0; i < buddyFields.length; ++i) {
+				const bf = buddyFields[i];
+				if (bf.userId) {
+					const u = sus[bf.userId];
+					if (u) {
+						bf.name = u.nickname;
+					}
+				}
+			}
+			buddyFields = [...buddyFields];
+		});
+	});
+	onDestroy(() => {
+		unsubStoredUsers();
+	});
+
+	$: currentBF = { name: '', matches: [], userId: null } as BuddyData;
 
 	$: {
 		if (rsv && rsv.comments && !comments) {
@@ -105,8 +130,8 @@
 		currentBF.matches = [];
 		if (currentBF.name.length > 0) {
 			let buddyName = currentBF.name.toLowerCase();
-			for (let id in users) {
-				let record = users[id];
+			for (let id in $storedUsers) {
+				let record = $storedUsers[id];
 				if (
 					record.status !== 'disabled' &&
 					record.id !== $user?.id &&

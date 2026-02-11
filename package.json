@@ -1,6 +1,6 @@
 {
 	"name": "superhome-scheduler",
-	"version": "0.3.17",
+	"version": "0.3.54",
 	"private": true,
 	"scripts": {
 		"dev": "PUBLIC_STAGE=dev vite dev",
@@ -14,6 +14,7 @@
 		"regen_db": "supabase db reset && supabase gen types typescript --local > src/lib/supabase.types.ts && prettier --plugin-search-dir . --write src/lib/supabase.types.ts"
 	},
 	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20260207.0",
 		"@faker-js/faker": "^7.6.0",
 		"@popperjs/core": "^2.11.8",
 		"@sveltejs/adapter-auto": "^7.0.0",
@@ -56,6 +57,7 @@
 		"axios": "^1.13.2",
 		"daisyui": "^2.52.0",
 		"dayjs": "^1.11.19",
+		"fetch-retry": "^6.0.0",
 		"jszip": "^3.10.1",
 		"lodash": "^4.17.21",
 		"lru-cache": "^11.2.5",

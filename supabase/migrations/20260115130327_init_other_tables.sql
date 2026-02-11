@@ -27,10 +27,10 @@ create type "public"."reservation_type" as enum (
 ---
 
 create table "public"."Reservations" (
-    "id" text not null default gen_random_uuid()::text,
+    "id" uuid not null default gen_random_uuid(),
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
-    "user" text not null /* link: Users */,
+    "user" uuid not null /* link: Users */,
     "status" public.reservation_status not null default 'pending'::reservation_status,
     "date" date not null,
     "startTime" time not null,
@@ -39,7 +39,7 @@ create table "public"."Reservations" (
     "resType" public.reservation_type not null,
     "owTime" text null,
     "comments" text null,
-    "buddies" text[] not null default '{}'::text[],
+    "buddies" uuid[] not null default '{}'::uuid[], /* link: Users[] */
     "numStudents" bigint null,
     "maxDepth" bigint null,
     "owner" bool not null default true,
@@ -56,7 +56,7 @@ create table "public"."Reservations" (
     "price" bigint null,
 
     CONSTRAINT Reservations_pkey primary KEY ("id"),
-    CONSTRAINT Reservations_user_key foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete set null,
+    CONSTRAINT Reservations_user_key foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete restrict,
     CONSTRAINT "Reservations:cannot have overlapping same user,date,[time)"
         EXCLUDE USING gist (
             "user" WITH =,
@@ -87,6 +87,13 @@ to authenticated
 using (
   (SELECT public.is_active())
 );
+
+---
+
+CREATE TRIGGER "Broadcast changes of table: Reservations"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."Reservations"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
 
 ---
 
@@ -133,14 +140,43 @@ as
 ---
 ---
 
+create type "public"."setting_name" as enum (
+  'boats',
+  'cancelationCutOffTime',
+  'cbsAvailable',
+  'classroomBookable',
+  'classroomLabel',
+  'classrooms',
+  'maxChargeableOWPerMonth',
+  'maxClassroomEndTime',
+  'maxPoolEndTime',
+  'minClassroomStartTime',
+  'minPoolStartTime',
+  'openForBusiness',
+  'openwaterAmBookable',
+  'openwaterAmEndTime',
+  'openwaterAmStartTime',
+  'openwaterPmBookable',
+  'openwaterPmEndTime',
+  'openwaterPmStartTime',
+  'poolBookable',
+  'poolLabel',
+  'poolLanes',
+  'reservationCutOffTime',
+  'reservationIncrement',
+  'reservationLeadTimeDays'
+);
+
+---
+
 create table "public"."Settings" (
-    "id" text not null default gen_random_uuid()::text,
+    "id" uuid not null default gen_random_uuid(),
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
-    "name" text not null,
-    "value" text not null,
-    "startDate" text not null default 'default',
-    "endDate" text not null default 'default',
+    "name" public.setting_name not null,
+    "value" jsonb not null,
+    "startDate" date null default null,
+    "endDate" date null default null,
 
     constraint Settings_pkey primary key ("id")
 ) TABLESPACE pg_default;
@@ -166,10 +202,17 @@ using (
 );
 
 ---
+
+CREATE TRIGGER "Broadcast changes of table: Settings"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."Settings"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
 ---
 
 create table "public"."Buoys" (
-    "id" text not null default gen_random_uuid()::text,
+    "id" uuid not null default gen_random_uuid(),
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
     "name" text not null,
@@ -203,10 +246,17 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
+
+CREATE TRIGGER "Broadcast changes of table: Buoys"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."Buoys"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
 ---
 
 create table "public"."Boats" (
-    "id" text not null default gen_random_uuid()::text,
+    "id" date not null,
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
     "assignments" text null,
@@ -235,22 +285,29 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
+
+CREATE TRIGGER "Broadcast changes of table: Boats"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."Boats"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
 ---
 
 create table "public"."PriceTemplates" (
-    "id" text not null default gen_random_uuid()::text,
+    "id" text not null,
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
-    "coachOW" bigint null,
-    "coachPool" bigint null,
-    "coachClassroom" bigint null,
-    "autoOW" bigint null,
-    "autoPool" bigint null,
-    "cbsOW" bigint null default 0,
-    "proSafetyOW" bigint null default 0,
-    "platformOW" bigint null default 0,
-    "platformCBSOW" bigint null default 0,
-    "comp-setupOW" bigint null default 0,
+    "coachOW" bigint not null,
+    "coachPool" bigint not null,
+    "coachClassroom" bigint not null,
+    "autoOW" bigint not null,
+    "autoPool" bigint not null,
+    "cbsOW" bigint not null,
+    "proSafetyOW" bigint not null,
+    "platformOW" bigint not null,
+    "platformCBSOW" bigint not null,
+    "comp-setupOW" bigint not null,
 
     constraint PriceTemplates_pkey primary key ("id")
 ) TABLESPACE pg_default;
@@ -265,20 +322,24 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
+
+-- CREATE TRIGGER "Broadcast changes of table: PriceTemplates"
+-- AFTER INSERT OR UPDATE OR DELETE ON "public"."PriceTemplates"
+-- FOR EACH ROW
+-- EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
 ---
 
 create table "public"."UserPriceTemplates" (
-    "id" text not null default gen_random_uuid()::text,
+    "user" uuid not null /* link: Users */,
+    "priceTemplate" text not null /* link: PriceTemplates */,
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
-    "user" text null /* link: Users */,
-    "priceTemplate" text not null /* link: PriceTemplates */,
-    "startDate" text null default 'default',
-    "endDate" text null default 'default',
 
-    constraint UserPriceTemplates_pkey primary key ("id"),
-    constraint UserPriceTemplates_user_key foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete set null,
-    constraint UserPriceTemplates_priceTemplate_key foreign KEY ("priceTemplate") references "public"."PriceTemplates" ("id") on update cascade on delete cascade
+    constraint UserPriceTemplates_user_pkey primary key ("user"),
+    constraint UserPriceTemplates_user_fkey foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete cascade,
+    constraint UserPriceTemplates_priceTemplate_key foreign KEY ("priceTemplate") references "public"."PriceTemplates" ("id") on update cascade on delete restrict
 ) TABLESPACE pg_default;
 
 alter table "public"."UserPriceTemplates" enable row level security;
@@ -291,14 +352,33 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
+
+-- CREATE TRIGGER "Broadcast changes of table: UserPriceTemplates"
+-- AFTER INSERT OR UPDATE OR DELETE ON "public"."UserPriceTemplates"
+-- FOR EACH ROW
+-- EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
+
+create view "public"."ReservationsWithPrices" 
+with (security_invoker = true) -- Important for RLS
+as
+  select r.*
+        , to_jsonb(pt.*) as "priceTemplate"
+  from public."Reservations" r
+  left join public."UserPriceTemplates" up on r."user" = up."user" -- same as inner
+  left join public."PriceTemplates" pt on up."priceTemplate" = pt."id" -- same as inner
+;
+
+---
 ---
 
 create table "public"."BuoyGroupings" (
-    "id" text not null,
+    "id" text not null default gen_random_uuid(),
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
     "comment" text null,
-    "date" timestamp with time zone not null default NOW(),
+    "date" date not null default now(),
     "buoy" text not null default '',
     "am_pm" text not null default 'AM',
 
@@ -326,6 +406,13 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
+
+CREATE TRIGGER "Broadcast changes of table: BuoyGroupings"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."BuoyGroupings"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
 ---
 
 create type "public"."notification_status" as enum (
@@ -334,7 +421,7 @@ create type "public"."notification_status" as enum (
 );
 
 create table "public"."Notifications" (
-    "id" text not null default gen_random_uuid()::text,
+    "id" uuid not null default gen_random_uuid(),
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
     "status" public.notification_status not null default 'active'::notification_status,
@@ -354,11 +441,18 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
+
+CREATE TRIGGER "Broadcast changes of table: Notifications"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."Notifications"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
+
+---
 ---
 
 create table "public"."NotificationReceipts" (
-    "notification" text not null /* link: Notifications */,
-    "user" text not null /* link: Users */,
+    "notification" uuid not null /* link: Notifications */,
+    "user" uuid not null /* link: Users */,
     "createdAt" timestamp with time zone not null default now(),
 
     constraint NotificationReceipts_pkey primary key ("notification", "user"),
@@ -367,6 +461,13 @@ create table "public"."NotificationReceipts" (
 ) TABLESPACE pg_default;
 
 alter table "public"."NotificationReceipts" enable row level security;
+
+---
+
+-- CREATE TRIGGER "Broadcast changes of table: NotificationReceipts"
+-- AFTER INSERT OR UPDATE OR DELETE ON "public"."NotificationReceipts"
+-- FOR EACH ROW
+-- EXECUTE FUNCTION "public"."broadcast_table_changes"();
 
 ---
 
@@ -385,7 +486,7 @@ AS $$
     SELECT 1 
     FROM public."NotificationReceipts" nr 
     WHERE nr.notification = n.id 
-    AND nr."user" = p_user_id
+    AND nr."user" = p_user_id::uuid
   );
 $$;
 

@@ -22,7 +22,7 @@ export async function GET({ params, locals: { user } }: RequestEvent) {
 
 		const result = await pushNotificationService.send(data.id, 'title', 'notification test');
 
-		return json({ status: 'success', message: result.map(x => x.status) });
+		return json({ status: 'success', data: result });
 	} catch (error) {
 		return json({ status: 'error', error: error instanceof Error ? error.message : `${error}` });
 	}
