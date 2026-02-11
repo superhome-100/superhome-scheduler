@@ -7,7 +7,7 @@ create type "public"."user_privilege" as enum ('normal', 'admin');
 ---
 
 create table "public"."Users" (
-  "id" text not null,
+  "id" uuid not null default gen_random_uuid(),
   "createdAt" timestamp with time zone not null default now(),
   "updatedAt" timestamp with time zone not null default now(),
   "status" public.user_status not null default 'disabled'::user_status,
@@ -194,7 +194,7 @@ GRANT EXECUTE ON FUNCTION public.get_users_minimal() TO authenticated;
 
 create table "public"."UserSessions" (
   "sessionId" uuid primary key references "auth"."sessions" ("id") on delete cascade,
-  "userId" text not null,
+  "userId" uuid not null,
   "createdAt" timestamp with time zone not null default now(),
   "updatedAt" timestamp with time zone not null default now(),
   "pushSubscription" jsonb null,

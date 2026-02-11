@@ -27,10 +27,10 @@ create type "public"."reservation_type" as enum (
 ---
 
 create table "public"."Reservations" (
-    "id" text not null default gen_random_uuid()::text,
+    "id" uuid not null default gen_random_uuid(),
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
-    "user" text not null /* link: Users */,
+    "user" uuid not null /* link: Users */,
     "status" public.reservation_status not null default 'pending'::reservation_status,
     "date" date not null,
     "startTime" time not null,
@@ -39,7 +39,7 @@ create table "public"."Reservations" (
     "resType" public.reservation_type not null,
     "owTime" text null,
     "comments" text null,
-    "buddies" text[] not null default '{}'::text[],
+    "buddies" uuid[] not null default '{}'::uuid[], /* link: Users[] */
     "numStudents" bigint null,
     "maxDepth" bigint null,
     "owner" bool not null default true,
@@ -114,7 +114,7 @@ as
 ---
 
 create table "public"."Settings" (
-    "id" text not null default gen_random_uuid()::text,
+    "id" uuid not null default gen_random_uuid(),
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
     "name" text not null,
@@ -156,7 +156,7 @@ EXECUTE FUNCTION "public"."broadcast_table_changes"();
 ---
 
 create table "public"."Buoys" (
-    "id" text not null default gen_random_uuid()::text,
+    "id" uuid not null default gen_random_uuid(),
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
     "name" text not null,
@@ -200,7 +200,7 @@ EXECUTE FUNCTION "public"."broadcast_table_changes"();
 ---
 
 create table "public"."Boats" (
-    "id" text not null default gen_random_uuid()::text,
+    "id" uuid not null default gen_random_uuid(),
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
     "assignments" text null,
@@ -239,7 +239,7 @@ EXECUTE FUNCTION "public"."broadcast_table_changes"();
 ---
 
 create table "public"."PriceTemplates" (
-    "id" text not null default gen_random_uuid()::text,
+    "id" uuid not null default gen_random_uuid(),
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
     "coachOW" bigint not null,
@@ -276,11 +276,11 @@ EXECUTE FUNCTION set_updatedAt_to_now();
 ---
 
 create table "public"."UserPriceTemplates" (
-    "id" text not null default gen_random_uuid()::text,
+    "id" uuid not null default gen_random_uuid(),
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
-    "user" text not null /* link: Users */,
-    "priceTemplate" text not null /* link: PriceTemplates */,
+    "user" uuid not null /* link: Users */,
+    "priceTemplate" uuid not null /* link: PriceTemplates */,
 
     constraint UserPriceTemplates_pkey primary key ("id"),
     constraint UserPriceTemplates_user_unique unique ("user"),
@@ -320,7 +320,7 @@ as
 ---
 
 create table "public"."BuoyGroupings" (
-    "id" text not null,
+    "id" uuid not null default gen_random_uuid(),
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
     "comment" text null,
@@ -367,7 +367,7 @@ create type "public"."notification_status" as enum (
 );
 
 create table "public"."Notifications" (
-    "id" text not null default gen_random_uuid()::text,
+    "id" uuid not null default gen_random_uuid(),
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
     "status" public.notification_status not null default 'active'::notification_status,
@@ -397,8 +397,8 @@ EXECUTE FUNCTION "public"."broadcast_table_changes"();
 ---
 
 create table "public"."NotificationReceipts" (
-    "notification" text not null /* link: Notifications */,
-    "user" text not null /* link: Users */,
+    "notification" uuid not null /* link: Notifications */,
+    "user" uuid not null /* link: Users */,
     "createdAt" timestamp with time zone not null default now(),
 
     constraint NotificationReceipts_pkey primary key ("notification", "user"),
@@ -432,7 +432,7 @@ AS $$
     SELECT 1 
     FROM public."NotificationReceipts" nr 
     WHERE nr.notification = n.id 
-    AND nr."user" = p_user_id
+    AND nr."user" = p_user_id::uuid
   );
 $$;
 

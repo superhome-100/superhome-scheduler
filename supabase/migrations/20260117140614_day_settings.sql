@@ -7,6 +7,7 @@ create table "public"."DaySettings" (
   "value" jsonb not null,
   "createdAt" timestamp with time zone not null default now(),
   "updatedAt" timestamp with time zone not null default now(),
+  
   constraint DaySettings_pkey primary key ("date", "key")
 ) TABLESPACE pg_default;
 

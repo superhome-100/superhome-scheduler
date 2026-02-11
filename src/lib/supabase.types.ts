@@ -65,7 +65,7 @@ export type Database = {
 					comment?: string | null;
 					createdAt?: string;
 					date?: string;
-					id: string;
+					id?: string;
 					updatedAt?: string;
 				};
 				Update: {
@@ -454,7 +454,7 @@ export type Database = {
 					authProvider?: string | null;
 					createdAt?: string;
 					email?: string | null;
-					id: string;
+					id?: string;
 					metadata?: Json | null;
 					name: string;
 					nickname: string;
