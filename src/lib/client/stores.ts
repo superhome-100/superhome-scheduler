@@ -73,6 +73,7 @@ function readableWithSubscriptionToCore<T>(
                 await progressTracker.track(async (cp, v) => {
                     try {
                         console.debug('refreshing store', variableName);
+                        set(defaultValue);
                         value = await cb(cp, v);
                         set(value);
                     } catch (e) {
@@ -111,11 +112,13 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
                 const cacheVal = cache.get(paramJsn!);
                 if (cacheVal !== undefined) {
                     value = cacheVal;
+                    console.debug('refreshing store from cache', variableName, param);
                     set(value);
                 } else {
                     await progressTracker.track(async (cp, p, v) => {
                         try {
-                            console.debug('refreshing store', variableName);
+                            console.debug('refreshing store', variableName, param);
+                            set(defaultValue);
                             value = await cb(cp, p, v);
                             cache.set(paramJsn!, value);
                             set(value);
@@ -127,9 +130,11 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
             }
         };
         const unsubCs = storedCore_params.subscribe(async (cpN: CoreStore) => {
-            coreParam = cpN as CoreStoreWithUser;
-            cache.clear();
-            safeCb();
+            if (coreParam !== cpN) {
+                coreParam = cpN as CoreStoreWithUser;
+                cache.clear();
+                safeCb();
+            }
         });
         const unsubP = paramStore.subscribe(async (pN: P) => {
             param = pN;
