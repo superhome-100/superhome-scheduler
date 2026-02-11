@@ -62,33 +62,47 @@ type CoreStoreWithUser = RequireKeys<CoreStore, 'user'>;
 function readableWithSubscriptionToCore<T>(
     variableName: string,
     defaultValue: T,
-    cb: (cs: CoreStoreWithUser, prev: T) => Promise<T>,
+    cb: (cs: CoreStoreWithUser) => Promise<T>,
     event: EventType, ...events: EventType[]
 ): Readable<T> {
+    let cacheVal: T | undefined = undefined;
+    supabase_es.subscribe(() => {
+        cacheVal = undefined;
+    }, event, ...events);
+    let coreParam: CoreStoreWithUser | undefined = undefined;
     return readable<T>(defaultValue, (set) => {
-        let coreParam: CoreStoreWithUser | undefined = undefined;
-        let value: T = defaultValue;
         const safeCb = async () => {
             if (coreParam?.user) {
-                await progressTracker.track(async (cp, v) => {
-                    try {
-                        console.debug('store.refresh', variableName);
-                        set(defaultValue);
-                        value = await cb(cp, v);
-                        set(value);
-                    } catch (e) {
-                        console.error('store.error', variableName, e);
-                    }
-                }, coreParam, value);
+                if (cacheVal !== undefined) {
+                    console.debug('store.refresh.from-cache', variableName);
+                    set(cacheVal);
+                } else {
+                    await progressTracker.track(async (cp) => {
+                        try {
+                            console.debug('store.refresh', variableName);
+                            set(defaultValue);
+                            cacheVal = await cb(cp);
+                            set(cacheVal);
+                        } catch (e) {
+                            console.error('store.error', variableName, e);
+                        }
+                    }, coreParam);
+                }
             }
         };
         const unsubCs = storedCore_params.subscribe(async (cpN: CoreStore) => {
-            coreParam = cpN as CoreStoreWithUser;
-            safeCb();
+            if (coreParam !== cpN) {
+                coreParam = cpN as CoreStoreWithUser;
+                cacheVal = undefined;
+                safeCb();
+            }
         });
-        const unsubSupa = supabase_es.subscribe(safeCb, event, ...events);
+        const unsubSupa = supabase_es.subscribe(() => {
+            cacheVal = undefined;
+            safeCb();
+        }, event, ...events);
         return () => {
-            console.log("store.decomission", variableName)
+            // console.log("store.unsub", variableName)
             unsubCs();
             unsubSupa();
         }
@@ -99,34 +113,35 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
     variableName: string,
     defaultValue: T,
     paramStore: Readable<P>,
-    cb: (cs: CoreStoreWithUser, param: P, prev: T) => Promise<T>,
+    cb: (cs: CoreStoreWithUser, param: P) => Promise<T>,
     event: EventType, ...events: EventType[]
 ): Readable<T> {
+    const cache = new LRUCache<string, T>({ max: 50 });
+    supabase_es.subscribe(() => {
+        cache.clear();
+    }, event, ...events);
+    let coreParam: CoreStoreWithUser | undefined = undefined;
+    let param: P | undefined = undefined;
+    let paramJsn: string | undefined = undefined;
     return readable<T>(defaultValue, (set) => {
-        const cache = new LRUCache<string, T>({ max: 50 });
-        let coreParam: CoreStoreWithUser | undefined = undefined;
-        let param: P | undefined = undefined;
-        let paramJsn: string | undefined = undefined;
-        let value: T = defaultValue;
         const safeCb = async () => {
             if (coreParam?.user && param !== undefined) {
                 const cacheVal = cache.get(paramJsn!);
                 if (cacheVal !== undefined) {
-                    value = cacheVal;
-                    console.debug('store.refresh.cache', variableName, param);
-                    set(value);
+                    console.debug('store.refresh.from-cache', variableName, param);
+                    set(cacheVal);
                 } else {
-                    await progressTracker.track(async (cp, p, v) => {
+                    await progressTracker.track(async (cp, p) => {
                         try {
                             console.debug('store.refresh', variableName, param);
                             set(defaultValue);
-                            value = await cb(cp, p, v);
+                            const value = await cb(cp, p);
                             cache.set(paramJsn!, value);
                             set(value);
                         } catch (e) {
                             console.error('subscribeToCoreAndParam', variableName, e, param);
                         }
-                    }, coreParam, param, value);
+                    }, coreParam, param);
                 }
             }
         };
@@ -150,7 +165,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
             safeCb()
         }, event, ...events);
         return () => {
-            console.log("store.decomission", variableName);
+            // console.log("store.unsub", variableName);
             unsubCs();
             unsubP();
             unsubSupa();
