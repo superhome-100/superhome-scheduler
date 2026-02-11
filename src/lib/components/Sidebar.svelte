@@ -228,6 +228,12 @@
 										{spanClass}
 										on:click={() => downloadDatabase('all')}
 									/>
+									<SidebarItem
+										label="Update prices manually"
+										{spanClass}
+										target="_blank"
+										href="/api/admin/updatePrices"
+									/>
 								</SidebarDropdownWrapper>
 							{/if}
 						{/if}

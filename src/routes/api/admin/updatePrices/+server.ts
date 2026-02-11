@@ -6,7 +6,7 @@ import {
 	PanglaoDayJs,
 	getYYYYMMDD
 } from '$lib/datetimeUtils';
-import { AuthError, supabaseServiceRole } from '$lib/server/supabase';
+import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import { ReservationStatus, type ReservationWithPrices } from '$types';
 import { console_error } from '$lib/server/sentry';
 import { getSettingsManager } from '$lib/settings';
@@ -48,12 +48,16 @@ const unpackTemplate = (r: ReservationWithPrices) => {
  * - platformCBSOW: OW autonomous on Platform + CBS
  * - there is a maximum chargable settings, see code
  */
-export async function GET({ request }: RequestEvent) {
+export async function GET({ request, locals: { user } }: RequestEvent) {
 	try {
-		const authHeader = request.headers.get('X-Cron-Secret');
-		if (authHeader !== env.PRIVATE_CRON_SECRET) {
-			console_error('api/admin/updatePrices', new Error('secret error'));
-			return new Response('Unauthorized', { status: 401 });
+		try {
+			checkAuthorisation(user, 'admin');
+		} catch {
+			const authHeader = request.headers.get('X-Cron-Secret');
+			if (authHeader !== env.PRIVATE_CRON_SECRET) {
+				console_error('api/admin/updatePrices', new Error('secret error'));
+				return new Response('Unauthorized', { status: 401 });
+			}
 		}
 
 		const now = PanglaoDayJs()
