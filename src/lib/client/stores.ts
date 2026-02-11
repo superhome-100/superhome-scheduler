@@ -10,7 +10,6 @@ import type {
     DateReservationSummary,
     Notifications,
     RequireKeys,
-    Reservation,
     ReservationEx,
     SupabaseClient,
     UserEx,
@@ -73,12 +72,12 @@ function readableWithSubscriptionToCore<T>(
             if (coreParam?.user) {
                 await progressTracker.track(async (cp, v) => {
                     try {
-                        console.debug('refreshing store', variableName);
+                        console.debug('store.refresh', variableName);
                         set(defaultValue);
                         value = await cb(cp, v);
                         set(value);
                     } catch (e) {
-                        console.error('subscribeToCore', variableName, e);
+                        console.error('store.error', variableName, e);
                     }
                 }, coreParam, value);
             }
@@ -89,6 +88,7 @@ function readableWithSubscriptionToCore<T>(
         });
         const unsubSupa = supabase_es.subscribe(safeCb, event, ...events);
         return () => {
+            console.log("store.decomission", variableName)
             unsubCs();
             unsubSupa();
         }
@@ -113,12 +113,12 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
                 const cacheVal = cache.get(paramJsn!);
                 if (cacheVal !== undefined) {
                     value = cacheVal;
-                    console.debug('refreshing store from cache', variableName, param);
+                    console.debug('store.refresh.cache', variableName, param);
                     set(value);
                 } else {
                     await progressTracker.track(async (cp, p, v) => {
                         try {
-                            console.debug('refreshing store', variableName, param);
+                            console.debug('store.refresh', variableName, param);
                             set(defaultValue);
                             value = await cb(cp, p, v);
                             cache.set(paramJsn!, value);
@@ -150,6 +150,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
             safeCb()
         }, event, ...events);
         return () => {
+            console.log("store.decomission", variableName);
             unsubCs();
             unsubP();
             unsubSupa();
