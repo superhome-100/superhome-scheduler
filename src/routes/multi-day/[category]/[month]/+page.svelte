@@ -184,7 +184,7 @@
 					<tr>
 						{#each week as date}
 							<td
-								class={`border-${category}-bg-to align-top h-20 xs:h-24 border border-solid ${
+								class={`border-${category}-bg-to align-top h-24 xs:h-24 border border-solid ${
 									!date.isSame(now, 'month') && 'opacity-20 border-opacity-20'
 								}`}
 							>
