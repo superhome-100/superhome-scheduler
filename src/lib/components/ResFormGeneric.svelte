@@ -1,12 +1,12 @@
 <script lang="ts">
-	import type { BuddyData, ReservationEx } from '$types';
+	import type { BuddyData, ReservationEx, UserMinimal } from '$types';
 	import { ReservationType } from '$types';
 	import { ReservationStatus, ReservationCategory } from '$types';
 	import { canSubmit } from '$lib/stores';
 	import { storedUsers, storedUser as user, storedSettings, storedUser } from '$lib/client/stores';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes';
 	import { adminView, isMyReservation } from '$lib/utils';
-	import { PanglaoDate } from '$lib/datetimeUtils';
+	import { getYYYYMMDD, PanglaoDate } from '$lib/datetimeUtils';
 	import BuddyMatch from '$lib/components/BuddyMatch.svelte';
 	import PlusIcon from '$lib/components/PlusIcon.svelte';
 	import DeleteIcon from '$lib/components/DeleteIcon.svelte';
@@ -15,9 +15,9 @@
 	import { onDestroy, onMount } from 'svelte';
 
 	export let rsv: ReservationEx | null;
-	export let date: string = rsv?.date || PanglaoDate().toString();
+	export let date: string = rsv?.date ?? getYYYYMMDD(PanglaoDate());
 	export let category: ReservationCategory =
-		(rsv?.category as ReservationCategory) || ReservationCategory.pool;
+		(rsv?.category as ReservationCategory) ?? ReservationCategory.pool;
 	export let viewOnly = false;
 	export let showBuddyFields = true;
 	export let restrictModify = false;
@@ -35,12 +35,6 @@
 
 	$: maxBuddies =
 		category === ReservationCategory.openwater ? 3 : category === ReservationCategory.pool ? 1 : 0; //category === ReservationCategory.classroom
-
-	const fallbackBuddy = (id: string): UserMinimal => ({
-		id,
-		nickname: '<loading...>',
-		status: 'active'
-	});
 
 	const initBF = (): BuddyData[] => {
 		let buddyFields: BuddyData[] = [];
@@ -108,7 +102,7 @@
 		}
 	}
 	const addBuddyField = () => {
-		buddyFields = [...buddyFields, { name: '', matches: [], id: buddyFields.length }];
+		buddyFields = [...buddyFields, { userId: null, name: '', matches: [], id: buddyFields.length }];
 	};
 
 	const removeBuddyField = (bf: BuddyData) => {
@@ -193,7 +187,8 @@
 	const bdColor: { [key in ReservationStatus]: string } = {
 		[ReservationStatus.confirmed]: 'dark:text-white bg-green-600',
 		[ReservationStatus.pending]: 'dark:text-white',
-		[ReservationStatus.rejected]: 'dark:text-white bg-red-600'
+		[ReservationStatus.rejected]: 'dark:text-white bg-red-600',
+		[ReservationStatus.canceled]: 'dummy-not-shown'
 	};
 
 	const onRemoveBuddy = (bf: BuddyData) => {
