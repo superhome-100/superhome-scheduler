@@ -88,7 +88,7 @@ export type Buoy = Required<Tables<'Buoys'>>;
 
 export interface BuddyData {
 	name: string;
-	userId?: string;
+	userId: string | null;
 	id?: number;
 	matches?: any[];
 }
