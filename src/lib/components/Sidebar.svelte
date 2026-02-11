@@ -88,6 +88,22 @@
 		});
 	}
 
+	function updatePrices() {
+		const fn = async () => {
+			const response = await fetch('/api/admin/updatePrices');
+			if (response.status == 200) {
+				return Promise.resolve();
+			} else {
+				return Promise.reject();
+			}
+		};
+		toast.promise(fn(), {
+			loading: 'updating prices...',
+			success: 'updated prices!',
+			error: 'error!  please try again'
+		});
+	}
+
 	async function userLogout() {
 		toast.promise(signOut(page.data.supabase), {
 			loading: 'Logging out...',
@@ -228,12 +244,7 @@
 										{spanClass}
 										on:click={() => downloadDatabase('all')}
 									/>
-									<SidebarItem
-										label="Update prices manually"
-										{spanClass}
-										target="_blank"
-										href="/api/admin/updatePrices"
-									/>
+									<SidebarItem label="Update prices manually" {spanClass} on:click={updatePrices} />
 								</SidebarDropdownWrapper>
 							{/if}
 						{/if}
