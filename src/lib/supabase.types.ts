@@ -362,30 +362,30 @@ export type Database = {
 			Settings: {
 				Row: {
 					createdAt: string;
-					endDate: string;
+					endDate: string | null;
 					id: string;
-					name: string;
-					startDate: string;
+					name: Database['public']['Enums']['setting_name'];
+					startDate: string | null;
 					updatedAt: string;
-					value: string;
+					value: Json;
 				};
 				Insert: {
 					createdAt?: string;
-					endDate?: string;
+					endDate?: string | null;
 					id?: string;
-					name: string;
-					startDate?: string;
+					name: Database['public']['Enums']['setting_name'];
+					startDate?: string | null;
 					updatedAt?: string;
-					value: string;
+					value: Json;
 				};
 				Update: {
 					createdAt?: string;
-					endDate?: string;
+					endDate?: string | null;
 					id?: string;
-					name?: string;
-					startDate?: string;
+					name?: Database['public']['Enums']['setting_name'];
+					startDate?: string | null;
 					updatedAt?: string;
-					value?: string;
+					value?: Json;
 				};
 				Relationships: [];
 			};
@@ -655,6 +655,31 @@ export type Database = {
 				| 'competitionSetupCBS'
 				| 'course'
 				| 'proSafety';
+			setting_name:
+				| 'boats'
+				| 'cancelationCutOffTime'
+				| 'cbsAvailable'
+				| 'classroomBookable'
+				| 'classroomLabel'
+				| 'classrooms'
+				| 'maxChargeableOWPerMonth'
+				| 'maxClassroomEndTime'
+				| 'maxPoolEndTime'
+				| 'minClassroomStartTime'
+				| 'minPoolStartTime'
+				| 'openForBusiness'
+				| 'openwaterAmBookable'
+				| 'openwaterAmEndTime'
+				| 'openwaterAmStartTime'
+				| 'openwaterPmBookable'
+				| 'openwaterPmEndTime'
+				| 'openwaterPmStartTime'
+				| 'poolBookable'
+				| 'poolLabel'
+				| 'poolLanes'
+				| 'reservationCutOffTime'
+				| 'reservationIncrement'
+				| 'reservationLeadTimeDays';
 			user_privilege: 'normal' | 'admin';
 			user_status: 'active' | 'disabled';
 		};
@@ -796,6 +821,32 @@ export const Constants = {
 				'competitionSetupCBS',
 				'course',
 				'proSafety'
+			],
+			setting_name: [
+				'boats',
+				'cancelationCutOffTime',
+				'cbsAvailable',
+				'classroomBookable',
+				'classroomLabel',
+				'classrooms',
+				'maxChargeableOWPerMonth',
+				'maxClassroomEndTime',
+				'maxPoolEndTime',
+				'minClassroomStartTime',
+				'minPoolStartTime',
+				'openForBusiness',
+				'openwaterAmBookable',
+				'openwaterAmEndTime',
+				'openwaterAmStartTime',
+				'openwaterPmBookable',
+				'openwaterPmEndTime',
+				'openwaterPmStartTime',
+				'poolBookable',
+				'poolLabel',
+				'poolLanes',
+				'reservationCutOffTime',
+				'reservationIncrement',
+				'reservationLeadTimeDays'
 			],
 			user_privilege: ['normal', 'admin'],
 			user_status: ['active', 'disabled']

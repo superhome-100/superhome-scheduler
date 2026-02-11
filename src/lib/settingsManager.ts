@@ -81,9 +81,6 @@ export const getSettingsManager = (settings: Settings) => {
 		getPoolLanes: (date?: string) => {
 			return <string[]>getOn(settings.poolLanes, date);
 		},
-		getRefreshIntervalSeconds: (date?: string) => {
-			return <number>getOn(settings.refreshIntervalSeconds, date);
-		},
 		getReservationCutOffTime: (date?: string) => {
 			return <string>getOn(settings.reservationCutOffTime, date);
 		},

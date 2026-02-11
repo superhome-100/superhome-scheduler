@@ -113,14 +113,43 @@ as
 ---
 ---
 
+create type "public"."setting_name" as enum (
+  'boats',
+  'cancelationCutOffTime',
+  'cbsAvailable',
+  'classroomBookable',
+  'classroomLabel',
+  'classrooms',
+  'maxChargeableOWPerMonth',
+  'maxClassroomEndTime',
+  'maxPoolEndTime',
+  'minClassroomStartTime',
+  'minPoolStartTime',
+  'openForBusiness',
+  'openwaterAmBookable',
+  'openwaterAmEndTime',
+  'openwaterAmStartTime',
+  'openwaterPmBookable',
+  'openwaterPmEndTime',
+  'openwaterPmStartTime',
+  'poolBookable',
+  'poolLabel',
+  'poolLanes',
+  'reservationCutOffTime',
+  'reservationIncrement',
+  'reservationLeadTimeDays'
+);
+
+---
+
 create table "public"."Settings" (
     "id" uuid not null default gen_random_uuid(),
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
-    "name" text not null,
-    "value" text not null,
-    "startDate" text not null default 'default',
-    "endDate" text not null default 'default',
+    "name" public.setting_name not null,
+    "value" jsonb not null,
+    "startDate" date null default null,
+    "endDate" date null default null,
 
     constraint Settings_pkey primary key ("id")
 ) TABLESPACE pg_default;

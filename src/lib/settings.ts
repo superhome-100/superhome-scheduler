@@ -34,35 +34,8 @@ function parseSettingsTbl(settingsTbl: Tables<'Settings'>[]): Settings {
 	const fields = new Set(settingsTbl.map((e) => e.name));
 
 	let fixTypes = (e: Tables<'Settings'>) => {
-		let name = e.name!;
-		let v: any = e.value!;
-		if (
-			['maxChargeableOWPerMonth', 'refreshIntervalSeconds', 'reservationLeadTimeDays'].includes(
-				name
-			)
-		) {
-			v = parseInt(v);
-		}
-		if (name === 'refreshIntervalSeconds') {
-			name = 'refreshInterval';
-			v = v * 1000;
-		}
-		if (
-			[
-				'cbsAvailable',
-				'classroomBookable',
-				'openForBusiness',
-				'openwaterAmBookable',
-				'openwaterPmBookable',
-				'poolBookable'
-			].includes(name)
-		) {
-			v = v === 'true';
-		}
-		if (['poolLanes', 'classrooms', 'boats', 'captains'].includes(name)) {
-			v = v.split(';');
-		}
-
+		const name = e.name;
+		const v = e.value as string | string[] | boolean | number;
 		return {
 			...e,
 			name,
@@ -73,7 +46,7 @@ function parseSettingsTbl(settingsTbl: Tables<'Settings'>[]): Settings {
 	fields.forEach((field) => {
 		let entries = settingsTbl.filter((e) => e.name === field).map((e) => fixTypes(e));
 		let def = entries.splice(
-			entries.findIndex((e) => e.startDate === 'default'),
+			entries.findIndex((e) => e.startDate === null),
 			1
 		)[0];
 		if (def.name) {
