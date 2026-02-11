@@ -14,25 +14,21 @@
 	import DayOpenWaterSubmissionsCard from './DayOpenWaterSubmissionsCard.svelte';
 	import { buoyDesc } from '$lib/utils';
 	import { setBuoyToReservations } from '$lib/autoAssign';
-	import dayjs from 'dayjs';
 	import {
 		isLoading,
 		storedBoatAssignments,
 		storedBuoys,
-		storedDayReservations,
 		storedDaySettings,
 		storedOWAdminComments
 	} from '$lib/client/stores';
 	import { ow_am_full } from '$lib/dateSettings';
 	import type { SettingsManager } from '$lib/settingsManager';
 
-	export let date = dayjs().format('YYYY-MM-DD');
+	export let date: string;
+	export let reservations: ReservationEx[];
 	export let settingsManager: SettingsManager;
-	$: isAmFull = $storedDaySettings[ow_am_full];
 
-	$: reservations = $storedDayReservations.filter(
-		(r) => r.category === ReservationCategory.openwater && r.date == date
-	);
+	$: isAmFull = $storedDaySettings[ow_am_full];
 	$: boatAssignments = $storedBoatAssignments;
 
 	const { open } = getContext('simple-modal');

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { BuddyData, Reservation } from '$types';
+	import type { BuddyData, ReservationEx } from '$types';
 	import { ReservationType } from '$types';
 	import { ReservationStatus, ReservationCategory } from '$types';
 	import { canSubmit } from '$lib/stores';

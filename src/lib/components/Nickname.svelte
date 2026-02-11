@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { storedUser as user } from '$lib/client/stores';
-	import { storedUsers as users } from '$lib/client/stores';
+	import { storedUsers } from '$lib/client/stores';
 	import { toast } from 'svelte-french-toast';
 	import { getContext } from 'svelte';
 	import { popup } from '$lib/components/Popup.svelte';
@@ -15,7 +15,7 @@
 	}
 
 	const updateNickname = async ({ form, formData, action, cancel }) => {
-		let userNicknames = Object.values($users).map((user) => user.nickname);
+		let userNicknames = Object.values($storedUsers).map((user) => user.nickname);
 
 		if (formData.get('nickname').length == 0) {
 			cancel();

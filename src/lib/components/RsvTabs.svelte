@@ -4,7 +4,7 @@
 	import ViewForm from '$lib/components/ViewForm.svelte';
 	import ModifyForm from '$lib/components/ModifyForm.svelte';
 	import { storedSettings, storedUser as user } from '$lib/client/stores';
-	import { storedUsers as users } from '$lib/client/stores';
+	import { storedUsers } from '$lib/client/stores';
 	import { beforeResCutoff, beforeCancelCutoff } from '$lib/reservationTimes';
 
 	import type { Reservation, ReservationEx } from '$types';
@@ -38,7 +38,7 @@
 	<Tabs bind:tabIndex>
 		<TabList>
 			{#each rsvs as rsv}
-				<Tab>{rsv.user_json?.nickname ?? $users[rsv.user]?.nickname ?? '<missing>'}</Tab>
+				<Tab>{rsv.user_json?.nickname ?? $storedUsers[rsv.user]?.nickname ?? '<missing>'}</Tab>
 			{/each}
 		</TabList>
 

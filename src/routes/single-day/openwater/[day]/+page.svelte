@@ -34,7 +34,7 @@
 	let categories = [...CATEGORIES];
 
 	$: reservations = $storedDayReservations.filter(
-		(r) => r.category == ReservationCategory.openwater && r.date == day
+		(r) => r.category == ReservationCategory.openwater
 	);
 
 	$: groupsHaveBeenAssignedBuoy = reservations.every((rsv) => rsv.buoy !== 'auto');
@@ -173,7 +173,7 @@
 		on:swipe={swipeHandler}
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			<DayOpenWater date={day} {settingsManager} />
+			<DayOpenWater date={day} {settingsManager} {reservations} />
 		</Modal>
 	</div>
 {/if}

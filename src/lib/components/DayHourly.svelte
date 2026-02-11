@@ -5,14 +5,14 @@
 		isLoading,
 		storedDayReservations,
 		storedSettings,
-		storedUsers as users
+		storedUsers
 	} from '$lib/client/stores';
 	import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils';
 	import { getContext } from 'svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { badgeColor, getDaySchedule } from '$lib/utils';
 	import LoadingBar from './LoadingBar.svelte';
-	import { type Reservation, ReservationEx } from '$types';
+	import { type ReservationEx } from '$types';
 	import type { SettingsManager } from '$lib/settings';
 
 	export let resInfo;
@@ -63,11 +63,11 @@
 	const formatTag = (rsvs: ReservationEx[], nSlots, width, slotWidthPx) => {
 		let tag = '';
 		if (rsvs[0].resType === 'course') {
-			let nickname = rsvs[0].user_json?.nickname ?? $users[rsvs[0].user].nickname;
+			let nickname = rsvs[0].user_json?.nickname ?? $storedUsers[rsvs[0].user].nickname;
 			tag = nickname + ' +' + rsvs[0].numStudents;
 		} else {
 			for (let i = 0; i < rsvs.length; i++) {
-				let nickname = rsvs[i].user_json?.nickname ?? $users[rsvs[i].user].nickname;
+				let nickname = rsvs[i].user_json?.nickname ?? $storedUsers[rsvs[i].user].nickname;
 				tag += nickname;
 				if (i < rsvs.length - 1) {
 					tag += ' and ';
