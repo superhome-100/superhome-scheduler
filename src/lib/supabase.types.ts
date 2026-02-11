@@ -38,7 +38,7 @@ export type Database = {
 				Insert: {
 					assignments?: string | null;
 					createdAt?: string;
-					id?: string;
+					id: string;
 					updatedAt?: string;
 				};
 				Update: {
@@ -231,7 +231,7 @@ export type Database = {
 					coachPool: number;
 					'comp-setupOW': number;
 					createdAt?: string;
-					id?: string;
+					id: string;
 					platformCBSOW: number;
 					platformOW: number;
 					proSafetyOW: number;
@@ -392,21 +392,18 @@ export type Database = {
 			UserPriceTemplates: {
 				Row: {
 					createdAt: string;
-					id: string;
 					priceTemplate: string;
 					updatedAt: string;
 					user: string;
 				};
 				Insert: {
 					createdAt?: string;
-					id?: string;
 					priceTemplate: string;
 					updatedAt?: string;
 					user: string;
 				};
 				Update: {
 					createdAt?: string;
-					id?: string;
 					priceTemplate?: string;
 					updatedAt?: string;
 					user?: string;

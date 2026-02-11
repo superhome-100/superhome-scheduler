@@ -200,7 +200,7 @@ EXECUTE FUNCTION "public"."broadcast_table_changes"();
 ---
 
 create table "public"."Boats" (
-    "id" uuid not null default gen_random_uuid(),
+    "id" date not null,
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
     "assignments" text null,
@@ -239,7 +239,7 @@ EXECUTE FUNCTION "public"."broadcast_table_changes"();
 ---
 
 create table "public"."PriceTemplates" (
-    "id" uuid not null default gen_random_uuid(),
+    "id" text not null,
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
     "coachOW" bigint not null,
@@ -276,15 +276,13 @@ EXECUTE FUNCTION set_updatedAt_to_now();
 ---
 
 create table "public"."UserPriceTemplates" (
-    "id" uuid not null default gen_random_uuid(),
+    "user" uuid not null /* link: Users */,
+    "priceTemplate" text not null /* link: PriceTemplates */,
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
-    "user" uuid not null /* link: Users */,
-    "priceTemplate" uuid not null /* link: PriceTemplates */,
 
-    constraint UserPriceTemplates_pkey primary key ("id"),
-    constraint UserPriceTemplates_user_unique unique ("user"),
-    constraint UserPriceTemplates_user_fkey foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete restrict,
+    constraint UserPriceTemplates_user_pkey primary key ("user"),
+    constraint UserPriceTemplates_user_fkey foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete cascade,
     constraint UserPriceTemplates_priceTemplate_key foreign KEY ("priceTemplate") references "public"."PriceTemplates" ("id") on update cascade on delete restrict
 ) TABLESPACE pg_default;
 
@@ -320,11 +318,11 @@ as
 ---
 
 create table "public"."BuoyGroupings" (
-    "id" uuid not null default gen_random_uuid(),
+    "id" text not null default gen_random_uuid(),
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
     "comment" text null,
-    "date" timestamp with time zone not null default NOW(),
+    "date" date not null default now(),
     "buoy" text not null default '',
     "am_pm" text not null default 'AM',
 
