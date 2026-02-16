@@ -149,13 +149,12 @@
 					Unlock
 				</button>
 				<button
-					class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
+					class="{highlightButton(isAmFull)} px-1 py-0 font-semibold border-black dark:border-white"
 					on:click={() => {
 						flagOWAmAsFull(day, !isAmFull);
 					}}
 				>
-					<span class="desktop-text">mark AM as{isAmFull ? ' not' : ''} full</span>
-					<span class="mobile-text">AM{isAmFull ? ' not' : ''} full</span>
+					<span>AM full</span>
 				</button>
 				<button
 					class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
@@ -175,7 +174,7 @@
 		on:swipe={swipeHandler}
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			<DayOpenWater date={day} {settingsManager} {reservations} />
+			<DayOpenWater date={day} {settingsManager} {reservations} {isAmFull} />
 		</Modal>
 	</div>
 {/if}

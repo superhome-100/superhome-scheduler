@@ -12,17 +12,15 @@
 		isLoading,
 		storedBoatAssignments,
 		storedBuoys,
-		storedDaySettings,
 		storedOWAdminComments
 	} from '$lib/client/stores';
-	import { ow_am_full } from '$lib/dateSettings';
 	import type { SettingsManager } from '$lib/settingsManager';
 
 	export let date: string;
 	export let reservations: ReservationEx[];
 	export let settingsManager: SettingsManager;
+	export let isAmFull: boolean;
 
-	$: isAmFull = $storedDaySettings[ow_am_full];
 	$: boatAssignments = $storedBoatAssignments;
 
 	const { open } = getContext('simple-modal');
@@ -76,8 +74,8 @@
 		id: string;
 		buoy: Buoy;
 		boat?: string | null;
-		amReservations?: OWReservation[];
-		pmReservations?: OWReservation[];
+		amReservations: OWReservation[];
+		pmReservations: OWReservation[];
 		amAdminComment?: string;
 		pmAdminComment?: string;
 		amHeadCount: number;
@@ -123,28 +121,30 @@
 {#if $isLoading}
 	<LoadingBar />
 {/if}
-{#if isAmFull}
-	<header class="bg-[#FF0000] text-white p-2 rounded-md">
-		Morning session is full please book in the afternoon instead.
-	</header>
-{/if}
 {#if settingsManager.getOpenForBusiness(date) === false}
 	<div class="font-semibold text-3xl text-center">Closed</div>
 {:else}
 	<section class="w-full relative block">
-		<header class="flex w-full gap-0.5 sm:gap-2 text-xs py-2">
+		<header
+			class="flex w-full gap-0.5 sm:gap-2 py-2"
+			style="padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: solid;"
+		>
 			<div class="flex-none w-12 min-w-12">buoy</div>
 			<div class="flex-none text-center" class:w-20={isAdmin} class:w-8={!isAdmin}>boat</div>
-			<div class="grow text-center">
-				<span>AM Count</span>
-
+			<div class="grow text-center justify-items-center">
+				<span>AM</span><span class="desktop-text"> Session</span>
+				{#if isAmFull}
+					<span class="bg-[#FF0000] text-white p-2 rounded-md">is full</span>
+				{/if}
 				{#if $viewMode === 'admin'}
 					<div
 						class="sm:text-xl whitespace-nowrap w-fit opacity-70 z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1"
+						style="margin-top: 0.5rem;"
 					>
+						<span class="desktop-text">Boats:</span>
 						{#each boats as boat}
 							<span class="font-bold ml-1">{boat}</span>
-							<span class=" bg-teal-100 border border-black px-0.5"
+							<span class="bg-teal-100 border border-black px-0.4"
 								>{buoyGroupings
 									.filter((b) => b.boat === boat)
 									.reduce((a, b) => a + b.amHeadCount, 0)}</span
@@ -153,16 +153,17 @@
 					</div>
 				{/if}
 			</div>
-			<div class="grow text-center">
-				<span>PM Count</span>
-
+			<div class="grow text-center justify-items-center">
+				<span>PM</span><span class="desktop-text"> Session</span>
 				{#if $viewMode === 'admin'}
 					<div
 						class="sm:text-xl whitespace-nowrap w-fit opacity-70 z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1"
+						style="margin-top: 0.5rem;"
 					>
+						<span class="desktop-text">Boats:</span>
 						{#each boats as boat}
 							<span class="font-bold ml-1">{boat}</span>
-							<span class=" bg-teal-100 border border-black px-0.5"
+							<span class="bg-teal-100 border border-black px-0.4"
 								>{buoyGroupings
 									.filter((b) => b.boat === boat)
 									.reduce((a, b) => a + b.pmHeadCount, 0)}</span

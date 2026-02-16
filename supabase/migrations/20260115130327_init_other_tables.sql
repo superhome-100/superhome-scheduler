@@ -400,6 +400,19 @@ using (
 
 ---
 
+-- create policy "Enable active admins to modify all BuoyGrouping"
+-- on "public"."BuoyGroupings"
+-- as PERMISSIVE
+-- for ALL
+-- to authenticated
+-- using (
+--   (SELECT public.is_admin())
+-- ) with check (
+--   (SELECT public.is_admin())
+-- );
+
+---
+
 CREATE TRIGGER "trigger_set_updatedAt_to_now_on_BuoyGroupings"
 BEFORE UPDATE ON "public"."BuoyGroupings"
 FOR EACH ROW
