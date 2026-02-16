@@ -132,7 +132,7 @@
 			<div class="flex-none w-12 min-w-12">buoy</div>
 			<div class="flex-none text-center" class:w-20={isAdmin} class:w-8={!isAdmin}>boat</div>
 			<div class="grow text-center justify-items-center">
-				<span>AM</span><span class="desktop-text"> Session</span>
+				<span>AM</span><span class="desktop-text">&nbsp;Session</span>
 				{#if isAmFull}
 					<span class="bg-[#FF0000] text-white p-2 rounded-md">is full</span>
 				{/if}
@@ -154,7 +154,7 @@
 				{/if}
 			</div>
 			<div class="grow text-center justify-items-center">
-				<span>PM</span><span class="desktop-text"> Session</span>
+				<span>PM</span><span class="desktop-text">&nbsp;Session</span>
 				{#if $viewMode === 'admin'}
 					<div
 						class="sm:text-xl whitespace-nowrap w-fit opacity-70 z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1"
@@ -181,7 +181,7 @@
 					<div class="flex-none w-12 min-w-12">
 						<button
 							type="button"
-							class="cursor-pointer font-semibold text-left p-0 border-none bg-transparent block w-full"
+							class="cursor-pointer font-semibold text-center p-0 border-none bg-transparent block w-full"
 							on:click={() => isAdmin && showAdminCommentForm(date, grouping.buoy.name)}
 						>
 							<span>{grouping.buoy.name}</span>
@@ -192,7 +192,8 @@
 					<div class="flex-none px-2 text-center" class:w-20={isAdmin} class:w-8={!isAdmin}>
 						{#if $viewMode === 'admin'}
 							<select
-								class="text-sm h-6 w-16 xs:text-xl xs:h-8 xs:w-16"
+								class="text-sm h-6 w-16 xs:text-xl xs:h-8 xs:w-8 text-center"
+								style="appearance: none; -webkit-appearance: none; -moz-appearance: none; padding-right: 2px; background: transparent; text-align: center;"
 								name={grouping.buoy.name + '_boat'}
 								id={grouping.buoy.name + '_boat'}
 								bind:value={grouping.boat}
