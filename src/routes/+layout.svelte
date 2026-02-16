@@ -30,6 +30,7 @@
 	export let data;
 	const { user, supabase, settings } = data;
 
+	Sentry.setUser(user ? { id: user.id } : null);
 	page.subscribe((p) => Sentry.setTag('route', p.route.id));
 	storedDayReservations_param.subscribe((v) => Sentry.setContext('storedDayReservations_param', v));
 	storedReservationsSummary_param.subscribe((v) =>
@@ -37,6 +38,11 @@
 	);
 
 	storedSettingsW.set(getSettingsManager(settings));
+
+	$: {
+		supabase_es.init(supabase).catch((reason) => console.error('supabase_es.init', reason));
+		storedCore_paramsW.set({ supabase, user });
+	}
 
 	const publicRoutes = ['/privacy'];
 
@@ -46,7 +52,6 @@
 
 	if ($page.route.id && !publicRoutes.includes($page.route.id)) {
 		onMount(async () => {
-			Sentry.setUser(user ? { id: user.id } : null);
 			storedAppVisibilityW.set('visible');
 			document.addEventListener('visibilitychange', () => {
 				// by default (no tab change) this value is visible and no event is fired
@@ -64,9 +69,6 @@
 						.catch((reason) => console.error('supabase_es.init', reason));
 				}
 			});
-			await supabase_es.init(supabase).catch((reason) => console.error('supabase_es.init', reason));
-			// fence: do not reorder
-			storedCore_paramsW.set({ supabase, user });
 			if (user) {
 				await pushService.init(user.has_push ?? false);
 			} else {
