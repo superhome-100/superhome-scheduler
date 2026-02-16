@@ -12,7 +12,7 @@
 	import { ReservationCategory } from '$types';
 	import { getCategoryDatePath } from '$lib/url';
 	import { approveAllPendingReservations, flagOWAmAsFull, lockBuoyAssignments } from '$lib/api';
-	import { getYYYYMM, getYYYYMMDD } from '$lib/datetimeUtils.js';
+	import { getYYYYMM, PanglaoDayJs } from '$lib/datetimeUtils.js';
 	import {
 		storedDaySettings,
 		storedDayReservations,
@@ -70,9 +70,10 @@
 	}
 
 	const toggleBuoyLock = async (lock: boolean) => {
-		// @ts-ignore
 		toast.promise(lockBuoyAssignments(day, lock), {
-			error: 'buoy lock failed'
+			loading: (lock ? 'L' : 'Unl') + 'ocking buoy assignments',
+			success: (lock ? 'L' : 'Unl') + 'ocked buoy assignments',
+			error: 'Failed to ' + (lock ? '' : 'u') + 'nlock buoy assignments'
 		});
 	};
 	const lockBuoys = async () => toggleBuoyLock(true);
@@ -108,7 +109,7 @@
 				<Chevron direction="right" svgClass="h-8 w-8" />
 			</span>
 			<span class="text-2xl ml-2">
-				{dayjs(day).format('MMMM DD, YYYY dddd')}
+				{PanglaoDayJs(day).format('MMMM DD, YYYY dddd')}
 			</span>
 		</div>
 		<span class="mr-2">
@@ -150,10 +151,11 @@
 				<button
 					class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
 					on:click={() => {
-						flagOWAmAsFull(getYYYYMMDD(day), !isAmFull);
+						flagOWAmAsFull(day, !isAmFull);
 					}}
 				>
-					mark AM as {isAmFull ? 'not' : ''} full
+					<span class="desktop-text">mark AM as{isAmFull ? ' not' : ''} full</span>
+					<span class="mobile-text">AM{isAmFull ? ' not' : ''} full</span>
 				</button>
 				<button
 					class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"

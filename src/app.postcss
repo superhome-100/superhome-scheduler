@@ -28,6 +28,14 @@
 			background-color: #1a1a1a;
 		}
 	}
+
+	.desktop-text { display: inline; }
+  	.mobile-text { display: none; }
+
+	@media (max-width: 600px) {
+		.desktop-text { display: none; }
+		.mobile-text { display: inline; }
+	}
 }
 
 @layer components {
