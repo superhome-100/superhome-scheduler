@@ -23,6 +23,8 @@
 	import { getSettingsManager } from '$lib/settingsManager';
 	import * as Sentry from '@sentry/browser';
 
+	console.info('superhome-scheduler', __APP_VERSION__);
+
 	// svelte-ignore unused-export-let
 	export let params;
 	export let data;

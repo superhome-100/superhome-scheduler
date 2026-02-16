@@ -90,11 +90,13 @@ function readableWithSubscriptionToCore<T>(
                 }
             }
         };
+        let isInit = true;
         const unsubCs = storedCore_params.subscribe(async (cpN: CoreStore) => {
             if (coreParam !== cpN) {
                 coreParam = cpN as CoreStoreWithUser;
                 cacheVal = undefined;
-                safeCb();
+                if (!isInit)
+                    safeCb();
             }
         });
         const unsubSupa = supabase_es.subscribe(() => {
@@ -102,8 +104,9 @@ function readableWithSubscriptionToCore<T>(
             safeCb();
         }, event, ...events);
         safeCb();
+        isInit = false;
         return () => {
-            // console.log("store.unsub", variableName)
+            console.log("store.unsub", variableName)
             unsubCs();
             unsubSupa();
         }
@@ -146,11 +149,13 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
                 }
             }
         };
+        let isInit = true;
         const unsubCs = storedCore_params.subscribe(async (cpN: CoreStore) => {
             if (coreParam !== cpN) {
                 coreParam = cpN as CoreStoreWithUser;
                 cache.clear();
-                safeCb();
+                if (!isInit)
+                    safeCb();
             }
         });
         const unsubP = paramStore.subscribe(async (pN: P) => {
@@ -158,7 +163,8 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
             const paramJsnN = stableStringify(pN);
             if (paramJsn !== paramJsnN) {
                 paramJsn = paramJsnN;
-                safeCb();
+                if (!isInit)
+                    safeCb();
             }
         });
         const unsubSupa = supabase_es.subscribe(() => {
@@ -166,8 +172,9 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
             safeCb()
         }, event, ...events);
         safeCb();
+        isInit = false;
         return () => {
-            // console.log("store.unsub", variableName);
+            console.log("store.unsub", variableName);
             unsubCs();
             unsubP();
             unsubSupa();

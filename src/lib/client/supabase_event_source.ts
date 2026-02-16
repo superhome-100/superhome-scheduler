@@ -24,6 +24,7 @@ type Unsubscribe = () => void
 
 
 export class SupabaseEventSource {
+    private readonly _channelName = 'table_changes';
     private channel: RealtimeChannel | null = null;
     private readonly subscribers = new Map<EventType, Set<Subscriber>>()
     private _channelStatus: REALTIME_SUBSCRIBE_STATES | undefined = undefined;
@@ -44,7 +45,7 @@ export class SupabaseEventSource {
             await client.removeChannel(this.channel);
         }
         await client.realtime.setAuth(); // Needed for Realtime Authorization
-        this.channel = client.channel("table_changes", {
+        this.channel = client.channel(this._channelName, {
             config: { private: true }
         })
         for (const event of EVENTS) {
@@ -55,11 +56,13 @@ export class SupabaseEventSource {
                 payload => fn(payload)
             )
         }
-        this.channel.subscribe((status, err) => {
-            console.log('table_changes subscriber', status, err)
-            this._channelStatus = status;
+        return await new Promise(resolve => {
+            this.channel!.subscribe((status, err) => {
+                console.log('channel:', this._channelName, status, err)
+                this._channelStatus = status;
+            })
+            resolve(true);
         })
-        return true;
     }
 
     async destroy(client: SupabaseClient<Database>) {

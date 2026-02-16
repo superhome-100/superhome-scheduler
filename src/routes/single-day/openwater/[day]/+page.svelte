@@ -153,7 +153,7 @@
 						flagOWAmAsFull(getYYYYMMDD(day), !isAmFull);
 					}}
 				>
-					mark morning as {isAmFull ? 'not' : ''} full
+					mark AM as {isAmFull ? 'not' : ''} full
 				</button>
 				<button
 					class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
