@@ -1,6 +1,6 @@
-import { getOWReservationAdminComments } from '$lib/server/ow';
+import { getYYYYMMDD } from '$lib/datetimeUtils';
 import { console_error } from '$lib/server/sentry';
-import { AuthError, checkAuthorisation } from '$lib/server/supabase';
+import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import { json, type RequestEvent } from '@sveltejs/kit';
 
 /**
@@ -11,7 +11,11 @@ export async function GET({ params, locals: { user } }: RequestEvent) {
 		checkAuthorisation(user);
 		const date = params['date'];
 		if (!date) throw Error('date param is expected');
-		const adminComments = await getOWReservationAdminComments(date);
+		const { data: adminComments } = await supabaseServiceRole
+			.from('BuoyGroupings')
+			.select('*')
+			.eq('date', getYYYYMMDD(date))
+			.throwOnError();
 		return json(adminComments);
 	} catch (error) {
 		console_error('error assignBuoysToBoats', error);

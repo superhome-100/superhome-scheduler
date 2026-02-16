@@ -128,13 +128,16 @@ export const actions: Actions = {
 	adminCommentUpdate: async ({ request, locals: { user } }: RequestEvent) => {
 		checkAuthorisation(user, 'admin');
 		const data = await request.formData();
-		const adminComment = data.get('admin_comments') as string;
-		const record = await upsertOWReservationAdminComments({
-			comment: adminComment,
-			date: data.get('date') as string,
-			buoy: data.get('buoy') as string,
-			am_pm: data.get('owTime') as OWTime
+		const comment = data.get('admin_comments') as string;
+		const date = data.get('date') as string;
+		const buoy = data.get('buoy') as string;
+		const am_pm = data.get('owTime') as OWTime;
+		if (!date || !buoy || !am_pm) throw Error('form error');
+		await upsertOWReservationAdminComments({
+			comment,
+			date,
+			buoy,
+			am_pm,
 		});
-		return { record };
 	}
 };

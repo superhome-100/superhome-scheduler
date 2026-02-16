@@ -16,10 +16,11 @@
 		adminComments: BuoyGroupings[]
 	) => {
 		for (let ac of adminComments) {
-			if (ac.buoy == buoy && ac.am_pm == owTime) {
-				return ac.comment;
+			if (ac.buoy === buoy && ac.am_pm === owTime) {
+				return ac.comment ?? '';
 			}
 		}
+		return '';
 	};
 
 	$: owTime = OWTime.AM;

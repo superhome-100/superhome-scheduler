@@ -14,7 +14,6 @@ interface BuoyGroupingComment {
 export const upsertOWReservationAdminComments = async (data: BuoyGroupingComment) => {
 	const { buoy, date, am_pm, comment } = data;
 	const recordId = `${buoy}-${date}-${am_pm}`;
-	let record;
 	if (comment) {
 		try {
 			await supabaseServiceRole
@@ -32,24 +31,10 @@ export const upsertOWReservationAdminComments = async (data: BuoyGroupingComment
 		}
 	} else {
 		// delete comment if it exists
-		const { data: rec } = await supabaseServiceRole
+		await supabaseServiceRole
 			.from('BuoyGroupings')
 			.delete()
 			.eq('id', recordId)
-			.select('*')
 			.throwOnError();
-		record = { ...rec, comment: null };
 	}
-	return record;
-};
-
-export const getOWReservationAdminComments = async (
-	date: string
-): Promise<Tables<'BuoyGroupings'>[]> => {
-	const { data } = await supabaseServiceRole
-		.from('BuoyGroupings')
-		.select('*')
-		.eq('date', getYYYYMMDD(date))
-		.throwOnError();
-	return data;
 };

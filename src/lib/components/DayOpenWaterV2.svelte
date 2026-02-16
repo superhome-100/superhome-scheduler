@@ -4,13 +4,7 @@
 	import AdminComment from '$lib/components/AdminComment.svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import LoadingBar from '$lib/components/LoadingBar.svelte';
-	import {
-		type Buoy,
-		type Submission,
-		ReservationCategory,
-		type OWReservation,
-		type ReservationEx
-	} from '$types';
+	import { type Buoy, type Submission, type OWReservation, type ReservationEx } from '$types';
 	import DayOpenWaterSubmissionsCard from './DayOpenWaterSubmissionsCard.svelte';
 	import { buoyDesc } from '$lib/utils';
 	import { setBuoyToReservations } from '$lib/autoAssign';
