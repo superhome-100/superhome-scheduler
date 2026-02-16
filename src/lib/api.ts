@@ -8,7 +8,7 @@ import {
 	type ReservationEx
 } from '$types';
 import type { Dayjs } from 'dayjs';
-import { dayjs } from './datetimeUtils';
+import { dayjs, fromPanglaoDateTimeStringToDayJs, PanglaoDayJs } from './datetimeUtils';
 import { ow_am_full } from './dateSettings';
 
 export const getBuoys = async (supabase: SupabaseClient) => {
@@ -41,6 +41,8 @@ export const getBoatAssignmentsByDate = async (supabase: SupabaseClient, date: s
 
 export const getUserPastReservations = async (user: User, supabase: SupabaseClient, maxDateStr: string) => {
 	try {
+		const now = PanglaoDayJs();
+
 		const { data } = await supabase
 			.from('ReservationsEx')
 			.select('*')
@@ -49,6 +51,8 @@ export const getUserPastReservations = async (user: User, supabase: SupabaseClie
 			.eq('status', ReservationStatus.confirmed)
 			.overrideTypes<ReservationEx[]>()
 			.throwOnError();
+
+		return data.filter(r => fromPanglaoDateTimeStringToDayJs(r.date, r.startTime) < now);
 		return data;
 	} catch (error) {
 		console.error(error);
@@ -59,7 +63,7 @@ export const getUserPastReservations = async (user: User, supabase: SupabaseClie
 export const getIncomingReservations = async (user: User, supabase: SupabaseClient) => {
 	try {
 		const daysLimit = 60;
-		const now = dayjs().tz('Asia/Manila');
+		const now = PanglaoDayJs();
 		const inXDays = now.clone().add(daysLimit, 'days');
 
 		const dateArray = [];
@@ -80,7 +84,7 @@ export const getIncomingReservations = async (user: User, supabase: SupabaseClie
 			.overrideTypes<ReservationEx[]>()
 			.throwOnError();
 
-		return data;
+		return data.filter(r => now <= fromPanglaoDateTimeStringToDayJs(r.date, r.startTime));
 	} catch (error) {
 		console.error(error);
 		return []

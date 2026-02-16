@@ -1,11 +1,12 @@
 <script lang="ts">
 	import Modal from '$lib/components/Modal.svelte';
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
-	import MyReservations from '$lib/components/MyReservations.svelte';
 	import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs';
 	import { minValidDateStr } from '$lib/reservationTimes';
 	import { storedSettings, storedUser as user } from '$lib/client/stores';
 	import type { UserEx } from '$types';
+	import MyReservationsUpcoming from '$lib/components/MyReservationsUpcoming.svelte';
+	import MyReservationsPassed from '$lib/components/MyReservationsPassed.svelte';
 
 	// svelte-ignore unused-export-let
 	export let params;
@@ -70,12 +71,12 @@
 
 		<TabPanel>
 			<Modal on:open={onOpen} on:close={onClose}>
-				<MyReservations resPeriod="upcoming" />
+				<MyReservationsUpcoming />
 			</Modal>
 		</TabPanel>
 		<TabPanel>
 			<Modal on:open={onOpen} on:close={onClose}>
-				<MyReservations resPeriod="past" />
+				<MyReservationsPassed />
 			</Modal>
 		</TabPanel>
 	</Tabs>

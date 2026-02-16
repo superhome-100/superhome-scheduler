@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
-	import { minuteOfDay, beforeCancelCutoff } from '$lib/reservationTimes';
+	import { beforeCancelCutoff } from '$lib/reservationTimes';
 	import { timeStrToMin } from '$lib/datetimeUtils';
 	import { getContext } from 'svelte';
 	import Modal from './Modal.svelte';
@@ -16,31 +15,8 @@
 	} from '$lib/client/stores';
 	import type { SettingsManager } from '$lib/settings';
 
-	export let resPeriod: ReservationPeriod = 'upcoming';
-
-	function getResPeriod(rsv: Reservation, sm: SettingsManager) {
-		let view;
-		let today = PanglaoDate();
-		let todayStr = datetimeToLocalDateStr(today);
-		if (rsv.date && rsv.date > todayStr) {
-			view = 'upcoming';
-		} else if (rsv.date && rsv.date < todayStr) {
-			view = 'past';
-		} else {
-			let rsvMin: number = 0;
-			if (rsv.category === ReservationCategory.openwater) {
-				if (rsv.owTime === 'AM') {
-					rsvMin = timeStrToMin(sm.getOpenwaterAmEndTime(rsv.date));
-				} else if (rsv.owTime === 'PM') {
-					rsvMin = timeStrToMin(sm.getOpenwaterPmEndTime(rsv.date));
-				}
-			} else {
-				rsvMin = timeStrToMin(rsv.endTime);
-			}
-			view = rsvMin && rsvMin >= minuteOfDay(today) ? 'upcoming' : 'past';
-		}
-		return view;
-	}
+	export let resPeriod: ReservationPeriod;
+	export let reservations: ReservationEx[];
 
 	const bgColorByCategoryFrom: { [key: string]: string } = {
 		[ReservationCategory.pool]: 'from-pool-bg-from',
@@ -118,19 +94,9 @@
 
 	const groupRsvs = (
 		resPeriod: ReservationPeriod,
-		allRsvs: ReservationEx[],
-		userPastRsvs: ReservationEx[],
+		rsvs: ReservationEx[],
 		sm: SettingsManager
 	): ReservationsByMonth[] => {
-		let rsvs: Reservation[] = [];
-		if (resPeriod === 'upcoming') {
-			rsvs = allRsvs.filter((rsv) => {
-				return getResPeriod(rsv, sm) === resPeriod;
-			});
-		} else if (resPeriod === 'past') {
-			rsvs = userPastRsvs.filter((rsv) => getResPeriod(rsv, sm) === resPeriod);
-		}
-
 		const sorted = sortChronologically(rsvs, resPeriod);
 
 		if (resPeriod === 'upcoming') {
@@ -152,12 +118,7 @@
 		}
 	};
 
-	$: rsvGroups = groupRsvs(
-		resPeriod,
-		$storedIncomingReservations,
-		$storedPastReservations,
-		$storedSettings
-	);
+	$: rsvGroups = groupRsvs(resPeriod, reservations, $storedSettings);
 
 	const statusTextColor: { [key: string]: string } = {
 		[ReservationStatus.confirmed]: 'text-status-confirmed',
