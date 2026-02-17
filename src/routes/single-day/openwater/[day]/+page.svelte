@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { swipe } from 'svelte-gestures';
-	import { goto } from '$app/navigation';
+	import { goto, pushState } from '$app/navigation';
 	import DayOpenWater from '$lib/components/DayOpenWaterV2.svelte';
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
@@ -8,11 +8,10 @@
 	import { viewMode } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants';
 	import { toast } from 'svelte-french-toast';
-	import dayjs from 'dayjs';
 	import { ReservationCategory } from '$types';
 	import { getCategoryDatePath } from '$lib/url';
 	import { approveAllPendingReservations, flagOWAmAsFull, lockBuoyAssignments } from '$lib/api';
-	import { getYYYYMM, PanglaoDayJs } from '$lib/datetimeUtils.js';
+	import { getYYYYMM, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils.js';
 	import {
 		storedDaySettings,
 		storedDayReservations,
@@ -20,16 +19,18 @@
 		storedUser
 	} from '$lib/client/stores.js';
 	import { ow_am_full } from '$lib/dateSettings.js';
+	import type { Enums } from '$lib/supabase.types.js';
 
 	// svelte-ignore unused-export-let
 	export let params;
 	export let data;
 	const { settingsManager } = data;
 
-	$: day = data.day;
-	$: storedDayReservations_param.set({ day });
+	$: day = PanglaoDayJs(data.day);
+	$: dayStr = getYYYYMMDD(day);
+	$: storedDayReservations_param.set({ day: dayStr });
 
-	const category = 'openwater';
+	let category: Enums<'reservation_category'> = 'openwater';
 
 	let categories = [...CATEGORIES];
 
@@ -49,12 +50,12 @@
 	};
 
 	function prevDay() {
-		const prev = dayjs(day).subtract(1, 'day');
-		goto(getCategoryDatePath('openwater', prev.format('YYYY-MM-DD')));
+		const prev = day.subtract(1, 'day');
+		goto(getCategoryDatePath('openwater', getYYYYMMDD(prev)));
 	}
 	function nextDay() {
-		const next = dayjs(day).add(1, 'day');
-		goto(getCategoryDatePath('openwater', next.format('YYYY-MM-DD')));
+		const next = day.add(1, 'day');
+		goto(getCategoryDatePath('openwater', getYYYYMMDD(next)));
 	}
 
 	let modalOpened = false;
@@ -69,8 +70,31 @@
 		}
 	}
 
+	function handleKeypress(e: any) {
+		const { tagName } = e.target;
+		const isEditable = e.target.isContentEditable;
+
+		// Filter out inputs, textareas, and contenteditable elements
+		if (tagName === 'INPUT' || tagName === 'TEXTAREA' || isEditable) {
+			return;
+		}
+
+		if (!modalOpened) {
+			if (e.keyCode == 37) {
+				// left arrow key
+				prevDay();
+			} else if (e.keyCode == 39) {
+				// right arrow key
+				nextDay();
+			} else if (e.keyCode == 84) {
+				// letter 't'
+				day = PanglaoDayJs();
+			}
+		}
+	}
+
 	const toggleBuoyLock = async (lock: boolean) => {
-		toast.promise(lockBuoyAssignments(day, lock), {
+		toast.promise(lockBuoyAssignments(dayStr, lock), {
 			loading: (lock ? 'L' : 'Unl') + 'ocking buoy assignments',
 			success: (lock ? 'L' : 'Unl') + 'ocked buoy assignments',
 			error: 'Failed to ' + (lock ? '' : 'u') + 'nlock buoy assignments'
@@ -81,6 +105,8 @@
 
 	$: isAmFull = $storedDaySettings[ow_am_full];
 </script>
+
+<svelte:window on:keydown={handleKeypress} />
 
 {#if $storedUser}
 	<div class="[&>*]:mx-auto flex items-center justify-between">
@@ -93,7 +119,7 @@
 				{#each categories as cat}
 					{#if cat !== category}
 						<li>
-							<a class="text-xl active:bg-gray-300" href={getCategoryDatePath(cat, day)}>
+							<a class="text-xl active:bg-gray-300" href={getCategoryDatePath(cat, dayStr)}>
 								{cat}
 							</a>
 						</li>
@@ -109,7 +135,7 @@
 				<Chevron direction="right" svgClass="h-8 w-8" />
 			</span>
 			<span class="text-2xl ml-2">
-				{PanglaoDayJs(day).format('MMMM DD, YYYY dddd')}
+				{day.format('MMMM DD, YYYY dddd')}
 			</span>
 		</div>
 		<span class="mr-2">
@@ -117,7 +143,7 @@
 				on:open={() => (modalOpened = true)}
 				on:close={() => {
 					modalOpened = false;
-				}}><ReservationDialog {category} dateFn={() => day} /></Modal
+				}}><ReservationDialog {category} dateFn={() => dayStr} /></Modal
 			>
 		</span>
 	</div>
@@ -151,7 +177,7 @@
 				<button
 					class="{highlightButton(isAmFull)} px-1 py-0 font-semibold border-black dark:border-white"
 					on:click={() => {
-						flagOWAmAsFull(day, !isAmFull);
+						flagOWAmAsFull(dayStr, !isAmFull);
 					}}
 				>
 					<span>AM full</span>
@@ -159,7 +185,7 @@
 				<button
 					class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
 					on:click={async () => {
-						await approveAllPendingReservations(ReservationCategory.openwater, day);
+						await approveAllPendingReservations(ReservationCategory.openwater, dayStr);
 					}}
 				>
 					Approve All
@@ -174,7 +200,7 @@
 		on:swipe={swipeHandler}
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			<DayOpenWater date={day} {settingsManager} {reservations} {isAmFull} />
+			<DayOpenWater date={dayStr} {settingsManager} {reservations} {isAmFull} />
 		</Modal>
 	</div>
 {/if}
