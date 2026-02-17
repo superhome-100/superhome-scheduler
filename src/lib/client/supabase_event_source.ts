@@ -1,4 +1,4 @@
-import { debounce } from "ts-debounce";
+import debounce from "debounce-fn";
 import type { Database } from '$lib/supabase.types'
 import {
     SupabaseClient,
@@ -49,7 +49,7 @@ export class SupabaseEventSource {
             config: { private: true }
         })
         for (const event of EVENTS) {
-            const fn = debounce((payload: Payload) => this.dispatch(event, payload), 200, { maxWait: 5000 })
+            const fn = debounce((payload: Payload) => this.dispatch(event, payload), { wait: 200, maxWait: 3000 })
             this.channel.on(
                 'broadcast',
                 { event },
