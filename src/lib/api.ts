@@ -31,9 +31,9 @@ export const getBoatAssignmentsByDate = async (supabase: SupabaseClient, date: s
 			.from('Boats')
 			.select('*')
 			.eq('id', date)
+			.maybeSingle()
 			.throwOnError();
-		if (data.length == 0 || !data[0].assignments) return {};
-		return data[0].assignments as Record<string, string>;
+		return data?.assignments as Record<string, string> ?? {};
 	} catch (error) {
 		console.error(error);
 		return {}

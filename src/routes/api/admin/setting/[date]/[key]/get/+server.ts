@@ -1,6 +1,7 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import { json } from '@sveltejs/kit';
+import type { Enums } from '$lib/supabase.types';
 
 
 export async function GET({ params, locals: { user } }: RequestEvent) {
@@ -14,16 +15,11 @@ export async function GET({ params, locals: { user } }: RequestEvent) {
 			.from("DaySettings")
 			.select("value")
 			.eq("date", date)
-			.eq("key", key)
+			.eq("key", key as Enums<'day_setting_key'>)
+			.maybeSingle()
 			.throwOnError();
 
-		if (data.length == 0) {
-			return json(null);
-		} else if (data.length == 1) {
-			return json(data[0].value);
-		} else {
-			throw Error(`assertion ${date}.${key} returned with more than 1 row`);
-		}
+		return json(data ?? null);
 	} catch (error) {
 		if (error instanceof AuthError) {
 			return json({ status: 'error', error: error.message }, { status: error.code });
