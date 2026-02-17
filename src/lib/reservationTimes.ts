@@ -1,4 +1,4 @@
-import type { SettingsManager } from '$lib/client/settings';
+import type { SettingsManager } from '$lib/settings';
 import { ReservationCategory } from '$types';
 import * as dtu from './datetimeUtils';
 
@@ -12,17 +12,7 @@ export const maxClassroomEnd = (stns: SettingsManager, date: string): number =>
 	dtu.timeStrToMin(stns.getMaxClassroomEndTime(date));
 export const resCutoff = (stns: SettingsManager, date: string): number =>
 	dtu.timeStrToMin(stns.getReservationCutOffTime(date));
-export const cancelCutoff = (
-	stns: SettingsManager,
-	cat: ReservationCategory,
-	date: string
-): number => {
-	if ([ReservationCategory.pool, ReservationCategory.classroom].includes(cat)) {
-		return 0;
-	} else {
-		return dtu.timeStrToMin(stns.getCancelationCutOffTime(date));
-	}
-};
+
 export const inc = (stns: SettingsManager, date: string): number =>
 	dtu.timeStrToMin(stns.getReservationIncrement(date));
 
@@ -72,17 +62,13 @@ export function beforeCancelCutoff(
 	startTime: string,
 	category: ReservationCategory
 ): boolean {
-	let now = dtu.PanglaoDate();
-	let today = dtu.datetimeToLocalDateStr(now);
-	if (dateStr > today) {
-		return true;
+	const now = dtu.PanglaoDayJs();
+	const startDt = dtu.fromPanglaoDateTimeStringToDayJs(dateStr, startTime);
+	const diffInMin = startDt.diff(now, 'minutes');
+	if ([ReservationCategory.pool, ReservationCategory.classroom].includes(category)) {
+		return diffInMin > 60; // Keep 1 hour cutoff for modifications
 	} else {
-		const timeUntilStart = dtu.timeStrToMin(startTime) - minuteOfDay(now);
-		if ([ReservationCategory.pool, ReservationCategory.classroom].includes(category)) {
-			return dateStr === today && timeUntilStart > 60; // Keep 1 hour cutoff for modifications
-		} else {
-			return dateStr === today && timeUntilStart > cancelCutoff(stns, category, dateStr);
-		}
+		return diffInMin > dtu.timeStrToMin(stns.getCancelationCutOffTime(dateStr));
 	}
 }
 
