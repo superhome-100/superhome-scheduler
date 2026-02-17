@@ -192,8 +192,7 @@
 					<div class="flex-none px-2 text-center" class:w-20={isAdmin} class:w-8={!isAdmin}>
 						{#if $viewMode === 'admin'}
 							<select
-								class="text-sm h-6 w-16 xs:text-xl xs:h-8 xs:w-8 text-center"
-								style="appearance: none; -webkit-appearance: none; -moz-appearance: none; padding-right: 2px; background: transparent; text-align: center;"
+								class="boat_select text-sm h-8 w-8 xs:text-xl xs:h-8 xs:w-8 text-center"
 								name={grouping.buoy.name + '_boat'}
 								id={grouping.buoy.name + '_boat'}
 								bind:value={grouping.boat}
@@ -235,3 +234,17 @@
 		</ul>
 	</section>
 {/if}
+
+<style>
+	.boat_select {
+		appearance: none;
+		-webkit-appearance: none;
+		-moz-appearance: none;
+		padding: 0px;
+		padding-right: 2px;
+		background: transparent;
+		text-align: center;
+		text-align-last: center;
+		border-radius: none;
+	}
+</style>
