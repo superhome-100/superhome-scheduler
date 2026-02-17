@@ -5,10 +5,11 @@ import {
 	type SupabaseClient,
 	ReservationStatus,
 	type User,
-	type ReservationEx
+	type ReservationEx,
+	type DateReservationReport
 } from '$types';
 import type { Dayjs } from 'dayjs';
-import { dayjs, fromPanglaoDateTimeStringToDayJs, PanglaoDayJs } from './datetimeUtils';
+import { dayjs, fromPanglaoDateTimeStringToDayJs, getYYYYMMDD, PanglaoDayJs } from './datetimeUtils';
 import { ow_am_full } from './dateSettings';
 
 export const getBuoys = async (supabase: SupabaseClient) => {
@@ -153,73 +154,42 @@ export const getReservationsByDate = async (supabase: SupabaseClient, date: stri
 
 export const getReservationSummary = async (supabase: SupabaseClient, startDate: Date, endDate: Date) => {
 	try {
-		const dateArray = [];
-		let currentDate: Dayjs = dayjs(startDate);
+		const startDj = PanglaoDayJs(startDate);
+		const endDj = PanglaoDayJs(endDate);
+		const numOfDays = endDj.diff(startDj, 'days') + 1;
+		const dateArray = Array.from({ length: numOfDays }).map((_, i) => getYYYYMMDD(startDj.add(i, 'days')));
 
-		while (currentDate.isBefore(dayjs(endDate).add(1, 'day'))) {
-			dateArray.push(currentDate.format('YYYY-MM-DD'));
-			currentDate = currentDate.add(1, 'day');
-		}
-
-		const startStr = dayjs(startDate).format('YYYY-MM-DD')
-		const endStr = dayjs(endDate).format('YYYY-MM-DD')
+		const startStr = getYYYYMMDD(startDj)
+		const endStr = getYYYYMMDD(endDj)
 
 		const { data: reservations } = await supabase
 			.from('ReservationsReport')
 			.select('*')
 			.gte('date', startStr)
 			.lte('date', endStr)
-			.throwOnError()
-
-		const { data: daySettings } = await supabase
-			.from('DaySettings')
-			.select('date, value')
-			.gte('date', startStr)
-			.lte('date', endStr)
-			.eq('key', ow_am_full)
+			.overrideTypes<DateReservationReport[]>()
 			.throwOnError()
 
 		const summary: Record<string, DateReservationSummary> = {};
 
-		for (const date of dateArray) {
-			summary[date] = {
-				pool: 0,
-				openwater: {
-					AM: 0,
-					PM: 0,
-					total: 0,
-					ow_am_full: false
-				},
-				classroom: 0,
-			};
-		}
-
 		for (const reservation of reservations) {
 			const date = reservation.date!;
-			const category = reservation.category!;
-			const owTime = reservation.owTime;
-			const count = reservation.count!;
 			if (!date) continue;
-
-			const day = summary[date];
-			if (!day) continue;
-
-			if (category === 'pool') {
-				day.pool += count;
-			} else if (category === 'classroom') {
-				day.classroom += count;
-			} else if (category === 'openwater') {
-				if (owTime === 'AM') {
-					day.openwater.AM += count;
-				} else if (owTime === 'PM') {
-					day.openwater.PM += count;
-				}
-				day.openwater.total += count;
-			}
+			summary[date] = reservation.summary;
 		}
 
-		for (const daySetting of daySettings) {
-			summary[daySetting.date].openwater.ow_am_full = daySetting.value === true;
+		for (const dayStr of dateArray) {
+			if (summary[dayStr] === undefined) {
+				summary[dayStr] = {
+					pool: 0,
+					openwater: {
+						AM: 0,
+						PM: 0,
+						ow_am_full: false
+					},
+					classroom: 0,
+				};
+			}
 		}
 
 		return summary;

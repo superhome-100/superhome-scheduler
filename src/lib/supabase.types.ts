@@ -566,10 +566,8 @@ export type Database = {
 			};
 			ReservationsReport: {
 				Row: {
-					category: Database['public']['Enums']['reservation_category'] | null;
-					count: number | null;
 					date: string | null;
-					owTime: string | null;
+					summary: Json | null;
 				};
 				Relationships: [];
 			};

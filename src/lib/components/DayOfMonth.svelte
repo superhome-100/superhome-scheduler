@@ -22,7 +22,7 @@
 				{dayjs(date).get('date')}
 			</p>
 			{#if summary}
-				{#if category === 'openwater' && summary.openwater.total}
+				{#if category === 'openwater' && summary.openwater.AM + summary.openwater.PM > 0}
 					<div
 						class="mx-auto first-of-type:mt-2 first-of-type:mb-1 flex items-center justify-center text-sm rounded-xl h-6 w-10 md:w-16 px-1 rsv {category}"
 					>

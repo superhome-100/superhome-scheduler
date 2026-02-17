@@ -124,11 +124,12 @@ export type DateReservationSummary = {
 	openwater: {
 		AM: number;
 		PM: number;
-		total: number;
 		ow_am_full: boolean;
 	};
 	classroom: number;
 };
+
+export type DateReservationReport = { date: string, summary: DateReservationSummary }
 
 
 export type Notification = Tables<'Notifications'>;

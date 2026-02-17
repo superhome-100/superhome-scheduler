@@ -128,13 +128,31 @@ as
 create view "public"."ReservationsReport" 
 with (security_invoker = true) -- Important for RLS
 as
-  select "date", 
-    "category",
-    "owTime", 
-    SUM(1 + COALESCE("numStudents", 0)) as "count"
-  from "public"."Reservations"
-  where "status" in ('confirmed', 'pending')
-  group by 1,2,3
+  with r as (
+    select 
+      "date", 
+      "category",
+      "owTime",
+      SUM(1 + COALESCE("numStudents", 0)) as "count"
+    from "public"."Reservations"
+    where "status" in ('confirmed', 'pending')
+    group by 1,2,3
+  )
+  select 
+    r."date",
+    jsonb_build_object(
+      'pool', coalesce(sum(count) filter (where "category" = 'pool'), 0),
+      'classroom', coalesce(sum(count) filter (where "category" = 'classroom'), 0),
+      'openwater', jsonb_build_object(
+        'AM', coalesce(sum(count) filter (where "category" = 'openwater' and "owTime" = 'AM'), 0),
+        'PM', coalesce(sum(count) filter (where "category" = 'openwater' and "owTime" = 'PM'), 0),
+        'ow_am_full', coalesce(ds.value, 'false'::jsonb)
+      )
+    ) as summary
+  from r
+  left join "public"."DaySettings" as ds
+      on r."date" = ds."date" and ds."key" = 'ow_am_full'
+  group by r."date", ds."value"
 ;
 
 ---
