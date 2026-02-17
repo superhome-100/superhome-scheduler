@@ -1,5 +1,4 @@
 import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
-import type { Tables } from '$lib/supabase.types';
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 
@@ -12,9 +11,9 @@ export async function GET({ locals: { user } }: RequestEvent) {
 			.select('*')
 			.throwOnError();
 		const assignmentsById = assignments.reduce((obj, ent) => {
-			obj[ent.id] = ent.assignments ? JSON.parse(ent.assignments) : {};
+			obj[ent.id] = ent.assignments as Record<string, string>;
 			return obj;
-		}, {} as { [id: string]: Tables<'Boats'> });
+		}, {} as Record<string, Record<string, string>>);
 		return json({ status: 'success', assignmentsById });
 	} catch (error) {
 		if (error instanceof AuthError) {

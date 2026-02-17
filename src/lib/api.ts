@@ -9,7 +9,7 @@ import {
 	type DateReservationReport
 } from '$types';
 import type { Dayjs } from 'dayjs';
-import { dayjs, fromPanglaoDateTimeStringToDayJs, getYYYYMMDD, PanglaoDayJs } from './datetimeUtils';
+import { fromPanglaoDateTimeStringToDayJs, getYYYYMMDD, PanglaoDayJs } from './datetimeUtils';
 import { ow_am_full } from './dateSettings';
 
 export const getBuoys = async (supabase: SupabaseClient) => {
@@ -33,7 +33,7 @@ export const getBoatAssignmentsByDate = async (supabase: SupabaseClient, date: s
 			.eq('id', date)
 			.throwOnError();
 		if (data.length == 0 || !data[0].assignments) return {};
-		return JSON.parse(data[0].assignments);
+		return data[0].assignments as Record<string, string>;
 	} catch (error) {
 		console.error(error);
 		return {}
@@ -54,7 +54,6 @@ export const getUserPastReservations = async (user: User, supabase: SupabaseClie
 			.throwOnError();
 
 		return data.filter(r => fromPanglaoDateTimeStringToDayJs(r.date, r.startTime) < now);
-		return data;
 	} catch (error) {
 		console.error(error);
 		return []

@@ -30,19 +30,19 @@ export type Database = {
 		Tables: {
 			Boats: {
 				Row: {
-					assignments: string | null;
+					assignments: Json;
 					createdAt: string;
 					id: string;
 					updatedAt: string;
 				};
 				Insert: {
-					assignments?: string | null;
+					assignments: Json;
 					createdAt?: string;
 					id: string;
 					updatedAt?: string;
 				};
 				Update: {
-					assignments?: string | null;
+					assignments?: Json;
 					createdAt?: string;
 					id?: string;
 					updatedAt?: string;

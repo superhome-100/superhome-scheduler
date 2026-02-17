@@ -24,7 +24,7 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 			.from('Boats')
 			.upsert({
 				id: date,
-				assignments: JSON.stringify(assignments)
+				assignments,
 			})
 			.throwOnError();
 

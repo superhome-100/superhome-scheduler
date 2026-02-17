@@ -277,7 +277,7 @@ create table "public"."Boats" (
     "id" date not null,
     "createdAt" timestamp with time zone not null default now(),
     "updatedAt" timestamp with time zone not null default now(),
-    "assignments" text null,
+    "assignments" jsonb not null,
 
     constraint Boats_pkey primary key ("id")
 ) TABLESPACE pg_default;
