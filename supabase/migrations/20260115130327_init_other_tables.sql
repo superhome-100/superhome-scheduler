@@ -371,6 +371,7 @@ EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
 
+-- no need to broadcast, not used on client side
 -- CREATE TRIGGER "Broadcast changes of table: UserPriceTemplates"
 -- AFTER INSERT OR UPDATE OR DELETE ON "public"."UserPriceTemplates"
 -- FOR EACH ROW

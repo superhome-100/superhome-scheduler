@@ -119,21 +119,21 @@ export type Database = {
 				Row: {
 					createdAt: string;
 					date: string;
-					key: string;
+					key: Database['public']['Enums']['day_setting_key'];
 					updatedAt: string;
 					value: Json;
 				};
 				Insert: {
 					createdAt?: string;
 					date: string;
-					key: string;
+					key: Database['public']['Enums']['day_setting_key'];
 					updatedAt?: string;
 					value: Json;
 				};
 				Update: {
 					createdAt?: string;
 					date?: string;
-					key?: string;
+					key?: Database['public']['Enums']['day_setting_key'];
 					updatedAt?: string;
 					value?: Json;
 				};
@@ -691,6 +691,7 @@ export type Database = {
 			is_admin: { Args: never; Returns: boolean };
 		};
 		Enums: {
+			day_setting_key: 'ow_am_full';
 			notification_status: 'active' | 'inactive';
 			reservation_category: 'classroom' | 'openwater' | 'pool';
 			reservation_status: 'canceled' | 'confirmed' | 'pending' | 'rejected';
@@ -857,6 +858,7 @@ export const Constants = {
 	},
 	public: {
 		Enums: {
+			day_setting_key: ['ow_am_full'],
 			notification_status: ['active', 'inactive'],
 			reservation_category: ['classroom', 'openwater', 'pool'],
 			reservation_status: ['canceled', 'confirmed', 'pending', 'rejected'],

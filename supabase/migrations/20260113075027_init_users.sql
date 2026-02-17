@@ -177,6 +177,10 @@ as
   from "public"."Users"
 ;
 
+grant select on table public."UsersMinimal" to authenticated;
+
+---
+
 CREATE OR REPLACE FUNCTION public.get_users_minimal()
 RETURNS SETOF "UsersMinimal" 
 LANGUAGE sql
