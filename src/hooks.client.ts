@@ -1,12 +1,12 @@
 import { PUBLIC_STAGE } from '$env/static/public';
-import { handleErrorWithSentry, replayIntegration } from '@sentry/sveltekit';
+import { handleErrorWithSentry } from '@sentry/sveltekit';
 import * as Sentry from '@sentry/sveltekit';
 
 Sentry.init({
 	dsn: 'https://f2da7b160a72d4083e99922a3ae707fe@o4510844761931776.ingest.de.sentry.io/4510844770975824',
 
 	// Enable logs to be sent to Sentry
-	enableLogs: true, // PUBLIC_STAGE !== 'dev' TODO:mate
+	enableLogs: PUBLIC_STAGE !== 'dev',
 
 	integrations: [
 		Sentry.consoleLoggingIntegration({ levels: ["warn", "error"] }),

@@ -245,6 +245,13 @@
 										on:click={() => downloadDatabase('all')}
 									/>
 									<SidebarItem label="Update prices manually" {spanClass} on:click={updatePrices} />
+									<SidebarItem
+										label="Simupate error"
+										{spanClass}
+										on:click={() => {
+											updatePrices.missing.simulate_error();
+										}}
+									/>
 								</SidebarDropdownWrapper>
 							{/if}
 						{/if}
