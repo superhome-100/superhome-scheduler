@@ -16,6 +16,8 @@
 	const { close } = getContext('simple-modal');
 
 	const adminUpdate = async ({ formData, action }) => {
+		const toastId = toast.loading('Updating reservation...');
+
 		let status = action.href.includes('Confirmed')
 			? 'confirmed'
 			: action.href.includes('Rejected')
@@ -28,6 +30,7 @@
 		dispatch('submit', { rsv });
 
 		return async ({ result, update }) => {
+			toast.dismiss(toastId);
 			switch (result.type) {
 				case 'success':
 					toast.success('Reservation updated!');

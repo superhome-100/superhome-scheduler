@@ -26,15 +26,17 @@
 	$: owTime = OWTime.AM;
 
 	const adminCommentUpdate = async ({ form, formData, action, cancel }) => {
+		const toastId = toast.loading('Updating admin comment...');
 		close();
 		return async ({ result, update }) => {
+			toast.dismiss(toastId);
 			switch (result.type) {
 				case 'success':
-					toast.success('Admin comment updated');
+					toast.success('Updated admin comment');
 					break;
 				default:
 					console.error('admin comment', result);
-					toast.error('Admin comment update failed!');
+					toast.error('Failed tp update admin comment!');
 					break;
 			}
 		};

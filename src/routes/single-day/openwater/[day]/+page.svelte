@@ -194,8 +194,8 @@
 							approveAllPendingReservations(ReservationCategory.openwater, dayStr),
 							{
 								loading: 'Approving all reservations...',
-								success: 'Approved all',
-								error: 'Failed to approve all'
+								success: 'Approved all reservations',
+								error: 'Failed to approve all reservations'
 							}
 						);
 					}}

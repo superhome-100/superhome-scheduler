@@ -65,6 +65,8 @@
 	};
 
 	const modifyReservation = async ({ formData, cancel }) => {
+		const toastId = toast.loading('Modifying reservation...');
+
 		error = '';
 		cleanUpFormDataBuddyFields(formData);
 		if (!reservationChanged(formData, rsv)) {
@@ -75,6 +77,7 @@
 		hideModal();
 
 		return async ({ result }) => {
+			toast.dismiss(toastId);
 			switch (result.type) {
 				case 'success':
 					toast.success('Reservation updated!');

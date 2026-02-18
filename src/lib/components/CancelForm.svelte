@@ -17,6 +17,8 @@
 	type ActionData = { error?: string };
 
 	const cancelReservation = ({ formData }: { formData: FormData }) => {
+		const toastId = toast.loading('Cancelling reservation(s)...');
+
 		let buddies: string[] = JSON.parse(formData.get('buddies') as string);
 		let cancelBuddies: string[] = [];
 		for (let i = 0; i < buddies.length; i++) {
@@ -30,6 +32,7 @@
 		hideModal();
 
 		return async ({ result }: { result: { type: string; data?: ActionData } }) => {
+			toast.dismiss(toastId);
 			switch (result.type) {
 				case 'success':
 					toast.success('Reservation canceled');

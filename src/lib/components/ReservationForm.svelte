@@ -18,12 +18,15 @@
 	const { close, hideModal, showModal } = getContext('simple-modal');
 
 	const submitReservation = async ({ formData, cancel }) => {
+		const toastId = toast.loading('Submitting reservation(s)...');
+
 		error = '';
 		console.log(formData);
 		cleanUpFormDataBuddyFields(formData);
 		hideModal();
 
 		return async ({ result }) => {
+			toast.dismiss(toastId);
 			onSubmit();
 			switch (result.type) {
 				case 'success':
