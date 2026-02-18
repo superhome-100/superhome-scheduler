@@ -1,6 +1,6 @@
 {
 	"name": "superhome-scheduler",
-	"version": "0.3.89",
+	"version": "0.3.91",
 	"private": true,
 	"scripts": {
 		"dev": "PUBLIC_STAGE=dev vite dev",
@@ -14,7 +14,7 @@
 		"regen_db": "supabase db reset && supabase gen types typescript --local > src/lib/supabase.types.ts && prettier --plugin-search-dir . --write src/lib/supabase.types.ts"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20260217.0",
+		"@cloudflare/workers-types": "^4.20260218.0",
 		"@faker-js/faker": "^7.6.0",
 		"@popperjs/core": "^2.11.8",
 		"@sveltejs/adapter-auto": "^7.0.1",
@@ -30,10 +30,10 @@
 		"autoprefixer": "^10.4.24",
 		"classnames": "^2.5.1",
 		"dotenv": "^17.3.1",
-		"esbuild": "^0.27.2",
+		"esbuild": "^0.27.3",
 		"eslint": "8.57.1",
 		"eslint-config-prettier": "^10.1.8",
-		"eslint-plugin-svelte": "^3.14.0",
+		"eslint-plugin-svelte": "^3.15.0",
 		"flowbite": "^1.8.1",
 		"flowbite-svelte": "^0.48.6",
 		"postcss": "^8.5.6",
@@ -41,7 +41,7 @@
 		"prettier": "2.8.8",
 		"prettier-plugin-svelte": "^2.10.1",
 		"svelte": "^4.2.20",
-		"svelte-check": "^4.3.5",
+		"svelte-check": "^4.4.0",
 		"svelte-preprocess": "^6.0.3",
 		"tailwindcss": "^3.4.19",
 		"typescript": "^5.9.3",
@@ -51,16 +51,16 @@
 		"vitest": "^1.6.1"
 	},
 	"dependencies": {
-		"@sentry/sveltekit": "^10.38.0",
+		"@sentry/sveltekit": "^10.39.0",
 		"@supabase/ssr": "^0.8.0",
-		"@supabase/supabase-js": "^2.90.1",
-		"axios": "^1.13.2",
+		"@supabase/supabase-js": "^2.96.0",
+		"axios": "^1.13.5",
 		"daisyui": "^2.52.0",
 		"dayjs": "^1.11.19",
 		"fetch-retry": "^6.0.0",
 		"jszip": "^3.10.1",
-		"lodash": "^4.17.21",
-		"lru-cache": "^11.2.5",
+		"lodash": "^4.17.23",
+		"lru-cache": "^11.2.6",
 		"node-fetch": "^3.3.2",
 		"papaparse": "^5.5.3",
 		"svelte-french-toast": "^1.2.0",
@@ -70,6 +70,6 @@
 		"utc": "^0.1.0",
 		"web-push": "^3.6.7"
 	},
-	"packageManager": "npm@10.8.3",
+	"packageManager": "npm@11.10.0",
 	"type": "module"
 }

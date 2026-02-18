@@ -49,7 +49,7 @@ export class SupabaseEventSource {
             config: { private: true }
         })
         for (const event of EVENTS) {
-            const fn = debounce((payload: Payload) => this.dispatch(event, payload), { wait: 200, maxWait: 3000 })
+            const fn = debounce((payload: Payload) => this.dispatch(event, payload), { wait: 200, maxWait: 2000 })
             this.channel.on(
                 'broadcast',
                 { event },
