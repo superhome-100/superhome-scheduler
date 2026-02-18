@@ -30,10 +30,11 @@
 		return async ({ result, update }) => {
 			switch (result.type) {
 				case 'success':
+					toast.success('Admin comment updated');
 					break;
 				default:
-					console.error(result);
-					toast.error('Update failed with unknown error!');
+					console.error('admin comment', result);
+					toast.error('Admin comment update failed!');
 					break;
 			}
 		};
