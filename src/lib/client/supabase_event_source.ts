@@ -22,6 +22,8 @@ type Payload = unknown
 type Subscriber = () => void | Promise<void>
 type Unsubscribe = () => void
 
+const debounceWaitMs = 200;
+const debounceMaxWaitMs = 2000;
 
 export class SupabaseEventSource {
     private readonly _channelName = 'table_changes';
@@ -49,7 +51,10 @@ export class SupabaseEventSource {
             config: { private: true }
         })
         for (const event of EVENTS) {
-            const fn = debounce((payload: Payload) => this.dispatch(event, payload), { wait: 200, maxWait: 2000 })
+            const fn = debounce((payload: Payload) => this.dispatch(event, payload), {
+                wait: debounceWaitMs,
+                maxWait: debounceMaxWaitMs
+            })
             this.channel.on(
                 'broadcast',
                 { event },
@@ -93,6 +98,12 @@ export class SupabaseEventSource {
     notifyAll() {
         for (const e of this.subscribers.keys()) {
             this.dispatch(e, undefined)
+        }
+    }
+
+    notify(...events: EventType[]) {
+        for (const e of events) {
+            this.dispatch(e, undefined);
         }
     }
 

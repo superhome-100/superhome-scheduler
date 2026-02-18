@@ -15,6 +15,7 @@
 		storedOWAdminComments
 	} from '$lib/client/stores';
 	import type { SettingsManager } from '$lib/settingsManager';
+	import toast from 'svelte-french-toast';
 
 	export let date: string;
 	export let reservations: ReservationEx[];
@@ -39,7 +40,7 @@
 
 	$: boats = settingsManager.getBoats(date);
 
-	const saveAssignments = async (e) => {
+	const saveAssignments = async (e: any) => {
 		e.target.blur();
 		let buoy = e.target.id.split('_')[0];
 		let boat = e.target.value;
@@ -64,10 +65,7 @@
 	};
 
 	const getHeadCount = (rsvs: Submission[]) => {
-		return rsvs.reduce(
-			(acc, rsv) => acc + (rsv.resType === 'course' ? (rsv.numStudents ?? 0) + 1 : 1),
-			0
-		);
+		return rsvs.reduce((acc, rsv) => acc + (rsv.numStudents ?? 0) + 1, 0);
 	};
 
 	type BuoyGrouping = {
@@ -196,7 +194,13 @@
 								name={grouping.buoy.name + '_boat'}
 								id={grouping.buoy.name + '_boat'}
 								bind:value={grouping.boat}
-								on:input={saveAssignments}
+								on:input={async (e) => {
+									toast.promise(saveAssignments(e), {
+										loading: 'Changing boat assignments...',
+										success: 'Changed boat assignments',
+										error: 'Failed changing boat assignments'
+									});
+								}}
 							>
 								<option value="null">-</option>
 								{#each boats as boat}
