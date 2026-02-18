@@ -1,6 +1,7 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import { json } from '@sveltejs/kit';
+import type { Enums } from '$lib/supabase.types';
 
 
 export async function PUT({ request, params, locals: { user } }: RequestEvent) {
@@ -8,7 +9,7 @@ export async function PUT({ request, params, locals: { user } }: RequestEvent) {
 		checkAuthorisation(user, "admin");
 
 		const date = params['date'];
-		const key = params['key'];
+		const key = params['key'] as Enums<'day_setting_key'>;
 		const value = await request.json();
 
 		await supabaseServiceRole

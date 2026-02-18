@@ -273,7 +273,7 @@ export type Database = {
 					numStudents: number | null;
 					O2OnBuoy: boolean | null;
 					owner: boolean;
-					owTime: string | null;
+					owTime: Database['public']['Enums']['reservation_ow_time'] | null;
 					price: number | null;
 					pulley: boolean | null;
 					resType: Database['public']['Enums']['reservation_type'];
@@ -302,7 +302,7 @@ export type Database = {
 					numStudents?: number | null;
 					O2OnBuoy?: boolean | null;
 					owner?: boolean;
-					owTime?: string | null;
+					owTime?: Database['public']['Enums']['reservation_ow_time'] | null;
 					price?: number | null;
 					pulley?: boolean | null;
 					resType: Database['public']['Enums']['reservation_type'];
@@ -331,7 +331,7 @@ export type Database = {
 					numStudents?: number | null;
 					O2OnBuoy?: boolean | null;
 					owner?: boolean;
-					owTime?: string | null;
+					owTime?: Database['public']['Enums']['reservation_ow_time'] | null;
 					price?: number | null;
 					pulley?: boolean | null;
 					resType?: Database['public']['Enums']['reservation_type'];
@@ -535,7 +535,7 @@ export type Database = {
 					numStudents: number | null;
 					O2OnBuoy: boolean | null;
 					owner: boolean | null;
-					owTime: string | null;
+					owTime: Database['public']['Enums']['reservation_ow_time'] | null;
 					price: number | null;
 					pulley: boolean | null;
 					resType: Database['public']['Enums']['reservation_type'] | null;
@@ -590,7 +590,7 @@ export type Database = {
 					numStudents: number | null;
 					O2OnBuoy: boolean | null;
 					owner: boolean | null;
-					owTime: string | null;
+					owTime: Database['public']['Enums']['reservation_ow_time'] | null;
 					price: number | null;
 					priceTemplate: Json | null;
 					pulley: boolean | null;
@@ -694,6 +694,7 @@ export type Database = {
 			day_setting_key: 'ow_am_full';
 			notification_status: 'active' | 'inactive';
 			reservation_category: 'classroom' | 'openwater' | 'pool';
+			reservation_ow_time: 'AM' | 'PM';
 			reservation_status: 'canceled' | 'confirmed' | 'pending' | 'rejected';
 			reservation_type:
 				| 'autonomous'
@@ -861,6 +862,7 @@ export const Constants = {
 			day_setting_key: ['ow_am_full'],
 			notification_status: ['active', 'inactive'],
 			reservation_category: ['classroom', 'openwater', 'pool'],
+			reservation_ow_time: ['AM', 'PM'],
 			reservation_status: ['canceled', 'confirmed', 'pending', 'rejected'],
 			reservation_type: [
 				'autonomous',

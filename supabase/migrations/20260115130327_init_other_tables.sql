@@ -24,6 +24,11 @@ create type "public"."reservation_type" as enum (
     'proSafety'
 );
 
+create type "public"."reservation_ow_time" as enum (
+    'AM',
+    'PM'
+);
+
 ---
 
 create table "public"."Reservations" (
@@ -37,7 +42,7 @@ create table "public"."Reservations" (
     "endTime" time not null,
     "category" public.reservation_category not null,
     "resType" public.reservation_type not null,
-    "owTime" text null,
+    "owTime" public.reservation_ow_time null,
     "comments" text null,
     "buddies" uuid[] not null default '{}'::uuid[], /* link: Users[] */
     "numStudents" bigint null,
@@ -90,6 +95,17 @@ using (
 
 ---
 
+create policy "Enable admins to update all Reservations"
+on "public"."Reservations"
+as PERMISSIVE
+for UPDATE
+to authenticated
+using (
+  (SELECT public.is_admin())
+);
+
+---
+
 CREATE TRIGGER "Broadcast changes of table: Reservations"
 AFTER INSERT OR UPDATE OR DELETE ON "public"."Reservations"
 FOR EACH ROW
@@ -104,7 +120,8 @@ as
       r.*,
       jsonb_build_object(
         'id', r.user,
-        'nickname', COALESCE(u.nickname, '<unknown>')
+        'nickname', COALESCE(u.nickname, '<unknown>'),
+        'name', COALESCE(u.name, '<unknown>')
       ) AS user_json,
       COALESCE(bd.buddies_json, '[]'::jsonb) as buddies_json
   FROM "Reservations" r
@@ -114,7 +131,8 @@ as
       SELECT jsonb_agg(
           jsonb_build_object(
               'id', u.id,
-              'nickname', u.nickname
+              'nickname', u.nickname,
+              'name', u.name
           )
       ) AS buddies_json
       FROM "Users" u
@@ -334,6 +352,17 @@ alter table "public"."PriceTemplates" enable row level security;
 
 ---
 
+create policy "Enable active users to view all PriceTemplates"
+on "public"."PriceTemplates"
+as PERMISSIVE
+for SELECT
+to authenticated
+using (
+  (SELECT public.is_admin())
+);
+
+---
+
 CREATE TRIGGER "trigger_set_updatedAt_to_now_on_PriceTemplates"
 BEFORE UPDATE ON "public"."PriceTemplates"
 FOR EACH ROW
@@ -341,10 +370,10 @@ EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
 
--- CREATE TRIGGER "Broadcast changes of table: PriceTemplates"
--- AFTER INSERT OR UPDATE OR DELETE ON "public"."PriceTemplates"
--- FOR EACH ROW
--- EXECUTE FUNCTION "public"."broadcast_table_changes"();
+CREATE TRIGGER "Broadcast changes of table: PriceTemplates"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."PriceTemplates"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
 
 ---
 ---
@@ -364,6 +393,17 @@ alter table "public"."UserPriceTemplates" enable row level security;
 
 ---
 
+create policy "Enable admins to manage all UserPriceTemplates"
+on "public"."UserPriceTemplates"
+as PERMISSIVE
+for ALL
+to authenticated
+using (
+  (SELECT public.is_admin())
+);
+
+---
+
 CREATE TRIGGER "trigger_set_updatedAt_to_now_on_UserPriceTemplates"
 BEFORE UPDATE ON "public"."UserPriceTemplates"
 FOR EACH ROW
@@ -371,11 +411,10 @@ EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
 
--- no need to broadcast, not used on client side
--- CREATE TRIGGER "Broadcast changes of table: UserPriceTemplates"
--- AFTER INSERT OR UPDATE OR DELETE ON "public"."UserPriceTemplates"
--- FOR EACH ROW
--- EXECUTE FUNCTION "public"."broadcast_table_changes"();
+CREATE TRIGGER "Broadcast changes of table: UserPriceTemplates"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."UserPriceTemplates"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."broadcast_table_changes"();
 
 ---
 
@@ -385,8 +424,8 @@ as
   select r.*
         , to_jsonb(pt.*) as "priceTemplate"
   from public."Reservations" r
-  left join public."UserPriceTemplates" up on r."user" = up."user" -- same as inner
-  left join public."PriceTemplates" pt on up."priceTemplate" = pt."id" -- same as inner
+  left join public."UserPriceTemplates" up on r."user" = up."user"
+  left join public."PriceTemplates" pt on coalesce(up."priceTemplate", 'regular') = pt."id"
 ;
 
 ---

@@ -73,7 +73,19 @@ as PERMISSIVE
 for SELECT
 to authenticated
 using (
-  "authId" = (SELECT auth.uid()) OR (SELECT public.is_active())
+  "authId" = (SELECT auth.uid())
+  OR (SELECT public.is_admin())
+);
+
+---
+
+create policy "Enable admins to modify Users"
+on "public"."Users"
+as PERMISSIVE
+for UPDATE
+to authenticated
+using (
+  (SELECT public.is_admin())
 );
 
 ---

@@ -1,7 +1,6 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import {
-	firstOfMonthStr,
 	fromPanglaoDateTimeStringToDayJs,
 	PanglaoDayJs,
 	getYYYYMMDD
@@ -61,7 +60,7 @@ export async function GET({ request, locals: { user } }: RequestEvent) {
 		}
 
 		const now = PanglaoDayJs()
-		const nowDay = getYYYYMMDD(PanglaoDayJs());
+		const nowDay = getYYYYMMDD(now);
 		// need to use supabaseServiceRole because this code run from scheduled worker without user so 
 		// `locals:{supabase}` is not working here
 		const maxChargeableOWPerMonth = (await getSettingsManager(supabaseServiceRole)).getMaxChargeableOWPerMonth(nowDay);
@@ -71,7 +70,7 @@ export async function GET({ request, locals: { user } }: RequestEvent) {
 		const { data: reservations } = await supabaseServiceRole
 			.from('ReservationsWithPrices')
 			.select('*')
-			.gte('date', firstOfMonthStr(nowDay))
+			.gte('date', getYYYYMMDD(now.add(-30, "days")))
 			.lte('date', nowDay)
 			.eq('status', ReservationStatus.confirmed)
 			.order("date")

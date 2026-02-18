@@ -246,7 +246,7 @@
 									/>
 									<SidebarItem label="Update prices manually" {spanClass} on:click={updatePrices} />
 									<SidebarItem
-										label="Simupate error"
+										label="Simuate error"
 										{spanClass}
 										on:click={() => {
 											updatePrices.missing.simulate_error();

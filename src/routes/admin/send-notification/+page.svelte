@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Constants } from '$lib/supabase.types';
+
 	// State management for RequestBody
 	let payload = {
 		title: '',
@@ -69,9 +71,9 @@ The following form will send push notification to all the users whom has a reser
 				<td>
 					<select bind:value={payload.category}>
 						<option value="">all</option>
-						<option value="openwater">openwater</option>
-						<option value="pool">pool</option>
-						<option value="classroom">classroom</option>
+						{#each Constants['public']['Enums']['reservation_category'] as v}
+							<option value={v}>{v}</option>
+						{/each}
 					</select>
 				</td>
 			</tr>
@@ -81,8 +83,9 @@ The following form will send push notification to all the users whom has a reser
 				<td>
 					<select bind:value={payload.owTime}>
 						<option value="">-</option>
-						<option value="AM">AM</option>
-						<option value="PM">PM</option>
+						{#each Constants['public']['Enums']['reservation_ow_time'] as v}
+							<option value={v}>{v}</option>
+						{/each}
 					</select>
 				</td>
 			</tr>

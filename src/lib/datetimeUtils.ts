@@ -37,6 +37,8 @@ const parseHM = (timeStr: string): { hour: number; min: number } => {
 	return { hour, min };
 };
 
+export const completeHM = (timeStr: string) => minToTimeStr(timeStrToMin(timeStr));
+
 export function timeStrToMin(timeStr: string): number {
 	let p = parseHM(timeStr);
 	return 60 * p.hour + p.min;

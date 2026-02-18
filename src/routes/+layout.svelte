@@ -80,6 +80,7 @@
 	console.log('layout', $page.route.id, $page.params['day']);
 </script>
 
+<Toaster />
 <Refresher {onRefresh}>
 	{#if $page.route.id && !publicRoutes.includes($page.route.id)}
 		<Nprogress />
@@ -90,8 +91,6 @@
 				<slot />
 			</main>
 		</div>
-
-		<Toaster />
 
 		<Popup />
 

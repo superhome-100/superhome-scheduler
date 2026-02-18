@@ -47,7 +47,7 @@
 	<!-- Google Login Button -->
 	<button
 		type="button"
-		class="btn bg-blue-500 text-black border-[#e5e5e5] w-full h-24 text-base font-medium gap-3"
+		class="btn bg-blue-500 text-black border-[#e5e5e5] w-full h-72 text-base font-medium gap-3"
 		on:click={handleGoogleLogin}
 		disabled={false}
 		aria-label="Sign in with Google"

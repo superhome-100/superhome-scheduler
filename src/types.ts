@@ -23,6 +23,12 @@ export enum UserStatus {
 	disabled = 'disabled',
 }
 
+export type UserWithPriceTemplate = (User & {
+	UserPriceTemplates: {
+		priceTemplate: string;
+	} | null
+});
+
 export type Boats = Tables<'Boats'>;
 
 export type Buoys = Tables<'Buoys'>;
@@ -31,9 +37,11 @@ export type BuoyGroupings = Tables<'BuoyGroupings'>;
 
 export type Notifications = Tables<'Notifications'>;
 
+export type PriceTemplate = Tables<'PriceTemplates'>;
+
 export type Reservation = Tables<'Reservations'>;
 
-export type ReservationEx_User = { id: string, nickname: string };
+export type ReservationEx_User = { id: string, nickname: string, name: string };
 
 export type ReservationEx = Tables<'Reservations'> & {
 	user_json: ReservationEx_User, buddies_json: ReservationEx_User[]
