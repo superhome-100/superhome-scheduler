@@ -5,8 +5,9 @@ import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/
 /**
  * @deprecated unused, direct access to supabase now
  */
-export async function GET({ params, locals: { user } }: RequestEvent) {
+export async function GET({ params, locals: { safeGetSession } }: RequestEvent) {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user);
 
 		const date = params['date']!;

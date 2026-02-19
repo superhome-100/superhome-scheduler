@@ -6,8 +6,9 @@ import { json, type RequestEvent } from '@sveltejs/kit';
 /**
  * @deprecated unused, direct access to supabase now
  */
-export async function GET({ params, locals: { user } }: RequestEvent) {
+export async function GET({ params, locals: { safeGetSession } }: RequestEvent) {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user);
 		const date = params['date'];
 		if (!date) throw Error('date param is expected');

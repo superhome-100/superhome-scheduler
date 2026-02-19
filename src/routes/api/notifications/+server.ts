@@ -6,8 +6,9 @@ import { console_error } from '$lib/server/sentry';
 /**
  * @deprecated unused, direct access to supabase now
  */
-export async function GET({ locals: { user } }: RequestEvent) {
+export async function GET({ locals: { safeGetSession } }: RequestEvent) {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user);
 		const notifications = await getUserActiveNotifications(user.id);
 		return json({ status: 'success', notifications });

@@ -15,8 +15,9 @@ interface RequestData {
 /**
  * @deprecated unused, direct access to supabase now
  */
-export async function POST({ request, locals: { user } }: RequestEvent) {
+export async function POST({ request, locals: { safeGetSession } }: RequestEvent) {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user);
 
 		const { date, category } = (await request.json()) as RequestData;

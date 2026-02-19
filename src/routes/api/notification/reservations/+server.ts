@@ -3,7 +3,7 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import { pushNotificationService } from '$lib/server/push';
 import dayjs from 'dayjs';
-import { ReservationStatus, type Reservation, type ReservationCategory } from '$types';
+import { OWTime, ReservationStatus, type Reservation, type ReservationCategory } from '$types';
 import { fromPanglaoDateTimeStringToDayJs, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
 
 interface RequestBody {
@@ -15,8 +15,9 @@ interface RequestBody {
 	owTime?: string | null;
 }
 
-export async function POST({ request, locals: { user } }: RequestEvent) {
+export async function POST({ request, locals: { safeGetSession } }: RequestEvent) {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user, 'admin');
 
 		const requestJson = (await request.json()) as RequestBody;
@@ -47,7 +48,7 @@ export async function POST({ request, locals: { user } }: RequestEvent) {
 			query = query.eq("category", category as ReservationCategory)
 		}
 		if (owTime) {
-			query = query.eq("owTime", owTime)
+			query = query.eq("owTime", owTime as OWTime)
 		}
 		type ResX = Reservation & { _dt: dayjs.Dayjs }
 		const { data } = await query

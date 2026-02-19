@@ -10,8 +10,9 @@ dayjs.extend(tz);
 /**
  * @deprecated unused, direct access to supabase now
  */
-export async function GET({ locals: { user } }) {
+export async function GET({ locals: { safeGetSession } }) {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user);
 
 		const daysLimit = 60;

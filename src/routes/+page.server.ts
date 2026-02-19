@@ -15,12 +15,14 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { AuthError, checkAuthorisation } from '$lib/server/supabase';
 import type { OWTime } from '$types';
 import { console_error } from '$lib/server/sentry';
+import { getSettingsManager } from '$lib/settings';
 
 const adminUpdateGeneric = async ({
 	request,
-	locals: { user }
+	locals: { safeGetSession }
 }: RequestEvent): Promise<void | ActionFailure<{ error: string }>> => {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user, 'admin');
 		const data = await request.formData();
 		console.log('adminUpdateGeneric', data);
@@ -43,8 +45,10 @@ const adminUpdateGeneric = async ({
 };
 
 export const actions: Actions = {
-	submitReservation: async ({ request, locals: { settings, user } }: RequestEvent) => {
+	submitReservation: async ({ request, locals: { safeGetSession, supabase } }: RequestEvent) => {
 		try {
+			const { user } = await safeGetSession();
+			const settings = await getSettingsManager(supabase);
 			checkAuthorisation(user);
 			const data = await request.formData();
 			const category = data.get('category') as string;
@@ -64,8 +68,10 @@ export const actions: Actions = {
 			}
 		}
 	},
-	modifyReservation: async ({ request, locals: { user, settings } }: RequestEvent) => {
+	modifyReservation: async ({ request, locals: { safeGetSession, supabase } }: RequestEvent) => {
 		try {
+			const { user } = await safeGetSession();
+			const settings = await getSettingsManager(supabase);
 			checkAuthorisation(user);
 			const data = await request.formData();
 			const category = data.get('category') as string;
@@ -85,8 +91,10 @@ export const actions: Actions = {
 			}
 		}
 	},
-	cancelReservation: async ({ request, locals: { user, settings } }: RequestEvent) => {
+	cancelReservation: async ({ request, locals: { safeGetSession, supabase } }: RequestEvent) => {
 		try {
+			const { user } = await safeGetSession();
+			const settings = await getSettingsManager(supabase);
 			checkAuthorisation(user);
 			const data = await request.formData();
 			console.log('cancelReservation', data);
@@ -110,13 +118,15 @@ export const actions: Actions = {
 	adminUpdateConfirmed: adminUpdateGeneric,
 	adminUpdatePending: adminUpdateGeneric,
 	adminUpdateRejected: adminUpdateGeneric,
-	nickname: async ({ request, locals: { user } }: RequestEvent) => {
+	nickname: async ({ request, locals: { safeGetSession } }: RequestEvent) => {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user, 'admin');
 		const data = await request.formData();
 		const record = await updateNickname(data.get('id') as string, data.get('nickname') as string);
 		return record;
 	},
-	submitReceipt: async ({ request, locals: { user } }: RequestEvent) => {
+	submitReceipt: async ({ request, locals: { safeGetSession } }: RequestEvent) => {
+		const { user } = await safeGetSession();
 		// notification related
 		checkAuthorisation(user);
 		const data = await request.formData();
@@ -125,7 +135,8 @@ export const actions: Actions = {
 			await insertNotificationReceipt(notificationId as string, user.id);
 		}
 	},
-	adminCommentUpdate: async ({ request, locals: { user } }: RequestEvent) => {
+	adminCommentUpdate: async ({ request, locals: { safeGetSession } }: RequestEvent) => {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user, 'admin');
 		const data = await request.formData();
 		const comment = data.get('admin_comments') as string;

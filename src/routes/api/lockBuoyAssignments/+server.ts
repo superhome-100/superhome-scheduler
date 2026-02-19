@@ -4,8 +4,9 @@ import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/
 import { type OWReservation, ReservationCategory, ReservationStatus } from '$types';
 import { console_error } from '$lib/server/sentry';
 
-export async function POST({ request, locals: { user } }: RequestEvent) {
+export async function POST({ request, locals: { safeGetSession } }: RequestEvent) {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user, 'admin');
 
 		const { lock, date } = await request.json();

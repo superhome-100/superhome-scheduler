@@ -7,8 +7,9 @@ import { pushNotificationService } from '$lib/server/push';
 /**
  * just for testing 
  */
-export async function GET({ params, locals: { user } }: RequestEvent) {
+export async function GET({ params, locals: { safeGetSession } }: RequestEvent) {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user, 'admin');
 
 		const email = params['email'];

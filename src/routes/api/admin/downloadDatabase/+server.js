@@ -2,7 +2,8 @@ import { getBackUpZip } from '$lib/server/server';
 import { getReservationsCsv } from '$lib/server/reservation';
 import { checkAuthorisation } from '$lib/server/supabase';
 
-export async function POST({ request, locals: { user } }) {
+export async function POST({ request, locals: { safeGetSession } }) {
+	const { user } = await safeGetSession();
 	checkAuthorisation(user, 'admin');
 
 	let { table } = await request.json();

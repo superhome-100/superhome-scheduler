@@ -47,9 +47,10 @@ const unpackTemplate = (r: ReservationWithPrices) => {
  * - platformCBSOW: OW autonomous on Platform + CBS
  * - there is a maximum chargable settings, see code
  */
-export async function GET({ request, locals: { user } }: RequestEvent) {
+export async function GET({ request, locals: { safeGetSession } }: RequestEvent) {
 	try {
 		try {
+			const { user } = await safeGetSession();
 			checkAuthorisation(user, 'admin');
 		} catch {
 			const authHeader = request.headers.get('X-Cron-Secret');

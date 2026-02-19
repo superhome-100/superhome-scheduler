@@ -11,8 +11,9 @@ interface RequestBody {
 /**
  * @deprecated unused, direct access to supabase now
  */
-export async function POST({ request, locals: { user } }: RequestEvent) {
+export async function POST({ request, locals: { safeGetSession } }: RequestEvent) {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user);
 
 		const { maxDateStr } = (await request.json()) as RequestBody;

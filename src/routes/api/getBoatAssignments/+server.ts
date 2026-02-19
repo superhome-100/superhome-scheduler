@@ -2,8 +2,9 @@ import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 
-export async function GET({ locals: { user } }: RequestEvent) {
+export async function GET({ locals: { safeGetSession } }: RequestEvent) {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user);
 
 		const { data: assignments } = await supabaseServiceRole

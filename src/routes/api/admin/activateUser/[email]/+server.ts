@@ -4,8 +4,9 @@ import { json } from '@sveltejs/kit';
 import { UserStatus } from '$types';
 
 
-export async function GET({ params, locals: { user } }: RequestEvent) {
+export async function GET({ params, locals: { safeGetSession } }: RequestEvent) {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user, "admin");
 
 		const email = params['email'];

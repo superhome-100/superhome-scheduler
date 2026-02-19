@@ -8,8 +8,9 @@ import type { RequestEvent } from '@sveltejs/kit';
 /**
  * @deprecated unused, direct access to supabase now
  */
-export async function GET({ locals: { user } }: RequestEvent) {
+export async function GET({ locals: { safeGetSession } }: RequestEvent) {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user);
 
 		const { data: users } = await supabaseServiceRole
@@ -26,7 +27,7 @@ export async function GET({ locals: { user } }: RequestEvent) {
 			usersById
 		});
 	} catch (error) {
-		console_error(error);
+		console_error('getUsers', error);
 		if (error instanceof AuthError) {
 			return json({ status: 'error', error: error.message }, { status: error.code });
 		} else if (error instanceof Error) {

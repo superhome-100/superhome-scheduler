@@ -13,8 +13,9 @@ interface RequestData {
 	assignments: Assignment[];
 }
 
-export async function POST({ request, locals: { user } }: RequestEvent) {
+export async function POST({ request, locals: { safeGetSession } }: RequestEvent) {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user, 'admin');
 
 		const { date, assignments } = (await request.json()) as RequestData;

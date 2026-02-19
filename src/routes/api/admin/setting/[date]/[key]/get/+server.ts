@@ -4,8 +4,9 @@ import { json } from '@sveltejs/kit';
 import type { Enums } from '$lib/supabase.types';
 
 
-export async function GET({ params, locals: { user } }: RequestEvent) {
+export async function GET({ params, locals: { safeGetSession } }: RequestEvent) {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user, "admin");
 
 		const date = params['date'];

@@ -6,8 +6,9 @@ import type { RequestEvent, RequestHandler } from '@sveltejs/kit';
 /**
  * @deprecated unused, direct access to supabase now
  */
-export const GET: RequestHandler = async ({ locals: { user } }: RequestEvent) => {
+export const GET: RequestHandler = async ({ locals: { safeGetSession } }: RequestEvent) => {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user);
 
 		const buoys = await getBuoys();
