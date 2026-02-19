@@ -639,23 +639,6 @@ export type Database = {
 			};
 		};
 		Functions: {
-			get_unread_notifications: {
-				Args: { p_user_id: string };
-				Returns: {
-					checkboxMessage: string;
-					createdAt: string;
-					id: string;
-					message: string;
-					status: Database['public']['Enums']['notification_status'];
-					updatedAt: string;
-				}[];
-				SetofOptions: {
-					from: '*';
-					to: 'Notifications';
-					isOneToOne: false;
-					isSetofReturn: true;
-				};
-			};
 			get_user_unread_notifications: {
 				Args: never;
 				Returns: {

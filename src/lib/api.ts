@@ -208,11 +208,18 @@ export const approveAllPendingReservations = async (
 	});
 };
 
-export async function flagOWAmAsFull(date: string, state: boolean) {
-	await fetch(`/api/admin/setting/${date}/${ow_am_full}/set`, {
-		method: 'PUT',
-		body: JSON.stringify(state)
-	});
+export async function flagOWAmAsFull(supabase: SupabaseClient, date: string, state: boolean) {
+	try {
+		const key = 'ow_am_full';
+		await supabase
+			.from("DaySettings")
+			.upsert({ date, key, value: state })
+			.eq("date", date)
+			.eq("key", key)
+			.throwOnError();
+	} catch (error) {
+		console.error('flagOWAmAsFull', error, date, state);
+	}
 }
 
 export async function lockBuoyAssignments(day: string, lock: boolean) {

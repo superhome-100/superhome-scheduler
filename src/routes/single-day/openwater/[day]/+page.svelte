@@ -24,7 +24,7 @@
 	// svelte-ignore unused-export-let
 	export let params;
 	export let data;
-	const { settingsManager } = data;
+	const { settingsManager, supabase } = data;
 
 	$: day = PanglaoDayJs(data.day);
 	$: dayStr = getYYYYMMDD(day);
@@ -178,7 +178,7 @@
 					class="{highlightButton(isAmFull)} px-1 py-0 font-semibold border-black dark:border-white"
 					on:click={async () => {
 						const n = isAmFull ? 'not full' : 'full';
-						await toast.promise(flagOWAmAsFull(dayStr, !isAmFull), {
+						await toast.promise(flagOWAmAsFull(supabase, dayStr, !isAmFull), {
 							loading: 'Marking AM as ' + n,
 							success: 'Marked AM as ' + n,
 							error: 'Failed to makr AM as ' + n

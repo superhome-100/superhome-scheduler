@@ -29,7 +29,7 @@ export async function getDateSetting(supabase: SupabaseClient<Database>, date: D
 		const settings = { ...defaultDateSettings };
 		for (const { key, value, updatedAt } of data) {
 			// @ts-expect-error Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ ow_am_full: boolean; }'.
-			settings[key] = JSON.parse(value);
+			settings[key] = value;
 			const updatedAtJS = dayjs(updatedAt)
 			if (updatedAtJS > updatedAtMax) updatedAtMax = updatedAtJS;
 		}

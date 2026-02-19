@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { getContext } from 'svelte';
 	import NotificationPopup from '$lib/components/NotificationPopup.svelte';
 	import { storedNotifications } from '$lib/client/stores';
@@ -27,5 +28,7 @@
 		}
 	}
 
-	$: checkForNotifications($storedNotifications.reverse());
+	$: if (browser) {
+		checkForNotifications($storedNotifications);
+	}
 </script>

@@ -74,7 +74,7 @@ for SELECT
 to authenticated
 using (
   "authId" = (SELECT auth.uid())
-  OR (SELECT public.is_admin())
+  OR (SELECT public.is_active()) -- needed for "public"."ReservationsEx"
 );
 
 ---

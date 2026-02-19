@@ -39,6 +39,31 @@ using (
 
 ---
 
+CREATE POLICY "Enable admins to INSERT to DaySettings"
+ON "public"."DaySettings"
+AS PERMISSIVE
+FOR INSERT
+TO authenticated
+WITH CHECK (
+  public.is_admin()
+);
+
+---
+
+CREATE POLICY "Enable admins to UPDATE to DaySettings"
+ON "public"."DaySettings"
+AS PERMISSIVE
+FOR UPDATE
+TO authenticated
+USING (
+  public.is_admin()
+)
+WITH CHECK (
+  public.is_admin()
+);
+
+---
+
 CREATE TRIGGER "Broadcast changes of table: DaySettings"
 AFTER INSERT OR UPDATE OR DELETE ON "public"."DaySettings"
 FOR EACH ROW

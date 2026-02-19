@@ -20,7 +20,6 @@
 	} from '$lib/client/stores';
 	import { pushService } from '$lib/client/push';
 	import Refresher from '$lib/components/Refresher.svelte';
-	import { getSettingsManager } from '$lib/settingsManager';
 	import * as Sentry from '@sentry/browser';
 
 	console.info('superhome-scheduler', __APP_VERSION__);
@@ -28,7 +27,7 @@
 	// svelte-ignore unused-export-let
 	export let params;
 	export let data;
-	const { user, supabase, settings } = data;
+	const { user, supabase, settingsManager } = data;
 
 	Sentry.setUser(user ? { id: user.id } : null);
 	page.subscribe((p) => Sentry.setTag('route', p.route.id));
@@ -37,12 +36,7 @@
 		Sentry.setContext('storedReservationsSummary_param', v)
 	);
 
-	storedSettingsW.set(getSettingsManager(settings));
-
-	$: {
-		supabase_es.init(supabase).catch((reason) => console.error('supabase_es.init', reason));
-		storedCore_paramsW.set({ supabase, user });
-	}
+	storedSettingsW.set(settingsManager);
 
 	const publicRoutes = ['/privacy'];
 
@@ -52,6 +46,13 @@
 
 	if ($page.route.id && !publicRoutes.includes($page.route.id)) {
 		onMount(async () => {
+			if (user?.status !== 'disabled') {
+				await supabase_es
+					.init(supabase)
+					.catch((reason) => console.error('supabase_es.init', reason));
+			}
+			storedCore_paramsW.set({ supabase, user });
+
 			storedAppVisibilityW.set('visible');
 			document.addEventListener('visibilitychange', () => {
 				// by default (no tab change) this value is visible and no event is fired
