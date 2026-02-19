@@ -4,7 +4,6 @@ import { sequence } from '@sveltejs/kit/hooks';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$env/static/public';
 import type { Database } from '$lib/supabase.types';
 import { createServerClient } from '@supabase/ssr';
-import { getSettingsManager } from '$lib/settings';
 import type { Handle } from '@sveltejs/kit';
 import { sessionToSessionId } from '$lib/server/supabase';
 import { console_error } from '$lib/server/sentry';
@@ -71,7 +70,7 @@ export const handle: Handle = sequence(
 			const getUserP = event.locals.supabase.auth.getUser().then(async ({ data: { user: auth_user }, error }) => {
 				if (error || !auth_user) {
 					console_error("couldn't get auth_user", error);
-					return { auth_user: null, user: null };
+					return null;
 				}
 				const { data: user, error: user_error } = await event.locals.supabase
 					.from('Users')
@@ -80,7 +79,7 @@ export const handle: Handle = sequence(
 					.single();
 				if (user_error) {
 					console_error("couldn't get user", user_error);
-					return { auth_user: null, user: null };
+					return null;
 				}
 				return { auth_user, user };
 
@@ -88,7 +87,7 @@ export const handle: Handle = sequence(
 			const getSessionP = event.locals.supabase.auth.getSession().then(async ({ data: { session }, error }) => {
 				if (error || !session) {
 					console_error("couldn't get session", error);
-					return { session: null, has_push: false };
+					return null;
 				}
 				const sessionId = sessionToSessionId(session);
 				const { data: uSession } = await event.locals.supabase
@@ -99,33 +98,27 @@ export const handle: Handle = sequence(
 				return { session, has_push: !!uSession?.pushSubscription }
 			});
 
-			const { auth_user, user } = await getUserP;
-			const { session, has_push } = await getSessionP;
+			const user = await getUserP;
+			const session = await getSessionP;
 
-			const userEx = user as UserEx;
-			if (user) {
-				userEx.avatar_url = auth_user?.user_metadata?.avatar_url ?? null;
-				userEx.last_sign_in_at = auth_user?.last_sign_in_at ?? null;
-				userEx.has_push = has_push;
+			if (user && session) {
+				const userEx = user.user as UserEx;
+				userEx.avatar_url = user.auth_user.user_metadata?.avatar_url ?? null;
+				userEx.last_sign_in_at = user.auth_user.last_sign_in_at ?? null;
+				userEx.has_push = session.has_push;
 				return {
-					session,
-					auth_user,
-					user: userEx
+					session: session.session,
+					auth_user: user.auth_user,
+					user: userEx,
 				};
 			} else {
 				return {
 					session: null,
 					auth_user: null,
-					user: null
+					user: null,
 				};
 			}
 		};
-
-		const { session, auth_user, user } = await event.locals.safeGetSession();
-		event.locals.session = session;
-		event.locals.auth_user = auth_user;
-		event.locals.user = user;
-		event.locals.settings = await getSettingsManager(event.locals.supabase);
 
 		// event.locals avaiable in actions and +layout.server.ts
 

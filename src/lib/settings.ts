@@ -15,7 +15,7 @@ export const initSettings = async (supabase: SupabaseClient) => {
 	return getSettingsManagerConstructor(settings);
 };
 
-const getSettings = async (supabase: SupabaseClient): Promise<Settings> => {
+export const getSettings = async (supabase: SupabaseClient): Promise<Settings> => {
 	const { data: settingsTbl } =
 		await supabase
 			.from('Settings')
