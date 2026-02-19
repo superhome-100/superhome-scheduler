@@ -5,7 +5,7 @@
 	export let rsv: Reservation | null = null;
 	export let category = 'classroom';
 	export let date: string | null = null;
-	export let dateFn = null;
+	export let dateFn: null | ((arg0: string) => string) = null;
 	export let restrictModify = false;
 	export let viewOnly = false;
 	export let error = '';

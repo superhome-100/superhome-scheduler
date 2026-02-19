@@ -9,7 +9,7 @@
     might depend on values from the database, which may not have
     loaded by the time the page renders, e.g. immediately after 
     a refresh */
-	export let dateFn: () => string;
+	export let dateFn: (arg0: string) => string;
 
 	type ModalContext = {
 		open: (component: any, props?: Record<string, any>) => void;

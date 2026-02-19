@@ -9,7 +9,7 @@
 	import { ReservationCategory } from '$types';
 
 	export let category = ReservationCategory.openwater;
-	export let dateFn;
+	export let dateFn: null | ((arg0: string) => string) = null;
 	export let hasForm = false;
 	export let onSubmit = () => null;
 
