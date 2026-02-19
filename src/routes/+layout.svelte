@@ -81,7 +81,7 @@
 	console.log('layout', $page.route.id, $page.params['day']);
 </script>
 
-<Toaster />
+<Toaster toastOptions={{ error: { duration: 5000 } }} />
 <Refresher {onRefresh}>
 	{#if $page.route.id && !publicRoutes.includes($page.route.id)}
 		<Nprogress />

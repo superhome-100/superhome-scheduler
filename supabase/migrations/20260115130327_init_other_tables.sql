@@ -425,7 +425,9 @@ as
         , to_jsonb(pt.*) as "priceTemplate"
   from public."Reservations" r
   left join public."UserPriceTemplates" up on r."user" = up."user"
-  left join public."PriceTemplates" pt on coalesce(up."priceTemplate", 'regular') = pt."id"
+  left join public."PriceTemplates" pt 
+    -- coalesce(.., regular) is crutial, it makes the api/admin/updatePrices logic work for users without price plan
+    on coalesce(up."priceTemplate", 'regular') = pt."id"
 ;
 
 ---

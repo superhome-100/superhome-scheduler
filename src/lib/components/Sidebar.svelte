@@ -69,7 +69,7 @@
 			});
 			if (response.status == 200) {
 				let disp = await response.headers.get('Content-Disposition');
-				let fn = /attachment; filename=(.*)/.exec(disp)[1];
+				let fn = /attachment; filename=(.*)/.exec(disp!)![1];
 				let blob = await response.blob();
 				let a = document.createElement('a');
 				a.href = window.URL.createObjectURL(blob);
@@ -121,7 +121,7 @@
 		});
 	});
 
-	const updateSubscription = async (e) => {
+	const updateSubscription = async (e: any) => {
 		if (e.detail.checked) {
 			const swr = await navigator.serviceWorker.ready;
 			pushService.subscribe(swr);
@@ -130,7 +130,7 @@
 		}
 	};
 
-	const updateAdminMode = async (e) => {
+	const updateAdminMode = async (e: any) => {
 		if (e.detail.checked) {
 			$viewMode = 'admin';
 		} else {
@@ -139,7 +139,7 @@
 		localStorage.setItem(viewModeStorageKey, $viewMode);
 	};
 
-	function handleKeypress(e) {
+	function handleKeypress(e: any) {
 		const { tagName } = e.target;
 		const isEditable = e.target.isContentEditable;
 
@@ -246,7 +246,7 @@
 									/>
 									<SidebarItem label="Update prices manually" {spanClass} on:click={updatePrices} />
 									<SidebarItem
-										label="Simuate error"
+										label="Simulate error"
 										{spanClass}
 										on:click={() => {
 											updatePrices.missing.simulate_error();
