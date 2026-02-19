@@ -542,30 +542,6 @@ alter table "public"."NotificationReceipts" enable row level security;
 
 ---
 
--- for: api/notifications
-CREATE OR REPLACE FUNCTION public.get_unread_notifications(p_user_id text)
-RETURNS SETOF "Notifications" 
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-  SELECT n.*
-  FROM public."Notifications" n
-  WHERE n.status = 'active' -- only active notifications
-    AND NOT EXISTS (
-    SELECT 1 
-    FROM public."NotificationReceipts" nr 
-    WHERE nr.notification = n.id 
-    AND nr."user" = p_user_id::uuid
-  );
-$$;
-
-GRANT EXECUTE ON FUNCTION public.get_unread_notifications(text) TO authenticated;
-
----
-
--- for: api/notifications
 CREATE OR REPLACE FUNCTION public.get_user_unread_notifications()
 RETURNS SETOF "Notifications" 
 LANGUAGE sql

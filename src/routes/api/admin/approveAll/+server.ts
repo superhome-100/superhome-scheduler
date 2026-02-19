@@ -3,8 +3,9 @@ import { approveAllPendingReservations } from '$lib/server/reservation';
 import { doTransaction } from '$lib/server/transaction';
 import { AuthError, checkAuthorisation } from '$lib/server/supabase';
 
-export async function POST({ request, locals: { user } }) {
+export async function POST({ request, locals: { safeGetSession } }) {
 	try {
+		const { user } = await safeGetSession();
 		checkAuthorisation(user, 'admin');
 
 		const data = await request.json();

@@ -216,7 +216,7 @@ export async function flagOWAmAsFull(date: string, state: boolean) {
 }
 
 export async function lockBuoyAssignments(day: string, lock: boolean) {
-	const response = await fetch('/api/lockBuoyAssignments', {
+	const response = await fetch('/api/admin/lockBuoyAssignments', {
 		method: 'POST',
 		headers: { 'Content-type': 'application/json' },
 		body: JSON.stringify({
@@ -228,5 +228,17 @@ export async function lockBuoyAssignments(day: string, lock: boolean) {
 	if (data.status !== 'success') {
 		console.error(data.error);
 		throw Error(data.error);
+	}
+}
+
+export async function assignBuoysToBoats(date: string, assignments: Record<string, string>) {
+	let response = await fetch('/api/admin/assignBuoysToBoats', {
+		method: 'POST',
+		headers: { 'Content-type': 'application/json' },
+		body: JSON.stringify({ date, assignments })
+	});
+	let data = await response.json();
+	if (data.status !== 'success') {
+		console.error('saveAssignments', data);
 	}
 }

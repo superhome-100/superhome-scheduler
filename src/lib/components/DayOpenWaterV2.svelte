@@ -16,6 +16,7 @@
 	} from '$lib/client/stores';
 	import type { SettingsManager } from '$lib/settingsManager';
 	import toast from 'svelte-french-toast';
+	import { assignBuoysToBoats } from '$lib/api';
 
 	export let date: string;
 	export let reservations: ReservationEx[];
@@ -53,15 +54,7 @@
 			[buoy]: boat
 		};
 
-		let response = await fetch('/api/admin/assignBuoysToBoats', {
-			method: 'POST',
-			headers: { 'Content-type': 'application/json' },
-			body: JSON.stringify({ date, assignments })
-		});
-		let data = await response.json();
-		if (data.status !== 'success') {
-			console.error('saveAssignments', data);
-		}
+		await assignBuoysToBoats(date, assignments);
 	};
 
 	const getHeadCount = (rsvs: Submission[]) => {

@@ -38,13 +38,6 @@ export async function getBuoys() {
 	return data;
 }
 
-export async function getUserActiveNotifications(userId: string): Promise<Notification[]> {
-	const { data } = await supabaseServiceRole
-		.rpc("get_unread_notifications", { "p_user_id": userId })
-		.throwOnError()
-	return data
-}
-
 export async function insertNotificationReceipt(notificationId: string, userId: string) {
 	await supabaseServiceRole
 		.from('NotificationReceipts')
