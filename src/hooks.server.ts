@@ -9,6 +9,7 @@ import type { Handle } from '@sveltejs/kit';
 import { sessionToSessionId } from '$lib/server/supabase';
 import { console_error } from '$lib/server/sentry';
 import { fetchRetryForSupabase } from '$lib/supabase';
+import type { UserEx } from '$types';
 
 Sentry.initCloudflareSentryHandle({
 	dsn: 'https://f2da7b160a72d4083e99922a3ae707fe@o4510844761931776.ingest.de.sentry.io/4510844770975824',
@@ -49,8 +50,14 @@ export const handle: Handle = sequence(
 						 * will replicate previous/standard behavior (https://kit.svelte.dev/docs/types#public-types-cookies)
 						 */
 						cookiesToSet.forEach(({ name, value, options }) =>
-							event.cookies.set(name, value, { ...options, path: '/' })
+							event.cookies.set(name, value, {
+								...options,
+								path: '/',
+								sameSite: 'lax',
+								secure: true
+							})
 						);
+
 					}
 				}
 			}
@@ -61,45 +68,57 @@ export const handle: Handle = sequence(
 		 * JWT before returning the session.
 		 */
 		event.locals.safeGetSession = async () => {
-			const {
-				data: { session }
-			} = await event.locals.supabase.auth.getSession();
-			if (!session) {
-				return { session: null, auth_user: null, user: null };
-			}
-			const {
-				data: { user: auth_user },
-				error
-			} = await event.locals.supabase.auth.getUser();
-			if (error) {
-				console_error("couldn't get session", error);
-				return { session, auth_user: null, user: null };
-			}
-			const { data: user, error: user_error } = await event.locals.supabase
-				.from('Users')
-				.select('*')
-				.eq('authId', auth_user!.id)
-				.single();
-			if (user_error) {
-				console_error("couldn't get user", user_error);
-				return { session, auth_user, user: null };
-			}
-			const sessionId = sessionToSessionId(session);
-			const { data: uSession } = await event.locals.supabase
-				.from('UserSessions')
-				.select('sessionId')
-				.eq('sessionId', sessionId)
-				.single();
-			return {
-				session,
-				auth_user,
-				user: {
-					...user,
-					avatar_url: auth_user?.user_metadata?.avatar_url ?? null,
-					last_sign_in_at: auth_user?.last_sign_in_at ?? null,
-					has_push: !!uSession
+			const getUserP = event.locals.supabase.auth.getUser().then(async ({ data: { user: auth_user }, error }) => {
+				if (error || !auth_user) {
+					console_error("couldn't get auth_user", error);
+					return { auth_user: null, user: null };
 				}
-			};
+				const { data: user, error: user_error } = await event.locals.supabase
+					.from('Users')
+					.select('*')
+					.eq('authId', auth_user.id)
+					.single();
+				if (user_error) {
+					console_error("couldn't get user", user_error);
+					return { auth_user: null, user: null };
+				}
+				return { auth_user, user };
+
+			});
+			const getSessionP = event.locals.supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+				if (error || !session) {
+					console_error("couldn't get session", error);
+					return { session: null, has_push: false };
+				}
+				const sessionId = sessionToSessionId(session);
+				const { data: uSession } = await event.locals.supabase
+					.from('UserSessions')
+					.select('pushSubscription')
+					.eq('sessionId', sessionId)
+					.maybeSingle();
+				return { session, has_push: !!uSession?.pushSubscription }
+			});
+
+			const { auth_user, user } = await getUserP;
+			const { session, has_push } = await getSessionP;
+
+			const userEx = user as UserEx;
+			if (user) {
+				userEx.avatar_url = auth_user?.user_metadata?.avatar_url ?? null;
+				userEx.last_sign_in_at = auth_user?.last_sign_in_at ?? null;
+				userEx.has_push = has_push;
+				return {
+					session,
+					auth_user,
+					user: userEx
+				};
+			} else {
+				return {
+					session: null,
+					auth_user: null,
+					user: null
+				};
+			}
 		};
 
 		const { session, auth_user, user } = await event.locals.safeGetSession();
