@@ -114,14 +114,13 @@ function throwIfReservationIsInvalid(
 }
 
 /**
- * This function only does some sanoty check but does not change the structure anymore
+ * This function only does some sanity check but does not change the structure anymore
  */
-export async function convertFromXataToAppType(
+function throwIfReservationsAreInvalid(
 	rawRsvs: Tables<'Reservations'>[]
-): Promise<Reservation[]> {
+): asserts rawRsvs is Tables<'Reservations'>[] {
 	// make sure it's safe to cast to the Reservation type
 	rawRsvs.forEach((rsv) => throwIfReservationIsInvalid(rsv));
-	return rawRsvs;
 }
 
 export async function getReservationsSince(minDateStr: string) {
@@ -136,8 +135,8 @@ export async function getReservationsSince(minDateStr: string) {
 		.gte('date', minDateStr)
 		.order('date', { ascending: true })
 		.throwOnError();
-	const reservations = await convertFromXataToAppType(rawRsvs);
-	return reservations;
+	throwIfReservationsAreInvalid(rawRsvs);
+	return rawRsvs;
 }
 
 function categoryIsBookable(
@@ -173,7 +172,8 @@ async function getOverlappingReservations(settings: SettingsManager, sub: Reserv
 		.or(getTimeOverlapSupabaseFilter(settings, sub))
 		.in('status', [ReservationStatus.pending, ReservationStatus.confirmed])
 		.throwOnError();
-	return await convertFromXataToAppType(data);
+	throwIfReservationsAreInvalid(data)
+	return data;
 }
 
 async function getUserOverlappingReservations(settings: SettingsManager, sub: Reservation, userIds: string[]) {
@@ -521,15 +521,15 @@ const checkEventFull = async (date: Date | string, owTime: string) => {
 
 export async function modifyReservation(actor: User, formData: AppFormData, settings: SettingsManager) {
 	const id = formData.get('id');
-	const { data } = await supabaseServiceRole
+	const { data: orig } = await supabaseServiceRole
 		.from('Reservations')
 		.select('*')
 		.eq('id', id)
 		.single()
 		.throwOnError();
-	if (!(data.user === actor.id || actor.privileges === 'admin'))
+	if (!(orig.user === actor.id || actor.privileges === 'admin'))
 		throw Error(`unathorised reservation modification ${id} by ${actor.id}`);
-	let [orig] = await convertFromXataToAppType([data]);
+	throwIfReservationIsInvalid(orig)
 	let sub = await unpackModifyForm(settings, formData, orig);
 	const [settingDate] = await getDateSetting(supabaseServiceRole, sub.date);
 
@@ -646,15 +646,15 @@ async function throwIfInvalidCancellation(settings: SettingsManager, data: Table
 export async function cancelReservation(actor: User, formData: AppFormData, settings: SettingsManager) {
 	let id = formData.get('id');
 	let buddiesToCancel = JSON.parse(formData.get('cancelBuddies'));
-	const { data } = await supabaseServiceRole
+	const { data: sub } = await supabaseServiceRole
 		.from('Reservations')
 		.select('*')
 		.eq('id', id)
 		.single()
 		.throwOnError();
-	if (!(data.user === actor.id || actor.privileges === 'admin'))
+	if (!(sub.user === actor.id || actor.privileges === 'admin'))
 		throw Error(`unathorised reservation cancellation ${id} by ${actor.id}`);
-	let [sub] = await convertFromXataToAppType([data]);
+	throwIfReservationIsInvalid(sub);
 
 	await throwIfInvalidCancellation(settings, sub);
 
