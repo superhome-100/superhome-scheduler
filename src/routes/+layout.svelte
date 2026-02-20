@@ -16,7 +16,8 @@
 		storedReservationsSummary_param,
 		storedSettingsW,
 		storedAppVisibilityW,
-		storedCore_paramsW
+		storedCore_paramsW,
+		storedSettingsOnline
 	} from '$lib/client/stores';
 	import { pushService } from '$lib/client/push';
 	import Refresher from '$lib/components/Refresher.svelte';
@@ -71,6 +72,9 @@
 				}
 			});
 			if (user) {
+				storedSettingsOnline.subscribe(() => {
+					// just to subscribe, see def for logic
+				});
 				await pushService.init(user.has_push ?? false);
 			} else {
 				goto('/login');

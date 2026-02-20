@@ -292,6 +292,7 @@ export const storedSettingsW = writable<SettingsManager>();
 export const storedSettings = storedSettingsW as Readable<SettingsManager>;
 /**
  * use 'storedSettings' instead of this
+ * has to be used in src/routes/+layout.svelte to has a constant store subscription
  */
 export const storedSettingsOnline =
     readableWithSubscriptionToCore<SettingsManager>('storedSettingsOnline',

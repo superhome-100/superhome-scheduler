@@ -206,16 +206,28 @@ create type "public"."setting_name" as enum (
 ---
 
 create table "public"."Settings" (
-    "id" uuid not null default gen_random_uuid(),
-    "createdAt" timestamp with time zone not null default now(),
-    "updatedAt" timestamp with time zone not null default now(),
-    "name" public.setting_name not null,
-    "value" jsonb not null,
-    "startDate" date null default null,
-    "endDate" date null default null,
+  "id" uuid not null default gen_random_uuid(),
+  "createdAt" timestamp with time zone not null default now(),
+  "updatedAt" timestamp with time zone not null default now(),
+  "name" public.setting_name not null,
+  "value" jsonb not null,
+  "startDate" date null default null,
+  "endDate" date null default null,
 
-    constraint Settings_pkey primary key ("id")
+  constraint Settings_pkey primary key ("id"),
+  CONSTRAINT "Settings:cannot have overlapping name,[date]"
+    EXCLUDE USING gist (
+      "name" WITH =,
+      daterange("startDate", "endDate",
+        '[]' -- inclusive lower and upper
+      ) WITH &&
+    )
+    WHERE ("startDate" IS NOT NULL OR "endDate" IS NOT NULL)
 ) TABLESPACE pg_default;
+
+CREATE UNIQUE INDEX "Settings:one_global_per_name" 
+  ON "public"."Settings" ("name") 
+  WHERE ("startDate" IS NULL AND "endDate" IS NULL);
 
 alter table "public"."Settings" enable row level security;
 

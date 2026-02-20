@@ -115,8 +115,8 @@ export type AppFormData = {
 export type Setting = {
 	default: string | string[] | boolean | number;
 	entries: {
-		startDate: string; // yyyy-mm-dd
-		endDate: string; // yyyy-mm-dd
+		startDate: string | null; // yyyy-mm-dd
+		endDate: string | null; // yyyy-mm-dd
 		id: string;
 		name: string;
 		value: string | string[] | boolean | number;

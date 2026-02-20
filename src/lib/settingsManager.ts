@@ -1,16 +1,14 @@
 import type { Settings, Setting } from '$types';
 
-export const getOn = (setting: Setting, date?: string) => {
-	let val = setting.default;
+const getOn = (setting: Setting, date?: string) => {
 	if (date !== undefined) {
-		for (let entry of setting.entries) {
-			if (entry.startDate <= date && date <= entry.endDate) {
-				val = entry.value;
-				break;
+		for (const e of setting.entries) {
+			if ((e.startDate === null || e.startDate <= date) && (e.endDate === null || date <= e.endDate)) {
+				return e.value;
 			}
 		}
 	}
-	return val;
+	return setting.default;
 };
 
 export const getSettingsManager = (settings: Settings) => {
