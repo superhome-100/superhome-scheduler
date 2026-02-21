@@ -113,7 +113,7 @@
 	<LoadingBar />
 {/if}
 {#if settingsManager.getOpenForBusiness(date) === false}
-	<div class="font-semibold text-3xl text-center">Closed</div>
+	<div class="font-semibold text-3xl text-center">🔒 Closed</div>
 {:else}
 	<section class="w-full relative block">
 		<header

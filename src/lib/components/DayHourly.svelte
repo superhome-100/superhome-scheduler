@@ -109,7 +109,7 @@
 	<LoadingBar />
 {/if}
 {#if $storedSettings.getOpenForBusiness(datetimeToLocalDateStr(date)) === false}
-	<div class="font-semibold text-3xl text-center">Closed</div>
+	<div class="font-semibold text-3xl text-center">🔒 Closed</div>
 {:else}
 	{#if assignment.status === 'error'}
 		<div class="font-semibold text-red-600 text-xl text-center">Error assigning reservations!</div>

@@ -189,7 +189,7 @@
 								}`}
 							>
 								<DayOfMonth
-									date={date.toDate()}
+									date={getYYYYMMDD(date)}
 									{category}
 									summary={$storedReservationsSummary[getYYYYMMDD(date)]}
 								/>
