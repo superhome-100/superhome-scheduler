@@ -206,15 +206,14 @@ create type "public"."setting_name" as enum (
 ---
 
 create table "public"."Settings" (
-  "id" uuid not null default gen_random_uuid(),
-  "createdAt" timestamp with time zone not null default now(),
-  "updatedAt" timestamp with time zone not null default now(),
+  "id" bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   "name" public.setting_name not null,
   "value" jsonb not null,
   "startDate" date null default null,
   "endDate" date null default null,
+  "createdAt" timestamp with time zone not null default now(),
+  "updatedAt" timestamp with time zone not null default now(),
 
-  constraint Settings_pkey primary key ("id"),
   CONSTRAINT "Settings:cannot have overlapping name,[date]"
     EXCLUDE USING gist (
       "name" WITH =,
@@ -225,9 +224,61 @@ create table "public"."Settings" (
     WHERE ("startDate" IS NOT NULL OR "endDate" IS NOT NULL)
 ) TABLESPACE pg_default;
 
-CREATE UNIQUE INDEX "Settings:one_global_per_name" 
+--
+
+CREATE UNIQUE INDEX "Settings:one global per name" 
   ON "public"."Settings" ("name") 
   WHERE ("startDate" IS NULL AND "endDate" IS NULL);
+
+--
+
+ALTER TABLE "public"."Settings"
+ADD CONSTRAINT "Settings: type of value is not correct"
+CHECK (
+  CASE 
+    WHEN "name" IN (
+      'classroomLabel',
+      'poolLabel'
+    ) THEN jsonb_typeof("value") = 'string'
+
+    WHEN "name" IN (
+      'cancelationCutOffTime',
+      'maxClassroomEndTime',
+      'maxPoolEndTime',
+      'minClassroomStartTime',
+      'minPoolStartTime',
+      'openwaterAmEndTime',
+      'openwaterAmStartTime',
+      'openwaterPmEndTime',
+      'openwaterPmStartTime',
+      'reservationCutOffTime',
+      'reservationIncrement'
+    ) THEN jsonb_typeof("value") = 'string' 
+       AND ("value" #>> '{}') ~ '^\d?\d:\d\d$'
+
+    WHEN "name" IN (
+      'maxChargeableOWPerMonth',
+      'reservationLeadTimeDays'
+    ) THEN jsonb_typeof("value") = 'number'
+      
+    WHEN "name" IN (
+      'cbsAvailable',
+      'classroomBookable',
+      'openForBusiness',
+      'openwaterAmBookable',
+      'openwaterPmBookable',
+      'poolBookable'
+      ) THEN jsonb_typeof("value") = 'boolean'
+      
+    WHEN "name" IN (
+      'poolLanes',
+      'classrooms',
+      'boats'
+    ) THEN jsonb_typeof("value") = 'array'
+      
+    ELSE false -- fail if name is not explicitly covered, to fix add it above
+  END
+);
 
 alter table "public"."Settings" enable row level security;
 
