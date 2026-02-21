@@ -67,14 +67,14 @@
 
 	const { open } = getContext('simple-modal') as { open: (component: any, props: any) => void };
 
-	const showViewRsv = (rsv: Reservation) => {
+	const showViewRsv = (rsv: ReservationEx) => {
 		open(RsvTabs, {
 			rsvs: [rsv],
 			hasForm: true
 		});
 	};
 
-	const sortChronologically = (rsvs: Reservation[], resPeriod: ReservationPeriod) => {
+	const sortChronologically = (rsvs: ReservationEx[], resPeriod: ReservationPeriod) => {
 		let sign = resPeriod === 'upcoming' ? 1 : -1;
 		return rsvs.sort((a, b) => {
 			if (a.date > b.date) {
@@ -89,7 +89,7 @@
 
 	type ReservationsByMonth = {
 		month?: string;
-		rsvs: Reservation[];
+		rsvs: ReservationEx[];
 	};
 
 	const groupRsvs = (

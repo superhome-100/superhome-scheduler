@@ -1,5 +1,5 @@
 import type { SettingsManager } from '$lib/settings';
-import { ReservationCategory } from '$types';
+import { ReservationCategory, type ReservationCategoryT } from '$types';
 import * as dtu from './datetimeUtils';
 
 export const minPoolStart = (stns: SettingsManager, date: string): number =>
@@ -60,12 +60,12 @@ export function beforeCancelCutoff(
 	stns: SettingsManager,
 	dateStr: string,
 	startTime: string,
-	category: ReservationCategory
+	category: ReservationCategoryT
 ): boolean {
 	const now = dtu.PanglaoDayJs();
 	const startDt = dtu.fromPanglaoDateTimeStringToDayJs(dateStr, startTime);
 	const diffInMin = startDt.diff(now, 'minutes');
-	if ([ReservationCategory.pool, ReservationCategory.classroom].includes(category)) {
+	if ([ReservationCategory.pool, ReservationCategory.classroom].includes(category as ReservationCategory)) {
 		return diffInMin > 60; // Keep 1 hour cutoff for modifications
 	} else {
 		return diffInMin > dtu.timeStrToMin(stns.getCancelationCutOffTime(dateStr));

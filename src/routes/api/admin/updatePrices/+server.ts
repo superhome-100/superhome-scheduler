@@ -64,7 +64,8 @@ export async function GET({ request, locals: { safeGetSession } }: RequestEvent)
 		const nowDay = getYYYYMMDD(now);
 		// need to use supabaseServiceRole because this code run from scheduled worker without user so 
 		// `locals:{supabase}` is not working here
-		const maxChargeableOWPerMonth = (await getSettingsManager(supabaseServiceRole)).getMaxChargeableOWPerMonth(nowDay);
+		const settings = await getSettingsManager(supabaseServiceRole)
+		const maxChargeableOWPerMonth = settings.getMaxChargeableOWPerMonth(nowDay);
 
 		console.info('api/admin/updatePrices', { now, nowDay, maxChargeableOWPerMonth });
 

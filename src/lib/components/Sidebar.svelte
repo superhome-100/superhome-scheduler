@@ -25,7 +25,6 @@
 	import { onMount } from 'svelte';
 	import { subscription } from '$lib/client/push';
 	import { pushService } from '$lib/client/push';
-	import { goto } from '$app/navigation';
 
 	const schedulerDoc =
 		'https://docs.google.com/document/d/1FQ828hDuuPRnQ7QWYMykSv9bT3Lmxi0amLsFyTjnyuM/edit?usp=share_link';
@@ -138,32 +137,9 @@
 		}
 		localStorage.setItem(viewModeStorageKey, $viewMode);
 	};
-
-	function handleKeypress(e: any) {
-		const { tagName } = e.target;
-		const isEditable = e.target.isContentEditable;
-
-		// Filter out inputs, textareas, and contenteditable elements
-		if (tagName === 'INPUT' || tagName === 'TEXTAREA' || isEditable) {
-			return;
-		}
-		if (e.keyCode == 80) {
-			// p
-			goto('/multi-day/pool');
-		} else if (e.keyCode == 79) {
-			//o
-			goto('/multi-day/openwater');
-		} else if (e.keyCode == 67) {
-			//c
-			goto('/multi-day/classroom');
-		} else if (e.keyCode == 77) {
-			//m
-			goto('/');
-		}
-	}
 </script>
 
-<svelte:window bind:innerWidth={width} on:keydown={handleKeypress} />
+<svelte:window bind:innerWidth={width} />
 
 <Navbar let:hidden let:toggle class="!z-50">
 	<NavHamburger onClick={toggleDrawer} class="ml-3 {$user ? '!block' : 'hidden'}" />

@@ -10,7 +10,6 @@ import {
 } from '$types';
 import type { Dayjs } from 'dayjs';
 import { fromPanglaoDateTimeStringToDayJs, getYYYYMMDD, PanglaoDayJs } from './datetimeUtils';
-import { ow_am_full } from './dateSettings';
 
 export const getBuoys = async (supabase: SupabaseClient) => {
 	try {

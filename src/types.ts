@@ -90,6 +90,7 @@ export enum ReservationCategory {
 	pool = 'pool',
 	classroom = 'classroom'
 }
+export type ReservationCategoryT = Enums<'reservation_category'>
 
 export enum ReservationStatus {
 	confirmed = 'confirmed',
