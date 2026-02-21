@@ -30,7 +30,11 @@
 	export let data;
 	const { user, supabase, settingsManager } = data;
 
-	Sentry.setUser(user ? { id: user.id } : null);
+	Sentry.setUser(
+		user
+			? { id: user.id, status: user.status, privileges: user.privileges, createdAt: user.createdAt }
+			: null
+	);
 	page.subscribe((p) => Sentry.setTag('route', p.route.id));
 	storedDayReservations_param.subscribe((v) => Sentry.setContext('storedDayReservations_param', v));
 	storedReservationsSummary_param.subscribe((v) =>
