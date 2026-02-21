@@ -42,10 +42,11 @@
 			<div>
 				<br />Welcome back. This account is currently disabled.<br />
 				Contact the administrators. <br />
-				Via <button on:click={() => openWhatsApp($user)}> WhatsApp </button><br />
+				<!-- TODO:mate after xata migration is stable, add back -->
+				<!-- Via <button on:click={() => openWhatsApp($user)}> WhatsApp </button><br />
 				Or
 				<button on:click={() => copyToClipboard($user)}> click here </button>
-				to copy an activation link<br />and send it to the administrators.
+				to copy an activation link<br />and send it to the administrators. -->
 			</div>
 		</div>
 		<br />

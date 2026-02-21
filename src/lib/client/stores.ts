@@ -139,19 +139,19 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
                     console.debug('store.refresh.from-cache', variableName, param);
                     set(cacheVal);
                 } else {
-                    await progressTracker.track(async (cp, p) => {
+                    await progressTracker.track(async (cp, p, pJ) => {
                         try {
                             console.debug('store.refresh', variableName, param);
                             isLoading.set(true);
                             set(defaultValue);
                             const value = await cb(cp, p);
-                            cache.set(paramJsn!, value);
+                            cache.set(pJ, value);
                             set(value);
                             isLoading.set(false);
                         } catch (e) {
                             console.error('subscribeToCoreAndParam', variableName, e, param);
                         }
-                    }, coreParam, param);
+                    }, coreParam, param, paramJsn!);
                 }
             }
         };
