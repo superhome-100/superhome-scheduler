@@ -21,14 +21,11 @@
 
 	// svelte-ignore unused-export-let
 	export let params;
-	export let data: {
-		category: ReservationCategory;
-		month: string;
-	};
+	export let data;
 
 	let categories = [...CATEGORIES];
 
-	$: category = data.category;
+	$: category = data.category as ReservationCategory;
 	$: now = dayjs(data.month.substring(0, 7) + '-01');
 
 	function getWeeksInMonth(year: number, month: number) {

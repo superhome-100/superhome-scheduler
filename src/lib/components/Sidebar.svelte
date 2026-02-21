@@ -19,7 +19,6 @@
 	import Toggle from '$lib/components/Toggle.svelte';
 	import { sineIn } from 'svelte/easing';
 	import { viewMode } from '$lib/stores';
-	import { storedSettings, storedUser as user } from '$lib/client/stores';
 	import { toast } from 'svelte-french-toast';
 	import { page } from '$app/state';
 	import { signOut } from '$lib/user';
@@ -27,6 +26,7 @@
 	import { subscription } from '$lib/client/push';
 	import { pushService } from '$lib/client/push';
 	import { getFeature } from '$lib/userFeature';
+	import { storedSettings, storedUser } from '$lib/client/stores';
 
 	const supabaseTableUrl = `https://supabase.com/dashboard/project/${
 		new URL(PUBLIC_SUPABASE_URL).host.split('.')[0]
@@ -35,11 +35,13 @@
 		'https://docs.google.com/document/d/1FQ828hDuuPRnQ7QWYMykSv9bT3Lmxi0amLsFyTjnyuM/edit?usp=share_link';
 	const viewModeStorageKey = 'superhome-scheduler.viewMode';
 
+	$: user = $storedUser;
+
 	let drawerHidden = true;
 	$: activateClickOutside = !drawerHidden && width < breakPoint;
 
 	function toggleDrawer() {
-		if ($user) {
+		if (user) {
 			drawerHidden = !drawerHidden;
 		}
 	}
@@ -54,7 +56,7 @@
 		easing: sineIn
 	};
 
-	$: drawerHidden = $user === null || width < breakPoint;
+	$: drawerHidden = user === null || width < breakPoint;
 
 	const toggleSide = () => {
 		if (width < breakPoint) {
@@ -117,12 +119,10 @@
 	}
 
 	onMount(() => {
-		const sub = user.subscribe((u) => {
-			const stored = localStorage.getItem(viewModeStorageKey);
-			if (stored) {
-				$viewMode = stored === 'admin' && $user?.privileges === 'admin' ? 'admin' : 'normal';
-			}
-		});
+		const stored = localStorage.getItem(viewModeStorageKey);
+		if (stored) {
+			$viewMode = stored === 'admin' && user?.privileges === 'admin' ? 'admin' : 'normal';
+		}
 	});
 
 	const updateSubscription = async (e: any) => {
@@ -142,18 +142,24 @@
 		}
 		localStorage.setItem(viewModeStorageKey, $viewMode);
 	};
+
+	$: pushNotificationEnabled = ((user) => {
+		const smv = $storedSettings.getNow('pushNotificationEnabled');
+		if (!user) return smv;
+		return getFeature(user, 'pushNotificationEnabled', smv);
+	})(user);
 </script>
 
 <svelte:window bind:innerWidth={width} />
 
 <Navbar let:hidden let:toggle class="!z-50">
-	<NavHamburger onClick={toggleDrawer} class="ml-3 {$user ? '!block' : 'hidden'}" />
+	<NavHamburger onClick={toggleDrawer} class="ml-3 {user ? '!block' : 'hidden'}" />
 	<NavBrand href="/" class="lg:ml-64">
 		<span class="self-center whitespace-nowrap xs:text-xl font-semibold dark:text-white">
 			SuperHOME Scheduler
 		</span>
 	</NavBrand>
-	{#if $user}
+	{#if user}
 		<NavUl
 			divClass="block md:w-auto"
 			ulClass="flex flex-col p-0 mt-0 md:flex-row md:space-x-8 md:text-sm md:font-medium"
@@ -184,17 +190,16 @@
 	<Sidebar asideClass="w-54">
 		<SidebarWrapper divClass="overflow-y-auto py-4 px-3 rounded">
 			<SidebarGroup>
-				{#if $user}
+				{#if user}
 					<SidebarDropdownWrapper label="Profile">
 						<SidebarItem label="Logout" on:click={userLogout} />
-						{#if getFeature($user, 'pushNotificationEnabled', $storedSettings.getNow('pushNotificationEnabled'))}
-							<!-- always showing to admins for testing -->
+						{#if pushNotificationEnabled}
 							<div class="ms-4">
 								<Toggle checked={!!$subscription} on:change={updateSubscription} />
 								<span>Notifications</span>
 							</div>
 						{/if}
-						{#if $user.privileges === 'admin'}
+						{#if user.privileges === 'admin'}
 							<div class="ms-4">
 								<Toggle checked={$viewMode === 'admin'} on:change={updateAdminMode} />
 								<span>Admin Mode</span>

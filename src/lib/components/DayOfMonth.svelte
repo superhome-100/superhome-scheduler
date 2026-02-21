@@ -4,7 +4,6 @@
 
 	import { getCategoryDatePath } from '$lib/url';
 	import { storedSettings } from '$lib/client/stores';
-	import type { SettingsManager } from '$lib/settings';
 	import { isOpenForBooking } from '$lib/utils';
 
 	export let date: string;

@@ -81,7 +81,6 @@ function readableWithSubscriptionToCore<T>(
                         try {
                             console.debug('store.refresh', variableName);
                             isLoading.set(true);
-                            set(defaultValue);
                             cacheVal = await cb(cp);
                             set(cacheVal);
                             isLoading.set(false);
@@ -143,7 +142,6 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
                         try {
                             console.debug('store.refresh', variableName, param);
                             isLoading.set(true);
-                            set(defaultValue);
                             const value = await cb(cp, p);
                             cache.set(pJ, value);
                             set(value);
@@ -302,8 +300,9 @@ export const storedSettings = storedSettingsW as Readable<SettingsManager>;
  * has to be used in src/routes/+layout.svelte to has a constant store subscription
  */
 export const { value: storedSettingsOnline, isLoading: storedSettingsOnlineLoading } =
-    readableWithSubscriptionToCore<SettingsManager>('storedSettingsOnline',
+    readableWithSubscriptionToCoreAndParam<SettingsManager, string>('storedSettingsOnline',
         undefined as unknown as SettingsManager,
+        storedCurrentDay,
         async ({ supabase }) => {
             const r = await getSettingsManager(supabase);
             storedSettingsW.set(r); //hacky update but should be fine for now
