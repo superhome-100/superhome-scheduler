@@ -363,7 +363,7 @@ export type Database = {
 				Row: {
 					createdAt: string;
 					endDate: string | null;
-					id: string;
+					id: number;
 					name: Database['public']['Enums']['setting_name'];
 					startDate: string | null;
 					updatedAt: string;
@@ -372,7 +372,7 @@ export type Database = {
 				Insert: {
 					createdAt?: string;
 					endDate?: string | null;
-					id?: string;
+					id?: never;
 					name: Database['public']['Enums']['setting_name'];
 					startDate?: string | null;
 					updatedAt?: string;
@@ -381,7 +381,7 @@ export type Database = {
 				Update: {
 					createdAt?: string;
 					endDate?: string | null;
-					id?: string;
+					id?: never;
 					name?: Database['public']['Enums']['setting_name'];
 					startDate?: string | null;
 					updatedAt?: string;
