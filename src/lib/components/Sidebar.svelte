@@ -26,7 +26,7 @@
 	import { onMount } from 'svelte';
 	import { subscription } from '$lib/client/push';
 	import { pushService } from '$lib/client/push';
-	import { getFeature } from '$lib/utils';
+	import { getFeature } from '$lib/userFeature';
 
 	const supabaseTableUrl = `https://supabase.com/dashboard/project/${
 		new URL(PUBLIC_SUPABASE_URL).host.split('.')[0]

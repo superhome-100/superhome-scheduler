@@ -12,7 +12,7 @@
 	import DayHourly from '$lib/components/DayHourly.svelte';
 
 	import { getCategoryDatePath } from '$lib/url';
-	import { approveAllPendingReservations } from '$lib/api';
+	import { approveAllPendingReservations } from '$lib/client/api';
 	import { getYYYYMM } from '$lib/datetimeUtils';
 	import { storedDayReservations_param, storedSettings, storedUser } from '$lib/client/stores';
 	import type { SettingsManager } from '$lib/settings';

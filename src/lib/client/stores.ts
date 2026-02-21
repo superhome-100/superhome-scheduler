@@ -24,7 +24,7 @@ import {
     getUserNotifications,
     getUserPastReservations,
     getUsers
-} from '$lib/api';
+} from '$lib/client/api';
 import { LRUCache } from 'lru-cache';
 import { stableStringify } from '$lib/utils';
 

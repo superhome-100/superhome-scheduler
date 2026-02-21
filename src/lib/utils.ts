@@ -7,10 +7,6 @@ import { ReservationCategory, ReservationType, type Buoy, type Reservation, type
 import type { SettingsManager } from './settings';
 
 
-export function getFeature<T>(user: User, name: string, defaultValue: T): T {
-	return user?.metadata?.['feature']?.[name] ?? defaultValue;
-}
-
 export function cleanUpFormDataBuddyFields(formData: FormData): void {
 	const resType = formData.get('resType') as string;
 	const numBuddies = parseInt(formData.get('numBuddies') as string);

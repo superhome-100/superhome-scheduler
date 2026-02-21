@@ -9,11 +9,8 @@ import {
 	type DateReservationReport
 } from '$types';
 import type { Dayjs } from 'dayjs';
-import { fromPanglaoDateTimeStringToDayJs, getYYYYMMDD, PanglaoDayJs } from './datetimeUtils';
-//
-import { PUBLIC_XATA_MIGRATION } from '$env/static/public';
-const xataMigrationDayStrFilter = (d: string) => PUBLIC_XATA_MIGRATION <= d;
-//
+import { fromPanglaoDateTimeStringToDayJs, getYYYYMMDD, PanglaoDayJs } from '../datetimeUtils';
+import { xataMigrationDayStrFilter } from './xata';
 
 
 export const getBuoys = async (supabase: SupabaseClient) => {

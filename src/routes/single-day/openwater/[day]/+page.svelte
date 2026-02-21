@@ -10,16 +10,20 @@
 	import { toast } from 'svelte-french-toast';
 	import { ReservationCategory } from '$types';
 	import { getCategoryDatePath } from '$lib/url';
-	import { approveAllPendingReservations, flagOWAmAsFull, lockBuoyAssignments } from '$lib/api';
-	import { getYYYYMM, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils.js';
+	import {
+		approveAllPendingReservations,
+		flagOWAmAsFull,
+		lockBuoyAssignments
+	} from '$lib/client/api';
+	import { getYYYYMM, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
 	import {
 		storedDaySettings,
 		storedDayReservations,
 		storedDayReservations_param,
 		storedUser
-	} from '$lib/client/stores.js';
-	import { ow_am_full } from '$lib/dateSettings.js';
-	import type { Enums } from '$lib/supabase.types.js';
+	} from '$lib/client/stores';
+	import { ow_am_full } from '$lib/dateSettings';
+	import type { Enums } from '$lib/supabase.types';
 
 	// svelte-ignore unused-export-let
 	export let params;

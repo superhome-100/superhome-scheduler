@@ -16,7 +16,7 @@
 	} from '$lib/client/stores';
 	import type { SettingsManager } from '$lib/settings';
 	import toast from 'svelte-french-toast';
-	import { assignBuoysToBoats } from '$lib/api';
+	import { assignBuoysToBoats } from '$lib/client/api';
 
 	export let date: string;
 	export let reservations: ReservationEx[];
