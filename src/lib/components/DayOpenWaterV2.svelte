@@ -14,7 +14,7 @@
 		storedBuoys,
 		storedOWAdminComments
 	} from '$lib/client/stores';
-	import type { SettingsManager } from '$lib/settingsManager';
+	import type { SettingsManager } from '$lib/settings';
 	import toast from 'svelte-french-toast';
 	import { assignBuoysToBoats } from '$lib/api';
 

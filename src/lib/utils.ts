@@ -4,17 +4,12 @@ import { storedUsers } from '$lib/client/stores';
 import { get } from 'svelte/store';
 import { assignHourlySpaces } from './autoAssign';
 import { ReservationCategory, ReservationType, type Buoy, type Reservation, type ReservationEx, type User } from '$types';
-import type { SettingsManager } from './settingsManager';
+import type { SettingsManager } from './settings';
 
-// interface Reservation {
-// 	user: string;
-// 	resType: string;
-// 	numStudents?: number;
-// 	category: string;
-// 	status: 'pending' | 'confirmed';
-// 	date: string;
-// 	maxDepth?: number;
-// }
+
+export function getFeature<T>(user: User, name: string, defaultValue: T): T {
+	return user?.metadata?.['feature']?.[name] ?? defaultValue;
+}
 
 export function cleanUpFormDataBuddyFields(formData: FormData): void {
 	const resType = formData.get('resType') as string;

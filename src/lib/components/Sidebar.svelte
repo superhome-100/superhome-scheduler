@@ -19,13 +19,14 @@
 	import Toggle from '$lib/components/Toggle.svelte';
 	import { sineIn } from 'svelte/easing';
 	import { viewMode } from '$lib/stores';
-	import { storedUser as user } from '$lib/client/stores';
+	import { storedSettings, storedUser as user } from '$lib/client/stores';
 	import { toast } from 'svelte-french-toast';
 	import { page } from '$app/state';
 	import { signOut } from '$lib/user';
 	import { onMount } from 'svelte';
 	import { subscription } from '$lib/client/push';
 	import { pushService } from '$lib/client/push';
+	import { getFeature } from '$lib/utils';
 
 	const supabaseTableUrl = `https://supabase.com/dashboard/project/${
 		new URL(PUBLIC_SUPABASE_URL).host.split('.')[0]
@@ -186,10 +187,13 @@
 				{#if $user}
 					<SidebarDropdownWrapper label="Profile">
 						<SidebarItem label="Logout" on:click={userLogout} />
-						<div class="ms-4">
-							<Toggle checked={!!$subscription} on:change={updateSubscription} />
-							<span>Notifications</span>
-						</div>
+						{#if getFeature($user, 'pushNotificationEnabled', $storedSettings.getNow('pushNotificationEnabled'))}
+							<!-- always showing to admins for testing -->
+							<div class="ms-4">
+								<Toggle checked={!!$subscription} on:change={updateSubscription} />
+								<span>Notifications</span>
+							</div>
+						{/if}
 						{#if $user.privileges === 'admin'}
 							<div class="ms-4">
 								<Toggle checked={$viewMode === 'admin'} on:change={updateAdminMode} />

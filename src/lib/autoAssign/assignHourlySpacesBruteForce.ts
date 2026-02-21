@@ -4,7 +4,7 @@ import type { Block, Grid } from './hourlyUtils';
 import { blocksToDisplayData } from './hourlyDisplay';
 import type { Reservation } from '$types';
 import { ReservationCategory } from '$types';
-import type { SettingsManager } from '$lib/settingsManager';
+import type { SettingsManager } from '$lib/settings';
 
 const slotIsAvailable = (sByT: Grid, slot: number, blk: Block) => {
 	for (let i = blk.startTime; i < blk.endTime; i++) {

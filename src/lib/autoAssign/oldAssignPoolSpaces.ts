@@ -1,7 +1,7 @@
 import { inc, startTimes } from '$lib/reservationTimes';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getNumberOfOccupants } from '$utils/reservations';
-import type { SettingsManager } from '$lib/settingsManager';
+import type { SettingsManager } from '$lib/settings';
 
 interface Reservation {
 	id: string;

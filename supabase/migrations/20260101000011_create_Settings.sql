@@ -23,6 +23,7 @@ create type "public"."setting_name" as enum (
   'poolBookable',
   'poolLabel',
   'poolLanes',
+  'pushNotificationEnabled',
   'reservationCutOffTime',
   'reservationIncrement',
   'reservationLeadTimeDays'
@@ -92,7 +93,8 @@ CHECK (
       'openForBusiness',
       'openwaterAmBookable',
       'openwaterPmBookable',
-      'poolBookable'
+      'poolBookable',
+      'pushNotificationEnabled'
       ) THEN jsonb_typeof("value") = 'boolean'
       
     WHEN "name" IN (

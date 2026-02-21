@@ -3,6 +3,8 @@ import { SupabaseClient as SSupabaseClient } from '@supabase/supabase-js';
 
 export type SupabaseClient = SSupabaseClient<Database>;
 
+export type AssertEqual<T, U extends T> = T extends U ? true : never;
+
 export type RequireKeys<T, K extends keyof T> = Omit<T, K> & { [P in K]-?: NonNullable<T[P]>; };
 
 export type DeepNonNullable<T> = { [P in keyof T]-?: NonNullable<T[P]>; };
@@ -111,21 +113,6 @@ export interface BuddyData {
 export type AppFormData = {
 	has(name: string): boolean
 	get(name: string): string
-};
-
-export type Setting = {
-	default: string | string[] | boolean | number;
-	entries: {
-		startDate: string | null; // yyyy-mm-dd
-		endDate: string | null; // yyyy-mm-dd
-		id: string;
-		name: string;
-		value: string | string[] | boolean | number;
-	}[];
-};
-
-export type Settings = {
-	[key in Enums<'setting_name'>]: Setting;
 };
 
 export type DateReservationSummary = {

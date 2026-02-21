@@ -1,6 +1,7 @@
 import type { Session, SupabaseClient, User as AuthUser } from '@supabase/supabase-js';
 import type { Database } from '$lib/supabase.types';
-import type { Settings, UserEx } from '$types';
+import type { UserEx } from '$types';
+import type { Settings } from "$lib/settings";
 
 declare global {
 	namespace App {

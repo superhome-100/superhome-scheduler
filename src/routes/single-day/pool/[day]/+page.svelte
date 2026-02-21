@@ -13,9 +13,9 @@
 
 	import { getCategoryDatePath } from '$lib/url';
 	import { approveAllPendingReservations } from '$lib/api';
-	import { getYYYYMM } from '$lib/datetimeUtils.js';
-	import { storedDayReservations_param, storedSettings, storedUser } from '$lib/client/stores.js';
-	import type { SettingsManager } from '$lib/settingsManager.js';
+	import { getYYYYMM } from '$lib/datetimeUtils';
+	import { storedDayReservations_param, storedSettings, storedUser } from '$lib/client/stores';
+	import type { SettingsManager } from '$lib/settings';
 
 	// svelte-ignore unused-export-let
 	export let params;
