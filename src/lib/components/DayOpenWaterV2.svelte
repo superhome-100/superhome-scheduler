@@ -4,9 +4,15 @@
 	import AdminComment from '$lib/components/AdminComment.svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import LoadingBar from '$lib/components/LoadingBar.svelte';
-	import { type Buoy, type Submission, type OWReservation, type ReservationEx } from '$types';
+	import {
+		type Buoy,
+		type Submission,
+		type OWReservation,
+		type ReservationEx,
+		ReservationCategory
+	} from '$types';
 	import DayOpenWaterSubmissionsCard from './DayOpenWaterSubmissionsCard.svelte';
-	import { buoyDesc } from '$lib/utils';
+	import { buoyDesc, isOpenForBooking } from '$lib/utils';
 	import { setBuoyToReservations } from '$lib/autoAssign';
 	import {
 		isLoading,
@@ -107,12 +113,13 @@
 	})();
 
 	$: isAdmin = $viewMode === 'admin';
+	$: isOpen = isOpenForBooking(settingsManager, date, ReservationCategory.openwater, null);
 </script>
 
 {#if $isLoading}
 	<LoadingBar />
 {/if}
-{#if settingsManager.getOpenForBusiness(date) === false}
+{#if !isOpen}
 	<div class="font-semibold text-3xl text-center">🔒 Closed</div>
 {:else}
 	<section class="w-full relative block">

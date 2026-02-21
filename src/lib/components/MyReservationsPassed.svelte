@@ -1,6 +1,10 @@
 <script lang="ts">
-	import { storedPastReservations } from '$lib/client/stores';
+	import { storedPastReservations, storedPastReservationsLoading } from '$lib/client/stores';
 	import MyReservations from '$lib/components/MyReservations.svelte';
 </script>
 
-<MyReservations resPeriod="past" reservations={$storedPastReservations} />
+<MyReservations
+	resPeriod="past"
+	reservations={$storedPastReservations}
+	isLoading={$storedPastReservationsLoading}
+/>

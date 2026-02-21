@@ -1,10 +1,11 @@
-import { datetimeToLocalDateStr } from './datetimeUtils';
+import { datetimeToLocalDateStr, dayjs, getYYYYMMDD } from './datetimeUtils';
 import { viewMode } from './stores';
 import { storedUsers } from '$lib/client/stores';
 import { get } from 'svelte/store';
 import { assignHourlySpaces } from './autoAssign';
-import { ReservationCategory, ReservationType, type Buoy, type Reservation, type ReservationEx, type User } from '$types';
+import { OWTime, ReservationCategory, ReservationType, type Buoy, type Reservation, type ReservationCategoryT, type ReservationEx, type User } from '$types';
 import type { SettingsManager } from './settings';
+import type { Dayjs } from 'dayjs';
 
 
 export function cleanUpFormDataBuddyFields(formData: FormData): void {
@@ -96,3 +97,22 @@ export const stableStringify = (obj: unknown) => {
 		return value;
 	});
 }
+
+export const isOpenForBooking = ((sm: SettingsManager, date: string | Dayjs | Date, category: ReservationCategory | ReservationCategoryT, owTime: OWTime | null) => {
+	const dateStr = getYYYYMMDD(dayjs(date));
+	if (!sm.get('openForBusiness', dateStr)) return false;
+	switch (category) {
+		case ReservationCategory.pool:
+			return sm.get('poolBookable', dateStr);
+		case ReservationCategory.classroom:
+			return sm.get('classroomBookable', dateStr);
+		case ReservationCategory.openwater:
+			if (owTime) {
+				if (owTime === 'AM') return sm.get('openwaterAmBookable', dateStr)
+				else if (owTime === 'PM') sm.get('openwaterPmBookable', dateStr)
+			}
+			return sm.get('openwaterAmBookable', dateStr) || sm.get('openwaterPmBookable', dateStr);
+		default:
+			throw Error(`assert: unknown ${category}`);
+	}
+});

@@ -5,24 +5,13 @@
 	import { getCategoryDatePath } from '$lib/url';
 	import { storedSettings } from '$lib/client/stores';
 	import type { SettingsManager } from '$lib/settings';
+	import { isOpenForBooking } from '$lib/utils';
 
 	export let date: string;
 	export let category: ReservationCategory;
 	export let summary: DateReservationSummary;
 
-	$: isOpen = ((sm: SettingsManager) => {
-		if (!sm.get('openForBusiness', date)) return false;
-		switch (category) {
-			case ReservationCategory.pool:
-				return sm.get('poolBookable', date);
-			case ReservationCategory.classroom:
-				return sm.get('classroomBookable', date);
-			case ReservationCategory.openwater:
-				return sm.get('openwaterAmBookable', date) || sm.get('openwaterPmBookable', date);
-			default:
-				throw Error(`assert: unknown ${category}`);
-		}
-	})($storedSettings);
+	$: isOpen = isOpenForBooking($storedSettings, date, category, null);
 </script>
 
 <div

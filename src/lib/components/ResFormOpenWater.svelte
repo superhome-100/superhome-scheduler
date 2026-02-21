@@ -128,6 +128,7 @@
 	{showBuddyFields}
 	bind:date
 	bind:category
+	bind:owTime
 	{rsv}
 	extendDisabled={isAmFull && owTime === 'AM' && !rsv}
 	{discipline}

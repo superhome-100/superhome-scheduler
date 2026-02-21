@@ -10,7 +10,7 @@
 	import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils';
 	import { getContext } from 'svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
-	import { badgeColor, getDaySchedule } from '$lib/utils';
+	import { badgeColor, getDaySchedule, isOpenForBooking } from '$lib/utils';
 	import LoadingBar from './LoadingBar.svelte';
 	import { type ReservationEx } from '$types';
 	import type { SettingsManager } from '$lib/settings';
@@ -102,13 +102,14 @@
 
 	$: innerWidth = 0;
 	$: slotWidthPx = parseInt((innerWidth * 88) / resInfo.resources.length / 100);
+	$: isOpen = isOpenForBooking($storedSettings, date, category, null);
 </script>
 
 <svelte:window bind:innerWidth />
 {#if $isLoading}
 	<LoadingBar />
 {/if}
-{#if $storedSettings.getOpenForBusiness(datetimeToLocalDateStr(date)) === false}
+{#if !isOpen}
 	<div class="font-semibold text-3xl text-center">🔒 Closed</div>
 {:else}
 	{#if assignment.status === 'error'}

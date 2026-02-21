@@ -8,15 +8,12 @@
 	import type { Reservation, ReservationEx, ReservationPeriod } from '$types';
 	import { ReservationCategory, ReservationStatus } from '$types';
 	import dayjs from 'dayjs';
-	import {
-		storedSettings,
-		storedIncomingReservations,
-		storedPastReservations
-	} from '$lib/client/stores';
+	import { storedSettings } from '$lib/client/stores';
 	import type { SettingsManager } from '$lib/settings';
 
 	export let resPeriod: ReservationPeriod;
 	export let reservations: ReservationEx[];
+	export let isLoading: boolean;
 
 	const bgColorByCategoryFrom: { [key: string]: string } = {
 		[ReservationCategory.pool]: 'from-pool-bg-from',
@@ -131,7 +128,9 @@
 	};
 </script>
 
-{#if rsvGroups.length === 0}
+{#if isLoading}
+	<div>Loading...</div>
+{:else if rsvGroups.length === 0}
 	<div>No reservations found.</div>
 {/if}
 <table class="m-auto border-separate border-spacing-y-1">

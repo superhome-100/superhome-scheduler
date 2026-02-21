@@ -10,9 +10,6 @@
 	import { storedSettings, storedUser } from '$lib/client/stores';
 	import { type SettingsManager } from '$lib/settings';
 
-	let lanes = $storedSettings.getPoolLanes();
-	let rooms = $storedSettings.getClassrooms();
-
 	export let rsv: Reservation | null = null;
 	export let category = 'pool';
 	export let date: string | null = null;
@@ -27,6 +24,9 @@
 	let disabled = viewOnly || restrictModify;
 
 	date = !rsv || !rsv?.date ? (date ? date : dateFn(category)) : rsv.date;
+
+	let lanes = $storedSettings.getPoolLanes(date);
+	let rooms = $storedSettings.getClassrooms(date);
 
 	const getStartTimes = (sm: SettingsManager, date: string, category: string) => {
 		let startTs = startTimes(sm, date, category);

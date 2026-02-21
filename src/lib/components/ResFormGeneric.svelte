@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { BuddyData, ReservationEx, UserMinimal } from '$types';
+	import type { BuddyData, OWTime, ReservationEx, UserMinimal } from '$types';
 	import { ReservationType } from '$types';
 	import { ReservationStatus, ReservationCategory } from '$types';
 	import { canSubmit } from '$lib/stores';
 	import { storedUsers, storedUser as user, storedSettings, storedUser } from '$lib/client/stores';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes';
-	import { adminView, isMyReservation } from '$lib/utils';
+	import { adminView, isMyReservation, isOpenForBooking } from '$lib/utils';
 	import { getYYYYMMDD, PanglaoDate } from '$lib/datetimeUtils';
 	import BuddyMatch from '$lib/components/BuddyMatch.svelte';
 	import PlusIcon from '$lib/components/PlusIcon.svelte';
@@ -18,6 +18,7 @@
 	export let date: string = rsv?.date ?? getYYYYMMDD(PanglaoDate());
 	export let category: ReservationCategory =
 		(rsv?.category as ReservationCategory) ?? ReservationCategory.pool;
+	export let owTime: OWTime | null = null;
 	export let viewOnly = false;
 	export let showBuddyFields = true;
 	export let restrictModify = false;
@@ -202,6 +203,7 @@
 			removeBuddyField(bf);
 		}
 	};
+	$: isOpen = isOpenForBooking($storedSettings, date, category, owTime);
 </script>
 
 <svelte:window on:keydown={navigateList} />
@@ -342,19 +344,23 @@
 			</div>
 		{/if}
 		<div class="text-right p-2">
-			<button
-				type="submit"
-				class="bg-gray-100 disabled:text-gray-400 px-3 py-1"
-				tabindex="6"
-				disabled={!$canSubmit || extendDisabled}
-				hidden={viewOnly}
-			>
-				{#if rsv}
-					Update
-				{:else}
-					Submit
-				{/if}
-			</button>
+			{#if isOpen}
+				<button
+					type="submit"
+					class="bg-gray-100 disabled:text-gray-400 px-3 py-1"
+					tabindex="6"
+					disabled={!$canSubmit || extendDisabled}
+					hidden={viewOnly}
+				>
+					{#if rsv}
+						Update
+					{:else}
+						Submit
+					{/if}
+				</button>
+			{:else}
+				🔒 Closed
+			{/if}
 		</div>
 	</div>
 </div>
