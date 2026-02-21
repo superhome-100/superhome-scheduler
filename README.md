@@ -43,7 +43,7 @@ to sync database schema to your local code generated config
 
 ```sh
 supabase login
-supabase link --project-ref yzbmkdautiurjjmeliak
+supabase link --project-ref bvyrboeudhhaqtibvlnc
 supabase db push # --include-seed
 ```
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 	import {
 		Navbar,
 		NavBrand,
@@ -202,7 +203,7 @@
 										label="Supabase"
 										{spanClass}
 										target="_blank"
-										href="https://supabase.com/dashboard/project/yzbmkdautiurjjmeliak/editor/"
+										href="{PUBLIC_SUPABASE_URL}/editor/"
 									/>
 									<SidebarItem
 										label="Sentry Logs"
