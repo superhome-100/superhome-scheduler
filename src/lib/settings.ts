@@ -107,6 +107,7 @@ export function getSetting<K extends SettingName>(
 ): ValueMap[K] {
 	const setting = settings[name] as Setting<ValueMap[K]>;
 	if (setting === undefined) {
+		console.warn('missing setting', { name, defaultValue, settings })
 		if (defaultValue !== undefined) return defaultValue;
 		else throw Error(`missing setting ${name}`);
 	}

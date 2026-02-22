@@ -5,7 +5,6 @@
 	import { Toaster } from 'svelte-french-toast';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { browser } from '$app/environment';
 	import { supabase_es } from '$lib/client/supabase_event_source';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import Nprogress from '$lib/components/Nprogress.svelte';
@@ -30,7 +29,8 @@
 	// svelte-ignore unused-export-let
 	export let params;
 	export let data;
-	const { user, supabase, settingsManager } = data;
+	const { user, supabase } = data;
+	let settingsManager = data.settingsManager;
 
 	Sentry.setUser(
 		user
@@ -44,7 +44,9 @@
 	);
 
 	storedSettingsW.set(settingsManager);
-	$: settingsManagerCurr = browser ? $storedSettings : settingsManager;
+	storedSettings.subscribe((s) => {
+		settingsManager = s;
+	});
 
 	const publicRoutes = ['/privacy'];
 
@@ -97,7 +99,7 @@
 <Refresher {onRefresh}>
 	{#if $page.route.id && !publicRoutes.includes($page.route.id)}
 		<Nprogress />
-		<Sidebar settingsManager={settingsManagerCurr} />
+		<Sidebar {settingsManager} />
 
 		<div id="app" class="flex px-1 mx-auto w-full">
 			<main class="lg:ml-72 w-full mx-auto">
