@@ -107,9 +107,11 @@ export function getSetting<K extends SettingName>(
 ): ValueMap[K] {
 	const setting = settings[name] as Setting<ValueMap[K]>;
 	if (setting === undefined) {
-		console.warn('missing setting', { name, defaultValue, settings })
+		// Signed out or disabled users don't have access to the settings table.
+		// so for example login page needs default value
+		console.info('missing setting', { name, defaultValue, settings })
 		if (defaultValue !== undefined) return defaultValue;
-		else throw Error(`missing setting ${name}`);
+		else throw Error(`missing setting ${name} and defaultValue`);
 	}
 	if (!date) throw Error(`missing date for ${name}`);
 	else if (date.match(/\d{4}-\d{2}-\d{2}/) === null) throw Error(`incorrect date for ${name}, ${date}`);
