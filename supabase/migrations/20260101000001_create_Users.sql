@@ -67,6 +67,13 @@ GRANT EXECUTE ON FUNCTION public.is_active() TO authenticated;
 
 ---
 
+CREATE TRIGGER "trigger_set_updatedAt_to_now_on_Users"
+BEFORE UPDATE ON "public"."Users"
+FOR EACH ROW
+EXECUTE FUNCTION set_updatedAt_to_now();
+
+---
+
 create policy "Enable active users to view their own data or others if active"
 on "public"."Users"
 as PERMISSIVE
