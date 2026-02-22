@@ -106,6 +106,7 @@ export function getSetting<K extends SettingName>(
 	date: string
 ): ValueMap[K] {
 	const setting = settings[name] as Setting<ValueMap[K]>;
+	if (!setting) throw Error(`missing setting ${name}`);
 	if (!date) throw Error(`missing date for ${name}`);
 	else if (date.match(/\d{4}-\d{2}-\d{2}/) === null) throw Error(`incorrect date for ${name}, ${date}`);
 	for (const e of setting.entries) {
