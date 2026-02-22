@@ -119,9 +119,6 @@ export function getSetting<K extends SettingName>(
 
 export class SettingsManager {
 	constructor(private readonly settings: Settings) { }
-	getNow<K extends SettingName>(name: K) {
-		return getSetting<K>(this.settings, name, getYYYYMMDD(PanglaoDayJs()));
-	}
 	get<K extends SettingName>(name: K, date: string) {
 		return getSetting(this.settings, name, date);
 	}

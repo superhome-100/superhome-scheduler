@@ -5,6 +5,7 @@
 	import { Toaster } from 'svelte-french-toast';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import { browser } from '$app/environment';
 	import { supabase_es } from '$lib/client/supabase_event_source';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import Nprogress from '$lib/components/Nprogress.svelte';
@@ -17,7 +18,8 @@
 		storedSettingsW,
 		storedAppVisibilityW,
 		storedCore_paramsW,
-		storedSettingsOnline
+		storedSettingsOnline,
+		storedSettings
 	} from '$lib/client/stores';
 	import { pushService } from '$lib/client/push';
 	import Refresher from '$lib/components/Refresher.svelte';
@@ -42,6 +44,7 @@
 	);
 
 	storedSettingsW.set(settingsManager);
+	$: settingsManagerCurr = browser ? $storedSettings : settingsManager;
 
 	const publicRoutes = ['/privacy'];
 
@@ -78,6 +81,7 @@
 			if (user) {
 				storedSettingsOnline.subscribe(() => {
 					// just to subscribe, see def for logic
+					1 === 1;
 				});
 				await pushService.init(user.has_push ?? false);
 			} else {
@@ -93,7 +97,7 @@
 <Refresher {onRefresh}>
 	{#if $page.route.id && !publicRoutes.includes($page.route.id)}
 		<Nprogress />
-		<Sidebar />
+		<Sidebar settingsManager={settingsManagerCurr} />
 
 		<div id="app" class="flex px-1 mx-auto w-full">
 			<main class="lg:ml-72 w-full mx-auto">

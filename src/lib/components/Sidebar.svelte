@@ -26,7 +26,10 @@
 	import { subscription } from '$lib/client/push';
 	import { pushService } from '$lib/client/push';
 	import { getFeature } from '$lib/userFeature';
-	import { storedSettings, storedUser } from '$lib/client/stores';
+	import { storedCurrentDay, storedUser } from '$lib/client/stores';
+	import type { SettingsManager } from '$lib/settings';
+
+	export let settingsManager: SettingsManager;
 
 	const supabaseTableUrl = `https://supabase.com/dashboard/project/${
 		new URL(PUBLIC_SUPABASE_URL).host.split('.')[0]
@@ -143,11 +146,11 @@
 		localStorage.setItem(viewModeStorageKey, $viewMode);
 	};
 
-	$: pushNotificationEnabled = ((user) => {
-		const smv = $storedSettings.getNow('pushNotificationEnabled');
+	$: pushNotificationEnabled = ((user, sm, day) => {
+		const smv = sm.get('pushNotificationEnabled', day);
 		if (!user) return smv;
 		return getFeature(user, 'pushNotificationEnabled', smv);
-	})(user);
+	})(user, settingsManager, $storedCurrentDay);
 </script>
 
 <svelte:window bind:innerWidth={width} />

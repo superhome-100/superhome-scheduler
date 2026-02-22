@@ -118,6 +118,7 @@ function readableWithSubscriptionToCore<T>(
 function readableWithSubscriptionToCoreAndParam<T extends object, P>(
     variableName: string,
     defaultValue: T,
+    setDefaultWhenLoading: boolean,
     paramStore: Readable<P>,
     cb: (cs: CoreStoreWithUser, param: P) => Promise<T>,
     event: EventType, ...events: EventType[]
@@ -142,6 +143,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
                         try {
                             console.debug('store.refresh', variableName, param);
                             isLoading.set(true);
+                            if (setDefaultWhenLoading) set(defaultValue)
                             const value = await cb(cp, p);
                             cache.set(pJ, value);
                             set(value);
@@ -218,7 +220,7 @@ export const { value: storedIncomingReservations, isLoading: storedIncomingReser
 
 export const { value: storedPastReservations, isLoading: storedPastReservationsLoading } =
     readableWithSubscriptionToCoreAndParam<ReservationEx[], string>('storedPastReservations',
-        [],
+        [], true,
         storedCurrentDay,
         async ({ supabase, user }, currentDay) => {
             const r = await getUserPastReservations(user, supabase, currentDay);
@@ -229,7 +231,7 @@ export const storedDayReservations_param = writable<{ day: string }>();
 
 export const { value: storedDayReservations, isLoading: storedDayReservationsLoading } =
     readableWithSubscriptionToCoreAndParam<ReservationEx[], { day: string }>('storedDayReservations',
-        [],
+        [], true,
         storedDayReservations_param,
         async ({ supabase }, { day }) => {
             const r = await getReservationsByDate(supabase, day);
@@ -238,7 +240,7 @@ export const { value: storedDayReservations, isLoading: storedDayReservationsLoa
 
 export const { value: storedDaySettings, isLoading: storedDaySettingsLoading } =
     readableWithSubscriptionToCoreAndParam<DateSetting, { day: string }>('storedDaySettings',
-        defaultDateSettings,
+        defaultDateSettings, true,
         storedDayReservations_param,
         async ({ supabase }, { day }) => {
             const [dateSettings] = await getDateSetting(supabase, day);
@@ -249,7 +251,7 @@ export const storedReservationsSummary_param = writable<{ startDay: Date, endDay
 
 export const { value: storedReservationsSummary, isLoading: storedReservationsSummaryLoading } =
     readableWithSubscriptionToCoreAndParam<Record<string, DateReservationSummary>, { startDay: Date, endDay: Date }>('storedReservationsSummary',
-        {},
+        {}, true,
         storedReservationsSummary_param,
         async ({ supabase }, { startDay, endDay }) => {
             const r = await getReservationSummary(supabase, startDay, endDay);
@@ -258,7 +260,7 @@ export const { value: storedReservationsSummary, isLoading: storedReservationsSu
 
 export const { value: storedOWAdminComments, isLoading: storedOWAdminCommentsLoading } =
     readableWithSubscriptionToCoreAndParam<BuoyGroupings[], { day: string }>('storedOWAdminComments',
-        [],
+        [], true,
         storedDayReservations_param,
         async ({ supabase }, { day }) => {
             const r = await getOWAdminComments(supabase, day);
@@ -275,7 +277,7 @@ export const { value: storedBuoys, isLoading: storedBuoysLoading } =
 
 export const { value: storedBoatAssignments, isLoading: storedBoatAssignmentsLoading } =
     readableWithSubscriptionToCoreAndParam<Record<string, string>, { day: string }>('storedBoatAssignments',
-        {},
+        {}, true,
         storedDayReservations_param,
         async ({ supabase }, { day }) => {
             const r = await getBoatAssignmentsByDate(supabase, day);
@@ -300,9 +302,8 @@ export const storedSettings = storedSettingsW as Readable<SettingsManager>;
  * has to be used in src/routes/+layout.svelte to has a constant store subscription
  */
 export const { value: storedSettingsOnline, isLoading: storedSettingsOnlineLoading } =
-    readableWithSubscriptionToCoreAndParam<SettingsManager, string>('storedSettingsOnline',
+    readableWithSubscriptionToCore<SettingsManager>('storedSettingsOnline',
         undefined as unknown as SettingsManager,
-        storedCurrentDay,
         async ({ supabase }) => {
             const r = await getSettingsManager(supabase);
             storedSettingsW.set(r); //hacky update but should be fine for now
