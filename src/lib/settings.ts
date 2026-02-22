@@ -70,6 +70,19 @@ export type Settings = {
 	[K in SettingName]: Setting<ValueMap[K]>;
 };
 
+// we chache settings for 10 seconds because it is the most used 
+let cachedSettings: Settings | null = null;
+let lastFetchSettings = 0;
+
+export async function getCachedSettings(supabase: SupabaseClient): Promise<Settings> {
+	const now = Date.now();
+	if (!cachedSettings || now - lastFetchSettings > 10000) {
+		cachedSettings = await getSettings(supabase);
+		lastFetchSettings = now;
+	}
+	return cachedSettings;
+}
+
 export const getSettings = async (supabase: SupabaseClient): Promise<Settings> => {
 	const { data: settingsTbl } =
 		await supabase

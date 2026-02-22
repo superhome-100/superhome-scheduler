@@ -97,7 +97,8 @@
 		const sorted = sortChronologically(rsvs, resPeriod);
 
 		if (resPeriod === 'upcoming') {
-			return [{ rsvs: sorted }];
+			if (sorted.length > 0) return [{ rsvs: sorted }];
+			else return [];
 		} else {
 			return sorted.reduce((grps, rsv) => {
 				const month = dayjs(rsv.date).format('MMMM-YYYY');
