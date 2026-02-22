@@ -54,7 +54,7 @@
 
 	if ($page.route.id && !publicRoutes.includes($page.route.id)) {
 		onMount(async () => {
-			if (user?.status !== 'disabled') {
+			if (user) {
 				await supabase_es.init(supabase).catch((e) => console.error('supabase_es.init', e));
 			}
 			// this line being inside onMount protects from SSR leak
@@ -66,7 +66,7 @@
 				// by default (no tab change) this value is visible and no event is fired
 				console.log('visibilitychange', document.visibilityState);
 				storedAppVisibilityW.set(document.visibilityState);
-				if (document.visibilityState === 'visible') {
+				if (document.visibilityState === 'visible' && user) {
 					supabase_es
 						.init(supabase)
 						.then((isReconnected) => {
