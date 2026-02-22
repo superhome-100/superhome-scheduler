@@ -6,7 +6,7 @@ import type { Database } from '$lib/supabase.types';
 import { createServerClient } from '@supabase/ssr';
 import type { Handle } from '@sveltejs/kit';
 import { sessionToSessionId } from '$lib/server/supabase';
-import { console_error } from '$lib/server/sentry';
+import { console_error, console_info } from '$lib/server/sentry';
 import { fetchRetryForSupabase } from '$lib/supabase';
 import type { UserEx } from '$types';
 
@@ -69,7 +69,7 @@ export const handle: Handle = sequence(
 		event.locals.safeGetSession = async () => {
 			const getUserP = event.locals.supabase.auth.getUser().then(async ({ data: { user: auth_user }, error }) => {
 				if (error || !auth_user) {
-					console_error("couldn't get auth_user", error);
+					console_info("couldn't get auth_user", error);
 					return null;
 				}
 				const { data: user, error: user_error } = await event.locals.supabase
