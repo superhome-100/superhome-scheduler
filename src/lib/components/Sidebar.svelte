@@ -147,7 +147,7 @@
 	};
 
 	$: pushNotificationEnabled = ((user, sm, day) => {
-		const smv = sm.get('pushNotificationEnabled', day);
+		const smv = sm.get('pushNotificationEnabled', day, false);
 		if (!user) return smv;
 		return getFeature(user, 'pushNotificationEnabled', smv);
 	})(user, settingsManager, $storedCurrentDay);

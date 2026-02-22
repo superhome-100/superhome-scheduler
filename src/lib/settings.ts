@@ -1,6 +1,5 @@
 import type { AssertEqual, SupabaseClient } from '$types';
 import type { Enums, Tables } from '$lib/supabase.types';
-import { getYYYYMMDD, PanglaoDayJs } from './datetimeUtils';
 
 /**
  * If this is error: Indicates that the ValueMap should be updated as well.
@@ -103,10 +102,14 @@ function parseSettingsTbl(settingsTbl: Tables<'Settings'>[]): Settings {
 export function getSetting<K extends SettingName>(
 	settings: Settings,
 	name: K,
-	date: string
+	date: string,
+	defaultValue?: ValueMap[K]
 ): ValueMap[K] {
 	const setting = settings[name] as Setting<ValueMap[K]>;
-	if (!setting) throw Error(`missing setting ${name}`);
+	if (setting === undefined) {
+		if (defaultValue !== undefined) return defaultValue;
+		else throw Error(`missing setting ${name}`);
+	}
 	if (!date) throw Error(`missing date for ${name}`);
 	else if (date.match(/\d{4}-\d{2}-\d{2}/) === null) throw Error(`incorrect date for ${name}, ${date}`);
 	for (const e of setting.entries) {
@@ -120,8 +123,8 @@ export function getSetting<K extends SettingName>(
 
 export class SettingsManager {
 	constructor(private readonly settings: Settings) { }
-	get<K extends SettingName>(name: K, date: string) {
-		return getSetting(this.settings, name, date);
+	get<K extends SettingName>(name: K, date: string, defaultValue?: ValueMap[K]) {
+		return getSetting(this.settings, name, date, defaultValue);
 	}
 	getBoats(date: string) {
 		return this.get('boats', date);
