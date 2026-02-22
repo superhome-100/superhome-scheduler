@@ -18,15 +18,15 @@
 		isLoading,
 		storedBoatAssignments,
 		storedBuoys,
-		storedOWAdminComments
+		storedDaySettings,
+		storedOWAdminComments,
+		storedSettings
 	} from '$lib/client/stores';
-	import type { SettingsManager } from '$lib/settings';
 	import toast from 'svelte-french-toast';
 	import { assignBuoysToBoats } from '$lib/client/api';
 
 	export let date: string;
 	export let reservations: ReservationEx[];
-	export let settingsManager: SettingsManager;
 	export let isAmFull: boolean;
 
 	$: boatAssignments = $storedBoatAssignments;
@@ -45,7 +45,7 @@
 		open(AdminComment, { date, buoy });
 	};
 
-	$: boats = settingsManager.getBoats(date);
+	$: boats = $storedSettings.getBoats(date);
 
 	const saveAssignments = async (e: any) => {
 		e.target.blur();
@@ -113,7 +113,9 @@
 	})();
 
 	$: isAdmin = $viewMode === 'admin';
-	$: isOpen = isOpenForBooking(settingsManager, date, ReservationCategory.openwater, null);
+	$: isOpen = isOpenForBooking($storedSettings, date, ReservationCategory.openwater, null);
+	$: isAMOpen = $storedSettings.getOpenwaterAmBookable(date);
+	$: isPMOpen = $storedSettings.getOpenwaterPmBookable(date);
 </script>
 
 {#if $isLoading}
@@ -131,7 +133,9 @@
 			<div class="flex-none text-center" class:w-20={isAdmin} class:w-8={!isAdmin}>boat</div>
 			<div class="grow text-center justify-items-center">
 				<span>AM</span><span class="desktop-text">&nbsp;Session</span>
-				{#if isAmFull}
+				{#if !isAMOpen}
+					<span class="bg-[#565843] text-white p-2 rounded-md">is closed 🔒</span>
+				{:else if isAmFull}
 					<span class="bg-[#FF0000] text-white p-2 rounded-md">is full</span>
 				{/if}
 				{#if $viewMode === 'admin'}
@@ -153,6 +157,9 @@
 			</div>
 			<div class="grow text-center justify-items-center">
 				<span>PM</span><span class="desktop-text">&nbsp;Session</span>
+				{#if !isPMOpen}
+					<span class="bg-[#565843] text-white p-2 rounded-md">is closed 🔒</span>
+				{/if}
 				{#if $viewMode === 'admin'}
 					<div
 						class="sm:text-xl whitespace-nowrap w-fit opacity-70 z-10 bg-gray-100 dark:bg-gray-400 rounded-lg border border-black dark:text-black px-1"

@@ -2,7 +2,7 @@ import { writable, readable, type Readable } from 'svelte/store';
 import { supabase_es, type EventType } from './supabase_event_source';
 import { getYYYYMMDD, PanglaoDate } from '$lib/datetimeUtils';
 import { defaultDateSettings, getDateSetting, type DateSetting } from '$lib/dateSettings';
-import { getSettingsManager, type SettingsManager } from '$lib/settings';
+import { fallbackSettingsManager, getSettingsManager, type SettingsManager } from '$lib/settings';
 import type {
     Buoy,
     BuoyGroupings,
@@ -28,30 +28,23 @@ import {
 import { LRUCache } from 'lru-cache';
 import { stableStringify } from '$lib/utils';
 
-/**
- * use 'storedAppVisibility' instead of this
- */
-export const storedAppVisibilityW = writable<DocumentVisibilityState>();
-export const storedAppVisibility = storedAppVisibilityW as Readable<DocumentVisibilityState>
+export const storedAppVisibility: Readable<DocumentVisibilityState> = writable();
 
-type CoreStore = { supabase: SupabaseClient, user: UserEx | null };
+export type CoreStore = { supabase: SupabaseClient, user: UserEx | null };
 
-/**
- * use 'storedCore_params' instead of this
- */
-export const storedCore_paramsW = writable<CoreStore>(undefined);
-export const storedCore_params = storedCore_paramsW as Readable<CoreStore>;
+export const storedCore_params: Readable<CoreStore> = writable();
 
-export const isLoading = writable<boolean>(false);
+const isLoading_ = writable<boolean>(false);
+export const isLoading: Readable<boolean> = isLoading_;
 
 const progressTracker = {
     _inProgress: 0,
     async track<T, P extends unknown[]>(cb: (...args: P) => Promise<T>, ...args: P): Promise<T> {
-        if (this._inProgress++ == 0) isLoading.set(true);
+        if (this._inProgress++ == 0) isLoading_.set(true);
         try {
             return await cb(...args);
         } finally {
-            if (--this._inProgress == 0) isLoading.set(false);
+            if (--this._inProgress == 0) isLoading_.set(false);
         }
     }
 };
@@ -70,7 +63,8 @@ function readableWithSubscriptionToCore<T>(
     }, event, ...events);
     let coreParam: CoreStoreWithUser | undefined = undefined;
     const isLoading = writable<boolean>(false);
-    const value = readable<T>(defaultValue, (set) => {
+    // we lie about the interface because we really don't want users to set it
+    const value = writable<T>(defaultValue, (set) => {
         const safeCb = async () => {
             if (coreParam?.user) {
                 if (cacheVal !== undefined) {
@@ -202,7 +196,20 @@ export const storedCurrentDay = readable<string>(getYYYYMMDD(PanglaoDate()), (se
     return () => clearInterval(iid);
 });
 
-export const storedUser = readable<UserEx | null>(null, (set) => storedCore_params.subscribe((cs) => set(cs?.user)));
+export const { value: storedUser } =
+    readableWithSubscriptionToCore<UserEx | null>('storedUser',
+        null, async ({ supabase, user }) => {
+            const { data: u } = await supabase
+                .from('Users')
+                .select('*')
+                .eq('id', user.id)
+                .single()
+                .throwOnError();
+            if (u.updatedAt > user.updatedAt)
+                return { ...user, ...u };
+            else return user;
+        }, "Users");
+
 
 export const { value: storedUsers, isLoading: storedUsersLoading } =
     readableWithSubscriptionToCore<{ [uid: string]: UserMinimal }>('storedUsers',
@@ -293,19 +300,12 @@ export const { value: storedNotifications, isLoading: storedNotificationsLoading
         }, "Notifications");
 
 /**
- * set in src/routes/+layout.svelte and at change, don't use it
+ * set in src/routes/+layout.svelte
  */
-export const storedSettingsW = writable<SettingsManager>();
-export const storedSettings = storedSettingsW as Readable<SettingsManager>;
-/**
- * use 'storedSettings' instead of this
- * has to be used in src/routes/+layout.svelte to has a constant store subscription
- */
-export const { value: storedSettingsOnline, isLoading: storedSettingsOnlineLoading } =
-    readableWithSubscriptionToCore<SettingsManager>('storedSettingsOnline',
-        undefined as unknown as SettingsManager,
+export const { value: storedSettings, isLoading: storedSettingsOnlineLoading } =
+    readableWithSubscriptionToCore<SettingsManager>('storedSettings',
+        fallbackSettingsManager,
         async ({ supabase }) => {
             const r = await getSettingsManager(supabase);
-            storedSettingsW.set(r); //hacky update but should be fine for now
             return r;
         }, "Settings");

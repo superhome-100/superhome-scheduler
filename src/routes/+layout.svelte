@@ -14,15 +14,16 @@
 	import {
 		storedDayReservations_param,
 		storedReservationsSummary_param,
-		storedSettingsW,
-		storedAppVisibilityW,
-		storedCore_paramsW,
-		storedSettingsOnline,
-		storedSettings
+		storedCore_params,
+		storedSettings,
+		storedAppVisibility,
+		type CoreStore
 	} from '$lib/client/stores';
 	import { pushService } from '$lib/client/push';
 	import Refresher from '$lib/components/Refresher.svelte';
 	import * as Sentry from '@sentry/browser';
+	import type { SettingsManager } from '$lib/settings';
+	import type { Writable } from 'svelte/store';
 
 	console.info('superhome-scheduler', __APP_VERSION__);
 
@@ -43,10 +44,7 @@
 		Sentry.setContext('storedReservationsSummary_param', v)
 	);
 
-	storedSettingsW.set(settingsManager);
-	storedSettings.subscribe((s) => {
-		settingsManager = s;
-	});
+	(storedSettings as Writable<SettingsManager>).set(settingsManager);
 
 	const publicRoutes = ['/privacy'];
 
@@ -57,12 +55,12 @@
 	if ($page.route.id && !publicRoutes.includes($page.route.id)) {
 		onMount(async () => {
 			if (user?.status !== 'disabled') {
-				await supabase_es
-					.init(supabase)
-					.catch((reason) => console.error('supabase_es.init', reason));
+				await supabase_es.init(supabase).catch((e) => console.error('supabase_es.init', e));
 			}
-			storedCore_paramsW.set({ supabase, user });
+			// this line being inside onMount protects from SSR leak
+			(storedCore_params as Writable<CoreStore>).set({ supabase, user });
 
+			const storedAppVisibilityW = storedAppVisibility as Writable<DocumentVisibilityState>;
 			storedAppVisibilityW.set('visible');
 			document.addEventListener('visibilitychange', () => {
 				// by default (no tab change) this value is visible and no event is fired
@@ -80,11 +78,11 @@
 						.catch((reason) => console.error('supabase_es.init', reason));
 				}
 			});
+			storedSettings.subscribe((s) => {
+				// to subscribe, and to update settingsManager bellow which is used in SSR as well
+				settingsManager = s;
+			});
 			if (user) {
-				storedSettingsOnline.subscribe(() => {
-					// just to subscribe, see def for logic
-					1 === 1;
-				});
 				await pushService.init(user.has_push ?? false);
 			} else {
 				goto('/login');

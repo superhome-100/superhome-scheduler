@@ -28,7 +28,7 @@
 	// svelte-ignore unused-export-let
 	export let params;
 	export let data;
-	const { settingsManager, supabase } = data;
+	const { supabase } = data;
 
 	$: day = PanglaoDayJs(data.day);
 	$: dayStr = getYYYYMMDD(day);
@@ -216,7 +216,7 @@
 		on:swipe={swipeHandler}
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			<DayOpenWater date={dayStr} {settingsManager} {reservations} {isAmFull} />
+			<DayOpenWater date={dayStr} {reservations} {isAmFull} />
 		</Modal>
 	</div>
 {/if}

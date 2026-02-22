@@ -41,9 +41,9 @@ interface ValueMap {
 	'pushNotificationEnabled': boolean;
 	//   ) THEN jsonb_typeof("value") = 'boolean'
 
-	'poolLanes': string[];
-	'classrooms': string[];
 	'boats': string[];
+	'classrooms': string[];
+	'poolLanes': string[];
 	// ) THEN jsonb_typeof("value") = 'array'
 }
 /**
@@ -55,6 +55,39 @@ interface ValueMap {
 type _ValidateSyncLR = AssertEqual<keyof ValueMap, SettingName>;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type _ValidateSyncRL = AssertEqual<SettingName, keyof ValueMap>;
+
+// we just need this in case the server has some problem.
+const fallbackValues: ValueMap = {
+	"classroomLabel": "classroom",
+	"poolLabel": "Slot",
+
+	"cancelationCutOffTime": "1:00",
+	"maxClassroomEndTime": "20:00",
+	"maxPoolEndTime": "20:00",
+	"minClassroomStartTime": "8:00",
+	"minPoolStartTime": "8:00",
+	"openwaterAmEndTime": "11:00",
+	"openwaterAmStartTime": "9:00",
+	"openwaterPmEndTime": "16:00",
+	"openwaterPmStartTime": "14:00",
+	"reservationCutOffTime": "18:00",
+	"reservationIncrement": "0:30",
+
+	"maxChargeableOWPerMonth": 12,
+	"reservationLeadTimeDays": 30,
+
+	"cbsAvailable": false,
+	"classroomBookable": false,
+	"openForBusiness": false,
+	"openwaterAmBookable": false,
+	"openwaterPmBookable": false,
+	"poolBookable": false,
+	"pushNotificationEnabled": false,
+
+	"boats": ["1", "2", "3", "4"],
+	"classrooms": ["3", "2"],
+	"poolLanes": ["1", "2", "3", "4", "5", "6", "7", "8"],
+}
 
 export type Setting<T> = {
 	default: T;
@@ -93,38 +126,51 @@ export const getSettings = async (supabase: SupabaseClient): Promise<Settings> =
 };
 
 function parseSettingsTbl(settingsTbl: Tables<'Settings'>[]): Settings {
-	return Object.values(Object.groupBy(
-		settingsTbl as (Tables<'Settings'> & { value: string | string[] | boolean | number })[],
-		({ name }) => name)
-	)
-		.map(nameSettings => {
-			const def = nameSettings.find((v) => v.startDate === null && v.endDate === null);
-			if (!def) throw Error('Missing default for ' + nameSettings[0].name);
-			return {
-				_name: def.name,
-				default: def.value,
-				entries: nameSettings.filter(v => v !== def)
-			}
-		})
-		.reduce((acc, curr) => {
-			acc[curr._name] = curr;
-			return acc;
-		}, {} as Settings)
+	const values = Object.entries(fallbackValues).reduce((acc, [name, _fallback]) => {
+		acc[name] = {
+			entries: [],
+			default: undefined,
+			_fallback
+		};
+		return acc;
+	}, {} as Settings);
+	for (const s of settingsTbl) {
+		const v = values[s.name];
+		if (!v) {
+			console.warn('unknown/usnused setting name, did you forget to adjust the code?', s.name, s);
+			continue;
+		}
+		if (s.startDate === null && s.endDate === null)
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			v.default = s.value as any;
+		else
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			v.entries.push(s as any);
+	}
+	for (const [k, v] of Object.entries(values)) {
+		if (v.default === undefined) {
+			console.error('setting default is undefined, using fallback', k, v);
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(v as Setting<any>).default =
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				(v as any)._fallback;
+		}
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		delete (v as any)._fallback;
+	}
+	return values;
 }
 
 export function getSetting<K extends SettingName>(
 	settings: Settings,
 	name: K,
 	date: string,
-	defaultValue?: ValueMap[K]
 ): ValueMap[K] {
 	const setting = settings[name] as Setting<ValueMap[K]>;
 	if (setting === undefined) {
-		// Signed out or disabled users don't have access to the settings table.
-		// so for example login page needs default value
-		console.info('missing setting', { name, defaultValue, settings })
-		if (defaultValue !== undefined) return defaultValue;
-		else throw Error(`missing setting ${name} and defaultValue`);
+		console.error('missing setting', { name, settings })
+		if (fallbackValues[name] !== undefined) return fallbackValues[name];
+		throw Error(`missing setting ${name} and defaultValue`);
 	}
 	if (!date) throw Error(`missing date for ${name}`);
 	else if (date.match(/\d{4}-\d{2}-\d{2}/) === null) throw Error(`incorrect date for ${name}, ${date}`);
@@ -139,8 +185,8 @@ export function getSetting<K extends SettingName>(
 
 export class SettingsManager {
 	constructor(private readonly settings: Settings) { }
-	get<K extends SettingName>(name: K, date: string, defaultValue?: ValueMap[K]) {
-		return getSetting(this.settings, name, date, defaultValue);
+	get<K extends SettingName>(name: K, date: string) {
+		return getSetting(this.settings, name, date);
 	}
 	getBoats(date: string) {
 		return this.get('boats', date);
@@ -220,3 +266,13 @@ export const getSettingsManager = async (supabase: SupabaseClient): Promise<Sett
 	const s = await getSettings(supabase);
 	return new SettingsManager(s);
 };
+
+export const fallbackSettingsManager = new SettingsManager(
+	Object.entries(fallbackValues).reduce((acc, [name, _fallback]) => {
+		acc[name] = {
+			entries: [],
+			default: _fallback,
+		};
+		return acc;
+	}, {} as Settings)
+);
