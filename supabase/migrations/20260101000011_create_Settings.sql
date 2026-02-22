@@ -118,13 +118,22 @@ EXECUTE FUNCTION set_updatedAt_to_now();
 
 ---
 
-create policy "Enable active users to view all Settings"
+create policy "Enable auth users to view all Settings"
 on "public"."Settings"
 as PERMISSIVE
 for SELECT
 to authenticated
 using (
-  (SELECT public.is_active())
+  (TRUE)
+);
+
+create policy "Enable anon users to view all Settings"
+on "public"."Settings"
+as PERMISSIVE
+for SELECT
+to anon
+using (
+  (TRUE)
 );
 
 ---
