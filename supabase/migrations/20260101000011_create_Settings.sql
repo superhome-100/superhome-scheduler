@@ -98,9 +98,9 @@ CHECK (
       ) THEN jsonb_typeof("value") = 'boolean'
       
     WHEN "name" IN (
-      'boats'
+      'boats',
       'classrooms',
-      'poolLanes',
+      'poolLanes'
     ) THEN jsonb_typeof("value") = 'array'
       
     ELSE false -- fail if name is not explicitly covered, to fix add it above

@@ -244,7 +244,12 @@
 				</SidebarDropdownWrapper>
 				{#if $viewMode === 'admin'}
 					<SidebarDropdownWrapper label="Admin" bind:isOpen={isOpenAdminMenu}>
-						<SidebarItem label="Send Notification" {spanClass} href="/admin/send-notification" />
+						<SidebarItem
+							label="Send Notification"
+							{spanClass}
+							href="/admin/send-notification"
+							on:click={toggleSide}
+						/>
 						<SidebarDropdownWrapper label="Admin: Advanced" isOpen={false}>
 							<SidebarItem label="Supabase" {spanClass} target="_blank" href={supabaseTableUrl} />
 							<SidebarItem
