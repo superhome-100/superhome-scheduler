@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { PUBLIC_SUPABASE_URL } from '$env/static/public';
+	import { browser } from '$app/environment';
 	import {
 		Navbar,
 		NavBrand,
@@ -37,6 +38,8 @@
 	const schedulerDoc =
 		'https://docs.google.com/document/d/1FQ828hDuuPRnQ7QWYMykSv9bT3Lmxi0amLsFyTjnyuM/edit?usp=share_link';
 	const viewModeStorageKey = 'superhome-scheduler.viewMode';
+	const isOpenCalendarMenuStorageKey = 'superhome-scheduler.isOpenCalendarMenu';
+	const isOpenAdminMenuStorageKey = 'superhome-scheduler.isOpenAdminMenu';
 
 	$: user = $storedUser;
 
@@ -121,13 +124,6 @@
 		});
 	}
 
-	onMount(() => {
-		const stored = localStorage.getItem(viewModeStorageKey);
-		if (stored) {
-			$viewMode = stored === 'admin' && user?.privileges === 'admin' ? 'admin' : 'normal';
-		}
-	});
-
 	const updateSubscription = async (e: any) => {
 		if (e.detail.checked) {
 			const swr = await navigator.serviceWorker.ready;
@@ -151,6 +147,27 @@
 		if (!user) return smv;
 		return getFeature(user, 'pushNotificationEnabled', smv);
 	})(user, settingsManager, $storedCurrentDay);
+
+	let isOpenCalendarsMenu: boolean;
+	$: {
+		if (browser && isOpenCalendarsMenu !== undefined)
+			localStorage.setItem(isOpenCalendarMenuStorageKey, `${isOpenCalendarsMenu}`);
+	}
+	let isOpenAdminMenu: boolean;
+	$: {
+		if (browser && isOpenAdminMenu !== undefined)
+			localStorage.setItem(isOpenAdminMenuStorageKey, `${isOpenAdminMenu}`);
+	}
+
+	onMount(() => {
+		$viewMode =
+			(localStorage.getItem(viewModeStorageKey) ?? 'normal') === 'admin' &&
+			user?.privileges === 'admin'
+				? 'admin'
+				: 'normal';
+		isOpenCalendarsMenu = (localStorage.getItem(isOpenCalendarMenuStorageKey) ?? 'true') === 'true';
+		isOpenAdminMenu = (localStorage.getItem(isOpenAdminMenuStorageKey) ?? 'false') === 'true';
+	});
 </script>
 
 <svelte:window bind:innerWidth={width} />
@@ -207,50 +224,11 @@
 								<Toggle checked={$viewMode === 'admin'} on:change={updateAdminMode} />
 								<span>Admin Mode</span>
 							</div>
-							{#if $viewMode === 'admin'}
-								<SidebarDropdownWrapper label="Advanced">
-									<SidebarItem
-										label="Send Notification"
-										{spanClass}
-										href="/admin/send-notification"
-									/>
-									<SidebarItem
-										label="Supabase"
-										{spanClass}
-										target="_blank"
-										href={supabaseTableUrl}
-									/>
-									<SidebarItem
-										label="Sentry Logs"
-										{spanClass}
-										target="_blank"
-										href="https://superhome.sentry.io/explore/logs/"
-									/>
-									<SidebarItem
-										label="Download Reservations"
-										{spanClass}
-										on:click={() => downloadDatabase('Reservations')}
-									/>
-									<SidebarItem
-										label="Download DB"
-										{spanClass}
-										on:click={() => downloadDatabase('all')}
-									/>
-									<SidebarItem label="Update prices manually" {spanClass} on:click={updatePrices} />
-									<SidebarItem
-										label="Simulate error"
-										{spanClass}
-										on:click={() => {
-											updatePrices.missing.simulate_error();
-										}}
-									/>
-								</SidebarDropdownWrapper>
-							{/if}
 						{/if}
 					</SidebarDropdownWrapper>
 				{/if}
 				<SidebarItem label="My Reservations" href="/" on:click={toggleSide} />
-				<SidebarDropdownWrapper isOpen={true} label="Calendars">
+				<SidebarDropdownWrapper bind:isOpen={isOpenCalendarsMenu} label="Calendars">
 					<SidebarItem label="Pool" href="/multi-day/pool" {spanClass} on:click={toggleSide} />
 					<SidebarItem
 						label="Open Water"
@@ -264,6 +242,38 @@
 						on:click={toggleSide}
 					/>
 				</SidebarDropdownWrapper>
+				{#if $viewMode === 'admin'}
+					<SidebarDropdownWrapper label="Admin" bind:isOpen={isOpenAdminMenu}>
+						<SidebarItem label="Send Notification" {spanClass} href="/admin/send-notification" />
+						<SidebarDropdownWrapper label="Admin: Advanced" isOpen={false}>
+							<SidebarItem label="Supabase" {spanClass} target="_blank" href={supabaseTableUrl} />
+							<SidebarItem
+								label="Sentry Logs"
+								{spanClass}
+								target="_blank"
+								href="https://superhome.sentry.io/explore/logs/"
+							/>
+							<SidebarItem
+								label="Download Reservations"
+								{spanClass}
+								on:click={() => downloadDatabase('Reservations')}
+							/>
+							<SidebarItem
+								label="Download DB"
+								{spanClass}
+								on:click={() => downloadDatabase('all')}
+							/>
+							<SidebarItem label="Update prices manually" {spanClass} on:click={updatePrices} />
+							<SidebarItem
+								label="Simulate error"
+								{spanClass}
+								on:click={() => {
+									updatePrices.missing.simulate_error();
+								}}
+							/>
+						</SidebarDropdownWrapper>
+					</SidebarDropdownWrapper>
+				{/if}
 				<SidebarItem label="How to use this app" target="_blank" href={schedulerDoc} />
 				<SidebarItem
 					label="Facilities Guide"

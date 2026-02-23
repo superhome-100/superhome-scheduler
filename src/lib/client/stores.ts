@@ -101,7 +101,7 @@ function readableWithSubscriptionToCore<T>(
         safeCb();
         isInit = false;
         return () => {
-            console.log("store.unsub", variableName)
+            console.debug("store.unsub", variableName)
             unsubCs();
             unsubSupa();
         }
@@ -174,7 +174,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
         safeCb();
         isInit = false;
         return () => {
-            console.log("store.unsub", variableName);
+            console.debug("store.unsub", variableName);
             unsubCs();
             unsubP();
             unsubSupa();

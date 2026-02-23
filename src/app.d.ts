@@ -28,6 +28,13 @@ declare global {
 		// interface PageState {}
 		// interface Platform {}
 	}
+	namespace svelteHTML {
+		interface HTMLAttributes<T> {
+			// Replace 'any' with your specific CustomEvent type if defined
+			'on:swipe'?: (event: CustomEvent<any> & { target: EventTarget & T }) => void;
+		}
+	}
 }
+
 
 export { };

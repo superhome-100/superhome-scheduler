@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { swipe } from 'svelte-gestures';
-	import { goto, pushState } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import DayOpenWater from '$lib/components/DayOpenWaterV2.svelte';
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';

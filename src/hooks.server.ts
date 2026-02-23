@@ -69,7 +69,11 @@ export const handle: Handle = sequence(
 		event.locals.safeGetSession = async () => {
 			const getUserP = event.locals.supabase.auth.getUser().then(async ({ data: { user: auth_user }, error }) => {
 				if (error || !auth_user) {
-					console_info("couldn't get auth_user", error);
+					if (error?.name === 'AuthSessionMissingError') {
+						console.debug('user not logged in', error.message);
+					} else {
+						console_error("unexpected error when geting auth_user", error);
+					}
 					return null;
 				}
 				const { data: user, error: user_error } = await event.locals.supabase

@@ -18,7 +18,6 @@
 		isLoading,
 		storedBoatAssignments,
 		storedBuoys,
-		storedDaySettings,
 		storedOWAdminComments,
 		storedSettings
 	} from '$lib/client/stores';

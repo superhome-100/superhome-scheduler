@@ -23,7 +23,7 @@
 			['autonomous', 'cbs'].includes(rsv.resType));
 
 	let tabIndex = 0;
-	const handleAdminSubmit = (event) => {
+	const handleAdminSubmit = (event: any) => {
 		onSubmit();
 		let idx = rsvs.indexOf(event.detail.rsv);
 		if (idx == rsvs.length - 1) {

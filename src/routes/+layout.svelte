@@ -17,13 +17,16 @@
 		storedCore_params,
 		storedSettings,
 		storedAppVisibility,
-		type CoreStore
+		type CoreStore,
+		storedUser
 	} from '$lib/client/stores';
 	import { pushService } from '$lib/client/push';
 	import Refresher from '$lib/components/Refresher.svelte';
 	import * as Sentry from '@sentry/browser';
 	import type { SettingsManager } from '$lib/settings';
 	import type { Writable } from 'svelte/store';
+	import type { UserEx } from '$types';
+	import { browser } from '$app/environment';
 
 	console.info('superhome-scheduler', __APP_VERSION__);
 
@@ -35,15 +38,22 @@
 
 	Sentry.setUser(
 		user
-			? { id: user.id, status: user.status, privileges: user.privileges, createdAt: user.createdAt }
+			? {
+					id: user.id,
+					status: user.status,
+					privileges: user.privileges,
+					createdAt: user.createdAt
+			  }
 			: null
 	);
-	page.subscribe((p) => Sentry.setTag('route', p.route.id));
+
 	storedDayReservations_param.subscribe((v) => Sentry.setContext('storedDayReservations_param', v));
 	storedReservationsSummary_param.subscribe((v) =>
 		Sentry.setContext('storedReservationsSummary_param', v)
 	);
 
+	// these two lines make sure that we have all the fresh data in time for Sidebar
+	(storedUser as Writable<UserEx | null>).set(user);
 	(storedSettings as Writable<SettingsManager>).set(settingsManager);
 
 	const publicRoutes = ['/privacy'];
@@ -64,7 +74,7 @@
 			storedAppVisibilityW.set('visible');
 			document.addEventListener('visibilitychange', () => {
 				// by default (no tab change) this value is visible and no event is fired
-				console.log('visibilitychange', document.visibilityState);
+				console.debug('visibilitychange', document.visibilityState);
 				storedAppVisibilityW.set(document.visibilityState);
 				if (document.visibilityState === 'visible' && user) {
 					supabase_es

@@ -30,7 +30,7 @@ export function beforeResCutoff(
 	stns: SettingsManager,
 	dateStr: string,
 	startTime: string,
-	category: ReservationCategory
+	category: ReservationCategoryT
 ): boolean {
 	let now = dtu.PanglaoDate();
 	let today = dtu.datetimeToLocalDateStr(now);

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { OWTime, type Submission } from '$types';
+	import { OWTime, type ReservationEx } from '$types';
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-french-toast';
 	import { enhance } from '$app/forms';
@@ -11,7 +11,7 @@
 	import { storedSettings } from '$lib/client/stores';
 
 	export let hasForm = false;
-	export let rsv: Submission;
+	export let rsv: ReservationEx;
 
 	let error = '';
 	const { close, hideModal, showModal } = getContext('simple-modal');

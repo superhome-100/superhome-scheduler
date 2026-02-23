@@ -2,7 +2,7 @@
 	import { canSubmit } from '$lib/stores';
 	import { adminView, buoyDesc, isMyReservation, resTypeModDisabled } from '$lib/utils';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
-	import type { OWReservation, Reservation } from '$types';
+	import type { ReservationEx } from '$types';
 	import { ReservationCategory, ReservationType } from '$types';
 	import { PanglaoDate } from '$lib/datetimeUtils';
 	import InputLabel from './tiny_components/InputLabel.svelte';
@@ -17,7 +17,7 @@
 		storedUser
 	} from '$lib/client/stores';
 
-	export let rsv: OWReservation | null = null;
+	export let rsv: ReservationEx | null = null;
 	export let date: string = rsv?.date || PanglaoDate().toString();
 	export let dateFn: null | ((arg0: string) => string) = null;
 	export let category: ReservationCategory = ReservationCategory.openwater;
@@ -31,11 +31,11 @@
 	date = rsv?.date || (dateFn && dateFn(category)) || date;
 	storedDayReservations_param.set({ day: date });
 
-	const previousMaxDepthKey = 'previousMaxDepth';
+	const previousMaxDepthKey = 'superhome-scheduler.previousMaxDepth';
 	let resType: ReservationType =
 		rsv == null ? ReservationType.autonomous : (rsv?.resType as ReservationType);
 	let maxDepth = rsv?.maxDepth ?? (Number(localStorage.getItem(previousMaxDepthKey)) || undefined);
-	let owTime = rsv?.owTime || 'AM';
+	let owTime = rsv?.owTime ?? 'AM';
 	let numStudents = rsv?.resType !== ReservationType.course ? 1 : rsv.numStudents;
 	let pulley = rsv?.pulley;
 	let extraBottomWeight = rsv?.extraBottomWeight || false;
@@ -61,12 +61,14 @@
 	].includes(resType);
 	$: sortedBuoys = $storedBuoys.sort((a, b) => (a.maxDepth > b.maxDepth ? 1 : -1));
 
-	const buoyIsAssignedTo = (buoyName: string, reservations: Reservation[]) => {
+	$: isAdminView = adminView($storedUser, viewOnly);
+
+	const buoyIsAssignedTo = (buoyName: string, reservations: ReservationEx[]) => {
 		const filteredReservations = reservations.filter(
-			(other) => other.owTime === rsv.owTime && other.buoy === buoyName
+			(other) => other.owTime === rsv?.owTime && other.buoy === buoyName
 		);
 
-		return filteredReservations.map((r) => displayTag(r)).join(', ');
+		return filteredReservations.map((r) => displayTag(r, isAdminView)).join(', ');
 	};
 
 	const minMax: Record<ReservationType, { min: number; max: number }> = {
