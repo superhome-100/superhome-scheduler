@@ -9,7 +9,7 @@ const signIn = async (
 		const redirectTo = `${window.location.origin}/auth/callback`;
 		const { error } = await supabase.auth.signInWithOAuth({
 			provider,
-			options: { redirectTo, queryParams: { prompt: 'select_account' } }
+			options: { redirectTo, queryParams: { access_type: 'offline', prompt: 'select_account' } }
 		});
 		if (error) console.error('login failed', error);
 		return { error };
