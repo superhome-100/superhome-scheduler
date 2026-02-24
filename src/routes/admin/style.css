@@ -132,7 +132,7 @@ select {
     font-weight: normal;
     background-color: var(--bg-main);
     color: var(--text-primary);
-    font-size: 0.9rem;
+    font-size: 16px;
 }
 
 input:disabled,
@@ -142,7 +142,7 @@ textarea:read-only,
 select:disabled {
     background: var(--bg-disabled);
     color: var(--text-disabled);
-    font-size: 0.9rem;
+    font-size: 16px;
 }
 
 .control-strip {

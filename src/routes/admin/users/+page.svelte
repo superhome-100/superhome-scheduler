@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { page } from '$app/state';
+	import { page } from '$app/stores';
 	import {
 		storedPriceTemplates,
 		storedUsersForAdmin,
@@ -72,7 +72,7 @@
 	}
 
 	const limitList = 100;
-	$: searchTerm = page.url.searchParams.get('q') ?? '';
+	$: searchTerm = $page.url.searchParams.get('q') ?? '';
 	$: statusFilter = '';
 	$: searchTermLower = searchTerm.toLowerCase();
 	$: filteredUsers = $storedUsersForAdmin
@@ -95,7 +95,7 @@
 		const target = e.target as HTMLInputElement;
 		const value = target.value;
 
-		const query = page.url.searchParams;
+		const query = $page.url.searchParams;
 
 		if (value) {
 			query.set('q', value);
