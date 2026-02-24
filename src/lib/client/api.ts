@@ -11,7 +11,6 @@ import {
 } from '$types';
 import type { Dayjs } from 'dayjs';
 import { fromPanglaoDateTimeStringToDayJs, getYYYYMMDD, PanglaoDayJs } from '../datetimeUtils';
-import { xataMigrationDayStrFilter } from './xata';
 
 
 export const getBuoys = async (supabase: SupabaseClient) => {
@@ -55,8 +54,7 @@ export const getUserPastReservations = async (user: User, supabase: SupabaseClie
 			.overrideTypes<ReservationEx[]>()
 			.throwOnError();
 
-		return data.filter(r => fromPanglaoDateTimeStringToDayJs(r.date, r.startTime) < now)
-			.filter(x => xataMigrationDayStrFilter(x.date));
+		return data.filter(r => fromPanglaoDateTimeStringToDayJs(r.date, r.startTime) < now);
 	} catch (error) {
 		console.error(error);
 		return []
@@ -87,8 +85,7 @@ export const getIncomingReservations = async (user: User, supabase: SupabaseClie
 			.overrideTypes<ReservationEx[]>()
 			.throwOnError();
 
-		return data.filter(r => now <= fromPanglaoDateTimeStringToDayJs(r.date, r.startTime))
-			.filter(x => xataMigrationDayStrFilter(x.date));
+		return data.filter(r => now <= fromPanglaoDateTimeStringToDayJs(r.date, r.startTime));
 	} catch (error) {
 		console.error(error);
 		return []
@@ -162,7 +159,7 @@ export const getReservationsByDate = async (supabase: SupabaseClient, date: stri
 			.in('status', [ReservationStatus.confirmed, ReservationStatus.pending])
 			.overrideTypes<ReservationEx[]>()
 			.throwOnError();
-		return rawRsvs.filter(x => xataMigrationDayStrFilter(x.date));
+		return rawRsvs;
 	} catch (error) {
 		console.error(error);
 		return [];
@@ -192,8 +189,6 @@ export const getReservationSummary = async (supabase: SupabaseClient, startDate:
 		for (const reservation of reservations) {
 			const date = reservation.date!;
 			if (!date) continue;
-			if (!xataMigrationDayStrFilter(date))
-				continue;
 			summary[date] = reservation.summary;
 		}
 

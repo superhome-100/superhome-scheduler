@@ -122,7 +122,8 @@
 {/if}
 {#if !isOpen}
 	<div class="font-semibold text-3xl text-center">🔒 Closed</div>
-{:else}
+{/if}
+{#if isOpen || isAdmin}
 	<section class="w-full relative block">
 		<header
 			class="flex w-full gap-0.5 sm:gap-2 py-2"

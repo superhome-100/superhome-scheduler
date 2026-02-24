@@ -11,7 +11,7 @@ export type DeepNonNullable<T> = { [P in keyof T]-?: NonNullable<T[P]>; };
 
 export type User_MetadataT = { feature: Record<string, unknown> }
 
-export type User = Omit<Tables<'Users'>, 'metadata'> & { metadata: User_MetadataT };
+export type User = Tables<'Users'>;
 
 export type UserMinimal = RequireKeys<Tables<'UsersMinimal'>, 'id' | 'nickname' | 'status'>;
 
