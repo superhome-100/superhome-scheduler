@@ -13,6 +13,5 @@ export function getFeature<K extends FeatureName>(
     name: K,
     defaultValue: Features[K] | null
 ): Features[K] | null {
-    // @ts-expect-error Element implicitly has an 'any' type
-    return user?.metadata?.['feature']?.[name] ?? defaultValue;
+    return (user?.metadata as never)?.['feature']?.[name] ?? defaultValue;
 }

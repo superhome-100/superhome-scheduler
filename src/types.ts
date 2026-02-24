@@ -9,7 +9,9 @@ export type RequireKeys<T, K extends keyof T> = Omit<T, K> & { [P in K]-?: NonNu
 
 export type DeepNonNullable<T> = { [P in keyof T]-?: NonNullable<T[P]>; };
 
-export type User = Tables<'Users'>;
+export type User_MetadataT = { feature: Record<string, unknown> }
+
+export type User = Omit<Tables<'Users'>, 'metadata'> & { metadata: User_MetadataT };
 
 export type UserMinimal = RequireKeys<Tables<'UsersMinimal'>, 'id' | 'nickname' | 'status'>;
 

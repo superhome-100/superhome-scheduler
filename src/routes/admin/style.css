@@ -42,11 +42,25 @@
         --shadow: rgba(0, 0, 0, 0.5);
     }
 }
+
 .admin-view {
     width: 100%;
     font-family: sans-serif;
     background-color: var(--bg-main);
     color: var(--text-primary);
+}
+
+.filter-bar {
+    display: flex;
+    align-items: left;
+    gap: 0px;            /* Spacing between elements */
+    width: 100%;
+}
+
+.filter-bar-fill-remaining {
+  flex: 1;             /* Consumes all remaining horizontal space */
+  min-width: 0;        /* Prevents flexbox overflow in certain browsers */
+  max-width: 400px;
 }
 
 .search-input {
