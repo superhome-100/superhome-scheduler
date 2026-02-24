@@ -52,6 +52,7 @@
 
 .filter-bar {
     display: flex;
+    flex-wrap: wrap;
     align-items: left;
     gap: 0px;            /* Spacing between elements */
     width: 100%;
@@ -59,13 +60,11 @@
 
 .filter-bar-fill-remaining {
   flex: 1;             /* Consumes all remaining horizontal space */
-  min-width: 0;        /* Prevents flexbox overflow in certain browsers */
-  max-width: 400px;
+  min-width: 100px;        /* Prevents flexbox overflow in certain browsers */
+  max-width: 300px;
 }
 
 .search-input {
-    /* width: 20%; */
-    /* padding: 0.5rem; */
     margin-bottom: 1rem;
     border: 1px solid var(--border-default);
     background-color: var(--bg-main);

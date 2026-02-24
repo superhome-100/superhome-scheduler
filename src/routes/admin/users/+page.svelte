@@ -32,30 +32,32 @@
 	async function handleSave() {
 		if (!draftUser) return;
 
+		const user = draftUser;
+
 		const payload: TablesUpdate<'Users'> = {
-			name: draftUser.name,
-			nickname: draftUser.nickname,
-			email: draftUser.email,
-			privileges: draftUser.privileges,
-			status: draftUser.status
+			name: user.name,
+			nickname: user.nickname,
+			email: user.email,
+			privileges: user.privileges,
+			status: user.status
 		};
 
 		const fn = async () => {
-			if (!draftUser) throw Error();
+			if (!user) throw Error();
 			const { data: result } = await supabase
 				.from('Users')
 				.update(payload)
-				.eq('id', draftUser.id)
+				.eq('id', user.id)
 				.select('id')
 				.maybeSingle()
 				.throwOnError();
 
 			if (result === null) throw Error('User record missing');
 
-			if (draftUser.UserPriceTemplates?.priceTemplate !== draftUser.priceTemplate) {
+			if (user.UserPriceTemplates?.priceTemplate !== user.priceTemplate) {
 				await supabase
 					.from('UserPriceTemplates')
-					.upsert({ user: draftUser.id, priceTemplate: draftUser.priceTemplate })
+					.upsert({ user: user.id, priceTemplate: user.priceTemplate })
 					.single()
 					.throwOnError();
 			}
@@ -64,9 +66,39 @@
 			draftUser = null;
 		};
 
-		toast.promise(fn(), {
-			loading: `Updating ${draftUser.name}...`,
-			success: `Successfully updated ${draftUser.name}`,
+		return toast.promise(fn(), {
+			loading: `Updating ${user.name}...`,
+			success: `Successfully updated ${user.name}`,
+			error: (e) => `Update failed: ${e.message}`
+		});
+	}
+
+	async function deleteUser() {
+		if (!draftUser) return;
+
+		const user = draftUser;
+
+		const confirmed = window.confirm(
+			`Are you sure you want to delete:\n${user.name} / ${user.nickname}\n?`
+		);
+
+		if (!confirmed) return;
+
+		const fn = async () => {
+			if (!user) throw Error();
+			const { data: result } = await supabase
+				.from('Users')
+				.delete()
+				.eq('id', user.id)
+				.throwOnError();
+
+			// Cleanup on success
+			draftUser = null;
+		};
+
+		return toast.promise(fn(), {
+			loading: `Deleted ${user.name}...`,
+			success: `Successfully updated ${user.name}`,
 			error: (e) => `Update failed: ${e.message}`
 		});
 	}
@@ -139,12 +171,6 @@
 
 <div class="admin-view">
 	<div class="filter-bar">
-		<select bind:value={statusFilter} class="search-input">
-			<option value="" selected>Status</option>
-			{#each Constants['public']['Enums']['user_status'] as status}
-				<option value={status}>{status}</option>
-			{/each}
-		</select>
 		<input
 			id="searchTerm"
 			type="text"
@@ -153,6 +179,12 @@
 			on:input={handleSearchTermInput}
 			class="search-input filter-bar-fill-remaining"
 		/>
+		<select bind:value={statusFilter} class="search-input">
+			<option value="" selected>Status</option>
+			{#each Constants['public']['Enums']['user_status'] as status}
+				<option value={status}>{status}</option>
+			{/each}
+		</select>
 	</div>
 	{#if $storedUsersForAdminLoading}
 		<LoadingBar />
@@ -249,6 +281,7 @@
 												draftUser = null;
 											}}>Discard</button
 										>
+										<button class="btn-cancel" on:click={deleteUser}>Delete</button>
 									</div>
 								</div>
 							</td>
