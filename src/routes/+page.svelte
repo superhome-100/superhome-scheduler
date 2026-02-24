@@ -16,11 +16,8 @@
 	const onClose = () => (modalOpened = false);
 
 	const getActivationLink = (user: UserEx) => {
-		return (
-			window.location.origin +
-			'/api/admin/activateUser/' +
-			encodeURIComponent(user.email ?? user.id)
-		);
+		//TODO:mate: admin users?
+		return window.location.origin + '/api/admin/activateUser/' + encodeURIComponent(user.id);
 	};
 	const openWhatsApp = (user: UserEx) => {
 		const phoneNumber = '639763854480';

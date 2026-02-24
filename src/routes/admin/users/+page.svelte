@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import {
 		storedPriceTemplates,
 		storedUsersForAdmin,
@@ -70,13 +72,14 @@
 	}
 
 	const limitList = 100;
-	let searchTerm = '';
-	let statusFilter = '';
+	$: searchTerm = page.url.searchParams.get('q') ?? '';
+	$: statusFilter = '';
 	$: searchTermLower = searchTerm.toLowerCase();
 	$: filteredUsers = $storedUsersForAdmin
 		.filter(
 			(user) =>
 				!searchTerm ||
+				user.id.toLowerCase() === searchTermLower ||
 				user.name.toLowerCase().includes(searchTermLower) ||
 				user.nickname?.toLowerCase().includes(searchTermLower) ||
 				user.email?.toLowerCase().includes(searchTermLower)
@@ -87,6 +90,29 @@
 			const uu = { ...u, _createdAt: PanglaoDayJs(u.createdAt) };
 			return uu;
 		});
+
+	function handleSearchTermInput(e: Event) {
+		const target = e.target as HTMLInputElement;
+		const value = target.value;
+
+		const query = page.url.searchParams;
+
+		if (value) {
+			query.set('q', value);
+		} else {
+			query.delete('q');
+		}
+
+		// replaceState: true prevents flooding the browser history with every keystroke
+		// keepFocus: true ensures the cursor doesn't jump out of the input
+		goto(`?${query.toString()}`, {
+			replaceState: true,
+			keepFocus: true,
+			noScroll: true
+		});
+
+		searchTerm = value;
+	}
 
 	function handleKeydown(e: any, element: HTMLElement | null) {
 		const searchInput = element as HTMLInputElement;
@@ -116,7 +142,8 @@
 		id="searchTerm"
 		type="text"
 		placeholder="Search for name, nickname or email..."
-		bind:value={searchTerm}
+		value={searchTerm}
+		on:input={handleSearchTermInput}
 		class="search-input"
 	/>
 	<select bind:value={statusFilter} class="search-input">

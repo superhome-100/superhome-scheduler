@@ -39,7 +39,7 @@ export function beforeResCutoff(
 	let tomStr = dtu.datetimeToLocalDateStr(tomorrow);
 
 	// For pool and classroom, allow booking if target time is in the future
-	if ([ReservationCategory.pool, ReservationCategory.classroom].includes(category)) {
+	if ([ReservationCategory.pool, ReservationCategory.classroom].includes(category as ReservationCategory)) {
 		if (dateStr > today) {
 			return true;
 		} else if (dateStr === today) {
@@ -72,12 +72,12 @@ export function beforeCancelCutoff(
 	}
 }
 
-const minStart = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
+const minStart = (stns: SettingsManager, dateStr: string, cat: ReservationCategoryT) =>
 	cat === ReservationCategory.pool ? minPoolStart(stns, dateStr) : minClassroomStart(stns, dateStr);
-const maxEnd = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
+const maxEnd = (stns: SettingsManager, dateStr: string, cat: ReservationCategoryT) =>
 	cat === ReservationCategory.pool ? maxPoolEnd(stns, dateStr) : maxClassroomEnd(stns, dateStr);
 
-const nRes = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
+const nRes = (stns: SettingsManager, dateStr: string, cat: ReservationCategoryT) =>
 	Math.floor((maxEnd(stns, dateStr, cat) - minStart(stns, dateStr, cat)) / inc(stns, dateStr));
 
 /**
@@ -86,7 +86,7 @@ const nRes = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) 
 export const getStartEndTimes = (
 	stns: SettingsManager,
 	dateStr: string,
-	cat: ReservationCategory
+	cat: ReservationCategoryT
 ) =>
 	Array(nRes(stns, dateStr, cat) + 1)
 		.fill(undefined)
@@ -96,7 +96,7 @@ export const getStartEndTimes = (
 /**
  * @returns array of 'HH:MM'
  */
-export const startTimes = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
+export const startTimes = (stns: SettingsManager, dateStr: string, cat: ReservationCategoryT) =>
 	getStartEndTimes(stns, dateStr, cat).slice(0, -1).map(x => x.slice(0, -3));
 
 /**
@@ -105,11 +105,11 @@ export const startTimes = (stns: SettingsManager, dateStr: string, cat: Reservat
 export const endTimes = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
 	getStartEndTimes(stns, dateStr, cat).slice(1).map(x => x.slice(0, -3));
 
-export function minValidDate(stns: SettingsManager, category: ReservationCategory) {
+export function minValidDate(stns: SettingsManager, category: ReservationCategoryT) {
 	let today = dtu.PanglaoDate();
 	let todayStr = dtu.datetimeToLocalDateStr(today);
 	let d = dtu.PanglaoDate();
-	if ([ReservationCategory.pool, ReservationCategory.classroom].includes(category)) {
+	if ([ReservationCategory.pool, ReservationCategory.classroom].includes(category as ReservationCategory)) {
 		let sTs = startTimes(stns, todayStr, category);
 		let lastSlot = dtu.timeStrToMin(sTs[sTs.length - 1]);
 		if (minuteOfDay(today) < lastSlot) {
@@ -125,7 +125,7 @@ export function minValidDate(stns: SettingsManager, category: ReservationCategor
 	return d;
 }
 
-export function minValidDateStr(stns: SettingsManager, category: ReservationCategory) {
+export function minValidDateStr(stns: SettingsManager, category: ReservationCategoryT) {
 	let d = minValidDate(stns, category);
 	return dtu.datetimeToLocalDateStr(d);
 }
