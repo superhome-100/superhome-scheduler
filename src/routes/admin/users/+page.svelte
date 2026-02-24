@@ -181,6 +181,12 @@
 
 <div class="admin-view">
 	<div class="filter-bar">
+		<select bind:value={statusFilter} class="search-input">
+			<option value="" selected>Status</option>
+			{#each Constants['public']['Enums']['user_status'] as status}
+				<option value={status}>{status}</option>
+			{/each}
+		</select>
 		<input
 			id="searchTerm"
 			type="text"
@@ -189,12 +195,6 @@
 			on:input={handleSearchTermInput}
 			class="search-input filter-bar-fill-remaining"
 		/>
-		<select bind:value={statusFilter} class="search-input">
-			<option value="" selected>Status</option>
-			{#each Constants['public']['Enums']['user_status'] as status}
-				<option value={status}>{status}</option>
-			{/each}
-		</select>
 	</div>
 	{#if $storedUsersForAdminLoading}
 		<LoadingBar />
@@ -203,7 +203,7 @@
 			<thead>
 				<tr>
 					<th>Nickname /<br />Name</th>
-					<th>Created At</th>
+					<th>Created At ↓</th>
 					<th class="actions-col">Management</th>
 				</tr>
 			</thead>
