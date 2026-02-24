@@ -32,9 +32,12 @@
 
 	export let settingsManager: SettingsManager;
 
-	const supabaseTableUrl = `https://supabase.com/dashboard/project/${
-		new URL(PUBLIC_SUPABASE_URL).host.split('.')[0]
-	}/editor`;
+	const supabaseTableUrl =
+		PUBLIC_SUPABASE_URL.indexOf('localhost') !== -1
+			? 'http://localhost:54323/project/default/editor'
+			: `https://supabase.com/dashboard/project/${
+					new URL(PUBLIC_SUPABASE_URL).host.split('.')[0]
+			  }/editor`;
 	const schedulerDoc =
 		'https://docs.google.com/document/d/1FQ828hDuuPRnQ7QWYMykSv9bT3Lmxi0amLsFyTjnyuM/edit?usp=share_link';
 	const viewModeStorageKey = 'superhome-scheduler.viewMode';
