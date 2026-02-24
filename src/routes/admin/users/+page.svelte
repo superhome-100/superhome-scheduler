@@ -86,15 +86,19 @@
 
 		const fn = async () => {
 			if (!user) throw Error('assert');
-			throw Error('This feature is disabled now. Contact the developer for more info.');
 
-			const { data } = await supabase
+			const { data, error } = await supabase
 				.from('Users')
 				.delete()
 				.eq('id', user.id)
 				.select()
-				.maybeSingle()
-				.throwOnError();
+				.maybeSingle();
+
+			if (error?.message.indexOf('"reservations_user_key"') !== -1) {
+				throw Error(`User '${user.name}' has reservation(s), cannot be deleted`);
+			} else if (error) {
+				throw error;
+			}
 
 			if (!data) throw Error("Could't delete user!");
 

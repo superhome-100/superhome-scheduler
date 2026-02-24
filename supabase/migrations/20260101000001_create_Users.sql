@@ -97,6 +97,17 @@ using (
 
 ---
 
+create policy "Enable admins to delete Users"
+on "public"."Users"
+as PERMISSIVE
+for DELETE
+to authenticated
+using (
+  (SELECT public.is_admin())
+);
+
+---
+
 CREATE TRIGGER "Broadcast changes of table: Users"
 AFTER INSERT OR UPDATE OR DELETE ON "public"."Users"
 FOR EACH ROW
