@@ -30,8 +30,5 @@
         "crons": [ // use UTC times
             "0 0-12 * * *" // 8am-8pm
         ],
-    },
-    "vars": {
-        "PUBLIC_XATA_MIGRATION": "2026-03-01" // TODO:mate: end of migration
     }
 }
