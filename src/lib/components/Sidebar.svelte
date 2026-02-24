@@ -253,7 +253,7 @@
 						<SidebarItem
 							label="Send Notification"
 							{spanClass}
-							href="/admin/send-notification"
+							href="/admin/notify-reservations"
 							on:click={toggleSide}
 						/>
 						<SidebarDropdownWrapper label="Admin: Advanced" isOpen={false}>
@@ -270,15 +270,25 @@
 								{spanClass}
 								on:click={() => {
 									downloadDatabase('Reservations');
-									toggleDrawer();
+									toggleSide();
 								}}
 							/>
 							<SidebarItem
 								label="Download DB"
 								{spanClass}
-								on:click={() => downloadDatabase('all')}
+								on:click={() => {
+									downloadDatabase('all');
+									toggleSide();
+								}}
 							/>
-							<SidebarItem label="Update prices manually" {spanClass} on:click={updatePrices} />
+							<SidebarItem
+								label="Update prices manually"
+								{spanClass}
+								on:click={() => {
+									updatePrices();
+									toggleSide();
+								}}
+							/>
 							<SidebarItem
 								label="Simulate error"
 								{spanClass}
