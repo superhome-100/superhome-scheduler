@@ -16,6 +16,8 @@ const EVENTS = [
     'Reservations',
     'Settings',
     'Users',
+    'UserPriceTemplates',
+    'PriceTemplates',
 ] as const;
 export type EventType = typeof EVENTS[number];
 type Payload = unknown

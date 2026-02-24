@@ -19,7 +19,7 @@
 		result = null;
 
 		try {
-			const response = await fetch('/admin/send-notification', {
+			const response = await fetch('/admin/notify-reservations', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({

@@ -6,7 +6,8 @@ import {
 	ReservationStatus,
 	type User,
 	type ReservationEx,
-	type DateReservationReport
+	type DateReservationReport,
+	type UserWithPriceTemplate
 } from '$types';
 import type { Dayjs } from 'dayjs';
 import { fromPanglaoDateTimeStringToDayJs, getYYYYMMDD, PanglaoDayJs } from '../datetimeUtils';
@@ -109,6 +110,20 @@ export const getUsers = async (supabase: SupabaseClient) => {
 	} catch (error) {
 		console.error(error);
 		return {}
+	}
+};
+
+export const getUsersForAdmin = async (supabase: SupabaseClient): Promise<UserWithPriceTemplate[]> => {
+	try {
+		const { data } = await supabase
+			.from("Users")
+			.select("*, UserPriceTemplates!left(priceTemplate)")
+			.order("createdAt", { ascending: false })
+			.throwOnError();
+		return data;
+	} catch (error) {
+		console.error(error);
+		return []
 	}
 };
 

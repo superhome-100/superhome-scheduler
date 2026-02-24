@@ -247,6 +247,9 @@
 				</SidebarDropdownWrapper>
 				{#if $viewMode === 'admin'}
 					<SidebarDropdownWrapper label="Admin" bind:isOpen={isOpenAdminMenu}>
+						{#if getFeature(user, 'admin-users', false)}
+							<SidebarItem label="Users" {spanClass} href="/admin/users" on:click={toggleSide} />
+						{/if}
 						<SidebarItem
 							label="Send Notification"
 							{spanClass}
@@ -260,11 +263,15 @@
 								{spanClass}
 								target="_blank"
 								href="https://superhome.sentry.io/explore/logs/"
+								on:click={toggleSide}
 							/>
 							<SidebarItem
 								label="Download Reservations"
 								{spanClass}
-								on:click={() => downloadDatabase('Reservations')}
+								on:click={() => {
+									downloadDatabase('Reservations');
+									toggleDrawer();
+								}}
 							/>
 							<SidebarItem
 								label="Download DB"
@@ -287,16 +294,19 @@
 					label="Facilities Guide"
 					target="_blank"
 					href="https://www.freedivesuperhome.com/facility-guideline"
+					on:click={toggleSide}
 				/>
 				<SidebarItem
 					label="Messenger Group"
 					target="_blank"
 					href="https://m.me/j/Abaj0BzT0Q8K85gO/"
+					on:click={toggleSide}
 				/>
 				<SidebarItem
 					label="Privacy Policy"
 					target="_blank"
 					href="https://app.freedivesuperhome.com/privacy"
+					on:click={toggleSide}
 				/>
 			</SidebarGroup>
 		</SidebarWrapper>

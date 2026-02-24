@@ -3,16 +3,19 @@ import { supabase_es, type EventType } from './supabase_event_source';
 import { getYYYYMMDD, PanglaoDate } from '$lib/datetimeUtils';
 import { defaultDateSettings, getDateSetting, type DateSetting } from '$lib/dateSettings';
 import { fallbackSettingsManager, getSettingsManager, type SettingsManager } from '$lib/settings';
-import type {
-    Buoy,
-    BuoyGroupings,
-    DateReservationSummary,
-    Notifications,
-    RequireKeys,
-    ReservationEx,
-    SupabaseClient,
-    UserEx,
-    UserMinimal
+import {
+    ReservationStatus,
+    type Buoy,
+    type BuoyGroupings,
+    type DateReservationSummary,
+    type Notifications,
+    type PriceTemplate,
+    type RequireKeys,
+    type ReservationEx,
+    type SupabaseClient,
+    type UserEx,
+    type UserMinimal,
+    type UserWithPriceTemplate
 } from '$types';
 import {
     getBoatAssignmentsByDate,
@@ -23,7 +26,8 @@ import {
     getReservationSummary,
     getUserNotifications,
     getUserPastReservations,
-    getUsers
+    getUsers,
+    getUsersForAdmin,
 } from '$lib/client/api';
 import { LRUCache } from 'lru-cache';
 import { stableStringify } from '$lib/utils';
@@ -218,12 +222,30 @@ export const { value: storedUsers, isLoading: storedUsersLoading } =
             return r;
         }, "Users");
 
+export const { value: storedUsersForAdmin, isLoading: storedUsersForAdminLoading } =
+    readableWithSubscriptionToCore<UserWithPriceTemplate[]>('storedUsers',
+        [], async ({ supabase }) => {
+            const r = await getUsersForAdmin(supabase);
+            return r;
+        }, "Users", "UserPriceTemplates");
+
+export const { value: storedPriceTemplates } =
+    readableWithSubscriptionToCore<PriceTemplate[]>('storedUsers',
+        [], async ({ supabase }) => {
+            const { data } = await supabase
+                .from('PriceTemplates')
+                .select("*")
+                .order("id")
+                .throwOnError();
+            return data;
+        }, "PriceTemplates");
+
 export const { value: storedIncomingReservations, isLoading: storedIncomingReservationsLoading } =
     readableWithSubscriptionToCore<ReservationEx[]>('storedIncomingReservations',
         [], async ({ supabase, user }) => {
             const r = await getIncomingReservations(user, supabase);
             return r;
-        }, "Reservations");
+        }, "Reservations", "Users");
 
 export const { value: storedPastReservations, isLoading: storedPastReservationsLoading } =
     readableWithSubscriptionToCoreAndParam<ReservationEx[], string>('storedPastReservations',
@@ -232,7 +254,7 @@ export const { value: storedPastReservations, isLoading: storedPastReservationsL
         async ({ supabase, user }, currentDay) => {
             const r = await getUserPastReservations(user, supabase, currentDay);
             return r;
-        }, "Reservations");
+        }, "Reservations", "Users");
 
 export const storedDayReservations_param = writable<{ day: string }>();
 
