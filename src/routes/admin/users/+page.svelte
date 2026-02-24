@@ -85,12 +85,18 @@
 		if (!confirmed) return;
 
 		const fn = async () => {
-			if (!user) throw Error();
-			const { data: result } = await supabase
+			if (!user) throw Error('assert');
+			throw Error('This feature is disabled now. Contact the developer for more info.');
+
+			const { data } = await supabase
 				.from('Users')
 				.delete()
 				.eq('id', user.id)
+				.select()
+				.maybeSingle()
 				.throwOnError();
+
+			if (!data) throw Error("Could't delete user!");
 
 			// Cleanup on success
 			draftUser = null;
@@ -98,8 +104,8 @@
 
 		return toast.promise(fn(), {
 			loading: `Deleted ${user.name}...`,
-			success: `Successfully updated ${user.name}`,
-			error: (e) => `Update failed: ${e.message}`
+			success: `Successfully deleted ${user.name}`,
+			error: (e) => `Delete failed: ${e.message}`
 		});
 	}
 
@@ -281,7 +287,8 @@
 												draftUser = null;
 											}}>Discard</button
 										>
-										<button class="btn-cancel" on:click={deleteUser}>Delete</button>
+										<div class="control-strip-spacer" />
+										<button class="btn-delete" on:click={deleteUser}>Delete</button>
 									</div>
 								</div>
 							</td>
@@ -291,7 +298,7 @@
 			</tbody>
 		</table>
 		{#if searchTerm == '' && $storedUsersForAdmin.length > limitList}
-			... this list is not complete, use search bar ...
+			... list is filtered, use search bar ...
 		{/if}
 	{/if}
 </div>

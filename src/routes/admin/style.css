@@ -166,6 +166,10 @@ select:disabled {
     padding-top: 1rem;
 }
 
+.control-strip-spacer {
+    flex-grow: 1; /* Forces the last button to the far right */
+  }
+
 .btn-save {
     background: var(--accent-green);
     color: white;
@@ -176,6 +180,15 @@ select:disabled {
 }
 
 .btn-cancel {
+    background: var(--accent-blue);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.btn-delete {
     background: var(--accent-red);
     color: white;
     border: none;
