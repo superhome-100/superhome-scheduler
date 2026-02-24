@@ -202,11 +202,13 @@
 								id={grouping.buoy.name + '_boat'}
 								bind:value={grouping.boat}
 								on:input={async (e) => {
-									toast.promise(saveAssignments(e), {
-										loading: 'Changing boat assignments...',
-										success: 'Changed boat assignments',
-										error: 'Failed changing boat assignments'
-									});
+									toast
+										.promise(saveAssignments(e), {
+											loading: 'Changing boat assignments...',
+											success: 'Changed boat assignments',
+											error: 'Failed changing boat assignments'
+										})
+										.catch((e) => console.warn('boat-assignment', grouping.buoy.name));
 								}}
 							>
 								<option value="null">-</option>

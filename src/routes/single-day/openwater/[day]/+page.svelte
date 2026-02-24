@@ -98,11 +98,13 @@
 	}
 
 	const toggleBuoyLock = async (lock: boolean) => {
-		toast.promise(lockBuoyAssignments(dayStr, lock), {
-			loading: (lock ? 'L' : 'Unl') + 'ocking buoy assignments',
-			success: (lock ? 'L' : 'Unl') + 'ocked buoy assignments',
-			error: 'Failed to ' + (lock ? '' : 'u') + 'nlock buoy assignments'
-		});
+		toast
+			.promise(lockBuoyAssignments(dayStr, lock), {
+				loading: (lock ? 'L' : 'Unl') + 'ocking buoy assignments',
+				success: (lock ? 'L' : 'Unl') + 'ocked buoy assignments',
+				error: 'Failed to ' + (lock ? '' : 'u') + 'nlock buoy assignments'
+			})
+			.catch((e) => console.warn('buoy-assignemnt', e));
 	};
 	const lockBuoys = async () => toggleBuoyLock(true);
 	const unlockBuoys = async () => toggleBuoyLock(false);
@@ -182,11 +184,13 @@
 					class="{highlightButton(isAmFull)} px-1 py-0 font-semibold border-black dark:border-white"
 					on:click={async () => {
 						const n = isAmFull ? 'not full' : 'full';
-						await toast.promise(flagOWAmAsFull(supabase, dayStr, !isAmFull), {
-							loading: 'Marking AM as ' + n,
-							success: 'Marked AM as ' + n,
-							error: 'Failed to makr AM as ' + n
-						});
+						await toast
+							.promise(flagOWAmAsFull(supabase, dayStr, !isAmFull), {
+								loading: 'Marking AM as ' + n,
+								success: 'Marked AM as ' + n,
+								error: 'Failed to makr AM as ' + n
+							})
+							.catch((e) => console.warn('mark-as-am', n));
 					}}
 				>
 					<span>AM full</span>
@@ -194,14 +198,13 @@
 				<button
 					class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
 					on:click={async () => {
-						await toast.promise(
-							approveAllPendingReservations(ReservationCategory.openwater, dayStr),
-							{
+						await toast
+							.promise(approveAllPendingReservations(ReservationCategory.openwater, dayStr), {
 								loading: 'Approving all reservations...',
 								success: 'Approved all reservations',
 								error: 'Failed to approve all reservations'
-							}
-						);
+							})
+							.catch((e) => console.warn('approveAllPendingReservations', e, dayStr));
 					}}
 				>
 					Approve All

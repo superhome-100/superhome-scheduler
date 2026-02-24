@@ -66,11 +66,13 @@
 			draftUser = null;
 		};
 
-		return toast.promise(fn(), {
-			loading: `Updating ${user.name}...`,
-			success: `Successfully updated ${user.name}`,
-			error: (e) => `Update failed: ${e.message}`
-		});
+		return toast
+			.promise(fn(), {
+				loading: `Updating ${user.name}...`,
+				success: `Successfully updated ${user.name}`,
+				error: (e) => `Update failed: ${e.message}`
+			})
+			.catch((e) => console.warn('admin-users.delete', e, user));
 	}
 
 	async function deleteUser() {
@@ -106,11 +108,13 @@
 			draftUser = null;
 		};
 
-		return toast.promise(fn(), {
-			loading: `Deleted ${user.name}...`,
-			success: `Successfully deleted ${user.name}`,
-			error: (e) => `Delete failed: ${e.message}`
-		});
+		return toast
+			.promise(fn(), {
+				loading: `Deleted ${user.name}...`,
+				success: `Successfully deleted ${user.name}`,
+				error: (e) => `Delete failed: ${e.message}`
+			})
+			.catch((e) => console.warn('admin-users.delete', e, user));
 	}
 
 	const limitList = 100;

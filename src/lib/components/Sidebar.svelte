@@ -96,11 +96,13 @@
 				return Promise.reject();
 			}
 		};
-		toast.promise(fn(), {
-			loading: 'downloading...',
-			success: 'success!',
-			error: 'error!  please try again'
-		});
+		toast
+			.promise(fn(), {
+				loading: 'downloading...',
+				success: 'success!',
+				error: 'error! please try again'
+			})
+			.catch((e) => console.warn('downloading-db', e));
 	}
 
 	function updatePrices() {
@@ -112,19 +114,23 @@
 				return Promise.reject();
 			}
 		};
-		toast.promise(fn(), {
-			loading: 'updating prices...',
-			success: 'updated prices!',
-			error: 'error!  please try again'
-		});
+		toast
+			.promise(fn(), {
+				loading: 'updating prices...',
+				success: 'updated prices!',
+				error: 'error! please try again'
+			})
+			.catch((e) => console.warn('update.price', e));
 	}
 
 	async function userLogout() {
-		toast.promise(signOut(page.data.supabase), {
-			loading: 'Logging out...',
-			success: 'You are now logged out',
-			error: 'Error: could not log out!'
-		});
+		toast
+			.promise(signOut(page.data.supabase), {
+				loading: 'Logging out...',
+				success: 'You are now logged out',
+				error: 'Error: could not log out!'
+			})
+			.catch((e) => console.warn('userLogout', e));
 	}
 
 	const updateSubscription = async (e: any) => {
