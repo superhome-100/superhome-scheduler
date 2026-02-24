@@ -61,17 +61,25 @@ enabled = true
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
 sql_paths = [
+    "./seeds/xata migration_phase_1/Xata_Users.sql",
+    "./seeds/xata migration_phase_1/Xata_BuoyGroupings.sql",
+    "./seeds/xata migration_phase_1/Xata_Buoys.sql",
+    "./seeds/xata migration_phase_1/Xata_Boats.sql",
+    "./seeds/xata migration_phase_1/Xata_Settings.sql",
+    "./seeds/xata migration_phase_1/Xata_Reservations.sql",
+    "./seeds/xata migration_phase_1/Xata_Notifications.sql",
+    "./seeds/xata migration_phase_1/Xata_NotificationReceipts.sql",
+    "./seeds/xata migration_phase_1/Xata_PriceTemplates.sql",
+    "./seeds/xata migration_phase_1/Xata_UserPriceTemplates.sql",
+    "./seeds/seed_mate.sql",
+    # phase 2 bellow
     "./seeds/xata/Xata_Users.sql",
     "./seeds/xata/Xata_BuoyGroupings.sql",
     "./seeds/xata/Xata_Buoys.sql",
     "./seeds/xata/Xata_Boats.sql",
-    "./seeds/xata/Xata_Settings.sql",
     "./seeds/xata/Xata_Reservations.sql",
-    "./seeds/xata/Xata_Notifications.sql",
-    "./seeds/xata/Xata_NotificationReceipts.sql",
     "./seeds/xata/Xata_PriceTemplates.sql",
     "./seeds/xata/Xata_UserPriceTemplates.sql",
-    "./seeds/seed_mate.sql"
 ]
 
 [db.network_restrictions]

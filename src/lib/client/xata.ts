@@ -4,10 +4,11 @@ import { storedUser } from './stores';
 import { getFeature } from '$lib/userFeature';
 
 export const xataMigrationDayStrFilter = (d: string) => {
+    if (!env.PUBLIC_XATA_MIGRATION) return true;
     const user = get(storedUser);
     if (user) {
         const filterDisabled = getFeature(user, 'xataMigrationFilterDisabled', null);
         if (filterDisabled === true) return true;
     }
-    return env.PUBLIC_XATA_MIGRATION ? env.PUBLIC_XATA_MIGRATION <= d : true;
+    return env.PUBLIC_XATA_MIGRATION <= d;
 }

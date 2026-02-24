@@ -14,7 +14,7 @@
 		"regen_db": "supabase db reset && supabase gen types typescript --local > src/lib/supabase.types.ts && prettier --plugin-search-dir . --write src/lib/supabase.types.ts"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20260218.0",
+		"@cloudflare/workers-types": "^4.20260303.0",
 		"@faker-js/faker": "^7.6.0",
 		"@popperjs/core": "^2.11.8",
 		"@sveltejs/adapter-auto": "^7.0.1",
@@ -53,7 +53,7 @@
 	"dependencies": {
 		"@sentry/sveltekit": "^10.39.0",
 		"@supabase/ssr": "^0.8.0",
-		"@supabase/supabase-js": "^2.96.0",
+		"@supabase/supabase-js": "^2.97.0",
 		"axios": "^1.13.5",
 		"daisyui": "^2.52.0",
 		"dayjs": "^1.11.19",
