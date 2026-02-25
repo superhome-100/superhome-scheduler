@@ -1,4 +1,4 @@
-import debounce from "debounce-fn";
+import debounce, { type Options } from "debounce-fn";
 import type { Database } from '$lib/supabase.types'
 import {
     SupabaseClient,
@@ -24,8 +24,26 @@ type Payload = unknown
 type Subscriber = () => void | Promise<void>
 type Unsubscribe = () => void
 
-const debounceWaitMs = 200;
-const debounceMaxWaitMs = 2000;
+const debounceShort: Options = {
+    wait: 200,
+    maxWait: 1000,
+};
+const debounceLong: Options = {
+    wait: 1000,
+    maxWait: 2000,
+};
+const EventConfig: Record<EventType, Options> = {
+    'Boats': debounceShort,
+    'Buoys': debounceShort,
+    'BuoyGroupings': debounceShort,
+    'DaySettings': debounceShort,
+    'Notifications': debounceLong,
+    'Reservations': debounceLong,
+    'Settings': debounceShort,
+    'Users': debounceShort,
+    'UserPriceTemplates': debounceShort,
+    'PriceTemplates': debounceShort,
+}
 
 export class SupabaseEventSource {
     private readonly _channelName = 'table_changes';
@@ -53,10 +71,7 @@ export class SupabaseEventSource {
             config: { private: true }
         })
         for (const event of EVENTS) {
-            const fn = debounce((payload: Payload) => this.dispatch(event, payload), {
-                wait: debounceWaitMs,
-                maxWait: debounceMaxWaitMs
-            })
+            const fn = debounce((payload: Payload) => this.dispatch(event, payload), EventConfig[event])
             this.channel.on(
                 'broadcast',
                 { event },

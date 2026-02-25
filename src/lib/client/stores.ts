@@ -4,7 +4,6 @@ import { getYYYYMMDD, PanglaoDate } from '$lib/datetimeUtils';
 import { defaultDateSettings, getDateSetting, type DateSetting } from '$lib/dateSettings';
 import { fallbackSettingsManager, getSettingsManager, type SettingsManager } from '$lib/settings';
 import {
-    ReservationStatus,
     type Buoy,
     type BuoyGroupings,
     type DateReservationSummary,
