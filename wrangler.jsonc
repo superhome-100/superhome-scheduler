@@ -32,6 +32,9 @@
         ],
     },
     "env": {
+        "main": {
+            "name": "app"
+        },
         "dev": {
             "name": "dev"
         }
