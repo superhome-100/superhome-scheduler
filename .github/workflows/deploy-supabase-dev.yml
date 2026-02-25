@@ -53,7 +53,12 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Build
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          environment: ${{ github.ref_name }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         env:
           PRIVATE_SUPABASE_SERVICE_KEY: ${{ secrets.PRIVATE_SUPABASE_SERVICE_KEY }}
           PRIVATE_VAPID_KEY: ${{ secrets.PRIVATE_VAPID_KEY }}
@@ -63,11 +68,3 @@ jobs:
           PUBLIC_VAPID_KEY: ${{ vars.PUBLIC_VAPID_KEY }}
           PUBLIC_VAPID_SUBJECT: ${{ vars.PUBLIC_VAPID_SUBJECT }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-        run: npm run build
-
-      - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # Wrangler automatically picks up your wrangler.toml

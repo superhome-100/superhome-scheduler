@@ -30,5 +30,10 @@
         "crons": [ // use UTC times
             "0 0-12 * * *" // 8am-8pm
         ],
+    },
+    "env": {
+        "dev": {
+            "name": "dev"
+        }
     }
 }
