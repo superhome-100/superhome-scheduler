@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PUBLIC_SUPABASE_URL } from '$env/static/public';
+	import { PUBLIC_STAGE, PUBLIC_SUPABASE_URL } from '$env/static/public';
 	import { browser } from '$app/environment';
 	import {
 		Navbar,
@@ -186,6 +186,9 @@
 	<NavBrand href="/" class="lg:ml-64">
 		<span class="self-center whitespace-nowrap xs:text-xl font-semibold dark:text-white">
 			SuperHOME Scheduler
+			{#if PUBLIC_STAGE !== 'production'}
+				<span style="background-color: red;">{PUBLIC_STAGE}</span>
+			{/if}
 		</span>
 	</NavBrand>
 	{#if user}
