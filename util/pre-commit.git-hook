@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# Detect if the current git operation is an amend
+# This checks if 'amend' is present in the parent process command arguments
+if ps -p $PPID -o args= | grep -q "amend"; then
+    echo "Amend detected. Skipping version increment."
+    exit 0
+fi
+
+# Identify if package.json is among the staged changes
+if git diff --cached --name-only | grep -q 'package.json'; then
+    echo "package.json already modified, skipping automatic increment to prevent conflict."
+    exit 0
+fi
+
+echo "Incrementing patch version..."
+
+# Update version in package.json without creating a git tag
+# This modifies the file in the working directory
+npm version patch --no-git-tag-version
+
+# Re-stage the updated package.json so the change is included in the current commit
+git add package.json package-lock.json
+
+exit 0
