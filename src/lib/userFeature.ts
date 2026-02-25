@@ -1,4 +1,4 @@
-import type { User } from "$types";
+import type { SupabaseClient, User } from "$types";
 
 export interface Features {
     'pushNotificationEnabled': boolean;
@@ -13,3 +13,19 @@ export function getFeature<K extends FeatureName>(
 ): Features[K] | null {
     return (user?.metadata as never)?.['feature']?.[name] ?? defaultValue;
 }
+
+export async function getFeatureById<K extends FeatureName>(
+    supabase: SupabaseClient,
+    userId: string,
+    name: K,
+    defaultValue: Features[K] | null
+): Promise<Features[K] | null> {
+    try {
+        const { data } = await supabase.from("Users").select("metadata").eq("id", userId).single();
+        return (data?.metadata as never)?.['feature']?.[name] ?? defaultValue;
+    } catch (e) {
+        console.error('getFeatureById', userId, name, defaultValue, e);
+        return defaultValue;
+    }
+}
+

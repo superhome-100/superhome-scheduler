@@ -151,11 +151,13 @@
 		localStorage.setItem(viewModeStorageKey, $viewMode);
 	};
 
-	$: pushNotificationEnabled = ((user, sm, day) => {
-		const smv = sm.get('pushNotificationEnabled', day);
-		if (!user) return smv;
-		return getFeature(user, 'pushNotificationEnabled', smv);
-	})(user, settingsManager, $storedCurrentDay);
+	$: pushNotificationToggleEnabled = ((user) => {
+		return getFeature(
+			user,
+			'pushNotificationEnabled',
+			false /*TODO change here to enable for all users, can be a setting*/
+		);
+	})(user);
 
 	let isOpenCalendarsMenu: boolean;
 	$: {
@@ -187,7 +189,7 @@
 		<span class="self-center whitespace-nowrap xs:text-xl font-semibold dark:text-white">
 			SuperHOME Scheduler
 			{#if PUBLIC_STAGE !== 'production'}
-				<span style="background-color: red;">{PUBLIC_STAGE}</span>
+				<span style="background-color: red;">{PUBLIC_STAGE} v{__APP_VERSION__}</span>
 			{/if}
 		</span>
 	</NavBrand>
@@ -225,7 +227,7 @@
 				{#if user}
 					<SidebarDropdownWrapper label="Profile">
 						<SidebarItem label="Logout" on:click={userLogout} />
-						{#if pushNotificationEnabled}
+						{#if pushNotificationToggleEnabled}
 							<div class="ms-4">
 								<Toggle checked={!!$subscription} on:change={updateSubscription} />
 								<span>Notifications</span>

@@ -19,16 +19,17 @@ import { getSettingsManager } from '$lib/settings';
 
 const adminUpdateGeneric = async ({
 	request,
-	locals: { safeGetSession }
+	locals: { supabase, safeGetSession }
 }: RequestEvent): Promise<void | ActionFailure<{ error: string }>> => {
 	try {
 		const { user } = await safeGetSession();
+		const sm = await getSettingsManager(supabase);
 		checkAuthorisation(user, 'admin');
 		const data = await request.formData();
 		console.log('adminUpdateGeneric', data);
 		const category = data.get('category') as string;
 		await doTransaction(category, data.get('date') as string, async () => {
-			await adminUpdate(user, data);
+			await adminUpdate(user, data, sm);
 		});
 	} catch (e) {
 		console_error('error adminUpdateGeneric', e);

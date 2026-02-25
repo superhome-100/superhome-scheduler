@@ -5,6 +5,7 @@ import { pushNotificationService } from '$lib/server/push';
 import dayjs from 'dayjs';
 import { OWTime, ReservationStatus, type Reservation, type ReservationCategory } from '$types';
 import { fromPanglaoDateTimeStringToDayJs, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
+import { getSettingsManager } from '$lib/settings';
 
 interface RequestBody {
 	title: string;
@@ -15,9 +16,10 @@ interface RequestBody {
 	owTime?: string | null;
 }
 
-export async function POST({ request, locals: { safeGetSession } }: RequestEvent) {
+export async function POST({ request, locals: { supabase, safeGetSession } }: RequestEvent) {
 	try {
 		const { user } = await safeGetSession();
+		const sm = await getSettingsManager(supabase);
 		checkAuthorisation(user, 'admin');
 
 		const requestJson = (await request.json()) as RequestBody;
@@ -58,7 +60,7 @@ export async function POST({ request, locals: { safeGetSession } }: RequestEvent
 		const matches = data.filter(r => from <= r._dt && r._dt <= until);
 
 		const res = await Promise.all(matches.map(async (r) => {
-			const res = await pushNotificationService.send(r.user, title, body);
+			const res = await pushNotificationService.send(sm, r.user, title, body);
 			return {
 				...res, user: `${r.Users.nickname}(${r.Users.id})`
 			}
