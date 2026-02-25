@@ -1,7 +1,9 @@
 CREATE OR REPLACE FUNCTION public.merge_users(
     target_id UUID, 
     source_id UUID
-) RETURNS VOID AS $$
+) RETURNS VOID 
+SET search_path = ''
+AS $$
 BEGIN
     UPDATE public."Reservations"
     SET 
