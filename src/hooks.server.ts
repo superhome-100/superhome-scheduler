@@ -6,7 +6,7 @@ import type { Database } from '$lib/supabase.types';
 import { createServerClient } from '@supabase/ssr';
 import type { Handle } from '@sveltejs/kit';
 import { sessionToSessionId } from '$lib/server/supabase';
-import { console_error, console_info } from '$lib/server/sentry';
+import { console_error } from '$lib/server/sentry';
 import { fetchRetryForSupabase } from '$lib/supabase';
 import type { UserEx } from '$types';
 
