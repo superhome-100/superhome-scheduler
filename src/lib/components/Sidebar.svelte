@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PUBLIC_SUPABASE_URL } from '$env/static/public';
+	import { PUBLIC_STAGE, PUBLIC_SUPABASE_URL } from '$env/static/public';
 	import { browser } from '$app/environment';
 	import {
 		Navbar,
@@ -151,11 +151,13 @@
 		localStorage.setItem(viewModeStorageKey, $viewMode);
 	};
 
-	$: pushNotificationEnabled = ((user, sm, day) => {
-		const smv = sm.get('pushNotificationEnabled', day);
-		if (!user) return smv;
-		return getFeature(user, 'pushNotificationEnabled', smv);
-	})(user, settingsManager, $storedCurrentDay);
+	$: pushNotificationToggleEnabled = ((user) => {
+		return getFeature(
+			user,
+			'pushNotificationEnabled',
+			false /*TODO change here to enable for all users, can be a setting*/
+		);
+	})(user);
 
 	let isOpenCalendarsMenu: boolean;
 	$: {
@@ -186,6 +188,9 @@
 	<NavBrand href="/" class="lg:ml-64">
 		<span class="self-center whitespace-nowrap xs:text-xl font-semibold dark:text-white">
 			SuperHOME Scheduler
+			{#if PUBLIC_STAGE !== 'production'}
+				<span style="background-color: red;">{PUBLIC_STAGE} v{__APP_VERSION__}</span>
+			{/if}
 		</span>
 	</NavBrand>
 	{#if user}
@@ -222,7 +227,7 @@
 				{#if user}
 					<SidebarDropdownWrapper label="Profile">
 						<SidebarItem label="Logout" on:click={userLogout} />
-						{#if pushNotificationEnabled}
+						{#if pushNotificationToggleEnabled}
 							<div class="ms-4">
 								<Toggle checked={!!$subscription} on:change={updateSubscription} />
 								<span>Notifications</span>
@@ -253,9 +258,7 @@
 				</SidebarDropdownWrapper>
 				{#if $viewMode === 'admin'}
 					<SidebarDropdownWrapper label="Admin" bind:isOpen={isOpenAdminMenu}>
-						{#if getFeature(user, 'admin-users', false)}
-							<SidebarItem label="Users" {spanClass} href="/admin/users" on:click={toggleSide} />
-						{/if}
+						<SidebarItem label="Users" {spanClass} href="/admin/users" on:click={toggleSide} />
 						<SidebarItem
 							label="Send Notification"
 							{spanClass}

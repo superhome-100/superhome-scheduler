@@ -26,7 +26,7 @@
 	import type { SettingsManager } from '$lib/settings';
 	import type { Writable } from 'svelte/store';
 	import type { UserEx } from '$types';
-	import { browser } from '$app/environment';
+	import { PUBLIC_STAGE } from '$env/static/public';
 
 	console.info('superhome-scheduler', __APP_VERSION__);
 
@@ -103,6 +103,27 @@
 	console.log('layout', $page.route.id, $page.params['day']);
 </script>
 
+{#if PUBLIC_STAGE !== 'production'}
+	<style>
+		.staging-banner {
+			/* position: fixed; */
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 10px; /* Thin line */
+			background-color: #ff3e00; /* High-visibility warning color */
+			z-index: 9999;
+			text-indent: -9999px; /* Hides text while remaining accessible to screen readers */
+			pointer-events: none; /* Prevents interference with UI interactions */
+		}
+
+		/* Optional: Adjust global padding if the line needs to be thicker/visible text */
+		:global(body) {
+			margin-top: 4px;
+		}
+	</style>
+	<div class="staging-banner" role="alert" />
+{/if}
 <Toaster toastOptions={{ error: { duration: 5000 } }} />
 <Refresher {onRefresh}>
 	{#if $page.route.id && !publicRoutes.includes($page.route.id)}

@@ -1,6 +1,7 @@
 import type {
 	AppFormData,
 	Reservation,
+	ReservationCategoryT,
 	ReservationCreationFormUnpacked,
 	ReservationModifyingFormUnpacked,
 	Submission,
@@ -144,6 +145,7 @@ function categoryIsBookable(
 	sub: TablesUpdate<'Reservations'>
 ): boolean {
 	let isBookable = false;
+	if (!sub.date) throw Error('categoryIsBookable missing date');
 
 	switch (sub.category) {
 		case ReservationCategory.pool:
@@ -341,7 +343,7 @@ export async function submitReservation(
 		.select("*")
 		.throwOnError();
 
-	await pushNotificationService.sendReservationCreated(actor, data);
+	await pushNotificationService.sendReservationCreated(settings, actor, data);
 }
 
 async function throwIfUpdateIsInvalid(
@@ -571,7 +573,7 @@ export async function modifyReservation(actor: User, formData: AppFormData, sett
 			.select('*')
 			.single();
 		if (error) errors.push(error);
-		else await pushNotificationService.sendReservationModified(actor, [data]);
+		else await pushNotificationService.sendReservationModified(settings, actor, [data]);
 	}
 
 	if (create.length > 0) {
@@ -580,7 +582,7 @@ export async function modifyReservation(actor: User, formData: AppFormData, sett
 			.insert(create)
 			.select('*');
 		if (error) errors.push(error);
-		else if (createrecs) await pushNotificationService.sendReservationCreated(actor, createrecs);
+		else if (createrecs) await pushNotificationService.sendReservationCreated(settings, actor, createrecs);
 	}
 
 	if (cancel.length > 0) {
@@ -590,14 +592,14 @@ export async function modifyReservation(actor: User, formData: AppFormData, sett
 			.select("*")
 			.in("id", cancel);
 		if (error) errors.push(error);
-		else if (data) await pushNotificationService.sendReservationStatus(actor, data);
+		else if (data) await pushNotificationService.sendReservationStatus(settings, actor, data);
 	}
 
 	if (errors.length > 0)
 		throw Error(`Error during modifying reservation ${id} ${sub}: ${JSON.stringify(errors)}`);
 }
 
-export async function adminUpdate(actor: User, formData: AppFormData) {
+export async function adminUpdate(actor: User, formData: AppFormData, settings: SettingsManager) {
 	let rsv: Partial<Tables<'Reservations'>> = {};
 
 	let id = formData.get('id');
@@ -629,7 +631,7 @@ export async function adminUpdate(actor: User, formData: AppFormData) {
 		.single()
 		.throwOnError();
 
-	await pushNotificationService.sendReservationStatus(actor, [data]);
+	await pushNotificationService.sendReservationStatus(settings, actor, [data]);
 }
 
 async function throwIfInvalidCancellation(settings: SettingsManager, data: Tables<'Reservations'>) {
@@ -688,7 +690,7 @@ export async function cancelReservation(actor: User, formData: AppFormData, sett
 				if (error) errors.push({ id: m.id, error });
 				else modrecs.push(data);
 			}
-			await pushNotificationService.sendReservationModified(actor, modrecs);
+			await pushNotificationService.sendReservationModified(settings, actor, modrecs);
 		}
 
 		cancel = cancel.concat(existing.filter((rsv) => !save.includes(rsv.user)).map((rsv) => rsv.id));
@@ -700,13 +702,13 @@ export async function cancelReservation(actor: User, formData: AppFormData, sett
 			.select('*')
 			.in('id', cancel);
 		if (error) errors.push({ id, error });
-		else if (data) await pushNotificationService.sendReservationStatus(actor, data);
+		else if (data) await pushNotificationService.sendReservationStatus(settings, actor, data);
 	}
 	if (errors.length)
 		throw Error(`Error during cancelling reservations: ${JSON.stringify(errors)}`);
 }
 
-export async function approveAllPendingReservations(actor: User, category: ReservationType, date: string) {
+export async function approveAllPendingReservations(actor: User, category: ReservationCategoryT, date: string, settings: SettingsManager) {
 	console.info('Approving all pending reservations for', category, date);
 	const { data } = await supabaseServiceRole
 		.from('Reservations')
@@ -717,5 +719,5 @@ export async function approveAllPendingReservations(actor: User, category: Reser
 		.eq('status', ReservationStatus.pending)
 		.throwOnError();
 
-	await pushNotificationService.sendReservationStatus(actor, data)
+	await pushNotificationService.sendReservationStatus(settings, actor, data)
 }

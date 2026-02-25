@@ -6,7 +6,7 @@ import type { Database } from '$lib/supabase.types';
 import { createServerClient } from '@supabase/ssr';
 import type { Handle } from '@sveltejs/kit';
 import { sessionToSessionId } from '$lib/server/supabase';
-import { console_error, console_info } from '$lib/server/sentry';
+import { console_error } from '$lib/server/sentry';
 import { fetchRetryForSupabase } from '$lib/supabase';
 import type { UserEx } from '$types';
 
@@ -14,7 +14,7 @@ Sentry.initCloudflareSentryHandle({
 	dsn: 'https://f2da7b160a72d4083e99922a3ae707fe@o4510844761931776.ingest.de.sentry.io/4510844770975824',
 
 	// Enable logs to be sent to Sentry
-	enableLogs: PUBLIC_STAGE !== 'dev',
+	enableLogs: PUBLIC_STAGE !== 'local',
 
 	// integrations: [
 	// 	Sentry.consoleLoggingIntegration({ levels: ["warn", "error"] }),

@@ -4,11 +4,12 @@ import { PRIVATE_VAPID_KEY } from '$env/static/private';
 import { supabaseServiceRole } from './supabase';
 import webpush, { type PushSubscription } from 'web-push';
 import type { Reservation, User } from '$types';
-import { dayjs, fromPanglaoDateTimeStringToDayJs } from '$lib/datetimeUtils';
+import { dayjs, fromPanglaoDateTimeStringToDayJs, getYYYYMMDD } from '$lib/datetimeUtils';
 import { LRUCache } from 'lru-cache'
 import type { Json } from '$lib/supabase.types';
 import { getRandomElement } from '$lib/utils';
 import { console_error } from './sentry';
+import type { SettingsManager } from '$lib/settings';
 
 webpush.setVapidDetails(
     PUBLIC_VAPID_SUBJECT,
@@ -28,6 +29,7 @@ const userIdToPushCache = new LRUCache<string, {
 export type BulkPushResut = {
     success: number;
     failure: Error[];
+    message?: string;
 };
 
 export const pushNotificationService = {
@@ -37,8 +39,10 @@ export const pushNotificationService = {
      * #2: From Superhome
      * #3: <message>
      */
-    async send(userId: string, title: string, message: string, url: string = '/'): Promise<BulkPushResut> {
+    async send(sm: SettingsManager, userId: string, title: string, message: string, url: string = '/'): Promise<BulkPushResut> {
         try {
+            if (!sm.get('pushNotificationEnabled', getYYYYMMDD()))
+                return { success: 0, failure: [], message: 'push setting is not enabled' };
             const pss = await this._getPushSubscriptions(userId);
             const uRes = await Promise.all(pss.map(d => {
                 return (async (subscription) => {
@@ -79,34 +83,34 @@ export const pushNotificationService = {
         return data;
     },
 
-    async sendSafe(userId: string, title: string, message: string, url: string = '/') {
+    async sendSafe(sm: SettingsManager, userId: string, title: string, message: string, url: string = '/') {
         try {
-            return await this.send(userId, title, message, url);
+            return await this.send(sm, userId, title, message, url);
         } catch (e) {
             console_error("pushNotificationService.send", e)
         }
     },
 
-    async sendReservationFn(actor: User, rsvs: Reservation[], fn: (r: Reservation) => string) {
+    async _sendReservationFn(sm: SettingsManager, actor: User, rsvs: Reservation[], fn: (r: Reservation) => string) {
         await Promise.allSettled(rsvs
             .filter(r => r.user !== actor.id)
-            .map(async (rsv) => this.sendSafe(rsv.user,
+            .map(async (rsv) => this.sendSafe(sm, rsv.user,
                 reservationTitle(rsv, fn),
                 reservationDetails(rsv),
                 `/single-day/${rsv.category}/${rsv.date}`
             )))
     },
 
-    async sendReservationStatus(actor: User, rsvs: Reservation[]) {
-        await this.sendReservationFn(actor, rsvs, r => `[${r.status}]`);
+    async sendReservationStatus(sm: SettingsManager, actor: User, rsvs: Reservation[]) {
+        await this._sendReservationFn(sm, actor, rsvs, r => `[${r.status}]`);
     },
 
-    async sendReservationCreated(actor: User, rsvs: Reservation[]) {
-        await this.sendReservationFn(actor, rsvs, () => 'created');
+    async sendReservationCreated(sm: SettingsManager, actor: User, rsvs: Reservation[]) {
+        await this._sendReservationFn(sm, actor, rsvs, () => 'created');
     },
 
-    async sendReservationModified(actor: User, rsvs: Reservation[]) {
-        await this.sendReservationFn(actor, rsvs, () => 'modified');
+    async sendReservationModified(sm: SettingsManager, actor: User, rsvs: Reservation[]) {
+        await this._sendReservationFn(sm, actor, rsvs, () => 'modified');
     }
 };
 
@@ -138,7 +142,7 @@ const shortDateTime = (rsv: Reservation) => {
     if (rsvStart.isSame(now.add(1, 'day'), 'day')) {
         return 'Tomorrow❗️'
     }
-    return rsvStart.format('DD/MMM hh:mm')
+    return rsvStart.format('DD/MMM HH:mm')
 };
 
 const reservationStatusIcon = (rsv: Reservation) => {

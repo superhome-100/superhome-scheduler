@@ -1,0 +1,70 @@
+name: Deployment
+
+on:
+  push:
+    branches:
+      - dev
+      # - main
+
+jobs:
+  supabase-deploy-migration:
+    # Condition: Only run if '#skip-db' is NOT in the commit message
+    if: "!contains(github.event.head_commit.message, '#skip-db')"
+
+    # Map the branch to the corresponding GitHub Environment
+    environment: ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link and Push Migrations
+        env:
+          # These pull from the Environment selected above
+          SUPABASE_PROJECT_ID: ${{ vars.SUPABASE_PROJECT_ID }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: just-to-silence-warning
+          SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET_KEY: just-to-silence-warning
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_ID" -p "$SUPABASE_DB_PASSWORD"
+          supabase db push -p "$SUPABASE_DB_PASSWORD"
+
+  cloudflare-deploy:
+    environment: ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    needs: supabase-deploy-migration
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+      
+      - name: Install
+        run: npm ci
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          environment: ${{ github.ref_name }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        env:
+          PRIVATE_SUPABASE_SERVICE_KEY: ${{ secrets.PRIVATE_SUPABASE_SERVICE_KEY }}
+          PRIVATE_VAPID_KEY: ${{ secrets.PRIVATE_VAPID_KEY }}
+          PUBLIC_STAGE: ${{ vars.PUBLIC_STAGE }}
+          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          PUBLIC_SUPABASE_URL: "https://${{ vars.SUPABASE_PROJECT_ID }}.supabase.co"
+          PUBLIC_VAPID_KEY: ${{ vars.PUBLIC_VAPID_KEY }}
+          PUBLIC_VAPID_SUBJECT: ${{ vars.PUBLIC_VAPID_SUBJECT }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
