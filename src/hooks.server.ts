@@ -14,7 +14,7 @@ Sentry.initCloudflareSentryHandle({
 	dsn: 'https://f2da7b160a72d4083e99922a3ae707fe@o4510844761931776.ingest.de.sentry.io/4510844770975824',
 
 	// Enable logs to be sent to Sentry
-	enableLogs: PUBLIC_STAGE !== 'dev',
+	enableLogs: PUBLIC_STAGE !== 'local',
 
 	// integrations: [
 	// 	Sentry.consoleLoggingIntegration({ levels: ["warn", "error"] }),
