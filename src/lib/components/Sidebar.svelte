@@ -256,9 +256,7 @@
 				</SidebarDropdownWrapper>
 				{#if $viewMode === 'admin'}
 					<SidebarDropdownWrapper label="Admin" bind:isOpen={isOpenAdminMenu}>
-						{#if getFeature(user, 'admin-users', false)}
-							<SidebarItem label="Users" {spanClass} href="/admin/users" on:click={toggleSide} />
-						{/if}
+						<SidebarItem label="Users" {spanClass} href="/admin/users" on:click={toggleSide} />
 						<SidebarItem
 							label="Send Notification"
 							{spanClass}

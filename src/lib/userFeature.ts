@@ -2,8 +2,6 @@ import type { User } from "$types";
 
 export interface Features {
     'pushNotificationEnabled': boolean;
-    'xataMigrationFilterDisabled': boolean;
-    'admin-users': boolean;
 }
 
 type FeatureName = keyof Features;
