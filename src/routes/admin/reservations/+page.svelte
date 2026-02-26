@@ -37,9 +37,7 @@
 	})(dayParam);
 	$: dayStr = getYYYYMMDD(day);
 
-	$: {
-		storedDayReservations_param.set({ day: dayStr });
-	}
+	$: storedDayReservations_param.set({ day: dayStr });
 
 	let draftRsv:
 		| (ReservationEx & { _duration: number; _notify: boolean; _orig: ReservationEx })
