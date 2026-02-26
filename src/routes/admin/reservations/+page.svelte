@@ -105,10 +105,7 @@
 			if (result === null) throw Error('Reservation record missing');
 
 			if (rsv._notify) {
-				await fetch('/api/notification/notify-reservations-modified', {
-					method: 'POST',
 				sendPush([result.id]);
-				});
 			}
 
 			console.log('admin updated reservation', result);
@@ -306,12 +303,6 @@
 			await sendPush(data.map((r) => r.id));
 			return data;
 		};
-		const objToStr = (o: object) =>
-			'\n' +
-			Object.entries(o)
-				.map((v) => '- ' + v.join(':'))
-				.join('\n') +
-			'\n';
 		return await toast
 			.promise(fn(), {
 				loading: `Modifying ${selected.length} reservations: ${objToStr(update)}`,
