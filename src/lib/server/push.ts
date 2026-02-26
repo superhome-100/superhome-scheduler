@@ -125,10 +125,10 @@ const reservationDetails = (rsv: Reservation) => {
     if (rsv.maxDepth) d.push(`depth: ${rsv.maxDepth}m`);
     if (rsv.numStudents) d.push(`students: ${rsv.numStudents}`);
     if (rsv.buddies.length > 0) d.push(`buddies: ${rsv.buddies.length}`);
-    if (rsv.comments) d.push('', 'Comment: ' + rsv.comments);
+    if (rsv.comments) d.push(`Comment: ${rsv.comments}`);
     if (rsv.category !== 'openwater')
         d.push(`until: ${rsv.endTime.substring(0, 5)}`);
-    return d.join(',\n');
+    return d.join('\n');
 };
 
 const upperFirst = (s: string) => s.length > 0 ? s[0].toUpperCase() + s.substring(1) : '';
@@ -137,10 +137,10 @@ const shortDateTime = (rsv: Reservation) => {
     const rsvStart = fromPanglaoDateTimeStringToDayJs(rsv.date, rsv.startTime);
     const now = dayjs()
     if (rsvStart.isSame(now, 'day')) {
-        return 'Today❗️'
+        return 'Today❗️' + rsvStart.format('HH:mm')
     }
     if (rsvStart.isSame(now.add(1, 'day'), 'day')) {
-        return 'Tomorrow❗️'
+        return 'Tomorrow❗️' + rsvStart.format('HH:mm')
     }
     return rsvStart.format('DD/MMM HH:mm')
 };
