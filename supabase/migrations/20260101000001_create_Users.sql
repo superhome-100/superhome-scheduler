@@ -139,11 +139,11 @@ BEGIN
       NEW.raw_user_meta_data->>'name',
       NEW.raw_user_meta_data->>'preferred_username',
       NEW.email),
-    REPLACE(COALESCE(
+    COALESCE(
       NEW.raw_user_meta_data->>'preferred_username',
       NEW.raw_user_meta_data->>'name',
       NEW.raw_user_meta_data->>'full_name',
-      NEW.email), ' ', ''),
+      NEW.email),
     NEW.id,
     NEW.raw_app_meta_data->>'provider'
   )
@@ -157,13 +157,12 @@ BEGIN
           NEW.email),
         "nickname" = COALESCE(
           "Users"."nickname",
-          REPLACE(
-            COALESCE(
-              NEW.raw_user_meta_data->>'preferred_username',
-              NEW.raw_user_meta_data->>'name',
-              NEW.raw_user_meta_data->>'full_name',
-              NEW.email), 
-            ' ', '')),
+          COALESCE(
+            NEW.raw_user_meta_data->>'preferred_username',
+            NEW.raw_user_meta_data->>'name',
+            NEW.raw_user_meta_data->>'full_name',
+            NEW.email)
+          ),
         "updatedAt" = NOW()
     ;
   RETURN NEW;
