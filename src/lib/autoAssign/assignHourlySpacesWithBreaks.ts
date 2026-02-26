@@ -231,18 +231,27 @@ export function assignBlockSpacePaths(
 	let searchResult = searchForBestOrdering(maxTrials, state.spacesByTimes, state.unAsn);
 	let assignResult = tryInsertUnassigned(state.spacesByTimes, searchResult.bestOrder);
 
-	if (assignResult.failedIdx >= 0) {
-		//failed to find a valid assignment for the given blocks, so iteratively break up the
-		//next course/buddy group into separate blocks and try reassigning.  This is guaranteed
-		//to eventually succeed
-		while (assignResult.failedIdx >= 0) {
-			removeAssigned(state.spacesByTimes, searchResult.bestOrder);
-			breakUpNextGroup(blocks);
-			state = initializeGrid(blocks, nSpaces, nStartTimes);
-			searchResult = searchForBestOrdering(maxTrials, state.spacesByTimes, state.unAsn);
-			assignResult = tryInsertUnassigned(state.spacesByTimes, searchResult.bestOrder);
+	let tryCount = 0;
+	//failed to find a valid assignment for the given blocks, so iteratively break up the
+	//next course/buddy group into separate blocks and try reassigning.  This is guaranteed
+	//to eventually succeed
+	while (assignResult.failedIdx >= 0) {
+		if (tryCount++ > 30) {
+			return {
+				status: assignResult.failedIdx == -1 ? 'success' : 'error',
+				failedIdx: assignResult.failedIdx,
+				bestOrder: searchResult.bestOrder,
+				nTrials: searchResult.nTrials,
+				nBreaks: assignResult.nBreaks
+			}
 		}
+		removeAssigned(state.spacesByTimes, searchResult.bestOrder);
+		breakUpNextGroup(blocks);
+		state = initializeGrid(blocks, nSpaces, nStartTimes);
+		searchResult = searchForBestOrdering(maxTrials, state.spacesByTimes, state.unAsn);
+		assignResult = tryInsertUnassigned(state.spacesByTimes, searchResult.bestOrder);
 	}
+
 	return {
 		status: assignResult.failedIdx == -1 ? 'success' : 'error',
 		failedIdx: assignResult.failedIdx,
