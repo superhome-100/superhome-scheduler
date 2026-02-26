@@ -343,6 +343,14 @@
 				)
 				.select('id')
 				.throwOnError();
+			try {
+				await fetch('/api/notification/notify-reservations-modified', {
+					method: 'POST',
+					body: JSON.stringify(data)
+				});
+			} catch (e) {
+				console.error('couldnt send not for modifed reservation', e);
+			}
 			return data;
 		};
 		const objToStr = (o: object) =>
@@ -451,7 +459,7 @@
 			<button class="trigger search-input search-input-button">Status:{statusFilter.length}</button>
 			<div class="menu">
 				{#each Constants['public']['Enums']['reservation_status'] as status}
-					<label>
+					<label class="dropdown-label">
 						<input type="checkbox" value={status} bind:group={statusFilter} />
 						{status}
 					</label>
@@ -809,12 +817,12 @@
 		flex-direction: column;
 	}
 
-	label {
+	.dropdown-label {
 		display: block;
 		cursor: pointer;
 		white-space: nowrap;
 	}
-	label:hover {
+	.dropdown-label:hover {
 		background: #f0f0f0;
 	}
 </style>
