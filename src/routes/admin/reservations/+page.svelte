@@ -105,10 +105,7 @@
 			if (result === null) throw Error('Reservation record missing');
 
 			if (rsv._notify) {
-				await fetch('/api/notification/notify-reservations-modified', {
-					method: 'POST',
-					body: JSON.stringify([result.id])
-				});
+				sendPush([result.id]);
 			}
 
 			console.log('admin updated reservation', result);
@@ -267,7 +264,15 @@
 		);
 	}
 
+	const objToStr = (o: object) =>
+		'\n' +
+		Object.entries(o)
+			.map((v) => '- ' + v.join(':'))
+			.join('\n') +
+		'\n';
+
 	async function bulkEditSelected(e: any, update: TablesUpdate<'Reservations'>) {
+		return bulkBatchEditSelected(e, update);
 		if (!confirm(e)) return;
 		const selected = [...visibleSelectedRsvs];
 		const fn = async () => {
@@ -308,12 +313,6 @@
 			if (failures.length) throw [success, failures];
 			return success;
 		};
-		const objToStr = (o: object) =>
-			'\n' +
-			Object.entries(o)
-				.map((v) => '- ' + v.join(':'))
-				.join('\n') +
-			'\n';
 		return await toast
 			.promise(fn(), {
 				loading: `Modifying ${selected.length} reservations: ${objToStr(update)}`,
@@ -331,6 +330,17 @@
 		if (!confirm(e)) return;
 		const selected = [...visibleSelectedRsvs];
 		const fn = async () => {
+			if (update.owTime === 'AM') {
+				update.startTime = completeHHMM(sm.getOpenwaterAmStartTime(dayStr));
+				update.endTime = completeHHMM(sm.getOpenwaterAmEndTime(dayStr));
+				if (selected.some((p) => p.category !== 'openwater' || p.owTime !== 'PM'))
+					throw Error(`Some reservation(s) are not openwater or PM`);
+			} else if (update.owTime === 'PM') {
+				update.startTime = completeHHMM(sm.getOpenwaterPmStartTime(dayStr));
+				update.endTime = completeHHMM(sm.getOpenwaterPmEndTime(dayStr));
+				if (selected.some((p) => p.category !== 'openwater' || p.owTime !== 'AM'))
+					throw Error(`Some reservation(s) are not openwater or AM`);
+			}
 			const { data } = await supabase
 				.from('Reservations')
 				.update(update)
@@ -343,17 +353,11 @@
 			await sendPush(data.map((r) => r.id));
 			return data;
 		};
-		const objToStr = (o: object) =>
-			'\n' +
-			Object.entries(o)
-				.map((v) => '- ' + v.join(':'))
-				.join('\n') +
-			'\n';
 		return await toast
 			.promise(fn(), {
 				loading: `Modifying ${selected.length} reservations: ${objToStr(update)}`,
 				success: (s) => `Modified ${s.length} reservations: ${objToStr(update)}`,
-				error: `Failed modifying ${selected.length} reservations: ${objToStr(update)}`
+				error: (e) => `Failed modifying ${selected.length} reservations: ${objToStr(update)}\n${e}`
 			})
 			.catch((e) => {
 				console.info('rejected bulkBatchEditSelected', e, update, selected);

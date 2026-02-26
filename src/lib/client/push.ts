@@ -65,9 +65,28 @@ export const pushService = {
             subscriptionW.set(sub);
         }
         catch (e) {
-            subscriptionW.set(null);
-            subscriptionW.set(undefined);
-            console.error('pushService.subscribe', e)
+            if (e instanceof Error && e.name === 'InvalidStateError' && e.message.includes('to change the applicationServerKey, unsubscribe then resubscribe')) {
+                try {
+                    let sub = await swr.pushManager.getSubscription();
+                    if (sub) await sub.unsubscribe();
+                    sub = await swr.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: PUBLIC_VAPID_KEY
+                    });
+                    await this._sendToServer(sub);
+                    subscriptionW.set(sub);
+                } catch (ee) {
+                    subscriptionW.set(null);
+                    subscriptionW.set(undefined);
+                    console.error('pushService.resubscribe', e, ee);
+                    throw ee;
+                }
+            } else {
+                subscriptionW.set(null);
+                subscriptionW.set(undefined);
+                console.warn('pushService.subscribe', e)
+                throw e
+            }
         }
     },
 
