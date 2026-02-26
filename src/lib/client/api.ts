@@ -156,7 +156,6 @@ export const getReservationsByDate = async (supabase: SupabaseClient, date: stri
 			.from('ReservationsEx')
 			.select('*')
 			.eq('date', date)
-			.in('status', [ReservationStatus.confirmed, ReservationStatus.pending])
 			.overrideTypes<ReservationEx[]>()
 			.throwOnError();
 		return rawRsvs;
