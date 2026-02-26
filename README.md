@@ -76,6 +76,12 @@ Client-side code consists of three pages: `root`, `multi-day`, and `single-day`.
     - `DayOpenWater.svelte`
     - `DayHourly.svelete`
 
+## Debug
+
+```sh
+supabase db dump --db-url "postgresql://postgres.bvyrboeudhhaqtibvlnc:[YOUR-PASSWORD]@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres" --data-only -f supabase/migrations/seeds/remote_data.sql
+```
+
 ## Migration
 
 ### Remarks
