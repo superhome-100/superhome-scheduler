@@ -12,7 +12,6 @@
 	import {
 		storedDaySettings,
 		storedDayReservations,
-		storedDayReservations_param,
 		storedBuoys,
 		storedUser
 	} from '$lib/client/stores';
@@ -26,8 +25,6 @@
 	export let error = '';
 
 	let disabled = viewOnly || restrictModify;
-
-	$: storedDayReservations_param.set({ day: dayStr });
 
 	const previousMaxDepthKey = 'superhome-scheduler.previousMaxDepth';
 	let resType: ReservationType =
@@ -119,8 +116,6 @@
 			extractValuesFromComments();
 		}
 	});
-
-	$: console.log('resformopewater', dayStr);
 </script>
 
 <ResFormGeneric
