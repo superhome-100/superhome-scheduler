@@ -40,8 +40,10 @@
 		}
 		return startTs;
 	};
-	let chosenStart = rsv == null ? getStartTimes($storedSettings, date, category)[0] : rsv.startTime;
-	let chosenEnd = rsv == null ? getStartTimes($storedSettings, date, category)[1] : rsv.endTime;
+	let chosenStart =
+		rsv == null ? getStartTimes($storedSettings, date, category)[0] : rsv.startTime.substring(0, 5);
+	let chosenEnd =
+		rsv == null ? getStartTimes($storedSettings, date, category)[1] : rsv.endTime.substring(0, 5);
 	let autoOrCourse =
 		rsv == null ? (resType == null ? ReservationType.autonomous : resType) : rsv.resType;
 	let numStudents = rsv == null || rsv.resType !== ReservationType.course ? 1 : rsv.numStudents;
