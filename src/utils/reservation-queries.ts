@@ -1,7 +1,7 @@
-import type { SettingsManager } from '$lib/client/settings';
 import { OWTime, ReservationCategory, type Reservation } from '$types';
 import { getStartEndTimes } from '$lib/reservationTimes';
 import { minToTimeStr, timeStrToMin } from '$lib/datetimeUtils';
+import type { SettingsManager } from '$lib/settings';
 
 // helper for getTimeOverlapFilters: sorts all possible start and end times into four groups:
 // those that occur before, after, and during (two groups for start and end vals) the given start/end times
