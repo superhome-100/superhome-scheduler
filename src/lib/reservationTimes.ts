@@ -83,34 +83,44 @@ const nRes = (stns: SettingsManager, dateStr: string, cat: ReservationCategoryT)
 /**
  * @returns array of 'HH:MM:SS'
  */
-export const getStartEndTimes = (
+export const getStartEndTimesHHMMSS = (
 	stns: SettingsManager,
 	dateStr: string,
 	cat: ReservationCategoryT
 ) =>
 	Array(nRes(stns, dateStr, cat) + 1)
 		.fill(undefined)
-		.map((v, i) => dtu.minToTimeStr(minStart(stns, dateStr, cat) + i * inc(stns, dateStr)));
+		.map((v, i) => dtu.minToHHMM(minStart(stns, dateStr, cat) + i * inc(stns, dateStr)));
+
+/**
+ * @returns array of 'HH:MM'
+ */
+export const getStartEndTimesHHMM = (
+	stns: SettingsManager,
+	dateStr: string,
+	cat: ReservationCategoryT
+) =>
+	getStartEndTimesHHMMSS(stns, dateStr, cat).map(t => t.substring(0, 5));
 
 
 /**
  * @returns array of 'HH:MM'
  */
-export const startTimes = (stns: SettingsManager, dateStr: string, cat: ReservationCategoryT) =>
-	getStartEndTimes(stns, dateStr, cat).slice(0, -1).map(x => x.slice(0, -3));
+export const startTimesHHMM = (stns: SettingsManager, dateStr: string, cat: ReservationCategoryT) =>
+	getStartEndTimesHHMM(stns, dateStr, cat).slice(0, -1);
 
 /**
  * @returns array of 'HH:MM'
  */
-export const endTimes = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
-	getStartEndTimes(stns, dateStr, cat).slice(1).map(x => x.slice(0, -3));
+export const endTimesHHMM = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
+	getStartEndTimesHHMM(stns, dateStr, cat).slice(1);
 
 export function minValidDate(stns: SettingsManager, category: ReservationCategoryT) {
 	let today = dtu.PanglaoDate();
 	let todayStr = dtu.datetimeToLocalDateStr(today);
 	let d = dtu.PanglaoDate();
 	if ([ReservationCategory.pool, ReservationCategory.classroom].includes(category as ReservationCategory)) {
-		let sTs = startTimes(stns, todayStr, category);
+		let sTs = startTimesHHMM(stns, todayStr, category);
 		let lastSlot = dtu.timeStrToMin(sTs[sTs.length - 1]);
 		if (minuteOfDay(today) < lastSlot) {
 			d.setDate(today.getDate());

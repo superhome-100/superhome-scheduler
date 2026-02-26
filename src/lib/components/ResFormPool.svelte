@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
-	import { startTimes, endTimes, minuteOfDay } from '$lib/reservationTimes';
+	import { startTimesHHMM, endTimesHHMM, minuteOfDay } from '$lib/reservationTimes';
 	import { timeStrToMin, datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
 	import { canSubmit } from '$lib/stores';
 	import { adminView, resTypeModDisabled } from '$lib/utils';
@@ -29,13 +29,13 @@
 	let rooms = $storedSettings.getClassrooms(date);
 
 	const getStartTimes = (sm: SettingsManager, date: string, category: string) => {
-		let startTs = startTimes(sm, date, category);
+		let startTs = startTimesHHMM(sm, date, category);
 		let today = PanglaoDate();
 		if (!disabled && date === datetimeToLocalDateStr(today)) {
 			let now = minuteOfDay(today);
 			startTs = startTs.filter((time) => timeStrToMin(time) > now);
 			if (startTs.length == 0) {
-				startTs = startTimes(sm, date, category);
+				startTs = startTimesHHMM(sm, date, category);
 			}
 		}
 		return startTs;
@@ -92,7 +92,7 @@
 
 		<InputLabel forInput="formEnd" label="End Time">
 			<select id="formEnd" class="w-full" {disabled} name="endTime" value={chosenEnd}>
-				{#each endTimes($storedSettings, date, category) as t}
+				{#each endTimesHHMM($storedSettings, date, category) as t}
 					{#if validEndTime(chosenStart, t)}
 						<option value={t}>{t}</option>
 					{/if}

@@ -1,7 +1,7 @@
 import type { OWReservation, Reservation, Submission } from '$types';
 import { ReservationType, ReservationCategory, OWTime } from '$types';
 
-import { getStartEndTimes, beforeResCutoff, beforeCancelCutoff } from '$lib/reservationTimes';
+import { beforeResCutoff, beforeCancelCutoff, getStartEndTimesHHMM } from '$lib/reservationTimes';
 import { getUsersById } from '$lib/server/user';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getNumberOfOccupants } from './reservations';
@@ -131,7 +131,7 @@ export function checkPoolSpaceAvailable(
 	overlapping: Reservation[]
 ) {
 	const nLanes = settings.getPoolLanes(sub.date).length;
-	const startEndTs = getStartEndTimes(settings, sub.date, sub.category as ReservationCategory);
+	const startEndTs = getStartEndTimesHHMM(settings, sub.date, sub.category as ReservationCategory);
 	for (let i = startEndTs.indexOf(sub.startTime); i < startEndTs.indexOf(sub.endTime); i++) {
 		let time = timeStrToMin(startEndTs[i]);
 		let thisSlotOverlap = overlapping.filter((rsv) => {

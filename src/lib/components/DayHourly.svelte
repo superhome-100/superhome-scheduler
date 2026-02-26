@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { startTimes, endTimes } from '$lib/reservationTimes';
+	import { startTimesHHMM, endTimesHHMM } from '$lib/reservationTimes';
 	import { viewMode } from '$lib/stores';
 	import {
 		isLoading,
@@ -35,8 +35,8 @@
 	const blkMgn = 0.25; // dependent on tailwind margin styling
 
 	const slotsPerHr = (date, category, sm: SettingsManager) => {
-		let st = startTimes(sm, date, category);
-		let et = endTimes(sm, date, category);
+		let st = startTimesHHMM(sm, date, category);
+		let et = endTimesHHMM(sm, date, category);
 		let beg = st[0];
 		let end = et[et.length - 1];
 		let totalMin = timeStrToMin(end) - timeStrToMin(beg);
@@ -48,8 +48,8 @@
 
 	const displayTimes = (date, category, sm: SettingsManager) => {
 		let dateStr = datetimeToLocalDateStr(date);
-		let st = startTimes(sm, dateStr, category);
-		let et = endTimes(sm, dateStr, category);
+		let st = startTimesHHMM(sm, dateStr, category);
+		let et = endTimesHHMM(sm, dateStr, category);
 		let hrs = [];
 		for (let i = 0; i < st.length; i++) {
 			if (i % slotDiv == 0) {
