@@ -38,7 +38,9 @@
 	})(dayParam);
 	$: dayStr = getYYYYMMDD(day);
 
+	$: {
 	$: storedDayReservations_param.set({ day: dayStr });
+	}
 
 	let draftRsv:
 		| (ReservationEx & { _duration: number; _notify: boolean; _orig: ReservationEx })
@@ -105,7 +107,10 @@
 			if (result === null) throw Error('Reservation record missing');
 
 			if (rsv._notify) {
+				await fetch('/api/notification/notify-reservations-modified', {
+					method: 'POST',
 				sendPush([result.id]);
+				});
 			}
 
 			console.log('admin updated reservation', result);
@@ -162,6 +167,9 @@
 		switch (paramType) {
 			case dayParamKey:
 				dayParam = value;
+				break;
+			case statusParamKey:
+				statusFilter = value;
 				break;
 			case categoryParamKey:
 				categoryFilter = value;
@@ -303,6 +311,12 @@
 			await sendPush(data.map((r) => r.id));
 			return data;
 		};
+		const objToStr = (o: object) =>
+			'\n' +
+			Object.entries(o)
+				.map((v) => '- ' + v.join(':'))
+				.join('\n') +
+			'\n';
 		return await toast
 			.promise(fn(), {
 				loading: `Modifying ${selected.length} reservations: ${objToStr(update)}`,
@@ -442,7 +456,10 @@
 		</select>
 		<div class="dropdown">
 			<button class="trigger search-input search-input-button">Status:{statusFilter.length}</button>
+			on:input={(e) => handleInput(statusParamKey, e)}
 			<div class="menu">
+		>
+			<option value="" selected>Status</option>
 				{#each Constants['public']['Enums']['reservation_status'] as status}
 					<label class="dropdown-label">
 						<input type="checkbox" value={status} bind:group={statusFilter} />
