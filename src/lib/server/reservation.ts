@@ -12,7 +12,7 @@ import { ReservationCategory, ReservationStatus, ReservationType, OWTime } from 
 import { timeStrToMin, isValidProSafetyCutoff } from '$lib/datetimeUtils';
 import { getTimeOverlapSupabaseFilter } from '$utils/reservation-queries';
 import { type SettingsManager } from '../settings';
-import { getDateSetting } from '$lib/dateSettings';
+import { getDaySettings } from '$lib/dateSettings';
 import {
 	getStartTime,
 	throwIfNoSpaceAvailable,
@@ -511,13 +511,11 @@ async function unpackModifyForm(
 }
 
 const checkEventFull = async (date: Date | string, owTime: string) => {
-	const [settingDate] = await getDateSetting(supabaseServiceRole, date);
-	if (owTime === OWTime.AM) {
-		if (settingDate?.ow_am_full) {
-			throw new ValidationError(
-				'The morning open water session is full for this date.'
-			);
-		}
+	const daySettings = await getDaySettings(supabaseServiceRole, date);
+	if (owTime === OWTime.AM && daySettings.ow_am_full) {
+		throw new ValidationError(
+			'The morning open water session is full for this date.'
+		);
 	}
 }
 
@@ -533,13 +531,13 @@ export async function modifyReservation(actor: User, formData: AppFormData, sett
 		throw Error(`unathorised reservation modification ${id} by ${actor.id}`);
 	throwIfReservationIsInvalid(orig)
 	let sub = await unpackModifyForm(settings, formData, orig);
-	const [settingDate] = await getDateSetting(supabaseServiceRole, sub.date);
+	const daySettings = await getDaySettings(supabaseServiceRole, sub.date);
 
 	// check if additional buddy entries need to be created
 	// check also if AM open water schedule is full
 	// do allow creating of buddy if am schedule is full
 	let { create, modify, cancel } = await createBuddyEntriesForUpdate(settings, sub, orig);
-	if (settingDate?.ow_am_full && sub.owTime === OWTime.AM) {
+	if (sub.owTime === OWTime.AM && daySettings.ow_am_full) {
 		if (create.length > 0) {
 			throw new ValidationError(
 				'The morning open water session is full for this date cannot add a buddy.'
@@ -552,7 +550,7 @@ export async function modifyReservation(actor: User, formData: AppFormData, sett
 	}
 
 	let existing = [...modify.map((rsv) => rsv.id!), ...cancel];
-	await throwIfUpdateIsInvalid(settings, sub, orig, existing, settingDate?.ow_am_full ?? false);
+	await throwIfUpdateIsInvalid(settings, sub, orig, existing, daySettings.ow_am_full);
 
 	if (orig.buoy !== 'auto') {
 		modify[0].buoy = orig.buoy;
