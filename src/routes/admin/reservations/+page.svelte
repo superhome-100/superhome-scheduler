@@ -407,7 +407,7 @@
 <svelte:window on:keydown={(e) => handleKeydown(e, document.getElementById('searchTerm'))} />
 
 <div
-	class="admin-view"
+	class="admin-view h-full"
 	use:swipe={{ timeframe: 300, minSwipeDistance: 10, touchAction: 'pan-y' }}
 	on:swipe={swipeHandler}
 >
