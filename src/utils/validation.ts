@@ -3,12 +3,12 @@ import { ReservationType, ReservationCategory, OWTime } from '$types';
 
 import { getStartEndTimes, beforeResCutoff, beforeCancelCutoff } from '$lib/reservationTimes';
 import { getUsersById } from '$lib/server/user';
-import type { SettingsManager } from '$lib/client/settings';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getNumberOfOccupants } from './reservations';
 import { assignRsvsToBuoys } from '$lib/autoAssign';
 import { supabaseServiceRole } from '$lib/server/supabase';
 import type { Tables } from '$lib/supabase.types';
+import type { SettingsManager } from '$lib/settings';
 
 export class ValidationError extends Error { }
 
@@ -130,7 +130,8 @@ export function checkPoolSpaceAvailable(
 	sub: Submission,
 	overlapping: Reservation[]
 ) {
-	let startEndTs = getStartEndTimes(settings, sub.date, sub.category as ReservationCategory);
+	const nLanes = settings.getPoolLanes(sub.date).length;
+	const startEndTs = getStartEndTimes(settings, sub.date, sub.category as ReservationCategory);
 	for (let i = startEndTs.indexOf(sub.startTime); i < startEndTs.indexOf(sub.endTime); i++) {
 		let time = timeStrToMin(startEndTs[i]);
 		let thisSlotOverlap = overlapping.filter((rsv) => {
@@ -139,7 +140,7 @@ export function checkPoolSpaceAvailable(
 			return start <= time && end > time;
 		});
 		let numDivers = getNumberOfOccupants([...thisSlotOverlap, sub]) + (sub.buddies?.length ?? 0);
-		let nLanes = settings.getPoolLanes(sub.date).length;
+
 		if (numDivers > nLanes) {
 			return {
 				status: 'error',
