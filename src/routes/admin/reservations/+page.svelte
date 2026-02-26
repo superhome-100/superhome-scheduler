@@ -138,6 +138,7 @@
 	$: owTimeFilter = $page.url.searchParams.get(owTimeFilterParamKey) ?? '';
 	const statusParamKey = 'status';
 	let statusFilter = $page.url.searchParams.get(statusParamKey)?.split(',') ?? [];
+	$: console.log('resformopewater', statusFilter);
 
 	type ParamT =
 		| typeof dayParamKey
@@ -165,9 +166,6 @@
 		switch (paramType) {
 			case dayParamKey:
 				dayParam = value;
-				break;
-			case statusParamKey:
-				statusFilter = value;
 				break;
 			case categoryParamKey:
 				categoryFilter = value;
