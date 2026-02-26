@@ -4,7 +4,7 @@
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 	import type { ReservationEx } from '$types';
 	import { ReservationCategory, ReservationType } from '$types';
-	import { PanglaoDate } from '$lib/datetimeUtils';
+	import { getYYYYMMDD } from '$lib/datetimeUtils';
 	import InputLabel from './tiny_components/InputLabel.svelte';
 	import { ow_am_full } from '$lib/dateSettings';
 	import { displayTag } from '../../lib/utils';
@@ -18,8 +18,7 @@
 	} from '$lib/client/stores';
 
 	export let rsv: ReservationEx | null = null;
-	export let date: string = rsv?.date || PanglaoDate().toString();
-	export let dateFn: null | ((arg0: string) => string) = null;
+	export let dayStr: string = rsv?.date || getYYYYMMDD();
 	export let category: ReservationCategory = ReservationCategory.openwater;
 	export let viewOnly = false;
 	export let isModify = false;
@@ -28,8 +27,7 @@
 
 	let disabled = viewOnly || restrictModify;
 
-	date = rsv?.date || (dateFn && dateFn(category)) || date;
-	storedDayReservations_param.set({ day: date });
+	$: storedDayReservations_param.set({ day: dayStr });
 
 	const previousMaxDepthKey = 'superhome-scheduler.previousMaxDepth';
 	let resType: ReservationType =
@@ -121,6 +119,8 @@
 			extractValuesFromComments();
 		}
 	});
+
+	$: console.log('resformopewater', dayStr);
 </script>
 
 <ResFormGeneric
@@ -128,7 +128,7 @@
 	{viewOnly}
 	{restrictModify}
 	{showBuddyFields}
-	bind:date
+	bind:dayStr
 	bind:category
 	bind:owTime
 	{rsv}
@@ -166,7 +166,7 @@
 				<option value="autonomous">Autonomous on Buoy (0-89m)</option>
 				<option value="autonomousPlatform">Autonomous on Platform (0-99m)</option>
 				<option value="autonomousPlatformCBS">Autonomous on Platform+CBS (90-130m)</option>
-				<!-- TEMPORARY {#if date && Settings.getCbsAvailable(date)}
+				<!-- TEMPORARY {#if dayStr && Settings.getCbsAvailable(dayStr)}
 					<option value="competitionSetupCBS">Competition-Setup Training (0-130m)</option>
 				{/if} -->
 			</select>

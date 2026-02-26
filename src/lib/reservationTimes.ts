@@ -112,7 +112,7 @@ export const startTimesHHMM = (stns: SettingsManager, dateStr: string, cat: Rese
 /**
  * @returns array of 'HH:MM'
  */
-export const endTimesHHMM = (stns: SettingsManager, dateStr: string, cat: ReservationCategory) =>
+export const endTimesHHMM = (stns: SettingsManager, dateStr: string, cat: ReservationCategoryT) =>
 	getStartEndTimesHHMM(stns, dateStr, cat).slice(1);
 
 export function minValidDate(stns: SettingsManager, category: ReservationCategoryT) {

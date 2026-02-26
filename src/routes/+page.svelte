@@ -2,8 +2,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs';
-	import { minValidDateStr } from '$lib/reservationTimes';
-	import { storedSettings, storedUser as user } from '$lib/client/stores';
+	import { storedUser as user } from '$lib/client/stores';
 	import type { UserEx } from '$types';
 	import MyReservationsUpcoming from '$lib/components/MyReservationsUpcoming.svelte';
 	import MyReservationsPassed from '$lib/components/MyReservationsPassed.svelte';
@@ -57,7 +56,7 @@
 		</div>
 		<div class="flex-shrink-0" style="flex-basis: 48px;">
 			{#if $user.status !== 'disabled'}
-				<Modal><ReservationDialog dateFn={(cat) => minValidDateStr($storedSettings, cat)} /></Modal>
+				<Modal><ReservationDialog /></Modal>
 			{/if}
 		</div>
 	</div>

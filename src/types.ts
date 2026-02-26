@@ -78,6 +78,7 @@ export enum OWTime {
 	AM = 'AM',
 	PM = 'PM'
 }
+export type OWTimeT = Enums<'reservation_ow_time'>;
 
 export enum ReservationType {
 	autonomous = 'autonomous',

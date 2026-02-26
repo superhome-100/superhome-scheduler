@@ -7,14 +7,17 @@
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { cleanUpFormDataBuddyFields } from '$lib/utils';
 	import { ReservationCategory } from '$types';
+	import { minValidDateStr } from '$lib/reservationTimes';
+	import { storedSettings } from '$lib/client/stores';
 
 	export let category = ReservationCategory.openwater;
-	export let dateFn: null | ((arg0: string) => string) = null;
+	export let dayStrIn: string;
 	export let hasForm = false;
 	export let onSubmit = () => null;
 
+	let dayStr = dayStrIn || minValidDateStr($storedSettings, category);
+
 	let error = '';
-	let date: string;
 	const { close, hideModal, showModal } = getContext('simple-modal');
 
 	const submitReservation = async ({ formData, cancel }) => {
@@ -55,11 +58,11 @@
 		<div class="form-title">reservation request</div>
 		<form method="POST" action="/?/submitReservation" use:enhance={submitReservation}>
 			{#if category === 'pool'}
-				<ResFormPool bind:date {dateFn} bind:category {error} />
+				<ResFormPool bind:dayStr bind:category {error} />
 			{:else if category === 'openwater'}
-				<ResFormOpenWater bind:date {dateFn} bind:category {error} />
+				<ResFormOpenWater bind:dayStr bind:category {error} />
 			{:else if category === 'classroom'}
-				<ResFormClassroom bind:date {dateFn} bind:category {error} />
+				<ResFormClassroom bind:dayStr bind:category {error} />
 			{/if}
 		</form>
 	</div>
