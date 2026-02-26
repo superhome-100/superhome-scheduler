@@ -4,6 +4,7 @@ import type { Block, Grid } from './hourlyUtils';
 import { rsvsToBlock, createBuddyGroups } from './hourlyUtils';
 import { blocksToDisplayData } from './hourlyDisplay';
 import { getNumberOfOccupants } from '$utils/reservations';
+import type { SettingsManager } from '$lib/settings';
 
 function getMinBreaksPath(spacesByTimes: Grid, width: number, startTime: number, endTime: number) {
 	let pathObj = getMinBreaksPathRec(spacesByTimes, width, startTime, endTime, {
