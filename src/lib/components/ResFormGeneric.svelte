@@ -17,6 +17,7 @@
 	import DeleteIcon from '$lib/components/DeleteIcon.svelte';
 	import ExclamationCircle from '$lib/components/ExclamationCircle.svelte';
 	import InputLabel from './tiny_components/InputLabel.svelte';
+	import { PanglaoDayJs } from '$lib/datetimeUtils';
 
 	export let rsv: ReservationEx | null;
 	export let dayStr: string;
@@ -32,7 +33,17 @@
 	export let diveTime: string | null = null;
 	export let resType: ReservationType | null = null;
 
-	$: storedDayReservations_param.set({ day: dayStr });
+	const dayStrInitValue = dayStr;
+	$: dayStrInput = dayStrInitValue;
+	$: {
+		const d = PanglaoDayJs(dayStrInput);
+		if (d.isValid()) {
+			storedDayReservations_param.set({ day: dayStrInput });
+			dayStr = dayStrInput;
+		} else {
+			console.warn('invalid date', d, dayStrInput);
+		}
+	}
 
 	$: disabled = viewOnly || restrictModify;
 
@@ -223,7 +234,7 @@
 			</InputLabel>
 		{/if}
 		<InputLabel forInput="formDate" label="Date">
-			<input type="hidden" name="date" value={dayStr} />
+			<input type="hidden" name="date" value={dayStrInput} />
 			<input
 				type="date"
 				name="date"
@@ -231,7 +242,7 @@
 				class="w-full"
 				min={minValidDateStr($storedSettings, category)}
 				max={maxValidDateStr($storedSettings)}
-				bind:value={dayStr}
+				bind:value={dayStrInput}
 				{disabled}
 			/>
 		</InputLabel>
