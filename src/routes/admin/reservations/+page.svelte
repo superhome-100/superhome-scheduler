@@ -280,6 +280,7 @@
 			}
 			const success = [];
 			const failures = [];
+			const changedResIds = [];
 			for (const rsv of selected) {
 				try {
 					const { data } = await supabase
@@ -290,14 +291,9 @@
 						.select('id')
 						.maybeSingle()
 						.throwOnError();
-					if (data) success.push(`Modified ${rsv.user_json.nickname}: ${rsv.category}`);
-					try {
-						await fetch('/api/notification/notify-reservations-modified', {
-							method: 'POST',
-							body: JSON.stringify([rsv.id])
-						});
-					} catch (e) {
-						console.error('couldnt send not for modifed reservation', e);
+					if (data) {
+						success.push(`Modified ${rsv.user_json.nickname}: ${rsv.category}`);
+						changedResIds.push(rsv.id);
 					}
 				} catch (e) {
 					if (isOverlappingError(e)) {
@@ -308,6 +304,7 @@
 					}
 				}
 			}
+			await sendPush(changedResIds);
 			if (failures.length) throw [success, failures];
 			return success;
 		};
@@ -343,14 +340,7 @@
 				)
 				.select('id')
 				.throwOnError();
-			try {
-				await fetch('/api/notification/notify-reservations-modified', {
-					method: 'POST',
-					body: JSON.stringify(data)
-				});
-			} catch (e) {
-				console.error('couldnt send not for modifed reservation', e);
-			}
+			await sendPush(data.map((r) => r.id));
 			return data;
 		};
 		const objToStr = (o: object) =>
@@ -370,29 +360,70 @@
 			});
 	}
 
-	function handleKeydown(e: any, element: HTMLElement | null) {
-		const searchInput = element as HTMLInputElement;
-		const { target, key, ctrlKey, metaKey, altKey } = e;
+	async function sendPush(rsvIds: string[]) {
+		if (rsvIds.length === 0) return;
+		const fn = async () => {
+			await fetch('/api/notification/notify-reservations-modified', {
+				method: 'POST',
+				body: JSON.stringify(rsvIds)
+			});
+		};
+		return await toast
+			.promise(fn(), {
+				loading: `Sending push notification(s)...`,
+				success: (s) => `Sent push notification(s)`,
+				error: `Failed to send push notification(s)`
+			})
+			.catch((e) => {
+				console.info('rejected sendPushReminder', e, rsvIds);
+			});
+	}
+
+	async function sendPushReminder(e: any) {
+		if (!confirm(e)) return;
+		const selected = [...visibleSelectedRsvs];
+		return await sendPush(selected.map((r) => r.id));
+	}
+
+	function handleKeydown(e: KeyboardEvent, searchInput: HTMLInputElement | null) {
+		if (!searchInput) return;
+
+		const target = e.target as HTMLElement;
+		const { key, ctrlKey, metaKey, altKey } = e;
+
+		// Check if the focus is in a field where global shortcuts should be disabled
 		const isEditable =
 			target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
 		if (isEditable) {
-			if (target.attributes.name.value !== 'select') return;
+			// Use getAttribute to avoid throwing if 'name' is missing
+			const nameAttr = target.getAttribute('name');
+			if (nameAttr !== 'select') return;
 		}
+
+		// Ignore modifier combinations
 		if (ctrlKey || metaKey || altKey) return;
+
 		switch (key) {
 			case 'ArrowLeft':
+				e.preventDefault();
 				handleParam('day', getYYYYMMDD(day.add(-1, 'day')));
 				return;
 			case 'ArrowRight':
+				e.preventDefault();
 				handleParam('day', getYYYYMMDD(day.add(1, 'day')));
 				return;
 			case 'Backspace':
+				// Prevent browser 'Back' navigation if that is the default
 				searchInput.focus();
 				return;
 			case 'Enter':
 				return;
+			case 'Escape':
+				if (draftRsv) draftRsv = null;
 		}
-		// Unicode & Alphanumeric Filter: key.length === 1 identifies printable characters across all languages
+
+		// Capture printable characters to redirect focus to search
 		if (key.length === 1) {
 			searchInput.focus();
 		}
@@ -496,6 +527,13 @@
 					bulkEditSelected(e, { owTime: 'PM' });
 					menuState.show = false;
 				}}>Move to PM</button
+			>
+			<button
+				class="floating-button"
+				on:click={async (e) => {
+					sendPushReminder(e);
+					menuState.show = false;
+				}}>Send Push Reminder</button
 			>
 			<br />
 			<button
