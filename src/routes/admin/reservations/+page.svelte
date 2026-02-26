@@ -442,10 +442,7 @@
 		</select>
 		<div class="dropdown">
 			<button class="trigger search-input search-input-button">Status:{statusFilter.length}</button>
-			on:input={(e) => handleInput(statusParamKey, e)}
 			<div class="menu">
-		>
-			<option value="" selected>Status</option>
 				{#each Constants['public']['Enums']['reservation_status'] as status}
 					<label class="dropdown-label">
 						<input type="checkbox" value={status} bind:group={statusFilter} />
