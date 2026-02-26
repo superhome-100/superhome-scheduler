@@ -2,6 +2,7 @@ import type { SupabaseClient, User } from "$types";
 
 export interface Features {
     'pushNotificationEnabled': boolean;
+    'admin-reservations': boolean;
 }
 
 type FeatureName = keyof Features;
