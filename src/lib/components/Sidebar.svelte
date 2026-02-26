@@ -187,9 +187,10 @@
 	<NavHamburger onClick={toggleDrawer} class="ml-3 {user ? '!block' : 'hidden'}" />
 	<NavBrand href="/" class="lg:ml-64">
 		<span class="self-center whitespace-nowrap xs:text-xl font-semibold dark:text-white">
-			SuperHOME Scheduler
-			{#if PUBLIC_STAGE !== 'production'}
-				<span style="background-color: red;">{PUBLIC_STAGE} v{__APP_VERSION__}</span>
+			{#if PUBLIC_STAGE === 'production'}
+				SuperHOME Scheduler
+			{:else}
+				<span style="background-color: red;">SHS {PUBLIC_STAGE} v{__APP_VERSION__}</span>
 			{/if}
 		</span>
 	</NavBrand>
