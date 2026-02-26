@@ -217,6 +217,26 @@ async function throwIfSubmissionIsInvalid(settings: SettingsManager, sub: Submis
 	}
 
 	let allOverlappingRsvs = await getOverlappingReservations(settings, sub);
+	if (sub.category === ReservationCategory.pool) {
+		const slotCnt = settings.getPoolLanes(sub.date).length;
+		const requiredCnt = 1 + sub.buddies.length;
+		const occupiedCnt = allOverlappingRsvs
+			.filter(r => r.category === ReservationCategory.pool)
+			.map(r => (r.numStudents ?? 0) + 1)
+			.reduce((a, c) => a + c, 0);
+		const availableCnt = Math.max(slotCnt - occupiedCnt, 0);
+		if (requiredCnt > availableCnt)
+			throw Error(`Pool: Requested ${requiredCnt} lane(s), but only ${availableCnt} are available.`);
+	} else if (sub.category === ReservationCategory.classroom) {
+		const slotCnt = settings.getPoolLanes(sub.date).length;
+		const requiredCnt = 1;
+		const occupiedCnt = allOverlappingRsvs
+			.filter(r => r.category === ReservationCategory.classroom)
+			.length;
+		const availableCnt = Math.max(slotCnt - occupiedCnt, 0);
+		if (requiredCnt > availableCnt)
+			throw Error(`Classroom: Requested ${requiredCnt} lane(s), but only ${availableCnt} are available.`);
+	}
 
 	let userOverlappingRsvs = allOverlappingRsvs.filter((rsv) => userIds.includes(rsv.user));
 	if (userOverlappingRsvs.length > 0) {
