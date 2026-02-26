@@ -385,7 +385,6 @@
 
 	function swipeHandler(event: any) {
 		if (event.detail.direction === 'left') {
-			day = day.add(1, 'day');
 			handleParam('day', getYYYYMMDD(day.add(1, 'day')));
 		} else if (event.detail.direction === 'right') {
 			handleParam('day', getYYYYMMDD(day.add(-1, 'day')));
