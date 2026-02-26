@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { BuddyData, OWTime, ReservationEx, UserMinimal } from '$types';
+	import type { BuddyData, OWTimeT, ReservationCategoryT, ReservationEx } from '$types';
 	import { ReservationType } from '$types';
 	import { ReservationStatus, ReservationCategory } from '$types';
 	import { canSubmit } from '$lib/stores';
@@ -12,31 +12,29 @@
 	} from '$lib/client/stores';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes';
 	import { adminView, isMyReservation, isOpenForBooking } from '$lib/utils';
-	import { getYYYYMMDD, PanglaoDate } from '$lib/datetimeUtils';
 	import BuddyMatch from '$lib/components/BuddyMatch.svelte';
 	import PlusIcon from '$lib/components/PlusIcon.svelte';
 	import DeleteIcon from '$lib/components/DeleteIcon.svelte';
 	import ExclamationCircle from '$lib/components/ExclamationCircle.svelte';
 	import InputLabel from './tiny_components/InputLabel.svelte';
-	import { onDestroy, onMount } from 'svelte';
 
 	export let rsv: ReservationEx | null;
-	export let date: string = rsv?.date || getYYYYMMDD(PanglaoDate());
-	export let category: ReservationCategory =
-		(rsv?.category as ReservationCategory) ?? ReservationCategory.pool;
-	export let owTime: OWTime | null = null;
+	export let dayStr: string;
+	export let category: ReservationCategoryT;
+	export let owTime: OWTimeT | null = null;
 	export let viewOnly = false;
 	export let showBuddyFields = true;
 	export let restrictModify = false;
 	export let error = '';
 	export let extendDisabled = false;
 
-	export let discipline = '';
-	export let diveTime = '';
+	export let discipline: string | null = null;
+	export let diveTime: string | null = null;
 	export let resType: ReservationType | null = null;
 
-	$: storedDayReservations_param.set({ day: date });
-	let disabled = viewOnly || restrictModify;
+	$: storedDayReservations_param.set({ day: dayStr });
+
+	$: disabled = viewOnly || restrictModify;
 
 	let status: ReservationStatus = (rsv?.status as ReservationStatus) || ReservationStatus.pending;
 	let comments = rsv?.comments || null;
@@ -62,24 +60,18 @@
 
 	$: buddyFields = initBF();
 
-	let unsubStoredUsers = () => {};
-	onMount(() => {
-		unsubStoredUsers = storedUsers.subscribe((sus) => {
-			for (let i = 0; i < buddyFields.length; ++i) {
-				const bf = buddyFields[i];
-				if (bf.userId) {
-					const u = sus[bf.userId];
-					if (u) {
-						bf.name = u.nickname;
-					}
+	$: {
+		for (let i = 0; i < buddyFields.length; ++i) {
+			const bf = buddyFields[i];
+			if (bf.userId) {
+				const u = $storedUsers[bf.userId];
+				if (u) {
+					bf.name = u.nickname;
 				}
 			}
-			buddyFields = [...buddyFields];
-		});
-	});
-	onDestroy(() => {
-		unsubStoredUsers();
-	});
+		}
+		buddyFields = [...buddyFields];
+	}
 
 	$: currentBF = { name: '', matches: [], userId: null } as BuddyData;
 
@@ -210,7 +202,8 @@
 			removeBuddyField(bf);
 		}
 	};
-	$: isOpen = isOpenForBooking($storedSettings, date, category, owTime);
+
+	$: isOpen = isOpenForBooking($storedSettings, dayStr, category, owTime);
 </script>
 
 <svelte:window on:keydown={navigateList} />
@@ -230,7 +223,7 @@
 			</InputLabel>
 		{/if}
 		<InputLabel forInput="formDate" label="Date">
-			<input type="hidden" name="date" value={date} />
+			<input type="hidden" name="date" value={dayStr} />
 			<input
 				type="date"
 				name="date"
@@ -238,7 +231,7 @@
 				class="w-full"
 				min={minValidDateStr($storedSettings, category)}
 				max={maxValidDateStr($storedSettings)}
-				bind:value={date}
+				bind:value={dayStr}
 				{disabled}
 			/>
 		</InputLabel>

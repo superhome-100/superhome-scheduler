@@ -3,7 +3,7 @@ import { viewMode } from './stores';
 import { storedUsers } from '$lib/client/stores';
 import { get } from 'svelte/store';
 import { assignHourlySpaces } from './autoAssign';
-import { OWTime, ReservationCategory, ReservationType, type Buoy, type Reservation, type ReservationCategoryT, type ReservationEx, type User } from '$types';
+import { ReservationCategory, ReservationType, type Buoy, type OWTimeT, type Reservation, type ReservationCategoryT, type ReservationEx, type User } from '$types';
 import type { SettingsManager } from './settings';
 import type { Dayjs } from 'dayjs';
 
@@ -98,7 +98,7 @@ export const stableStringify = (obj: unknown) => {
 	});
 }
 
-export const isOpenForBooking = ((sm: SettingsManager, date: string | Dayjs | Date, category: ReservationCategory | ReservationCategoryT, owTime: OWTime | null) => {
+export const isOpenForBooking = ((sm: SettingsManager, date: string | Dayjs | Date, category: ReservationCategory | ReservationCategoryT, owTime: OWTimeT | null) => {
 	const dateStr = getYYYYMMDD(dayjs(date));
 	if (!sm.get('openForBusiness', dateStr)) return false;
 	switch (category) {

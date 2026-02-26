@@ -1,11 +1,12 @@
 <script lang="ts">
+	import { storedSettings } from '$lib/client/stores';
 	import ResFormPool from '$lib/components/ResFormPool.svelte';
-	import type { Reservation } from '$types';
+	import { minValidDateStr } from '$lib/reservationTimes';
+	import type { ReservationEx, ReservationCategoryT } from '$types';
 
-	export let rsv: Reservation | null = null;
-	export let category = 'classroom';
-	export let date: string | null = null;
-	export let dateFn: null | ((arg0: string) => string) = null;
+	export let rsv: ReservationEx | null = null;
+	export let category: ReservationCategoryT = 'classroom';
+	export let dayStr: string = rsv?.date || minValidDateStr($storedSettings, category);
 	export let restrictModify = false;
 	export let viewOnly = false;
 	export let error = '';
@@ -17,8 +18,7 @@
 <ResFormPool
 	resType="course"
 	{rsv}
-	bind:date
-	{dateFn}
+	bind:dayStr
 	bind:category
 	{restrictModify}
 	{viewOnly}
