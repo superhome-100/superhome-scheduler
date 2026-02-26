@@ -6,14 +6,13 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { viewMode } from '$lib/stores';
 	import { CATEGORIES } from '$lib/constants';
-	import dayjs from 'dayjs';
 	import { ReservationCategory } from '$types';
 
 	import DayHourly from '$lib/components/DayHourly.svelte';
 
 	import { getCategoryDatePath } from '$lib/url';
 	import { approveAllPendingReservations } from '$lib/client/api';
-	import { getYYYYMM } from '$lib/datetimeUtils';
+	import { getYYYYMM, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
 	import { storedDayReservations_param, storedSettings, storedUser } from '$lib/client/stores';
 	import type { SettingsManager } from '$lib/settings';
 
@@ -21,19 +20,20 @@
 	export let params;
 	export let data;
 
-	$: day = data.day;
-	$: storedDayReservations_param.set({ day });
+	$: day = PanglaoDayJs(data.day);
+	$: dayStr = getYYYYMMDD(data.day);
+	$: storedDayReservations_param.set({ day: dayStr });
 
 	const category = 'pool';
 
 	let categories = [...CATEGORIES];
 
 	function prevDay() {
-		const prev = dayjs(day).subtract(1, 'day');
+		const prev = day.subtract(1, 'day');
 		goto(getCategoryDatePath('pool', prev.toDate()));
 	}
 	function nextDay() {
-		const next = dayjs(day).add(1, 'day');
+		const next = day.add(1, 'day');
 		goto(getCategoryDatePath('pool', next.toDate()));
 	}
 
@@ -50,8 +50,8 @@
 	}
 
 	const resInfo = (sm: SettingsManager) => {
-		const resources = sm.getPoolLanes(day);
-		const name = sm.getPoolLabel(day);
+		const resources = sm.getPoolLanes(dayStr);
+		const name = sm.getPoolLabel(dayStr);
 		return { resources, name };
 	};
 </script>
@@ -67,7 +67,7 @@
 				{#each categories as cat}
 					{#if cat !== category}
 						<li>
-							<a class="text-xl active:bg-gray-300" href={getCategoryDatePath(cat, day)}>
+							<a class="text-xl active:bg-gray-300" href={getCategoryDatePath(cat, dayStr)}>
 								{cat}
 							</a>
 						</li>
@@ -83,7 +83,7 @@
 				<Chevron direction="right" svgClass="h-8 w-8" />
 			</span>
 			<span class="text-2xl ml-2">
-				{dayjs(day).format('MMMM DD, YYYY dddd')}
+				{day.format('MMMM DD, YYYY dddd')}
 			</span>
 		</div>
 		<span class="mr-2">
@@ -91,7 +91,7 @@
 				on:open={() => (modalOpened = true)}
 				on:close={() => {
 					modalOpened = false;
-				}}><ReservationDialog {category} dateFn={() => day} /></Modal
+				}}><ReservationDialog {category} {dayStr} /></Modal
 			>
 		</span>
 	</div>
@@ -108,7 +108,7 @@
 			<button
 				class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
 				on:click={async () => {
-					await approveAllPendingReservations(ReservationCategory.pool, day);
+					await approveAllPendingReservations(ReservationCategory.pool, dayStr);
 				}}
 			>
 				Approve All
@@ -122,7 +122,7 @@
 		on:swipe={swipeHandler}
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			<DayHourly {category} resInfo={resInfo($storedSettings)} date={day} />
+			<DayHourly {category} resInfo={resInfo($storedSettings)} date={dayStr} />
 		</Modal>
 	</div>
 {/if}

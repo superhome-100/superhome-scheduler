@@ -21,6 +21,7 @@
 	import { LRUCache } from 'lru-cache/raw';
 	import toast from 'svelte-french-toast';
 	import { swipe } from 'svelte-gestures';
+	import { browser } from '$app/environment';
 
 	export let data;
 	const { supabase } = data;
@@ -37,9 +38,7 @@
 	})(dayParam);
 	$: dayStr = getYYYYMMDD(day);
 
-	$: {
-		storedDayReservations_param.set({ day: dayStr });
-	}
+	$: storedDayReservations_param.set({ day: dayStr });
 
 	let draftRsv:
 		| (ReservationEx & { _duration: number; _notify: boolean; _orig: ReservationEx })
@@ -138,7 +137,7 @@
 	const owTimeFilterParamKey = 'owTime';
 	$: owTimeFilter = $page.url.searchParams.get(owTimeFilterParamKey) ?? '';
 	const statusParamKey = 'status';
-	$: statusFilter = $page.url.searchParams.get(statusParamKey) ?? '';
+	let statusFilter = $page.url.searchParams.get(statusParamKey)?.split(',') ?? [];
 
 	type ParamT =
 		| typeof dayParamKey
@@ -147,6 +146,8 @@
 		| typeof owTimeFilterParamKey
 		| typeof statusParamKey;
 
+	$: handleParam(statusParamKey, statusFilter.join(','));
+
 	function handleParam(paramType: ParamT, value: string) {
 		const query = $page.url.searchParams;
 		if (value) {
@@ -154,23 +155,24 @@
 		} else {
 			query.delete(paramType);
 		}
-		goto(`?${query.toString()}`, {
-			replaceState: true,
-			keepFocus: true,
-			noScroll: true
-		});
+		if (browser) {
+			goto(`?${query.toString()}`, {
+				replaceState: true,
+				keepFocus: true,
+				noScroll: true
+			});
+		}
 		switch (paramType) {
 			case dayParamKey:
 				dayParam = value;
-				break;
-			case statusParamKey:
-				statusFilter = value;
 				break;
 			case categoryParamKey:
 				categoryFilter = value;
 				break;
 			case searchTermParamKey:
 				searchTerm = value;
+				break;
+			case statusParamKey:
 				break;
 			case owTimeFilterParamKey:
 				owTimeFilter = value;
@@ -187,7 +189,7 @@
 
 	$: searchTermLower = searchTerm.toLowerCase();
 	$: filteredReservations = $storedDayReservationsAll
-		.filter((r) => !statusFilter || statusFilter === r.status)
+		.filter((r) => statusFilter.length === 0 || statusFilter.includes(r.status))
 		.filter((r) => !categoryFilter || categoryFilter === r.category)
 		.filter((r) => !owTimeFilter || owTimeFilter === r.owTime)
 		.filter((r) => !searchTerm || r.user_json.nickname.toLowerCase().includes(searchTermLower))
@@ -427,7 +429,7 @@
 		/>
 		<select
 			value={categoryFilter}
-			on:input={(e) => handleInput('category', e)}
+			on:input={(e) => handleInput(categoryParamKey, e)}
 			class="search-input"
 		>
 			<option value="" selected>Category</option>
@@ -445,16 +447,17 @@
 				<option value={v}>{v}</option>
 			{/each}
 		</select>
-		<select
-			value={statusFilter}
-			on:input={(e) => handleInput(statusParamKey, e)}
-			class="search-input"
-		>
-			<option value="" selected>Status</option>
-			{#each Constants['public']['Enums']['reservation_status'] as status}
-				<option value={status}>{status}</option>
-			{/each}
-		</select>
+		<div class="dropdown">
+			<button class="trigger search-input search-input-button">Status:{statusFilter.length}</button>
+			<div class="menu">
+				{#each Constants['public']['Enums']['reservation_status'] as status}
+					<label>
+						<input type="checkbox" value={status} bind:group={statusFilter} />
+						{status}
+					</label>
+				{/each}
+			</div>
+		</div>
 		<input
 			id="searchTerm"
 			type="text"
@@ -781,5 +784,37 @@
 		background-color: #4f4f50 !important;
 		width: 80px;
 		font-size: small;
+	}
+
+	.dropdown {
+		position: relative;
+		display: inline-block;
+		margin: 0px !important;
+		border: 0px;
+	}
+
+	.menu {
+		display: none; /* Hidden by default */
+		position: absolute;
+		background: white;
+		border: 1px solid #ccc;
+		padding: 10px;
+		z-index: 1;
+		min-width: 120px;
+	}
+
+	/* The "Simpler" Trigger */
+	.dropdown:hover .menu {
+		display: flex;
+		flex-direction: column;
+	}
+
+	label {
+		display: block;
+		cursor: pointer;
+		white-space: nowrap;
+	}
+	label:hover {
+		background: #f0f0f0;
 	}
 </style>

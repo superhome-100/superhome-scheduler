@@ -1,19 +1,23 @@
 <script lang="ts">
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 	import { startTimesHHMM, endTimesHHMM, minuteOfDay } from '$lib/reservationTimes';
-	import { timeStrToMin, datetimeToLocalDateStr, PanglaoDate } from '$lib/datetimeUtils';
+	import {
+		timeStrToMin,
+		datetimeToLocalDateStr,
+		PanglaoDate,
+		getYYYYMMDD
+	} from '$lib/datetimeUtils';
 	import { canSubmit } from '$lib/stores';
 	import { adminView, resTypeModDisabled } from '$lib/utils';
 	import { ReservationType } from '$types';
-	import type { Reservation } from '$types';
+	import type { ReservationEx, ReservationCategoryT } from '$types';
 	import InputLabel from './tiny_components/InputLabel.svelte';
 	import { storedSettings, storedUser } from '$lib/client/stores';
 	import { type SettingsManager } from '$lib/settings';
 
-	export let rsv: Reservation | null = null;
-	export let category = 'pool';
-	export let date: string | null = null;
-	export let dateFn: null | ((arg0: string) => string) = null;
+	export let category: ReservationCategoryT = 'pool';
+	export let rsv: ReservationEx | null = null;
+	export let dayStr: string = rsv?.date || getYYYYMMDD();
 	export let resType: null | 'course' | 'autonomous' = null;
 	export let viewOnly = false;
 	export let restrictModify = false;
@@ -23,12 +27,10 @@
 
 	let disabled = viewOnly || restrictModify;
 
-	date = !rsv || !rsv?.date ? (date ? date : dateFn(category)) : rsv.date;
+	let lanes = $storedSettings.getPoolLanes(dayStr);
+	let rooms = $storedSettings.getClassrooms(dayStr);
 
-	let lanes = $storedSettings.getPoolLanes(date);
-	let rooms = $storedSettings.getClassrooms(date);
-
-	const getStartTimes = (sm: SettingsManager, date: string, category: string) => {
+	const getStartTimes = (sm: SettingsManager, date: string, category: ReservationCategoryT) => {
 		let startTs = startTimesHHMM(sm, date, category);
 		let today = PanglaoDate();
 		if (!disabled && date === datetimeToLocalDateStr(today)) {
@@ -41,9 +43,11 @@
 		return startTs;
 	};
 	let chosenStart =
-		rsv == null ? getStartTimes($storedSettings, date, category)[0] : rsv.startTime.substring(0, 5);
+		rsv == null
+			? getStartTimes($storedSettings, dayStr, category)[0]
+			: rsv.startTime.substring(0, 5);
 	let chosenEnd =
-		rsv == null ? getStartTimes($storedSettings, date, category)[1] : rsv.endTime.substring(0, 5);
+		rsv == null ? getStartTimes($storedSettings, dayStr, category)[1] : rsv.endTime.substring(0, 5);
 	let autoOrCourse =
 		rsv == null ? (resType == null ? ReservationType.autonomous : resType) : rsv.resType;
 	let numStudents = rsv == null || rsv.resType !== ReservationType.course ? 1 : rsv.numStudents;
@@ -57,7 +61,15 @@
 	};
 </script>
 
-<ResFormGeneric {error} {viewOnly} {restrictModify} {showBuddyFields} bind:date bind:category {rsv}>
+<ResFormGeneric
+	{error}
+	{viewOnly}
+	{restrictModify}
+	{showBuddyFields}
+	bind:dayStr
+	bind:category
+	{rsv}
+>
 	<svelte:fragment slot="inputExtension">
 		{#if adminView($storedUser, viewOnly) && category === 'pool'}
 			<InputLabel forInput="formLane" label="Lane">
@@ -84,7 +96,7 @@
 
 		<InputLabel forInput="formStart" label="Start Time">
 			<select id="formStart" class="w-full" {disabled} bind:value={chosenStart} name="startTime">
-				{#each getStartTimes($storedSettings, date, category) as t}
+				{#each getStartTimes($storedSettings, dayStr, category) as t}
 					<option value={t}>{t}</option>
 				{/each}
 			</select>
@@ -92,7 +104,7 @@
 
 		<InputLabel forInput="formEnd" label="End Time">
 			<select id="formEnd" class="w-full" {disabled} name="endTime" value={chosenEnd}>
-				{#each endTimesHHMM($storedSettings, date, category) as t}
+				{#each endTimesHHMM($storedSettings, dayStr, category) as t}
 					{#if validEndTime(chosenStart, t)}
 						<option value={t}>{t}</option>
 					{/if}

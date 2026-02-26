@@ -4,7 +4,6 @@
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
-	import { minValidDateStr } from '$lib/reservationTimes';
 	import { getYYYYMM, getYYYYMMDD } from '$lib/datetimeUtils';
 	import { CATEGORIES } from '$lib/constants';
 	import type { ReservationCategory } from '$types';
@@ -15,7 +14,6 @@
 		isLoading,
 		storedReservationsSummary,
 		storedReservationsSummary_param,
-		storedSettings,
 		storedUser
 	} from '$lib/client/stores';
 
@@ -26,7 +24,7 @@
 	let categories = [...CATEGORIES];
 
 	$: category = data.category as ReservationCategory;
-	$: now = dayjs(data.month.substring(0, 7) + '-01');
+	$: day = dayjs(data.month.substring(0, 7) + '-01');
 
 	function getWeeksInMonth(year: number, month: number) {
 		const startOfMonth = dayjs().year(year).month(month).startOf('month');
@@ -46,7 +44,7 @@
 		return weeks;
 	}
 
-	$: monthDates = getWeeksInMonth(now.get('year'), now.get('month'));
+	$: monthDates = getWeeksInMonth(day.get('year'), day.get('month'));
 
 	$: {
 		const firstWeek = monthDates[0];
@@ -60,13 +58,13 @@
 	}
 
 	function prevMonth() {
-		now = now.subtract(1, 'month');
-		pushState(`/multi-day/${category}/${getYYYYMM(now)}`, { showModal: false });
+		day = day.subtract(1, 'month');
+		pushState(`/multi-day/${category}/${getYYYYMM(day)}`, { showModal: false });
 	}
 
 	function nextMonth() {
-		now = now.add(1, 'month');
-		pushState(`/multi-day/${category}/${getYYYYMM(now)}`, { showModal: false });
+		day = day.add(1, 'month');
+		pushState(`/multi-day/${category}/${getYYYYMM(day)}`, { showModal: false });
 	}
 
 	let modalOpened = false;
@@ -92,16 +90,16 @@
 				let i = categories.indexOf(category);
 				i = (i + 1) % categories.length;
 				category = categories[i] as ReservationCategory;
-				pushState(`/multi-day/${category}/${getYYYYMM(now)}`, { showModal: false });
+				pushState(`/multi-day/${category}/${getYYYYMM(day)}`, { showModal: false });
 			} else if (e.keyCode == 38) {
 				// up arrow
 				let i = categories.indexOf(category);
 				i = (categories.length + i - 1) % categories.length;
 				category = categories[i] as ReservationCategory;
-				pushState(`/multi-day/${category}/${getYYYYMM(now)}`, { showModal: false });
+				pushState(`/multi-day/${category}/${getYYYYMM(day)}`, { showModal: false });
 			} else if (e.keyCode == 84) {
 				// letter 't'
-				now = dayjs();
+				day = dayjs();
 			}
 		}
 	}
@@ -132,7 +130,7 @@
 				{#each ['pool', 'openwater', 'classroom'] as cat}
 					{#if cat !== category}
 						<li>
-							<a class="text-xl active:bg-gray-300" href="/multi-day/{cat}/{getYYYYMM(now)}">
+							<a class="text-xl active:bg-gray-300" href="/multi-day/{cat}/{getYYYYMM(day)}">
 								{cat}
 							</a>
 						</li>
@@ -148,15 +146,12 @@
 				<Chevron direction="right" svgClass="h-6 w-6" />
 			</span>
 			<span class="text-2xl"
-				>{now.format(now.year() === dayjs().year() ? 'MMMM' : 'MMMM YYYY')}</span
+				>{day.format(day.year() === dayjs().year() ? 'MMMM' : 'MMMM YYYY')}</span
 			>
 		</div>
 		<span class="">
 			<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}
-				><ReservationDialog
-					{category}
-					dateFn={(cat) => minValidDateStr($storedSettings, cat)}
-				/></Modal
+				><ReservationDialog {category} /></Modal
 			>
 		</span>
 	</div>
@@ -182,7 +177,7 @@
 						{#each week as date}
 							<td
 								class={`border-${category}-bg-to align-top h-24 xs:h-24 border border-solid ${
-									!date.isSame(now, 'month') && 'opacity-20 border-opacity-20'
+									!date.isSame(day, 'month') && 'opacity-20 border-opacity-20'
 								}`}
 							>
 								<DayOfMonth

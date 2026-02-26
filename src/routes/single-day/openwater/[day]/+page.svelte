@@ -149,7 +149,7 @@
 				on:open={() => (modalOpened = true)}
 				on:close={() => {
 					modalOpened = false;
-				}}><ReservationDialog {category} dateFn={() => dayStr} /></Modal
+				}}><ReservationDialog {category} {dayStr} /></Modal
 			>
 		</span>
 	</div>
