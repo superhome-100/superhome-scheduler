@@ -271,76 +271,26 @@
 			.join('\n') +
 		'\n';
 
-	async function bulkEditSelected(e: any, update: TablesUpdate<'Reservations'>) {
-		return bulkBatchEditSelected(e, update);
-		if (!confirm(e)) return;
-		const selected = [...visibleSelectedRsvs];
-		const fn = async () => {
-			if (update.owTime === 'AM') {
-				update.startTime = completeHHMM(sm.getOpenwaterAmStartTime(dayStr));
-				update.endTime = completeHHMM(sm.getOpenwaterAmEndTime(dayStr));
-			} else if (update.owTime === 'PM') {
-				update.startTime = completeHHMM(sm.getOpenwaterPmStartTime(dayStr));
-				update.endTime = completeHHMM(sm.getOpenwaterPmEndTime(dayStr));
-			}
-			const success = [];
-			const failures = [];
-			const changedResIds = [];
-			for (const rsv of selected) {
-				try {
-					const { data } = await supabase
-						.from('Reservations')
-						.update(update)
-						.eq('id', rsv.id)
-						.eq('category', ReservationCategory.openwater)
-						.select('id')
-						.maybeSingle()
-						.throwOnError();
-					if (data) {
-						success.push(`Modified ${rsv.user_json.nickname}: ${rsv.category}`);
-						changedResIds.push(rsv.id);
-					}
-				} catch (e) {
-					if (isOverlappingError(e)) {
-						failures.push(`Overlapping ${rsv.user_json.nickname}: ${rsv.category}`);
-					} else {
-						console.error('unknown error when modifing reservation', e);
-						failures.push(`Unknown issue with ${rsv.user_json.nickname}: ${rsv.category}`);
-					}
-				}
-			}
-			await sendPush(changedResIds);
-			if (failures.length) throw [success, failures];
-			return success;
-		};
-		return await toast
-			.promise(fn(), {
-				loading: `Modifying ${selected.length} reservations: ${objToStr(update)}`,
-				success: (s) => `Modified ${s.length} reservations: ${objToStr(update)}`,
-				error: ([success, failures]: string[][]) => {
-					return ['Modified:', ...success, '', 'Failed:', ...failures].join('\n');
-				}
-			})
-			.catch((e) => {
-				console.info('rejected bulkEditSelected', e, update, selected);
-			});
-	}
+	const processUpdateObject = (selected: ReservationEx[], update: TablesUpdate<'Reservations'>) => {
+		if (update.owTime === 'AM') {
+			update.startTime = completeHHMM(sm.getOpenwaterAmStartTime(dayStr));
+			update.endTime = completeHHMM(sm.getOpenwaterAmEndTime(dayStr));
+			if (selected.some((p) => p.category !== 'openwater' || p.owTime !== 'PM'))
+				throw Error(`Some reservation(s) are not openwater or PM`);
+		} else if (update.owTime === 'PM') {
+			update.startTime = completeHHMM(sm.getOpenwaterPmStartTime(dayStr));
+			update.endTime = completeHHMM(sm.getOpenwaterPmEndTime(dayStr));
+			if (selected.some((p) => p.category !== 'openwater' || p.owTime !== 'AM'))
+				throw Error(`Some reservation(s) are not openwater or AM`);
+		}
+		return update;
+	};
 
-	async function bulkBatchEditSelected(e: any, update: TablesUpdate<'Reservations'>) {
+	async function bulkEditSelected(e: any, update: TablesUpdate<'Reservations'>) {
 		if (!confirm(e)) return;
 		const selected = [...visibleSelectedRsvs];
 		const fn = async () => {
-			if (update.owTime === 'AM') {
-				update.startTime = completeHHMM(sm.getOpenwaterAmStartTime(dayStr));
-				update.endTime = completeHHMM(sm.getOpenwaterAmEndTime(dayStr));
-				if (selected.some((p) => p.category !== 'openwater' || p.owTime !== 'PM'))
-					throw Error(`Some reservation(s) are not openwater or PM`);
-			} else if (update.owTime === 'PM') {
-				update.startTime = completeHHMM(sm.getOpenwaterPmStartTime(dayStr));
-				update.endTime = completeHHMM(sm.getOpenwaterPmEndTime(dayStr));
-				if (selected.some((p) => p.category !== 'openwater' || p.owTime !== 'AM'))
-					throw Error(`Some reservation(s) are not openwater or AM`);
-			}
+			update = processUpdateObject(selected, update);
 			const { data } = await supabase
 				.from('Reservations')
 				.update(update)
@@ -360,7 +310,7 @@
 				error: (e) => `Failed modifying ${selected.length} reservations: ${objToStr(update)}\n${e}`
 			})
 			.catch((e) => {
-				console.info('rejected bulkBatchEditSelected', e, update, selected);
+				console.info('rejected bulkEditSelected', e, update, selected);
 			});
 	}
 
@@ -543,28 +493,28 @@
 			<button
 				class="floating-button"
 				on:click={async (e) => {
-					bulkBatchEditSelected(e, { status: 'confirmed' });
+					bulkEditSelected(e, { status: 'confirmed' });
 					menuState.show = false;
 				}}>Confirm</button
 			>
 			<button
 				class="floating-button"
 				on:click={async (e) => {
-					bulkBatchEditSelected(e, { status: 'rejected' });
+					bulkEditSelected(e, { status: 'rejected' });
 					menuState.show = false;
 				}}>Reject</button
 			>
 			<button
 				class="floating-button"
 				on:click={async (e) => {
-					bulkBatchEditSelected(e, { status: 'canceled' });
+					bulkEditSelected(e, { status: 'canceled' });
 					menuState.show = false;
 				}}>Cancel</button
 			>
 			<button
 				class="floating-button"
 				on:click={async (e) => {
-					bulkBatchEditSelected(e, { status: 'pending' });
+					bulkEditSelected(e, { status: 'pending' });
 					menuState.show = false;
 				}}>Pending</button
 			>
