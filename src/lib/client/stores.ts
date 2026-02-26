@@ -1,7 +1,7 @@
 import { writable, readable, type Readable } from 'svelte/store';
 import { supabase_es, type EventType } from './supabase_event_source';
 import { getYYYYMMDD, PanglaoDate } from '$lib/datetimeUtils';
-import { defaultDateSettings, getDateSetting, type DateSetting } from '$lib/dateSettings';
+import { defaultDateSettings, getDaySettings, type DaySettings } from '$lib/dateSettings';
 import { fallbackSettingsManager, getSettingsManager, type SettingsManager } from '$lib/settings';
 import {
     ReservationStatus,
@@ -280,11 +280,11 @@ export const storedDayReservations =
 
 
 export const { value: storedDaySettings, isLoading: storedDaySettingsLoading } =
-    readableWithSubscriptionToCoreAndParam<DateSetting, { day: string }>('storedDaySettings',
+    readableWithSubscriptionToCoreAndParam<DaySettings, { day: string }>('storedDaySettings',
         defaultDateSettings, true,
         storedDayReservations_param,
         async ({ supabase }, { day }) => {
-            const [dateSettings] = await getDateSetting(supabase, day);
+            const dateSettings = await getDaySettings(supabase, day);
             return dateSettings;
         }, "DaySettings");
 
