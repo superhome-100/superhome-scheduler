@@ -259,6 +259,14 @@
 				{#if $viewMode === 'admin'}
 					<SidebarDropdownWrapper label="Admin" bind:isOpen={isOpenAdminMenu}>
 						<SidebarItem label="Users" {spanClass} href="/admin/users" on:click={toggleSide} />
+						{#if getFeature(user, 'admin-reservations', false)}
+							<SidebarItem
+								label="Reservations"
+								{spanClass}
+								href="/admin/reservations"
+								on:click={toggleSide}
+							/>
+						{/if}
 						<SidebarItem
 							label="Send Notification"
 							{spanClass}
@@ -279,7 +287,6 @@
 								{spanClass}
 								on:click={() => {
 									downloadDatabase('Reservations');
-									toggleSide();
 								}}
 							/>
 							<SidebarItem

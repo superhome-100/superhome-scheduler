@@ -4,6 +4,7 @@ import { getYYYYMMDD, PanglaoDate } from '$lib/datetimeUtils';
 import { defaultDateSettings, getDateSetting, type DateSetting } from '$lib/dateSettings';
 import { fallbackSettingsManager, getSettingsManager, type SettingsManager } from '$lib/settings';
 import {
+    ReservationStatus,
     type Buoy,
     type BuoyGroupings,
     type DateReservationSummary,
@@ -80,6 +81,7 @@ function readableWithSubscriptionToCore<T>(
                             isLoading.set(true);
                             cacheVal = await cb(cp);
                             set(cacheVal);
+                            // console.debug('store.refreshed', variableName);
                             isLoading.set(false);
                         } catch (e) {
                             console.error('store.error', variableName, e);
@@ -104,7 +106,7 @@ function readableWithSubscriptionToCore<T>(
         safeCb();
         isInit = false;
         return () => {
-            console.debug("store.unsub", variableName)
+            // console.debug("store.unsub", variableName)
             unsubCs();
             unsubSupa();
         }
@@ -143,6 +145,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
                             if (setDefaultWhenLoading) set(defaultValue)
                             const value = await cb(cp, p);
                             cache.set(pJ, value);
+                            // console.debug('store.refreshed', variableName, param);
                             set(value);
                             isLoading.set(false);
                         } catch (e) {
@@ -177,7 +180,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
         safeCb();
         isInit = false;
         return () => {
-            console.debug("store.unsub", variableName);
+            // console.debug("store.unsub", variableName);
             unsubCs();
             unsubP();
             unsubSupa();
@@ -257,14 +260,24 @@ export const { value: storedPastReservations, isLoading: storedPastReservationsL
 
 export const storedDayReservations_param = writable<{ day: string }>();
 
-export const { value: storedDayReservations, isLoading: storedDayReservationsLoading } =
+export const { value: storedDayReservationsAll, isLoading: storedDayReservationsAllLoading } =
     readableWithSubscriptionToCoreAndParam<ReservationEx[], { day: string }>('storedDayReservations',
         [], true,
         storedDayReservations_param,
         async ({ supabase }, { day }) => {
             const r = await getReservationsByDate(supabase, day);
             return r;
-        }, "Reservations");
+        }, "Reservations", "Users");
+
+export const storedDayReservationsLoading = storedDayReservationsAllLoading;
+export const storedDayReservations =
+    readable<ReservationEx[]>([], (set) => {
+        return storedDayReservationsAll.subscribe(rs => {
+            const rsf = rs.filter(r => [ReservationStatus.confirmed, ReservationStatus.pending].includes(r.status as ReservationStatus));
+            set(rsf);
+        });
+    });
+
 
 export const { value: storedDaySettings, isLoading: storedDaySettingsLoading } =
     readableWithSubscriptionToCoreAndParam<DateSetting, { day: string }>('storedDaySettings',
