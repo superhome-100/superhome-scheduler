@@ -1,6 +1,6 @@
 import { OWTime, ReservationCategory, type Reservation } from '$types';
-import { getStartEndTimes } from '$lib/reservationTimes';
-import { minToTimeStr, timeStrToMin } from '$lib/datetimeUtils';
+import { getStartEndTimesHHMMSS } from '$lib/reservationTimes';
+import { minToHHMM, timeStrToMin } from '$lib/datetimeUtils';
 import type { SettingsManager } from '$lib/settings';
 
 // helper for getTimeOverlapFilters: sorts all possible start and end times into four groups:
@@ -18,9 +18,9 @@ function getTimeSlots({
 	start: string;
 	end: string;
 }) {
-	const startF = minToTimeStr(timeStrToMin(start));
-	const endF = minToTimeStr(timeStrToMin(end));
-	let times = getStartEndTimes(settings, date, category);
+	const startF = minToHHMM(timeStrToMin(start));
+	const endF = minToHHMM(timeStrToMin(end));
+	let times = getStartEndTimesHHMMSS(settings, date, category);
 	let sIdx = times.indexOf(startF);
 	let eIdx = times.indexOf(endF);
 

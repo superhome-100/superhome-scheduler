@@ -1,4 +1,4 @@
-import { inc, startTimes } from '$lib/reservationTimes';
+import { inc, startTimesHHMM } from '$lib/reservationTimes';
 import { timeStrToMin } from '$lib/datetimeUtils';
 import { getNumberOfOccupants } from '$utils/reservations';
 import type { SettingsManager } from '$lib/settings';
@@ -261,7 +261,7 @@ export function oldAssignPoolSpaces(
 	rsv?: Reservation;
 } {
 	const incT = inc(sm, dateStr);
-	const sTs = startTimes(sm, dateStr, 'pool');
+	const sTs = startTimesHHMM(sm, dateStr, 'pool');
 	const nTimes = sTs.length;
 	const minTime = timeStrToMin(sTs[0]);
 	const laneWidth = 1;

@@ -25,9 +25,9 @@ export function rsvsToBlock({
 	const spacePath = Array(pathLen).fill(-1); // -1 == unassigned
 	if (category == ReservationCategory.pool) {
 		//check for pre-assigned lane
-		if (rsv.lanes[0] != 'auto') {
+		if (rsv.lanes?.[0] !== 'auto') {
 			const nSpaces = resourceNames.length;
-			const lane = resourceNames.indexOf(rsv.lanes[0]);
+			const lane = resourceNames.indexOf(rsv.lanes?.[0]);
 			//make sure there's enough room for all required spaces
 			if (nSpaces - lane >= width) {
 				spacePath.fill(lane);

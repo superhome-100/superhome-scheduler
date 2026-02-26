@@ -1,4 +1,4 @@
-import { getStartEndTimes } from '$lib/reservationTimes';
+import { getStartEndTimesHHMMSS } from '$lib/reservationTimes';
 import { rsvsToBlock, createBuddyGroups } from './hourlyUtils';
 import type { Block, Grid } from './hourlyUtils';
 import { blocksToDisplayData } from './hourlyDisplay';
@@ -89,7 +89,7 @@ export function assignHourlySpaces(
 	dateStr: string,
 	category: ReservationCategory
 ) {
-	let startEndTimes = getStartEndTimes(sm, dateStr, category);
+	let startEndTimes = getStartEndTimesHHMMSS(sm, dateStr, category);
 	let nStartTimes = startEndTimes.length - 1;
 	let resourceNames: string[];
 	if (category == ReservationCategory.pool) {

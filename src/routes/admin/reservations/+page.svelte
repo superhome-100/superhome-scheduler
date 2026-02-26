@@ -10,9 +10,9 @@
 	import MyFloatingElement from '$lib/components/MyFloatingElement.svelte';
 	import LoadingBar from '$lib/components/LoadingBar.svelte';
 	import {
-		completeHM,
+		completeHHMM,
 		getYYYYMMDD,
-		minToTimeStr,
+		minToHHMM,
 		PanglaoDayJs,
 		timeStrToMin
 	} from '$lib/datetimeUtils';
@@ -270,11 +270,11 @@
 		const selected = [...visibleSelectedRsvs];
 		const fn = async () => {
 			if (update.owTime === 'AM') {
-				update.startTime = completeHM(sm.getOpenwaterAmStartTime(dayStr));
-				update.endTime = completeHM(sm.getOpenwaterAmEndTime(dayStr));
+				update.startTime = completeHHMM(sm.getOpenwaterAmStartTime(dayStr));
+				update.endTime = completeHHMM(sm.getOpenwaterAmEndTime(dayStr));
 			} else if (update.owTime === 'PM') {
-				update.startTime = completeHM(sm.getOpenwaterPmStartTime(dayStr));
-				update.endTime = completeHM(sm.getOpenwaterPmEndTime(dayStr));
+				update.startTime = completeHHMM(sm.getOpenwaterPmStartTime(dayStr));
+				update.endTime = completeHHMM(sm.getOpenwaterPmEndTime(dayStr));
 			}
 			const success = [];
 			const failures = [];
@@ -617,17 +617,17 @@
 												on:change={(e) => {
 													if (draftRsv) {
 														if (e.currentTarget.value === 'AM') {
-															draftRsv.startTime = completeHM(
+															draftRsv.startTime = completeHHMM(
 																sm.getOpenwaterAmStartTime(draftRsv.date)
 															);
-															draftRsv.endTime = completeHM(
+															draftRsv.endTime = completeHHMM(
 																sm.getOpenwaterAmEndTime(draftRsv.date)
 															);
 														} else if (e.currentTarget.value === 'PM') {
-															draftRsv.startTime = completeHM(
+															draftRsv.startTime = completeHHMM(
 																sm.getOpenwaterPmStartTime(draftRsv.date)
 															);
-															draftRsv.endTime = completeHM(
+															draftRsv.endTime = completeHHMM(
 																sm.getOpenwaterPmEndTime(draftRsv.date)
 															);
 														}
@@ -657,7 +657,7 @@
 													if (draftRsv) {
 														const newEndTime =
 															timeStrToMin(e.currentTarget.value) + draftRsv._duration;
-														draftRsv.endTime = minToTimeStr(newEndTime);
+														draftRsv.endTime = minToHHMM(newEndTime);
 													}
 												}}
 												readonly={draftRsv.category === 'openwater'}

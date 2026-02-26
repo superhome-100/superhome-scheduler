@@ -24,7 +24,7 @@ export function datetimeToLocalDateStr(datetime: Date | string) {
 	return dayjs(datetime).locale('en-US').format('YYYY-MM-DD');
 }
 
-export const minToTimeStr = (min: number) =>
+export const minToHHMM = (min: number) =>
 	`${Math.floor(min / 60)}`.padStart(2, '0') + ':' + `${min % 60}`.padStart(2, '0') + ':00';
 
 const timeStrRE = /([0-9]*[0-9]):([0-9][0-9])(:[0-9][0-9])?/;
@@ -37,7 +37,7 @@ const parseHM = (timeStr: string): { hour: number; min: number } => {
 	return { hour, min };
 };
 
-export const completeHM = (timeStr: string) => minToTimeStr(timeStrToMin(timeStr));
+export const completeHHMM = (timeStr: string) => minToHHMM(timeStrToMin(timeStr));
 
 export function timeStrToMin(timeStr: string): number {
 	let p = parseHM(timeStr);
