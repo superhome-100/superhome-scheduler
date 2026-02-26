@@ -54,7 +54,7 @@ export const pushNotificationService = {
                     const resp = await webpush.sendNotification(subscription, payload);
                     console.info('push sent', { user: userId, session: d.sessionId }, resp);
                     return { success: 1, failure: [] as Error[] };
-                })(d.pushSubscription as unknown as PushSubscription).catch((reason) => {
+                })(d.pushSubscription as unknown as PushSubscription).catch((reason: unknown) => {
                     console_error(`couldn't send notification`, { user: userId, session: d.sessionId }, reason);
                     return { success: 0, failure: [reason as Error] };
                 })
@@ -102,7 +102,7 @@ export const pushNotificationService = {
     },
 
     async sendReservationStatus(sm: SettingsManager, actor: User, rsvs: Reservation[]) {
-        await this._sendReservationFn(sm, actor, rsvs, r => `[${r.status}]`);
+        await this._sendReservationFn(sm, actor, rsvs, r => r.status);
     },
 
     async sendReservationCreated(sm: SettingsManager, actor: User, rsvs: Reservation[]) {
@@ -115,7 +115,7 @@ export const pushNotificationService = {
 };
 
 const reservationTitle = (rsv: Reservation, fn: (r: Reservation) => string) => {
-    return reservationCategoryIcon(rsv) + `${upperFirst(rsv.category)} ${shortDateTime(rsv)}: ${fn(rsv)}`
+    return `${upperFirst(rsv.category)} ${shortDateTime(rsv)}: ${fn(rsv)}`
 }
 
 const reservationDetails = (rsv: Reservation) => {
@@ -140,7 +140,7 @@ const shortDateTime = (rsv: Reservation) => {
         return 'Today❗️' + rsvStart.format('HH:mm')
     }
     if (rsvStart.isSame(now.add(1, 'day'), 'day')) {
-        return 'Tomorrow❗️' + rsvStart.format('HH:mm')
+        return 'Tmrw❗️' + rsvStart.format('HH:mm')
     }
     return rsvStart.format('DD/MMM HH:mm')
 };
@@ -150,7 +150,7 @@ const reservationStatusIcon = (rsv: Reservation) => {
         case 'canceled':
             return getRandomElement('🙈', '🙀', '🐣', '😶', '🤧', '🤒');
         case 'confirmed':
-            return '✅';
+            return reservationCategoryIcon(rsv);
         case 'pending':
             return '⌛️';
         case 'rejected':

@@ -3,7 +3,13 @@
 	import { ReservationType } from '$types';
 	import { ReservationStatus, ReservationCategory } from '$types';
 	import { canSubmit } from '$lib/stores';
-	import { storedUsers, storedUser as user, storedSettings, storedUser } from '$lib/client/stores';
+	import {
+		storedUsers,
+		storedUser as user,
+		storedSettings,
+		storedUser,
+		storedDayReservations_param
+	} from '$lib/client/stores';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes';
 	import { adminView, isMyReservation, isOpenForBooking } from '$lib/utils';
 	import { getYYYYMMDD, PanglaoDate } from '$lib/datetimeUtils';
@@ -15,7 +21,7 @@
 	import { onDestroy, onMount } from 'svelte';
 
 	export let rsv: ReservationEx | null;
-	export let date: string = rsv?.date ?? getYYYYMMDD(PanglaoDate());
+	export let date: string = rsv?.date || getYYYYMMDD(PanglaoDate());
 	export let category: ReservationCategory =
 		(rsv?.category as ReservationCategory) ?? ReservationCategory.pool;
 	export let owTime: OWTime | null = null;
@@ -29,6 +35,7 @@
 	export let diveTime = '';
 	export let resType: ReservationType | null = null;
 
+	$: storedDayReservations_param.set({ day: date });
 	let disabled = viewOnly || restrictModify;
 
 	let status: ReservationStatus = (rsv?.status as ReservationStatus) || ReservationStatus.pending;
