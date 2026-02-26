@@ -160,21 +160,36 @@
 		searchTerm = value;
 	}
 
-	function handleKeydown(e: any, element: HTMLElement | null) {
-		const searchInput = element as HTMLInputElement;
-		const { target, key, ctrlKey, metaKey, altKey } = e;
+	function handleKeydown(e: KeyboardEvent, searchInput: HTMLInputElement | null) {
+		if (!searchInput) return;
+
+		const target = e.target as HTMLElement;
+		const { key, ctrlKey, metaKey, altKey } = e;
+
+		// Check if the focus is in a field where global shortcuts should be disabled
 		const isEditable =
 			target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-		if (isEditable) return;
+
+		if (isEditable) {
+			// Use getAttribute to avoid throwing if 'name' is missing
+			const nameAttr = target.getAttribute('name');
+			if (nameAttr !== 'select') return;
+		}
+
+		// Ignore modifier combinations
 		if (ctrlKey || metaKey || altKey) return;
+
 		switch (key) {
 			case 'Backspace':
 				searchInput.focus();
 				return;
 			case 'Enter':
 				return;
+			case 'Escape':
+				if (draftUser) draftUser = null;
 		}
-		// Unicode & Alphanumeric Filter: key.length === 1 identifies printable characters across all languages
+
+		// Capture printable characters to redirect focus to search
 		if (key.length === 1) {
 			searchInput.focus();
 		}

@@ -91,9 +91,9 @@ export const pushNotificationService = {
         }
     },
 
-    async _sendReservationFn(sm: SettingsManager, actor: User, rsvs: Reservation[], fn: (r: Reservation) => string) {
+    async _sendReservationFn(sm: SettingsManager, actor: User | null, rsvs: Reservation[], fn: (r: Reservation) => string) {
         await Promise.allSettled(rsvs
-            .filter(r => r.user !== actor.id)
+            .filter(r => r.user !== actor?.id)
             .map(async (rsv) => this.sendSafe(sm, rsv.user,
                 reservationTitle(rsv, fn),
                 reservationDetails(rsv),
@@ -109,7 +109,7 @@ export const pushNotificationService = {
         await this._sendReservationFn(sm, actor, rsvs, () => 'created');
     },
 
-    async sendReservationModified(sm: SettingsManager, actor: User, rsvs: Reservation[]) {
+    async sendReservationModified(sm: SettingsManager, actor: User | null, rsvs: Reservation[]) {
         await this._sendReservationFn(sm, actor, rsvs, () => 'modified');
     }
 };

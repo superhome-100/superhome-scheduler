@@ -105,10 +105,7 @@
 			if (result === null) throw Error('Reservation record missing');
 
 			if (rsv._notify) {
-				await fetch('/api/notification/notify-reservations-modified', {
-					method: 'POST',
-					body: JSON.stringify([result.id])
-				});
+				sendPush([result.id]);
 			}
 
 			console.log('admin updated reservation', result);
@@ -267,73 +264,33 @@
 		);
 	}
 
+	const objToStr = (o: object) =>
+		'\n' +
+		Object.entries(o)
+			.map((v) => '- ' + v.join(':'))
+			.join('\n') +
+		'\n';
+
+	const processUpdateObject = (selected: ReservationEx[], update: TablesUpdate<'Reservations'>) => {
+		if (update.owTime === 'AM') {
+			update.startTime = completeHHMM(sm.getOpenwaterAmStartTime(dayStr));
+			update.endTime = completeHHMM(sm.getOpenwaterAmEndTime(dayStr));
+			if (selected.some((p) => p.category !== 'openwater' || p.owTime !== 'PM'))
+				throw Error(`Some reservation(s) are not openwater or PM`);
+		} else if (update.owTime === 'PM') {
+			update.startTime = completeHHMM(sm.getOpenwaterPmStartTime(dayStr));
+			update.endTime = completeHHMM(sm.getOpenwaterPmEndTime(dayStr));
+			if (selected.some((p) => p.category !== 'openwater' || p.owTime !== 'AM'))
+				throw Error(`Some reservation(s) are not openwater or AM`);
+		}
+		return update;
+	};
+
 	async function bulkEditSelected(e: any, update: TablesUpdate<'Reservations'>) {
 		if (!confirm(e)) return;
 		const selected = [...visibleSelectedRsvs];
 		const fn = async () => {
-			if (update.owTime === 'AM') {
-				update.startTime = completeHHMM(sm.getOpenwaterAmStartTime(dayStr));
-				update.endTime = completeHHMM(sm.getOpenwaterAmEndTime(dayStr));
-			} else if (update.owTime === 'PM') {
-				update.startTime = completeHHMM(sm.getOpenwaterPmStartTime(dayStr));
-				update.endTime = completeHHMM(sm.getOpenwaterPmEndTime(dayStr));
-			}
-			const success = [];
-			const failures = [];
-			for (const rsv of selected) {
-				try {
-					const { data } = await supabase
-						.from('Reservations')
-						.update(update)
-						.eq('id', rsv.id)
-						.eq('category', ReservationCategory.openwater)
-						.select('id')
-						.maybeSingle()
-						.throwOnError();
-					if (data) success.push(`Modified ${rsv.user_json.nickname}: ${rsv.category}`);
-					try {
-						await fetch('/api/notification/notify-reservations-modified', {
-							method: 'POST',
-							body: JSON.stringify([rsv.id])
-						});
-					} catch (e) {
-						console.error('couldnt send not for modifed reservation', e);
-					}
-				} catch (e) {
-					if (isOverlappingError(e)) {
-						failures.push(`Overlapping ${rsv.user_json.nickname}: ${rsv.category}`);
-					} else {
-						console.error('unknown error when modifing reservation', e);
-						failures.push(`Unknown issue with ${rsv.user_json.nickname}: ${rsv.category}`);
-					}
-				}
-			}
-			if (failures.length) throw [success, failures];
-			return success;
-		};
-		const objToStr = (o: object) =>
-			'\n' +
-			Object.entries(o)
-				.map((v) => '- ' + v.join(':'))
-				.join('\n') +
-			'\n';
-		return await toast
-			.promise(fn(), {
-				loading: `Modifying ${selected.length} reservations: ${objToStr(update)}`,
-				success: (s) => `Modified ${s.length} reservations: ${objToStr(update)}`,
-				error: ([success, failures]: string[][]) => {
-					return ['Modified:', ...success, '', 'Failed:', ...failures].join('\n');
-				}
-			})
-			.catch((e) => {
-				console.info('rejected bulkEditSelected', e, update, selected);
-			});
-	}
-
-	async function bulkBatchEditSelected(e: any, update: TablesUpdate<'Reservations'>) {
-		if (!confirm(e)) return;
-		const selected = [...visibleSelectedRsvs];
-		const fn = async () => {
+			update = processUpdateObject(selected, update);
 			const { data } = await supabase
 				.from('Reservations')
 				.update(update)
@@ -343,48 +300,84 @@
 				)
 				.select('id')
 				.throwOnError();
+			await sendPush(data.map((r) => r.id));
 			return data;
 		};
-		const objToStr = (o: object) =>
-			'\n' +
-			Object.entries(o)
-				.map((v) => '- ' + v.join(':'))
-				.join('\n') +
-			'\n';
 		return await toast
 			.promise(fn(), {
 				loading: `Modifying ${selected.length} reservations: ${objToStr(update)}`,
 				success: (s) => `Modified ${s.length} reservations: ${objToStr(update)}`,
-				error: `Failed modifying ${selected.length} reservations: ${objToStr(update)}`
+				error: (e) => `Failed modifying ${selected.length} reservations: ${objToStr(update)}\n${e}`
 			})
 			.catch((e) => {
-				console.info('rejected bulkBatchEditSelected', e, update, selected);
+				console.info('rejected bulkEditSelected', e, update, selected);
 			});
 	}
 
-	function handleKeydown(e: any, element: HTMLElement | null) {
-		const searchInput = element as HTMLInputElement;
-		const { target, key, ctrlKey, metaKey, altKey } = e;
+	async function sendPush(rsvIds: string[]) {
+		if (rsvIds.length === 0) return;
+		const fn = async () => {
+			await fetch('/api/notification/notify-reservations-modified', {
+				method: 'POST',
+				body: JSON.stringify(rsvIds)
+			});
+		};
+		return await toast
+			.promise(fn(), {
+				loading: `Sending push notification(s)...`,
+				success: (s) => `Sent push notification(s)`,
+				error: `Failed to send push notification(s)`
+			})
+			.catch((e) => {
+				console.info('rejected sendPushReminder', e, rsvIds);
+			});
+	}
+
+	async function sendPushReminder(e: any) {
+		if (!confirm(e)) return;
+		const selected = [...visibleSelectedRsvs];
+		return await sendPush(selected.map((r) => r.id));
+	}
+
+	function handleKeydown(e: KeyboardEvent, searchInput: HTMLInputElement | null) {
+		if (!searchInput) return;
+
+		const target = e.target as HTMLElement;
+		const { key, ctrlKey, metaKey, altKey } = e;
+
+		// Check if the focus is in a field where global shortcuts should be disabled
 		const isEditable =
 			target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
 		if (isEditable) {
-			if (target.attributes.name.value !== 'select') return;
+			// Use getAttribute to avoid throwing if 'name' is missing
+			const nameAttr = target.getAttribute('name');
+			if (nameAttr !== 'select') return;
 		}
+
+		// Ignore modifier combinations
 		if (ctrlKey || metaKey || altKey) return;
+
 		switch (key) {
 			case 'ArrowLeft':
+				e.preventDefault();
 				handleParam('day', getYYYYMMDD(day.add(-1, 'day')));
 				return;
 			case 'ArrowRight':
+				e.preventDefault();
 				handleParam('day', getYYYYMMDD(day.add(1, 'day')));
 				return;
 			case 'Backspace':
+				// Prevent browser 'Back' navigation if that is the default
 				searchInput.focus();
 				return;
 			case 'Enter':
 				return;
+			case 'Escape':
+				if (draftRsv) draftRsv = null;
 		}
-		// Unicode & Alphanumeric Filter: key.length === 1 identifies printable characters across all languages
+
+		// Capture printable characters to redirect focus to search
 		if (key.length === 1) {
 			searchInput.focus();
 		}
@@ -451,7 +444,7 @@
 			<button class="trigger search-input search-input-button">Status:{statusFilter.length}</button>
 			<div class="menu">
 				{#each Constants['public']['Enums']['reservation_status'] as status}
-					<label>
+					<label class="dropdown-label">
 						<input type="checkbox" value={status} bind:group={statusFilter} />
 						{status}
 					</label>
@@ -489,32 +482,39 @@
 					menuState.show = false;
 				}}>Move to PM</button
 			>
+			<button
+				class="floating-button"
+				on:click={async (e) => {
+					sendPushReminder(e);
+					menuState.show = false;
+				}}>Send Push Reminder</button
+			>
 			<br />
 			<button
 				class="floating-button"
 				on:click={async (e) => {
-					bulkBatchEditSelected(e, { status: 'confirmed' });
+					bulkEditSelected(e, { status: 'confirmed' });
 					menuState.show = false;
 				}}>Confirm</button
 			>
 			<button
 				class="floating-button"
 				on:click={async (e) => {
-					bulkBatchEditSelected(e, { status: 'rejected' });
+					bulkEditSelected(e, { status: 'rejected' });
 					menuState.show = false;
 				}}>Reject</button
 			>
 			<button
 				class="floating-button"
 				on:click={async (e) => {
-					bulkBatchEditSelected(e, { status: 'canceled' });
+					bulkEditSelected(e, { status: 'canceled' });
 					menuState.show = false;
 				}}>Cancel</button
 			>
 			<button
 				class="floating-button"
 				on:click={async (e) => {
-					bulkBatchEditSelected(e, { status: 'pending' });
+					bulkEditSelected(e, { status: 'pending' });
 					menuState.show = false;
 				}}>Pending</button
 			>
@@ -809,12 +809,12 @@
 		flex-direction: column;
 	}
 
-	label {
+	.dropdown-label {
 		display: block;
 		cursor: pointer;
 		white-space: nowrap;
 	}
-	label:hover {
+	.dropdown-label:hover {
 		background: #f0f0f0;
 	}
 </style>

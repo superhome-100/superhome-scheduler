@@ -21,7 +21,7 @@ export async function POST({ request, locals: { supabase, safeGetSession } }: Re
 		const { data } = await query
 			.throwOnError();
 
-		await pushNotificationService.sendReservationModified(sm, user, data);
+		await pushNotificationService.sendReservationModified(sm, null, data);
 
 		return json({
 			status: 'success'
