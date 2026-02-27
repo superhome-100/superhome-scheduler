@@ -1,116 +1,158 @@
-<script>
-	export let resistance = 0.05;
-	export let onRefresh = () => {};
+<script lang="ts">
+	import { logger } from '@sentry/core';
 
+	export let onRefresh: () => Promise<void> | void = async () => {};
+
+	// Configuration
+	export let resistance = 0.1; // 0.2-0.3 is standard for "snappy" feel
+	const REFRESH_THRESHOLD = 350; // Total pull distance to trigger
+	const MIN_PULL_DETECTION = 100; // Distance before UI shows up
+
+	let container: HTMLDivElement;
+	let isAtTop = false;
 	let startY = 0;
 	let currentY = 0;
 	let pulling = false;
-	let rotateDeg = 0;
 	let shouldRefresh = false;
 	let translateY = 0;
+	let rotateDeg = 0;
+	let isTransitioning = false; // Controls CSS transition
 
-	const touchStart = (event) => {
+	const touchStart = (event: TouchEvent) => {
+		// Reset transition state for immediate finger tracking
+		isTransitioning = false;
+		isAtTop = container.scrollTop === 0;
 		startY = event.touches[0].clientY;
 	};
 
-	const touchMove = (event) => {
+	const touchMove = (event: TouchEvent) => {
+		if (!isAtTop) return;
+
 		currentY = event.touches[0].clientY;
+		const diff = currentY - startY;
 
-		if (currentY - startY > 20) {
+		// Ignore upward swipes
+		if (diff <= 0) return;
+
+		// Prevent native browser "bounce" and pull-to-refresh
+		if (diff > 10 && event.cancelable) {
+			event.preventDefault();
+		}
+
+		if (diff > MIN_PULL_DETECTION) {
 			pulling = true;
-			rotateDeg = (currentY - startY) * 1;
-			translateY = (currentY - startY) * resistance;
+			translateY = diff * resistance;
 
-			if (rotateDeg > 180) {
-				shouldRefresh = true;
-			} else {
-				shouldRefresh = false;
-			}
-		} else {
-			pulling = false;
+			// Calculate rotation based on progress toward threshold
+			const progress = Math.min(diff / REFRESH_THRESHOLD, 1);
+			rotateDeg = progress * 360;
+
+			shouldRefresh = diff > REFRESH_THRESHOLD;
 		}
 	};
 
 	const touchEnd = () => {
-		if (shouldRefresh) {
-			rotateDeg = 0;
-			refresh();
+		isTransitioning = true; // Enable smooth snap-back
 
-			translateY = 60;
+		if (shouldRefresh) {
+			refresh();
+			translateY = 60; // Hang at 60px while loading
 		} else {
-			translateY = 0;
-			pulling = false;
-			shouldRefresh = false;
+			reset();
 		}
 	};
 
-	const refresh = async () => {
-		await onRefresh();
+	const reset = () => {
+		translateY = 0;
+		pulling = false;
+		shouldRefresh = false;
+		rotateDeg = 0;
+	};
 
+	const refresh = async () => {
+		try {
+			await onRefresh();
+		} catch (e) {
+			console.error('onRefresh', e);
+		}
+		// Artificial delay so the user sees the "success" state
 		setTimeout(() => {
-			translateY = 0;
-			pulling = false;
-			shouldRefresh = false;
-		}, 2000);
+			reset();
+		}, 1000);
 	};
 </script>
 
-<div on:touchstart={touchStart} on:touchmove={touchMove} on:touchend={touchEnd} class="refresher">
+<div
+	bind:this={container}
+	on:touchstart={touchStart}
+	on:touchmove={touchMove}
+	on:touchend={touchEnd}
+	class="refresher"
+>
 	{#if pulling}
-		<div class="refresher-indicator">
-			{#if shouldRefresh}
-				<div class="refresher-icon" style="animation-play-state: running;" />
-			{:else}
-				<div
-					class="refresher-icon"
-					style="transform: rotate({rotateDeg}deg); animation-play-state: paused;"
-				/>
-			{/if}
+		<div class="refresher-indicator" class:refreshing={shouldRefresh}>
+			<div
+				class="refresher-icon"
+				style="transform: rotate({rotateDeg}deg); animation-play-state: {shouldRefresh
+					? 'running'
+					: 'paused'};"
+			/>
 		</div>
 	{/if}
 
-	<div class="refresher-content-wrapper" style="transform: translateY({translateY}px)">
+	<div
+		class="refresher-content-wrapper"
+		class:animate={isTransitioning}
+		style="transform: translateY({translateY}px)"
+	>
 		<slot />
 	</div>
 </div>
 
 <style>
 	.refresher {
-		min-height: 100vh;
-		min-height: 100dvh;
+		height: 100dvh;
 		width: 100%;
 		position: relative;
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
 		display: flex;
 		flex-direction: column;
 	}
 
 	.refresher-indicator {
+		position: absolute;
 		left: 0;
-		position: fixed;
 		right: 0;
-		top: 30px;
+		top: 20px;
+		z-index: 10;
+		display: flex;
+		justify-content: center;
+		pointer-events: none;
 	}
 
 	.refresher-icon {
-		animation: spin 1s linear infinite;
-		border: 2px solid transparent;
-		border-radius: 50%;
+		width: 28px;
+		height: 28px;
+		border: 3px solid rgba(0, 135, 255, 0.2);
 		border-top-color: #0087ff;
-		height: 20px;
-		margin: auto;
-		width: 20px;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
 	}
 
 	.refresher-content-wrapper {
-		/* transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); */
-		flex: 1 0 auto; /* Grow to fill, do not shrink, auto basis */
+		flex: 1 0 auto;
 		width: 100%;
-		display: flex;
-		flex-direction: column;
+		will-change: transform;
+	}
+
+	/* Transition only when NOT dragging */
+	.animate {
+		transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 	}
 
 	@keyframes spin {
-		100% {
+		to {
 			transform: rotate(360deg);
 		}
 	}

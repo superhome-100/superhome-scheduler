@@ -46,15 +46,13 @@
 			  }
 			: null
 	);
-
-	storedDayReservations_param.subscribe((v) => Sentry.setContext('storedDayReservations_param', v));
-	storedReservationsSummary_param.subscribe((v) =>
-		Sentry.setContext('storedReservationsSummary_param', v)
-	);
+	$: Sentry.setContext('storedDayReservations_param', $storedDayReservations_param);
+	$: Sentry.setContext('storedReservationsSummary_param', $storedReservationsSummary_param);
 
 	// these two lines make sure that we have all the fresh data in time for Sidebar
 	(storedUser as Writable<UserEx | null>).set(user);
 	(storedSettings as Writable<SettingsManager>).set(settingsManager);
+	$: settingsManager = $storedSettings;
 
 	const publicRoutes = ['/privacy'];
 
@@ -87,10 +85,6 @@
 						})
 						.catch((reason) => console.error('supabase_es.init', reason));
 				}
-			});
-			storedSettings.subscribe((s) => {
-				// to subscribe, and to update settingsManager bellow which is used in SSR as well
-				settingsManager = s;
 			});
 			if (user) {
 				await pushService.init(user.has_push ?? false);
@@ -130,7 +124,7 @@
 		<Nprogress />
 		<Sidebar {settingsManager} />
 
-		<div id="app" class="flex px-1 mx-auto w-full">
+		<div id="app" class="flex px-1 mx-auto w-full h-full">
 			<main class="lg:ml-72 w-full mx-auto">
 				<slot />
 			</main>

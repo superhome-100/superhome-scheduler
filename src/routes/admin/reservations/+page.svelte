@@ -385,7 +385,6 @@
 
 	function swipeHandler(event: any) {
 		if (event.detail.direction === 'left') {
-			day = day.add(1, 'day');
 			handleParam('day', getYYYYMMDD(day.add(1, 'day')));
 		} else if (event.detail.direction === 'right') {
 			handleParam('day', getYYYYMMDD(day.add(-1, 'day')));
@@ -407,7 +406,7 @@
 <svelte:window on:keydown={(e) => handleKeydown(e, document.getElementById('searchTerm'))} />
 
 <div
-	class="admin-view"
+	class="admin-view h-full"
 	use:swipe={{ timeframe: 300, minSwipeDistance: 10, touchAction: 'pan-y' }}
 	on:swipe={swipeHandler}
 >
