@@ -268,14 +268,12 @@
 				{#if $viewMode === 'admin'}
 					<SidebarDropdownWrapper label="Admin" bind:isOpen={isOpenAdminMenu}>
 						<SidebarItem label="Users" {spanClass} href="/admin/users" on:click={toggleSide} />
-						{#if getFeature(user, 'admin-reservations', false)}
-							<SidebarItem
-								label="Reservations"
-								{spanClass}
-								href="/admin/reservations"
-								on:click={toggleSide}
-							/>
-						{/if}
+						<SidebarItem
+							label="Reservations"
+							{spanClass}
+							href="/admin/reservations"
+							on:click={toggleSide}
+						/>
 						<SidebarItem
 							label="Send Notification"
 							{spanClass}
@@ -314,77 +312,6 @@
 									toggleSide();
 								}}
 							/>
-							<SidebarItem
-								label="Simulate error"
-								{spanClass}
-								on:click={() => {
-									updatePrices.missing.simulate_error();
-								}}
-							/>
-							{#if user?.email === 'mate.pek@gmail.com'}
-								<SidebarItem
-									label="AU for Oliver"
-									{spanClass}
-									on:click={async () => {
-										const fn = async () => {
-											const { data } = await supabase
-												.from('Users')
-												.select('metadata')
-												.eq('email', 'oliver.luqing@gmail.com')
-												.single()
-												.throwOnError();
-											data.metadata = data.metadata ?? {};
-											const metadata = data.metadata;
-											metadata['feature'] = metadata['feature'] ?? {};
-											metadata['feature']['admin-reservations'] =
-												metadata['feature']['admin-reservations'] ?? false;
-											metadata['feature']['admin-reservations'] =
-												!metadata['feature']['admin-reservations'];
-											await supabase
-												.from('Users')
-												.update(data)
-												.eq('email', 'oliver.luqing@gmail.com')
-												.throwOnError();
-										};
-										await toast.promise(fn(), {
-											loading: 'loading',
-											success: 'success',
-											error: (e) => `error: ${e}`
-										});
-									}}
-								/>
-								<SidebarItem
-									label="AU for Yanzi,Vivi"
-									{spanClass}
-									on:click={async () => {
-										const fn = async () => {
-											const { data } = await supabase
-												.from('Users')
-												.select('metadata')
-												.in('email', ['freedivingfei@gmail.com', 'cliancakang@gmail.com'])
-												.single()
-												.throwOnError();
-											data.metadata = data.metadata ?? {};
-											const metadata = data.metadata;
-											metadata['feature'] = metadata['feature'] ?? {};
-											metadata['feature']['admin-reservations'] =
-												metadata['feature']['admin-reservations'] ?? false;
-											metadata['feature']['admin-reservations'] =
-												!metadata['feature']['admin-reservations'];
-											await supabase
-												.from('Users')
-												.update(data)
-												.in('email', ['freedivingfei@gmail.com', 'cliancakang@gmail.com'])
-												.throwOnError();
-										};
-										await toast.promise(fn(), {
-											loading: 'loading',
-											success: 'success',
-											error: (e) => `error: ${e}`
-										});
-									}}
-								/>
-							{/if}
 							<SidebarItem
 								label="Simulate error"
 								{spanClass}
