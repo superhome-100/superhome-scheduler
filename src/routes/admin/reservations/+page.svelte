@@ -134,7 +134,8 @@
 	const owTimeFilterParamKey = 'owTime';
 	$: owTimeFilter = $page.url.searchParams.get(owTimeFilterParamKey) ?? '';
 	const statusParamKey = 'status';
-	let statusFilter = $page.url.searchParams.get(statusParamKey)?.split(',') ?? [];
+	const statusValues = Constants['public']['Enums']['reservation_status'];
+	let statusFilter = $page.url.searchParams.get(statusParamKey)?.split(',') ?? statusValues;
 
 	type ParamT =
 		| typeof dayParamKey
@@ -143,7 +144,10 @@
 		| typeof owTimeFilterParamKey
 		| typeof statusParamKey;
 
-	$: handleParam(statusParamKey, statusFilter.join(','));
+	$: handleParam(
+		statusParamKey,
+		statusFilter.length === statusValues.length ? '' : statusFilter.join(',')
+	);
 
 	function handleParam(paramType: ParamT, value: string) {
 		const query = $page.url.searchParams;
@@ -442,7 +446,7 @@
 		<div class="dropdown">
 			<button class="trigger search-input search-input-button">Status:{statusFilter.length}</button>
 			<div class="menu">
-				{#each Constants['public']['Enums']['reservation_status'] as status}
+				{#each statusValues as status}
 					<label class="dropdown-label">
 						<input type="checkbox" value={status} bind:group={statusFilter} />
 						{status}

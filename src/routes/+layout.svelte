@@ -122,7 +122,7 @@
 <Refresher {onRefresh}>
 	{#if $page.route.id && !publicRoutes.includes($page.route.id)}
 		<Nprogress />
-		<Sidebar {settingsManager} />
+		<Sidebar {supabase} />
 
 		<div id="app" class="flex px-1 mx-auto w-full h-full">
 			<main class="lg:ml-72 w-full mx-auto">
