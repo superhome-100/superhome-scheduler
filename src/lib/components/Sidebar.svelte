@@ -27,10 +27,10 @@
 	import { subscription } from '$lib/client/push';
 	import { pushService } from '$lib/client/push';
 	import { getFeature } from '$lib/userFeature';
-	import { storedCurrentDay, storedUser } from '$lib/client/stores';
-	import type { SettingsManager } from '$lib/settings';
+	import { storedUser } from '$lib/client/stores';
+	import type { SupabaseClient } from '$types';
 
-	export let settingsManager: SettingsManager;
+	export let supabase: SupabaseClient;
 
 	const supabaseTableUrl =
 		PUBLIC_SUPABASE_URL.indexOf('localhost') !== -1
@@ -314,6 +314,77 @@
 									toggleSide();
 								}}
 							/>
+							<SidebarItem
+								label="Simulate error"
+								{spanClass}
+								on:click={() => {
+									updatePrices.missing.simulate_error();
+								}}
+							/>
+							{#if user?.email === 'mate.pek@gmail.com'}
+								<SidebarItem
+									label="AU for Oliver"
+									{spanClass}
+									on:click={async () => {
+										const fn = async () => {
+											const { data } = await supabase
+												.from('Users')
+												.select('metadata')
+												.eq('email', 'oliver.luqing@gmail.com')
+												.single()
+												.throwOnError();
+											data.metadata = data.metadata ?? {};
+											const metadata = data.metadata;
+											metadata['feature'] = metadata['feature'] ?? {};
+											metadata['feature']['admin-reservations'] =
+												metadata['feature']['admin-reservations'] ?? false;
+											metadata['feature']['admin-reservations'] =
+												!metadata['feature']['admin-reservations'];
+											await supabase
+												.from('Users')
+												.update(data)
+												.eq('email', 'oliver.luqing@gmail.com')
+												.throwOnError();
+										};
+										await toast.promise(fn(), {
+											loading: 'loading',
+											success: 'success',
+											error: (e) => `error: ${e}`
+										});
+									}}
+								/>
+								<SidebarItem
+									label="AU for Yanzi,Vivi"
+									{spanClass}
+									on:click={async () => {
+										const fn = async () => {
+											const { data } = await supabase
+												.from('Users')
+												.select('metadata')
+												.in('email', ['freedivingfei@gmail.com', 'cliancakang@gmail.com'])
+												.single()
+												.throwOnError();
+											data.metadata = data.metadata ?? {};
+											const metadata = data.metadata;
+											metadata['feature'] = metadata['feature'] ?? {};
+											metadata['feature']['admin-reservations'] =
+												metadata['feature']['admin-reservations'] ?? false;
+											metadata['feature']['admin-reservations'] =
+												!metadata['feature']['admin-reservations'];
+											await supabase
+												.from('Users')
+												.update(data)
+												.in('email', ['freedivingfei@gmail.com', 'cliancakang@gmail.com'])
+												.throwOnError();
+										};
+										await toast.promise(fn(), {
+											loading: 'loading',
+											success: 'success',
+											error: (e) => `error: ${e}`
+										});
+									}}
+								/>
+							{/if}
 							<SidebarItem
 								label="Simulate error"
 								{spanClass}
