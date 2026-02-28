@@ -327,7 +327,7 @@
 				<textarea
 					id="formComments"
 					name="comments"
-					class="w-44 xs:w-52 mb-4"
+					class="w-full mb-4"
 					bind:value={comments}
 					tabindex="4"
 					{disabled}

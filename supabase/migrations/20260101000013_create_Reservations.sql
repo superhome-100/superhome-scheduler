@@ -59,6 +59,7 @@ create table "public"."Reservations" (
     "shortSession" bool not null default false,
     "allowAutoAdjust" bool not null default true,
     "price" bigint null,
+    "attributes" jsonb not null default '{}'::jsonb,
 
     CONSTRAINT Reservations_pkey primary KEY ("id"),
     CONSTRAINT Reservations_user_key foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete restrict,

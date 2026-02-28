@@ -257,6 +257,7 @@ export type Database = {
 			Reservations: {
 				Row: {
 					allowAutoAdjust: boolean;
+					attributes: Json;
 					bottomPlate: boolean | null;
 					buddies: string[];
 					buoy: string | null;
@@ -286,6 +287,7 @@ export type Database = {
 				};
 				Insert: {
 					allowAutoAdjust?: boolean;
+					attributes?: Json;
 					bottomPlate?: boolean | null;
 					buddies?: string[];
 					buoy?: string | null;
@@ -315,6 +317,7 @@ export type Database = {
 				};
 				Update: {
 					allowAutoAdjust?: boolean;
+					attributes?: Json;
 					bottomPlate?: boolean | null;
 					buddies?: string[];
 					buoy?: string | null;
@@ -518,6 +521,7 @@ export type Database = {
 			ReservationsEx: {
 				Row: {
 					allowAutoAdjust: boolean | null;
+					attributes: Json | null;
 					bottomPlate: boolean | null;
 					buddies: string[] | null;
 					buddies_json: Json | null;
@@ -574,6 +578,7 @@ export type Database = {
 			ReservationsWithPrices: {
 				Row: {
 					allowAutoAdjust: boolean | null;
+					attributes: Json | null;
 					bottomPlate: boolean | null;
 					buddies: string[] | null;
 					buoy: string | null;
@@ -672,6 +677,10 @@ export type Database = {
 			};
 			is_active: { Args: never; Returns: boolean };
 			is_admin: { Args: never; Returns: boolean };
+			merge_users: {
+				Args: { source_id: string; target_id: string };
+				Returns: undefined;
+			};
 		};
 		Enums: {
 			day_setting_key: 'ow_am_full';

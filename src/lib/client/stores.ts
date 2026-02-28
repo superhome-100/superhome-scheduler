@@ -192,6 +192,17 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
 //
 
 /**
+ * set in src/routes/+layout.svelte
+ */
+export const { value: storedSettings, isLoading: storedSettingsOnlineLoading } =
+    readableWithSubscriptionToCore<SettingsManager>('storedSettings',
+        fallbackSettingsManager,
+        async ({ supabase }) => {
+            const r = await getSettingsManager(supabase);
+            return r;
+        }, "Settings");
+
+/**
  * refreshes in every minute
  */
 export const storedCurrentDay = readable<string>(getYYYYMMDD(PanglaoDate()), (set) => {
@@ -278,7 +289,6 @@ export const storedDayReservations =
         });
     });
 
-
 export const { value: storedDaySettings, isLoading: storedDaySettingsLoading } =
     readableWithSubscriptionToCoreAndParam<DaySettings, { day: string }>('storedDaySettings',
         defaultDateSettings, true,
@@ -332,14 +342,3 @@ export const { value: storedNotifications, isLoading: storedNotificationsLoading
             const r = await getUserNotifications(supabase);
             return r;
         }, "Notifications");
-
-/**
- * set in src/routes/+layout.svelte
- */
-export const { value: storedSettings, isLoading: storedSettingsOnlineLoading } =
-    readableWithSubscriptionToCore<SettingsManager>('storedSettings',
-        fallbackSettingsManager,
-        async ({ supabase }) => {
-            const r = await getSettingsManager(supabase);
-            return r;
-        }, "Settings");

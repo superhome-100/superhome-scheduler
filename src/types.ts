@@ -43,11 +43,15 @@ export type Notifications = Tables<'Notifications'>;
 
 export type PriceTemplate = Tables<'PriceTemplates'>;
 
-export type Reservation = Tables<'Reservations'>;
+export type Reservation_Attributes = {
+	preferAM?: boolean
+};
+
+export type Reservation = Tables<'Reservations'> & { attributes: Reservation_Attributes };
 
 export type ReservationEx_User = { id: string, nickname: string, name: string };
 
-export type ReservationEx = Tables<'Reservations'> & {
+export type ReservationEx = Reservation & {
 	user_json: ReservationEx_User, buddies_json: ReservationEx_User[]
 };
 
@@ -110,7 +114,7 @@ export interface BuddyData {
 	name: string;
 	userId: string | null;
 	id?: number;
-	matches?: any[];
+	matches?: unknown[];
 }
 
 export type AppFormData = {
