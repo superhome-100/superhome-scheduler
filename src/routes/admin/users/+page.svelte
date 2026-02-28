@@ -200,7 +200,10 @@
 
 <div class="admin-view">
 	<div class="filter-bar">
-		<select bind:value={statusFilter} class="search-input">
+		<select
+			bind:value={statusFilter}
+			class="search-input {statusFilter ? 'search-input-active' : ''}"
+		>
 			<option value="" selected>Status</option>
 			{#each Constants['public']['Enums']['user_status'] as status}
 				<option value={status}>{status}</option>
@@ -212,7 +215,7 @@
 			placeholder="Search for name, nickname or email..."
 			value={searchTerm}
 			on:input={handleSearchTermInput}
-			class="search-input filter-bar-fill-remaining"
+			class="search-input filter-bar-fill-remaining {searchTerm ? 'search-input-active' : ''}"
 		/>
 	</div>
 	{#if $storedUsersForAdminLoading}

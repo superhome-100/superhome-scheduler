@@ -17,7 +17,7 @@
 		timeStrToMin
 	} from '$lib/datetimeUtils';
 	import { Constants, type TablesUpdate } from '$lib/supabase.types';
-	import { ReservationCategory, type ReservationEx } from '$types';
+	import { type ReservationEx } from '$types';
 	import { LRUCache } from 'lru-cache/raw';
 	import toast from 'svelte-french-toast';
 	import { swipe } from 'svelte-gestures';
@@ -136,18 +136,24 @@
 	const statusParamKey = 'status';
 	const statusValues = Constants['public']['Enums']['reservation_status'];
 	let statusFilter = $page.url.searchParams.get(statusParamKey)?.split(',') ?? statusValues;
+	const specialFilterParamKey = 'special';
+	const specialFilterValues = ['preferAM'] as const;
+	let specialFilter = $page.url.searchParams.get(specialFilterParamKey)?.split(',') ?? [];
 
 	type ParamT =
 		| typeof dayParamKey
 		| typeof searchTermParamKey
 		| typeof categoryParamKey
 		| typeof owTimeFilterParamKey
-		| typeof statusParamKey;
+		| typeof statusParamKey
+		| typeof specialFilterParamKey;
 
 	$: handleParam(
 		statusParamKey,
 		statusFilter.length === statusValues.length ? '' : statusFilter.join(',')
 	);
+
+	$: handleParam(specialFilterParamKey, specialFilter.join(','));
 
 	function handleParam(paramType: ParamT, value: string) {
 		const query = $page.url.searchParams;
@@ -194,6 +200,11 @@
 		.filter((r) => !categoryFilter || categoryFilter === r.category)
 		.filter((r) => !owTimeFilter || owTimeFilter === r.owTime)
 		.filter((r) => !searchTerm || r.user_json.nickname.toLowerCase().includes(searchTermLower))
+		.filter((r) => {
+			if (specialFilter.length === 0) return true;
+			if (specialFilter.includes('preferAM') && r.attributes['preferAM']) return true;
+			return false;
+		})
 		.sort((a, b) =>
 			a.startTime !== b.startTime
 				? a.startTime < b.startTime
@@ -219,6 +230,9 @@
 			'allowAutoAdjust'
 		] as (keyof TablesUpdate<'Reservations'>)[];
 		let txt = '';
+		for (const [k, v] of Object.entries(rsv.attributes)) {
+			txt += k + ': ' + v + '\n';
+		}
 		for (const k of keys) {
 			if (rsv[k] !== null) txt += k + ': ' + rsv[k] + '\n';
 		}
@@ -426,7 +440,7 @@
 		<select
 			value={categoryFilter}
 			on:input={(e) => handleInput(categoryParamKey, e)}
-			class="search-input"
+			class="search-input {categoryFilter ? 'search-input-active' : ''}"
 		>
 			<option value="" selected>Category</option>
 			{#each Constants['public']['Enums']['reservation_category'] as v}
@@ -436,7 +450,7 @@
 		<select
 			value={owTimeFilter}
 			on:input={(e) => handleInput(owTimeFilterParamKey, e)}
-			class="search-input"
+			class="search-input {owTimeFilter ? 'search-input-active' : ''}"
 		>
 			<option value="" selected>OW Time</option>
 			{#each Constants['public']['Enums']['reservation_ow_time'] as v}
@@ -444,12 +458,32 @@
 			{/each}
 		</select>
 		<div class="dropdown">
-			<button class="trigger search-input search-input-button">Status:{statusFilter.length}</button>
+			<button
+				class="trigger search-input search-input-button {statusFilter.length !== 0 &&
+				statusFilter.length !== statusValues.length
+					? 'search-input-active'
+					: ''}">Status:{statusFilter.length}</button
+			>
 			<div class="menu">
 				{#each statusValues as status}
 					<label class="dropdown-label">
 						<input type="checkbox" value={status} bind:group={statusFilter} />
 						{status}
+					</label>
+				{/each}
+			</div>
+		</div>
+		<div class="dropdown">
+			<button
+				class="trigger search-input search-input-button {specialFilter.length !== 0
+					? 'search-input-active'
+					: ''}">Special:{specialFilter.length}</button
+			>
+			<div class="menu">
+				{#each specialFilterValues as special}
+					<label class="dropdown-label">
+						<input type="checkbox" value={special} bind:group={specialFilter} />
+						{special}
 					</label>
 				{/each}
 			</div>
@@ -460,7 +494,7 @@
 			placeholder="Search for nickname or id..."
 			value={searchTerm}
 			on:input={(e) => handleInput(searchTermParamKey, e)}
-			class="search-input filter-bar-fill-remaining"
+			class="search-input filter-bar-fill-remaining {searchTerm ? 'search-input-active' : ''}"
 		/>
 		<button
 			class="search-input search-input-button"

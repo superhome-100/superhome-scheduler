@@ -71,6 +71,10 @@
     color: var(--text-primary);
 }
 
+.search-input-active {
+    background-color: #7ab6fa;
+}
+
 .content-table {
     width: 100%;
     border-collapse: collapse;
