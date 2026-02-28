@@ -263,7 +263,7 @@
 	</svelte:fragment>
 
 	<div class="dark:text-white flex flex-col items-start pl-[70px]" slot="categoryOptionals">
-		{#if owTime === 'PM' && isAmFull}
+		{#if owTime === 'PM' && (preferAM || isAmFull)}
 			<div>
 				{#if disabled}
 					<input type="hidden" name="preferAM" value={preferAM ? 'on' : 'off'} />
