@@ -32,6 +32,7 @@
 	let maxDepth = rsv?.maxDepth ?? (Number(localStorage.getItem(previousMaxDepthKey)) || undefined);
 	let owTime = rsv?.owTime ?? 'AM';
 	let numStudents = rsv?.resType !== ReservationType.course ? 1 : rsv.numStudents;
+	let preferAM = rsv?.attributes?.preferAM ?? false;
 	let pulley = rsv?.pulley;
 	let extraBottomWeight = rsv?.extraBottomWeight || false;
 	let bottomPlate = rsv?.bottomPlate || false;
@@ -262,6 +263,22 @@
 	</svelte:fragment>
 
 	<div class="dark:text-white flex flex-col items-start pl-[70px]" slot="categoryOptionals">
+		{#if owTime === 'PM' && isAmFull}
+			<div>
+				{#if disabled}
+					<input type="hidden" name="preferAM" value={preferAM ? 'on' : 'off'} />
+				{/if}
+				<input
+					type="checkbox"
+					id="formPreferAm"
+					name="preferAM"
+					checked={preferAM}
+					{disabled}
+					tabindex="5"
+				/>
+				<label for="formPreferAm">AM session is preferred</label>
+			</div>
+		{/if}
 		<div>
 			{#if resType === ReservationType.autonomous}
 				{#if disabled}

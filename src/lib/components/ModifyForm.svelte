@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { OWTime, type ReservationEx } from '$types';
+	import {
+		OWTime,
+		type Reservation,
+		type ReservationEx,
+		type Reservation_Attributes
+	} from '$types';
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-french-toast';
 	import { enhance } from '$app/forms';
@@ -16,16 +21,22 @@
 	let error = '';
 	const { close, hideModal, showModal } = getContext('simple-modal');
 
-	const reservationChanged = (formData, original) => {
-		const checkString = (field) => {
+	const reservationChanged = (formData, original: Reservation) => {
+		const checkString = (field: keyof Reservation) => {
 			return formData.has(field) && formData.get(field) != original[field];
 		};
-		const checkNumber = (field) => {
+		const checkNumber = (field: keyof Reservation) => {
 			return formData.has(field) && parseInt(formData.get(field)) != original[field];
 		};
-		const checkBool = (field) => {
+		const checkBool = (field: keyof Reservation) => {
 			console.log('field', field, formData.get(field), original[field]);
 			const currentValue = original[field] == 'on' || original[field] === true;
+			return (formData.get(field) == 'on') != currentValue;
+		};
+		const checkAttrBool = (field: keyof Reservation_Attributes) => {
+			const value = original.attributes[field];
+			console.log('field.attr', field, formData.get(field), value);
+			const currentValue = value == 'on' || value === true;
 			return (formData.get(field) == 'on') != currentValue;
 		};
 
@@ -54,6 +65,7 @@
 			checkString('startTime') ||
 			checkString('endTime') ||
 			checkNumber('maxDepth') ||
+			checkAttrBool('preferAM') ||
 			checkBool('extraBottomWeight') ||
 			checkBool('bottomPlate') ||
 			checkBool('largeBuoy') ||
@@ -66,15 +78,23 @@
 
 	const modifyReservation = async ({ formData, cancel }) => {
 		const toastId = toast.loading('Modifying reservation...');
-
-		error = '';
-		cleanUpFormDataBuddyFields(formData);
-		if (!reservationChanged(formData, rsv)) {
+		try {
+			error = '';
+			cleanUpFormDataBuddyFields(formData);
+			if (!reservationChanged(formData, rsv)) {
+				cancel();
+				close();
+				toast.dismiss(toastId);
+				return;
+			}
+			hideModal();
+		} catch (e) {
+			console.error(modifyReservation, e, rsv);
 			cancel();
-			close();
+			toast.dismiss(toastId);
+			toast.error(`Failed Modifying reservation: ${e}`);
 			return;
 		}
-		hideModal();
 
 		return async ({ result }) => {
 			toast.dismiss(toastId);

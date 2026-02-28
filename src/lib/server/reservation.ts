@@ -1,6 +1,7 @@
 import type {
 	AppFormData,
 	Reservation,
+	Reservation_Attributes,
 	ReservationCategoryT,
 	ReservationCreationFormUnpacked,
 	ReservationModifyingFormUnpacked,
@@ -301,6 +302,10 @@ function unpackSubmitForm(
 			throw Error(`Unexpected OW time ${owTime}`);
 		}
 	}
+
+	const attributes: Reservation_Attributes = {};
+	attributes.preferAM = formData.get('preferAM') == 'on';
+
 	return {
 		user: user_id,
 		date,
@@ -323,7 +328,8 @@ function unpackSubmitForm(
 		status,
 		buoy,
 		lanes: ['auto'],
-		allowAutoAdjust: ['on', 'true'].includes(formData.get('allowAutoAdjust'))
+		allowAutoAdjust: ['on', 'true'].includes(formData.get('allowAutoAdjust')),
+		attributes
 	};
 }
 
@@ -475,6 +481,9 @@ async function unpackModifyForm(
 		: orig.resType;
 	const buoy = getBuoy(resType as ReservationType);
 
+	const attributes: Reservation_Attributes = { ...(orig.attributes as object) };
+	attributes.preferAM = formData.get('preferAM') == 'on';
+
 	return {
 		id: formData.get('id'),
 		date: formData.get('date'),
@@ -506,7 +515,8 @@ async function unpackModifyForm(
 		room: brc ? 'auto' : orig.room,
 		price: orig.price,
 		updatedAt: orig.updatedAt,
-		allowAutoAdjust: ['on', 'true'].includes(formData.get('allowAutoAdjust'))
+		allowAutoAdjust: ['on', 'true'].includes(formData.get('allowAutoAdjust')),
+		attributes
 	};
 }
 
