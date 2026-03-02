@@ -210,7 +210,7 @@
 				? a.startTime < b.startTime
 					? -1
 					: 1
-				: a.user_json.nickname < b.user_json.nickname
+				: a.createdAt < b.createdAt
 				? -1
 				: 1
 		);
@@ -593,7 +593,7 @@
 							/>
 						</td>
 						<td colspan="2" on:click={() => toggleRow(rsv)} class="name-cell">
-							{#if rsv.user_json.nickname === rsv.user_json.name.replaceAll(' ', '')}
+							{#if rsv.user_json.nickname.replaceAll(' ', '') === rsv.user_json.name.replaceAll(' ', '')}
 								<strong>{rsv.user_json.name}</strong>
 							{:else}
 								<strong>{rsv.user_json.nickname}</strong>

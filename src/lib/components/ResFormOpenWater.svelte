@@ -20,7 +20,6 @@
 	export let dayStr: string = rsv?.date || getYYYYMMDD();
 	export let category: ReservationCategory = ReservationCategory.openwater;
 	export let viewOnly = false;
-	export let isModify = false;
 	export let restrictModify = false;
 	export let error = '';
 
@@ -178,7 +177,7 @@
 					<option value="PM">PM</option>
 				</select>
 				<input type="hidden" name="owTime" value={owTime} />
-				{#if isAmFull && owTime === 'AM' && !isModify}
+				{#if isAmFull && owTime === 'AM'}
 					<header class="bg-[#FF0000] text-white p-2 rounded-md">
 						Morning session is full please book in the afternoon/PM instead.
 					</header>

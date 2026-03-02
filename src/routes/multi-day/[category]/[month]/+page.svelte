@@ -4,7 +4,7 @@
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Chevron from '$lib/components/Chevron.svelte';
-	import { getYYYYMM, getYYYYMMDD } from '$lib/datetimeUtils';
+	import { getYYYYMM, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
 	import { CATEGORIES } from '$lib/constants';
 	import type { ReservationCategory } from '$types';
 	import { pushState } from '$app/navigation';
@@ -146,7 +146,7 @@
 				<Chevron direction="right" svgClass="h-6 w-6" />
 			</span>
 			<span class="text-2xl"
-				>{day.format(day.year() === dayjs().year() ? 'MMMM' : 'MMMM YYYY')}</span
+				>{day.format(day.year() === PanglaoDayJs().year() ? 'MMMM' : 'MMMM YYYY')}</span
 			>
 		</div>
 		<span class="">

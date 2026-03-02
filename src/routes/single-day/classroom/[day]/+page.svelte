@@ -82,7 +82,7 @@
 				<Chevron direction="right" svgClass="h-8 w-8" />
 			</span>
 			<span class="text-2xl ml-2">
-				{day.format('MMMM DD, YYYY dddd')}
+				{day.format(day.year() === PanglaoDayJs().year() ? 'MMM DD, dddd' : 'MMM DD, YYYY dddd')}
 			</span>
 		</div>
 		<span class="mr-2">

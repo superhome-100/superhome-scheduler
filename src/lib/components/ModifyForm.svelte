@@ -129,7 +129,7 @@
 			{#if rsv.category === 'pool'}
 				<ResFormPool {restrictModify} {rsv} {error} />
 			{:else if rsv.category === 'openwater'}
-				<ResFormOpenWater {restrictModify} {rsv} {error} isModify={true} />
+				<ResFormOpenWater {restrictModify} {rsv} {error} />
 			{:else if rsv.category === 'classroom'}
 				<ResFormClassroom {rsv} {error} />
 			{/if}
