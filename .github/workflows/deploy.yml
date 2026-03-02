@@ -53,7 +53,8 @@ jobs:
       - name: Install
         run: npm ci
 
-      - env:
+      - name: Init Vercel
+        env:
           VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
         run: npx vercel pull "--token=${{ secrets.VERCEL_TOKEN }}" --yes
