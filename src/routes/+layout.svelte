@@ -86,6 +86,12 @@
 						.catch((reason) => console.error('supabase_es.init', reason));
 				}
 			});
+			window.addEventListener('online', () => {
+				console.log('Connectivity restored.');
+			});
+			window.addEventListener('offline', () => {
+				console.log('Connectivity lost.');
+			});
 			if (user) {
 				await pushService.init(user.has_push ?? false);
 			} else {
