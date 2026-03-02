@@ -20,6 +20,7 @@
         "@sveltejs/adapter-auto": "^7.0.1",
         "@sveltejs/adapter-cloudflare": "^7.2.7",
         "@sveltejs/adapter-node": "^5.5.3",
+        "@sveltejs/adapter-vercel": "^6.3.3",
         "@sveltejs/kit": "^2.52.0",
         "@sveltejs/vite-plugin-svelte": "^3.1.2",
         "@types/lodash": "^4.17.23",
@@ -57,6 +58,7 @@
         "axios": "^1.13.5",
         "daisyui": "^2.52.0",
         "dayjs": "^1.11.19",
+        "debounce-fn": "^6.0.0",
         "fetch-retry": "^6.0.0",
         "jszip": "^3.10.1",
         "lodash": "^4.17.23",
@@ -66,7 +68,6 @@
         "svelte-french-toast": "^1.2.0",
         "svelte-gestures": "^1.5.2",
         "timezone": "^1.0.23",
-        "debounce-fn": "^6.0.0",
         "utc": "^0.1.0",
         "web-push": "^3.6.7"
     },

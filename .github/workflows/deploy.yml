@@ -36,6 +36,43 @@ jobs:
           supabase link --project-ref "$SUPABASE_PROJECT_ID" -p "$SUPABASE_DB_PASSWORD"
           supabase db push -p "$SUPABASE_DB_PASSWORD"
 
+  vercel-deploy:
+    environment: ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    needs: supabase-deploy-migration
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+      
+      - name: Install
+        run: npm ci
+
+      - env:
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+        run: npx vercel pull "--token=${{ secrets.VERCEL_TOKEN }}" --yes
+
+      - name: Build
+        env:
+          PRIVATE_SUPABASE_SERVICE_KEY: ${{ secrets.PRIVATE_SUPABASE_SERVICE_KEY }}
+          PRIVATE_VAPID_KEY: ${{ secrets.PRIVATE_VAPID_KEY }}
+          PUBLIC_STAGE: ${{ vars.PUBLIC_STAGE }}
+          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          PUBLIC_SUPABASE_URL: "https://${{ vars.SUPABASE_PROJECT_ID }}.supabase.co"
+          PUBLIC_VAPID_KEY: ${{ vars.PUBLIC_VAPID_KEY }}
+          PUBLIC_VAPID_SUBJECT: ${{ vars.PUBLIC_VAPID_SUBJECT }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: npx vercel build --prod "--token=${{ secrets.VERCEL_TOKEN }}"
+
+      - name: Deploy to Vercel    
+        run: npx vercel deploy --prod --prebuilt "--token=${{ secrets.VERCEL_TOKEN }}"
+
   cloudflare-deploy:
     environment: ${{ github.ref_name }}
     runs-on: ubuntu-latest
@@ -52,6 +89,10 @@ jobs:
       
       - name: Install
         run: npm ci
+
+      - name: Prepare for Cloudflare
+        run: |
+          sed -i '1s/adapter-vercel/adapter-cloudflare/' svelte.config.js
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
