@@ -264,4 +264,16 @@ using (
 -- EXECUTE FUNCTION "public"."broadcast_table_changes"();
 
 ---
+
+CREATE OR REPLACE FUNCTION public.user_id()
+RETURNS UUID
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT "id" FROM "public"."Users" WHERE "authId" = (SELECT auth.uid());
+$$
+;
+
 ---
