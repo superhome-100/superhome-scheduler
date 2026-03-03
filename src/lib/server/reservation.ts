@@ -494,9 +494,12 @@ async function unpackModifyForm(
 			? OWTime[formData.get('owTime') as keyof typeof OWTime]
 			: orig.owTime,
 		resType,
-		numStudents: formData.has('numStudents')
-			? JSON.parse(formData.get('numStudents'))
-			: orig.numStudents,
+		numStudents:
+			resType === 'course'
+				? (formData.has('numStudents')
+					? JSON.parse(formData.get('numStudents'))
+					: orig.numStudents)
+				: null,
 		maxDepth: formData.has('maxDepth') ? JSON.parse(formData.get('maxDepth')) : orig.maxDepth,
 		comments: formData.has('comments') ? formData.get('comments') : orig.comments,
 		user: orig.user, //can't change
@@ -514,7 +517,6 @@ async function unpackModifyForm(
 		buoy,
 		room: brc ? 'auto' : orig.room,
 		price: orig.price,
-		updatedAt: orig.updatedAt,
 		allowAutoAdjust: ['on', 'true'].includes(formData.get('allowAutoAdjust')),
 		attributes
 	};
