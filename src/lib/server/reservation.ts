@@ -619,9 +619,13 @@ export async function adminUpdate(actor: User, formData: AppFormData, settings: 
 		.eq('id', id)
 		.single()
 		.throwOnError();
+
 	if (existing === null) throw Error(`reservation ${id} does not exists (anymore?).`);
-	if (existing.status != ReservationStatus.canceled) {
-		rsv.status = formData.get('status') as ReservationStatus;
+
+	if (existing.status !== ReservationStatus.canceled) {
+		const status = formData.get('status');
+		if (status && status !== existing.status)
+			rsv.status = status as ReservationStatus;
 	}
 
 	const cat = formData.get('category');
@@ -641,7 +645,8 @@ export async function adminUpdate(actor: User, formData: AppFormData, settings: 
 		.single()
 		.throwOnError();
 
-	await pushNotificationService.sendReservationStatus(settings, actor, [data]);
+	if (rsv.status) // let's do not send notification for buoy assignments
+		await pushNotificationService.sendReservationStatus(settings, actor, [data]);
 }
 
 async function throwIfInvalidCancellation(settings: SettingsManager, data: Tables<'Reservations'>) {

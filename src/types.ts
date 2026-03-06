@@ -108,6 +108,8 @@ export enum ReservationStatus {
 	canceled = 'canceled'
 }
 
+export type ReservationStatusT = Enums<'reservation_status'>
+
 export type Buoy = Required<Tables<'Buoys'>>;
 
 export interface BuddyData {
