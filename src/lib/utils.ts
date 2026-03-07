@@ -81,9 +81,30 @@ export const buoyDesc = (buoy: Buoy): string => {
 export const resTypeModDisabled = (rsv: Reservation | null): boolean =>
 	rsv != null && rsv.resType != ReservationType.course;
 
-export function getRandomElement<T>(...items: T[]): T {
-	const randomIndex = Math.floor(Math.random() * items.length);
+
+export function getRandomElementUsingGenerator<T>(rngGen: () => number, ...items: T[]): T {
+	const randomIndex = Math.floor(rngGen() * items.length);
 	return items[randomIndex];
+}
+
+export function getRandomElement<T>(...items: T[]): T {
+	return getRandomElementUsingGenerator(Math.random, ...items);
+}
+
+export function createRandomGeneratorFromString(str: string): () => number {
+	// Simple hash to convert string to 32-bit integer seed
+	let seed = 0;
+	for (let i = 0; i < str.length; i++) {
+		seed = (Math.imul(31, seed) + str.charCodeAt(i)) | 0;
+	}
+	return function () {
+		const x = Math.sin(seed++) * 10000;
+		return x - Math.floor(x);
+	}
+}
+
+export function getRandomElementUsingSeed<T>(seed: string, ...items: T[]): T {
+	return getRandomElementUsingGenerator(createRandomGeneratorFromString(seed), ...items);
 }
 
 export const stableStringify = (obj: unknown) => {

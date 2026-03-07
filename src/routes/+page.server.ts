@@ -116,6 +116,7 @@ export const actions: Actions = {
 			}
 		}
 	},
+	adminUpdateSubmit: adminUpdateGeneric,
 	adminUpdateConfirmed: adminUpdateGeneric,
 	adminUpdatePending: adminUpdateGeneric,
 	adminUpdateRejected: adminUpdateGeneric,

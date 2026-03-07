@@ -681,6 +681,7 @@ export type Database = {
 				Args: { source_id: string; target_id: string };
 				Returns: undefined;
 			};
+			user_id: { Args: never; Returns: string };
 		};
 		Enums: {
 			day_setting_key: 'ow_am_full';

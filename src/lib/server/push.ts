@@ -7,7 +7,7 @@ import type { Reservation, User } from '$types';
 import { dayjs, fromPanglaoDateTimeStringToDayJs, getYYYYMMDD } from '$lib/datetimeUtils';
 import { LRUCache } from 'lru-cache'
 import type { Json } from '$lib/supabase.types';
-import { getRandomElement } from '$lib/utils';
+import { getRandomElementUsingSeed } from '$lib/utils';
 import { console_error } from './sentry';
 import type { SettingsManager } from '$lib/settings';
 
@@ -148,7 +148,7 @@ const shortDateTime = (rsv: Reservation) => {
 const reservationStatusIcon = (rsv: Reservation) => {
     switch (rsv.status) {
         case 'canceled':
-            return getRandomElement('🙈', '🙀', '🐣', '😶', '🤧', '🤒');
+            return getRandomElementUsingSeed(rsv.id, '🙈', '🙀', '🐣', '😶', '🤧', '🤒');
         case 'confirmed':
             return reservationCategoryIcon(rsv);
         case 'pending':
@@ -163,9 +163,9 @@ const reservationStatusIcon = (rsv: Reservation) => {
 const reservationCategoryIcon = (rsv: Reservation) => {
     switch (rsv.category) {
         case 'classroom':
-            return getRandomElement('🧑‍🏫', '📚', '👩‍🏫', '👨‍🏫');
+            return getRandomElementUsingSeed(rsv.id, '🧑‍🏫', '📚', '👩‍🏫', '👨‍🏫');
         case 'openwater':
-            return getRandomElement('🌊', '🤿', '🪼', '🦀', '🐢', '🦈', '🐋', '🐙', '🦐', '🦑', '🦞', '🦦', '🦭', '🐡', '🐟', '🐠', '🐬', '🪸', '🐳', '🧜‍♀️', '🧜', '🧜‍♂️', '🦄');
+            return getRandomElementUsingSeed(rsv.id, '🌊', '🤿', '🪼', '🦀', '🐢', '🦈', '🐋', '🐙', '🦐', '🦑', '🦞', '🦦', '🦭', '🐡', '🐟', '🐠', '🐬', '🪸', '🐳', '🧜‍♀️', '🧜', '🧜‍♂️', '🦄');
         case 'pool':
             return '🏊‍♀️';
         default:

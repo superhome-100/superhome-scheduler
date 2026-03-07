@@ -38,7 +38,7 @@
 	<Tabs bind:tabIndex>
 		<TabList>
 			{#each rsvs as rsv}
-				<Tab>{rsv.user_json?.nickname ?? $storedUsers[rsv.user]?.nickname ?? '<missing>'}</Tab>
+				<Tab>{rsv.user_json?.nickname ?? $storedUsers[rsv.user]?.nickname ?? '<missing name>'}</Tab>
 			{/each}
 		</TabList>
 
