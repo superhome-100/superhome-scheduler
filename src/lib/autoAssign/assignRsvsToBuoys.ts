@@ -28,7 +28,8 @@ function countMatches(buoy: Buoys, opts: BuoyOpts) {
 function assignPreAssigned(
 	buoys: Buoys[],
 	grps: OWReservation[][],
-	assignments: { [buoyName: string]: OWReservation[] }
+	assignments: { [buoyName: string]: OWReservation[] },
+	assignReasons: { [buoyName: string]: string }
 ) {
 	const getBuoy = (grp: OWReservation[]): string => {
 		return grp.reduce((buoy, rsv) => {
@@ -43,6 +44,7 @@ function assignPreAssigned(
 			for (let j = buoys.length - 1; j >= 0; j--) {
 				if (buoys[j].name === name) {
 					assignments[name] = grp;
+					assignReasons[name] = "Manually assigned";
 					grps.splice(i, 1);
 					buoys.splice(j, 1);
 					break;
@@ -75,7 +77,8 @@ function sortByFewestExtraOpts(
 function assignAuto(
 	buoys: Buoys[],
 	grps: OWSubmission[][],
-	assignments: { [buoy: string]: Submission[] }
+	assignments: { [buoy: string]: Submission[] },
+	assignReasons: { [buoy: string]: string }
 ) {
 	// sort buoys from deep to shallow
 	buoys.sort((a, b) => b.maxDepth! - a.maxDepth!);
@@ -97,17 +100,21 @@ function assignAuto(
 		let candidates = buoys.map((buoy, idx) => {
 			return { buoy, idx };
 		});
+		
+		let reasonParts: string[] = [];
 
 		let deepEnough = candidates.filter((cand) => cand.buoy.maxDepth! >= grpMaxDepth);
 
 		if (deepEnough.length > 0) {
 			candidates = deepEnough;
+			reasonParts.push(`Depth OK (max ${grpMaxDepth}m)`);
 
 			// no-pulley requests are more important than other options
 			if (requestNoPulley) {
 				let noPulleyBuoys = candidates.filter((c) => c.buoy.pulley == false);
 				if (noPulleyBuoys.length > 0) {
 					candidates = noPulleyBuoys;
+					reasonParts.push(`No pulley req.`);
 				}
 			}
 
@@ -117,16 +124,19 @@ function assignAuto(
 				return nMatches > max ? nMatches : max;
 			}, 0);
 			candidates = candidates.filter((cand) => countMatches(cand.buoy, grpOpts) == maxMatches);
+			reasonParts.push(`${maxMatches} opt match`);
 
 			// of these, choose the one with fewest extra opts and closest maxDepth
 			sortByFewestExtraOpts(candidates, grpMaxDepth, grpOpts);
 		} else {
 			// all remaining buoys are less than group maxDepth
 			// candidates[0] will be the buoy with largest maxDepth
+			reasonParts.push(`Insufficient depth (needs ${grpMaxDepth}m)`);
 		}
 
 		let best = candidates[0];
 		assignments[best.buoy.name!] = grp;
+		assignReasons[best.buoy.name!] = "Auto: " + reasonParts.join(', ');
 		grps.splice(grps.length - 1, 1);
 		buoys.splice(best.idx, 1);
 
@@ -139,14 +149,16 @@ function assignAuto(
 
 function assignBuoyGroupsToBuoys(buoys: Buoys[], grps: OWReservation[][]) {
 	let assignments: { [buoy: string]: OWReservation[] } = {};
+	let assignReasons: { [buoy: string]: string } = {};
 	let remainingBuoys = [...buoys];
 
 	// remainingBuoys, grps, and assignments are modified in-place
-	assignPreAssigned(remainingBuoys, grps, assignments);
-	assignAuto(remainingBuoys, grps, assignments);
+	assignPreAssigned(remainingBuoys, grps, assignments, assignReasons);
+	assignAuto(remainingBuoys, grps, assignments, assignReasons);
 
 	return {
 		assignments,
+		assignReasons,
 		unassigned: grps.reduce((flat, grp) => flat.concat(grp), [])
 	};
 }
@@ -171,15 +183,15 @@ export function assignRsvsToBuoys(buoys: Buoys[], rsvs: OWReservation[]) {
 	return assignBuoyGroupsToBuoys(buoys, buoyGrps);
 }
 
-type TempSubmission = OWReservation & { _buoy?: string }; // _buoy is the suggested buoy not final
+export type TempSubmission = OWReservation & { _buoy?: string, _autoAssignReason?: string }; // _buoy is the suggested buoy not final
 export function setBuoyToReservations(buoys: Buoys[], rsvs: OWReservation[]): TempSubmission[] {
-	const { assignments, unassigned } = assignRsvsToBuoys(buoys, rsvs);
+	const { assignments, assignReasons, unassigned } = assignRsvsToBuoys(buoys, rsvs);
 	const tempSubmissions = [
 		...unassigned,
 		...Object.entries(assignments).flatMap(([buoyName, rsvs]) =>
 			// _buoy prevents buoy from being saved but also allows O*n rendering is possible
-			rsvs.map((rsv) => ({ ...rsv, _buoy: buoyName }))
+			rsvs.map((rsv) => ({ ...rsv, _buoy: buoyName, _autoAssignReason: assignReasons[buoyName] }))
 		)
 	];
-	return tempSubmissions;
+	return tempSubmissions as TempSubmission[];
 }

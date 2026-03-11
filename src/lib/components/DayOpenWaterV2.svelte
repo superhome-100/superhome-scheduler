@@ -9,7 +9,8 @@
 		type Submission,
 		type OWReservation,
 		type ReservationEx,
-		ReservationCategory
+		ReservationCategory,
+		type SupabaseClient
 	} from '$types';
 	import DayOpenWaterSubmissionsCard from './DayOpenWaterSubmissionsCard.svelte';
 	import { buoyDesc, isOpenForBooking } from '$lib/utils';
@@ -24,6 +25,7 @@
 	import toast from 'svelte-french-toast';
 	import { assignBuoysToBoats } from '$lib/client/api';
 
+	export let supabase: SupabaseClient;
 	export let date: string;
 	export let reservations: ReservationEx[];
 	export let isAmFull: boolean;
@@ -223,6 +225,7 @@
 					<div class="grow flex w-auto relative gap-0.5 sm:gap-2">
 						<div class="w-1/2">
 							<DayOpenWaterSubmissionsCard
+								{supabase}
 								submissions={grouping.amReservations || []}
 								onClick={() => {
 									showViewRsvs(grouping.amReservations || []);
@@ -233,6 +236,7 @@
 						</div>
 						<div class="w-1/2">
 							<DayOpenWaterSubmissionsCard
+								{supabase}
 								submissions={grouping.pmReservations || []}
 								onClick={() => {
 									showViewRsvs(grouping.pmReservations || []);
