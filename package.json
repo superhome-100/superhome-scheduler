@@ -33,7 +33,7 @@
         "esbuild": "^0.27.3",
         "eslint": "8.57.1",
         "eslint-config-prettier": "^10.1.8",
-        "eslint-plugin-svelte": "^3.15.0",
+        "eslint-plugin-svelte": "^3.15.2",
         "flowbite": "^1.8.1",
         "flowbite-svelte": "^0.48.6",
         "postcss": "^8.5.6",

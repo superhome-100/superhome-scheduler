@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { OWTime, type BuoyGroupings } from '$types';
+	import { type BuoyGroupings, type OWTimeT } from '$types';
 	import { enhance } from '$app/forms';
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-french-toast';
@@ -7,6 +7,7 @@
 
 	export let date: string;
 	export let buoy: string;
+	export let owTime: OWTimeT;
 
 	const { close } = getContext('simple-modal');
 
@@ -22,8 +23,6 @@
 		}
 		return '';
 	};
-
-	$: owTime = OWTime.AM;
 
 	const adminCommentUpdate = async ({ form, formData, action, cancel }) => {
 		const toastId = toast.loading('Updating admin comment...');
@@ -47,22 +46,14 @@
 	<div class="form-title">buoy {buoy}</div>
 	<input type="hidden" name="date" value={date} />
 	<input type="hidden" name="buoy" value={buoy} />
+	<input type="hidden" name="owTime" value={owTime} />
 	<div class="row m-4">
 		<div class="column text-right w-[33%]">
-			<div class="form-label h-8 mb-0.5">
-				<label for="owTime" class="dark:text-white">owTime</label>
-			</div>
 			<div class="form-label h-8 mb-0.5">
 				<label for="admin_comments" class="dark:text-white">Comments</label>
 			</div>
 		</div>
 		<div class="column w-[67%]">
-			<div>
-				<select id="owTime" name="owTime" bind:value={owTime}>
-					<option value={OWTime.AM}>AM</option>
-					<option value={OWTime.PM}>PM</option>
-				</select>
-			</div>
 			<div>
 				<textarea
 					id="adminComments"

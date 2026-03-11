@@ -1,17 +1,18 @@
 <script lang="ts">
-	import type { Submission } from '$types';
+	import type { ReservationEx, Buoy } from '$types';
 	import { displayTag, badgeColor } from '$lib/utils';
 	import { storedUser as user } from '$lib/client/stores';
 	import _ from 'lodash';
 
-	export let submissions: Submission[];
+	export let buoy: Buoy;
+	export let submissions: ReservationEx[];
 	export let adminView: boolean = false;
 
 	export let onClick: (e: MouseEvent) => void = () => {};
 
-	export let adminComment: string = '';
+	export let adminComment: string;
 
-	const curUserStyling = (rsv) => {
+	const curUserStyling = (rsv: ReservationEx) => {
 		if (rsv.user === $user?.id) {
 			return 'border border-transparent rounded bg-lime-300 text-black';
 		} else {
@@ -21,12 +22,12 @@
 </script>
 
 {#if submissions.length}
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
-	<div class="text-center w-full" on:click={onClick}>
+	<div class="text-center w-full bg-blue-300 rounded-md cursor-pointer text-sm" on:click={onClick}>
 		<div
 			class="bg-gradient-to-br from-openwater-bg-from to-openwater-bg-to text-openwater-fg py-0.5 sm:py-2 pr-1 flex flex-col rounded-md cursor-pointer text-sm"
+			style="padding-left: 10px;"
 		>
-			{#each _.sortBy(submissions, 'user') as rsv, i}
+			{#each _.sortBy(submissions, 'user') as rsv (rsv.id)}
 				<div class="flex items-center w-full px-2">
 					<div class="flex-1 text-xs lg:text-base {curUserStyling(rsv)} overflow-auto break-all">
 						{displayTag(rsv, adminView)}
@@ -36,11 +37,10 @@
 					</div>
 				</div>
 			{/each}
-
+		</div>
+		<div>
 			{#if adminComment}
-				<p class="flex flex-col text-sm p-0 text-gray-200">
-					ADMIN: {adminComment}
-				</p>
+				ADMIN: {adminComment}
 			{/if}
 		</div>
 	</div>

@@ -137,7 +137,7 @@
 			<InputLabel label="Buoy" forInput="formBuoy">
 				<select class="w-full" id="formBuoy" name="buoy" value={rsv?.buoy}>
 					<option value="auto">Auto</option>
-					{#each sortedBuoys as buoy}
+					{#each sortedBuoys as buoy (buoy.id)}
 						<option value={buoy.name}
 							>{buoy.name + ' - ' + buoyDesc(buoy)} - [{buoyIsAssignedTo(
 								buoy?.name,
