@@ -12,7 +12,7 @@ export async function POST({ request, locals: { supabase, safeGetSession } }) {
 
 		const data = await request.json();
 		await doTransaction(data.category, data.date, async () => {
-			await approveAllPendingReservations(user, data.category, data.date, sm);
+			await approveAllPendingReservations(supabase, user, data.category, data.date, sm);
 		});
 		return json({ status: 'success' });
 	} catch (error) {
