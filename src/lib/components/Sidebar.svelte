@@ -202,7 +202,7 @@
 				<span style="background-color: red;">SHS {PUBLIC_STAGE} v{__APP_VERSION__}</span>
 			{/if}
 			{#if !$supabaseIsOnline}
-				(Offline)
+				(connecting...)
 			{/if}
 		</span>
 	</NavBrand>

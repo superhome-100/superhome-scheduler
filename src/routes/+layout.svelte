@@ -4,7 +4,7 @@
 	import { Toaster } from 'svelte-french-toast';
 	import { onDestroy, onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { supabase_es } from '$lib/client/supabase_event_source';
+	import { supabase_es, supabaseIsOnline } from '$lib/client/supabase_event_source';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import Nprogress from '$lib/components/Nprogress.svelte';
 	import Popup from '$lib/components/Popup.svelte';
@@ -16,7 +16,8 @@
 		storedCore_params,
 		storedSettings,
 		type CoreStore,
-		storedUser
+		storedUser,
+		isLoading
 	} from '$lib/client/stores';
 	import { pushService } from '$lib/client/push';
 	import Refresher from '$lib/components/Refresher.svelte';
@@ -25,6 +26,7 @@
 	import type { Writable } from 'svelte/store';
 	import type { UserEx } from '$types';
 	import { PUBLIC_STAGE } from '$env/static/public';
+	import LoadingBar from '$lib/components/LoadingBar.svelte';
 
 	console.info('superhome-scheduler', __APP_VERSION__);
 
@@ -133,6 +135,9 @@
 	</style>
 	<div class="staging-banner" role="alert" />
 {/if}
+{#if !$supabaseIsOnline}
+	<LoadingBar styleClass="red" />
+{/if}
 <Toaster toastOptions={{ error: { duration: 5000 } }} />
 <Refresher {onRefresh}>
 	{#if $page.route.id && !publicRoutes.includes($page.route.id)}
@@ -141,6 +146,9 @@
 
 		<div id="app" class="flex px-1 mx-auto w-full h-full">
 			<main class="lg:ml-72 w-full mx-auto">
+				{#if $isLoading}
+					<LoadingBar />
+				{/if}
 				<slot />
 			</main>
 		</div>

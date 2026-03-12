@@ -30,7 +30,7 @@
 			rotateDeg = diff * 1;
 			translateY = diff * resistance;
 
-			if (rotateDeg > 360) {
+			if (rotateDeg > 330) {
 				shouldRefresh = true;
 			} else {
 				shouldRefresh = false;

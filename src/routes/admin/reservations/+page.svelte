@@ -558,9 +558,7 @@
 		</div>
 	</MyFloatingElement>
 
-	{#if $storedDayReservationsAllLoading}
-		<LoadingBar />
-	{:else}
+	{#if !$storedDayReservationsAllLoading}
 		<table class="content-table">
 			<thead>
 				<tr>
