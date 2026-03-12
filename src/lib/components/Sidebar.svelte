@@ -29,6 +29,7 @@
 	import { getFeature } from '$lib/userFeature';
 	import { storedUser } from '$lib/client/stores';
 	import type { SupabaseClient } from '$types';
+	import { supabaseIsOnline } from '$lib/client/supabase_event_source';
 
 	export let supabase: SupabaseClient;
 
@@ -199,6 +200,9 @@
 				SuperHOME Scheduler
 			{:else}
 				<span style="background-color: red;">SHS {PUBLIC_STAGE} v{__APP_VERSION__}</span>
+			{/if}
+			{#if !$supabaseIsOnline}
+				(Offline)
 			{/if}
 		</span>
 	</NavBrand>

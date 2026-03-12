@@ -183,12 +183,16 @@
 				<button
 					class="{highlightButton(isAmFull)} px-1 py-0 font-semibold border-black dark:border-white"
 					on:click={async () => {
+						const newIsAmFull = !isAmFull;
 						const n = isAmFull ? 'not full' : 'full';
 						await toast
-							.promise(flagOWAmAsFull(supabase, dayStr, !isAmFull), {
+							.promise(flagOWAmAsFull(supabase, dayStr, newIsAmFull), {
 								loading: 'Marking AM as ' + n,
 								success: 'Marked AM as ' + n,
 								error: 'Failed to makr AM as ' + n
+							})
+							.then(() => {
+								isAmFull = newIsAmFull;
 							})
 							.catch((e) => console.warn('mark-as-am', n));
 					}}

@@ -2,7 +2,7 @@
 	import '../app.postcss';
 	import { goto } from '$app/navigation';
 	import { Toaster } from 'svelte-french-toast';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { supabase_es } from '$lib/client/supabase_event_source';
 	import Sidebar from '$lib/components/Sidebar.svelte';
@@ -65,30 +65,13 @@
 		if (checkSupabaseConnectionGuard.isChecking) return;
 		const check = async () => {
 			if (document.visibilityState === 'visible') {
-				const isReconnected = await supabase_es.init(supabase, user);
-				console.debug('supabase_es.init', isReconnected);
-				if (isReconnected) {
-					console.debug('supabase_es.notifyAll');
-					supabase_es.notifyAll();
-				}
+				await supabase_es.init(supabase, user);
 			}
 		};
 		try {
-			do {
-				try {
-					await check();
-					break;
-				} catch (e) {
-					console.warn('checkSupabaseConnection.check', e);
-					await new Promise((r) => setTimeout(r, 3000));
-				}
-			} while (
-				// eslint-disable-next-line no-constant-condition
-				true
-			);
+			await check();
 		} catch (e) {
 			console.error('checkSupabaseConnection', e, document.visibilityState);
-			//TODO:mate: check again later
 		} finally {
 			checkSupabaseConnectionGuard.isChecking = false;
 		}
@@ -106,8 +89,12 @@
 	if ($page.route.id && !publicRoutes.includes($page.route.id)) {
 		onMount(async () => {
 			await supabase_es.init(supabase, user).catch((e) => console.error('supabase_es.init', e));
-			window.addEventListener('visibilitychange', handleVisibilityChange);
-			window.addEventListener('online', handleOnline);
+			supabase_es.isOnline.subscribe((isOnline: boolean) => {
+				console.debug('supabase_es.isOnline', isOnline);
+				if (isOnline) supabase_es.notifyAll();
+			});
+			document.addEventListener('visibilitychange', handleVisibilityChange);
+			document.addEventListener('online', handleOnline);
 			// this line being inside onMount protects from SSR leak
 			(storedCore_params as Writable<CoreStore>).set({ supabase, user });
 			if (user) {
@@ -115,6 +102,10 @@
 			} else {
 				goto('/login');
 			}
+		});
+
+		onDestroy(async () => {
+			await supabase_es.destroy(supabase).catch((e) => console.error('supabase_es.destroy', e));
 		});
 	}
 

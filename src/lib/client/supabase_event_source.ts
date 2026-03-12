@@ -6,6 +6,7 @@ import {
     REALTIME_CHANNEL_STATES,
     REALTIME_SUBSCRIBE_STATES
 } from '@supabase/supabase-js'
+import { readable, writable, type Readable } from "svelte/store";
 
 const EVENTS = [
     'Boats',
@@ -45,31 +46,38 @@ const EventConfig: Record<EventType, Options> = {
     'PriceTemplates': debounceShort,
 }
 
+let _channelId = 0;
+
 export class SupabaseEventSource {
     private readonly _channelName = 'table_changes';
     private channel: RealtimeChannel | null = null;
     private readonly subscribers = new Map<EventType, Set<Subscriber>>()
     private _channelStatus: REALTIME_SUBSCRIBE_STATES | undefined = undefined;
+    private _channelId: number | undefined = undefined;
+    private readonly _isOnline = writable<boolean>(false);
 
-    /**
-     * @returns `true` if (re)connected, `false` otherwise
-     */
-    async init(client: SupabaseClient<Database>, user: unknown): Promise<boolean> {
-        if (!user) return false;
-        if (this.channel && this._channelStatus !== REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
-            await client.removeChannel(this.channel);
-        }
-        else if (this.channel) {
+    get isOnline(): Readable<boolean> {
+        return this._isOnline;
+    }
+
+    async init(client: SupabaseClient<Database>, user: unknown): Promise<void> {
+        console.debug('supabase_es.init', this.channel?.state, !!user);
+        if (!user) return;
+        if (this.channel) {
             if (this.channel.state === REALTIME_CHANNEL_STATES.joined
                 || this.channel.state === REALTIME_CHANNEL_STATES.joining) {
-                return false;
+                return;
             }
-            await client.removeChannel(this.channel);
+            this._isOnline.set(false);
+            await this.channel.unsubscribe();
+            await client.removeChannel(this.channel).catch(e => console.error('supabase_es.removeChannel', e));
         }
         await client.realtime.setAuth(); // Needed for Realtime Authorization
         this.channel = client.channel(this._channelName, {
             config: { private: true }
-        })
+        });
+        const channelId = _channelId++;
+        this._channelId = channelId;
         for (const event of EVENTS) {
             const fn = debounce((payload: Payload) => this.dispatch(event, payload), EventConfig[event])
             this.channel.on(
@@ -78,13 +86,23 @@ export class SupabaseEventSource {
                 payload => fn(payload)
             )
         }
-        return await new Promise<true>(resolve => {
+        const subscribe = (resolve: (status: REALTIME_SUBSCRIBE_STATES) => void) => {
             this.channel!.subscribe((status, err) => {
-                console.log('channel:', this._channelName, status, err)
+                if (this._channelId !== channelId) {
+                    console.log('ignoring supabase_es.channel.subscribe:', this._channelId, channelId, this._channelName, this._channelStatus, status, err);
+                    return;
+                }
+                console.log('supabase_es.channel.subscribe:', channelId, this._channelName, this._channelStatus, status, err);
                 this._channelStatus = status;
-                resolve(true);
-            })
-        })
+                this._isOnline.set(status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED);
+                resolve(status);
+            }, 2000);
+        }
+        const status = await new Promise(subscribe);
+        if (status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT) {
+            console.debug('supabase_es.init', status, 'retry');
+            await new Promise(subscribe);
+        }
     }
 
     async destroy(client: SupabaseClient<Database>) {
@@ -113,6 +131,7 @@ export class SupabaseEventSource {
     }
 
     notifyAll() {
+        console.debug('supabase_es.notifyAll');
         for (const e of this.subscribers.keys()) {
             this.dispatch(e, undefined)
         }
@@ -132,3 +151,6 @@ export class SupabaseEventSource {
 }
 
 export const supabase_es = new SupabaseEventSource()
+export const supabaseIsOnline = readable<boolean>(false, (set) => {
+    supabase_es.isOnline.subscribe(set);
+});
