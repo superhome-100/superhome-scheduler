@@ -2,8 +2,6 @@ import debounce, { type Options } from "debounce-fn";
 import type { Database } from '$lib/supabase.types'
 import {
     SupabaseClient,
-    RealtimeChannel,
-    REALTIME_CHANNEL_STATES,
     REALTIME_SUBSCRIBE_STATES
 } from '@supabase/supabase-js'
 import { readable, writable, type Readable } from "svelte/store";
@@ -46,106 +44,141 @@ const EventConfig: Record<EventType, Options> = {
     'PriceTemplates': debounceShort,
 }
 
-let _channelId = 0;
+let currentChannelId = 0;
 
 export class SupabaseEventSource {
     private readonly _channelName = 'table_changes';
-    private channel: RealtimeChannel | null = null;
-    private readonly subscribers = new Map<EventType, Set<Subscriber>>()
-    private _channelStatus: REALTIME_SUBSCRIBE_STATES | undefined = undefined;
-    private _channelId: number | undefined = undefined;
+    private readonly subscribers = new Map<EventType, Set<Subscriber>>();
     private readonly _isOnline = writable<boolean>(false);
+
+    private _channelStatus: REALTIME_SUBSCRIBE_STATES | undefined = undefined;
+    private _client: SupabaseClient<Database> | undefined = undefined;
+    private _checkInterval: ReturnType<typeof setInterval> | undefined = undefined;
+    private _connectingP: Promise<void> | undefined = undefined;
 
     get isOnline(): Readable<boolean> {
         return this._isOnline;
     }
 
-    async init(client: SupabaseClient<Database>, user: unknown): Promise<void> {
-        console.debug('supabase_es.init', this.channel?.state, !!user);
-        if (!user) return;
-        if (this.channel) {
-            if (this.channel.state === REALTIME_CHANNEL_STATES.joined
-                || this.channel.state === REALTIME_CHANNEL_STATES.joining) {
-                return;
-            }
-            this._isOnline.set(false);
-            await this.channel.unsubscribe();
-            await client.removeChannel(this.channel).catch(e => console.error('supabase_es.removeChannel', e));
-        }
-        await client.realtime.setAuth(); // Needed for Realtime Authorization
-        this.channel = client.channel(this._channelName, {
-            config: { private: true }
-        });
-        const channelId = _channelId++;
-        this._channelId = channelId;
-        for (const event of EVENTS) {
-            const fn = debounce((payload: Payload) => this.dispatch(event, payload), EventConfig[event])
-            this.channel.on(
-                'broadcast',
-                { event },
-                payload => fn(payload)
-            )
-        }
-        const subscribe = (resolve: (status: REALTIME_SUBSCRIBE_STATES) => void) => {
-            this.channel!.subscribe((status, err) => {
-                if (this._channelId !== channelId) {
-                    console.log('ignoring supabase_es.channel.subscribe:', this._channelId, channelId, this._channelName, this._channelStatus, status, err);
-                    return;
-                }
-                console.log('supabase_es.channel.subscribe:', channelId, this._channelName, this._channelStatus, status, err);
-                this._channelStatus = status;
-                this._isOnline.set(status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED);
-                resolve(status);
-            }, 2000);
-        }
-        const status = await new Promise(subscribe);
-        if (status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT) {
-            console.debug('supabase_es.init', status, 'retry');
-            await new Promise(subscribe);
-        }
-    }
-
-    async destroy(client: SupabaseClient<Database>) {
-        if (this.channel) {
-            const channel = this.channel;
-            this.channel = null;
-            await client.removeChannel(channel);
-        }
-    }
-
     constructor() {
         for (const event of EVENTS) {
-            this.subscribers.set(event, new Set())
+            this.subscribers.set(event, new Set());
         }
+    }
+
+    async init(client: SupabaseClient<Database>, user: unknown): Promise<void> {
+        console.debug('supabase_es.init', this._channelStatus, !!user);
+        if (!user) {
+            this.stopCheckInterval();
+            return;
+        }
+        this._client = client;
+        this._startCheckInterval();
+        await this._connect();
+    }
+
+    private _startCheckInterval() {
+        if (this._checkInterval) return;
+        this._checkInterval = setInterval(() => this._connect(), 3000);
+    }
+
+    stopCheckInterval() {
+        if (this._checkInterval) {
+            clearInterval(this._checkInterval);
+            this._checkInterval = undefined;
+        }
+    }
+
+    private async _connect() {
+        if (!this._client) return;
+        if (this._channelStatus === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) return;
+        if (this._connectingP) return await this._connectingP;
+
+        const client = this._client;
+        this._connectingP = Promise.resolve()
+            .then(async () => {
+                console.debug('supabase_es._connect', this._channelStatus);
+                await client.removeAllChannels().catch(e => console.error('supabase_es._connect.removeAllChannels', e));
+                await client.realtime.setAuth();
+
+                const channel = client.channel(this._channelName, {
+                    config: { private: true }
+                });
+
+                const channelId = ++currentChannelId;
+
+                for (const event of EVENTS) {
+                    const fn = debounce((payload: Payload) => this._dispatch(event, payload), EventConfig[event]);
+                    channel.on(
+                        'broadcast',
+                        { event },
+                        payload => fn(payload)
+                    );
+                }
+
+                const status = await new Promise<REALTIME_SUBSCRIBE_STATES>(resolve => {
+                    channel.subscribe((status, err) => {
+                        if (currentChannelId !== channelId) {
+                            console.warn('ignoring supabase_es._connects.subscribe:', this._channelName, `${channelId}/${currentChannelId}`, status, err);
+                            return;
+                        }
+                        console.log('supabase_es._connect.subscribe:', this._channelName, `${channelId}/${currentChannelId}`, status, err);
+                        this._channelStatus = status;
+                        this._isOnline.set(status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED);
+                        resolve(status);
+                    }, 2000);
+                });
+
+                if (status !== REALTIME_SUBSCRIBE_STATES.SUBSCRIBED)
+                    await client.removeAllChannels().catch(e => console.error('supabase_es._connect.removeAllChannels', status, e));
+            })
+            .catch(e => console.error('supabase_es._connect', e));
+
+        await this._connectingP;
+        this._connectingP = undefined
+    }
+
+    async checkAndStartInterval() {
+        this._startCheckInterval()
+        await this._connect();
+    }
+
+    async destroy() {
+        console.debug('supabase_es.destroy', this._channelStatus);
+        this.stopCheckInterval();
+        if (this._client)
+            await this._client.removeAllChannels();
+        this._client = undefined;
+        this._channelStatus = undefined;
     }
 
     subscribe(fn: Subscriber, ...event: EventType[]): Unsubscribe {
         const sets: Set<Subscriber>[] = event.map(e => {
-            const set = this.subscribers.get(e)!
-            set.add(fn)
-            return set
+            const set = this.subscribers.get(e)!;
+            set.add(fn);
+            return set;
         });
         return () => {
-            sets.forEach(s => s.delete(fn))
-        }
+            sets.forEach(s => s.delete(fn));
+        };
     }
 
     notifyAll() {
         console.debug('supabase_es.notifyAll');
         for (const e of this.subscribers.keys()) {
-            this.dispatch(e, undefined)
+            this._dispatch(e, undefined);
         }
     }
 
     notify(...events: EventType[]) {
         for (const e of events) {
-            this.dispatch(e, undefined);
+            this._dispatch(e, undefined);
         }
     }
 
-    private dispatch(event: EventType, payload: Payload | undefined) {
+    private _dispatch(event: EventType, payload: Payload | undefined) {
         for (const fn of this.subscribers.get(event)!) {
-            Promise.resolve().then(fn).catch(e => console.error("SupabaseEventSource subscriber error", event, e, payload))
+            Promise.resolve().then(fn).catch(e => console.error("SupabaseEventSource subscriber error", event, e, payload));
         }
     }
 }

@@ -27,6 +27,7 @@
 	import type { UserEx } from '$types';
 	import { PUBLIC_STAGE } from '$env/static/public';
 	import LoadingBar from '$lib/components/LoadingBar.svelte';
+	import { withTimeout } from '$lib/utils';
 
 	console.info('superhome-scheduler', __APP_VERSION__);
 
@@ -60,45 +61,43 @@
 		window.location.reload();
 	};
 
-	const checkSupabaseConnectionGuard = {
-		isChecking: false
-	};
-	const checkSupabaseConnection = async () => {
-		if (checkSupabaseConnectionGuard.isChecking) return;
-		const check = async () => {
-			if (document.visibilityState === 'visible') {
-				await supabase_es.init(supabase, user);
-			}
-		};
-		try {
-			await check();
-		} catch (e) {
-			console.error('checkSupabaseConnection', e, document.visibilityState);
-		} finally {
-			checkSupabaseConnectionGuard.isChecking = false;
+	const checkVisibility = async () => {
+		if (document.visibilityState === 'visible') {
+			await supabase_es.checkAndStartInterval();
+		} else {
+			supabase_es.stopCheckInterval();
 		}
 	};
-
 	const handleVisibilityChange = async () => {
 		console.debug('visibilitychange', document.visibilityState);
-		checkSupabaseConnection();
+		checkVisibility();
 	};
 	const handleOnline = async () => {
 		console.log('Connectivity restored.');
-		checkSupabaseConnection();
+		checkVisibility();
+	};
+	const handleOffline = async () => {
+		console.log('Connectivity lost.');
+		supabase_es.stopCheckInterval();
 	};
 
 	if ($page.route.id && !publicRoutes.includes($page.route.id)) {
 		onMount(async () => {
-			await supabase_es.init(supabase, user).catch((e) => console.error('supabase_es.init', e));
+			document.addEventListener('visibilitychange', handleVisibilityChange);
+			window.addEventListener('online', handleOnline);
+			window.addEventListener('offline', handleOffline);
+
+			await withTimeout(
+				supabase_es.init(supabase, user).catch((e) => console.error('supabase_es.init', e)),
+				5000
+			);
 			supabase_es.isOnline.subscribe((isOnline: boolean) => {
 				console.debug('supabase_es.isOnline', isOnline);
 				if (isOnline) supabase_es.notifyAll();
 			});
-			document.addEventListener('visibilitychange', handleVisibilityChange);
-			document.addEventListener('online', handleOnline);
 			// this line being inside onMount protects from SSR leak
 			(storedCore_params as Writable<CoreStore>).set({ supabase, user });
+
 			if (user) {
 				await pushService.init(user.has_push ?? false);
 			} else {
@@ -107,7 +106,7 @@
 		});
 
 		onDestroy(async () => {
-			await supabase_es.destroy(supabase).catch((e) => console.error('supabase_es.destroy', e));
+			await supabase_es.destroy().catch((e) => console.error('supabase_es.destroy', e));
 		});
 	}
 
