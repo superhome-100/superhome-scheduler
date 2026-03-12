@@ -51,15 +51,15 @@ export class SupabaseEventSource {
     private readonly subscribers = new Map<EventType, Set<Subscriber>>()
     private _channelStatus: REALTIME_SUBSCRIBE_STATES | undefined = undefined;
 
-    get channelStatus(): REALTIME_SUBSCRIBE_STATES | undefined {
-        return this._channelStatus;
-    }
-
     /**
-     * @returns `true` if reconnected, `false` otherwise
+     * @returns `true` if (re)connected, `false` otherwise
      */
-    async init(client: SupabaseClient<Database>) {
-        if (this.channel) {
+    async init(client: SupabaseClient<Database>, user: unknown): Promise<boolean> {
+        if (!user) return false;
+        if (this.channel && this._channelStatus !== REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
+            await client.removeChannel(this.channel);
+        }
+        else if (this.channel) {
             if (this.channel.state === REALTIME_CHANNEL_STATES.joined
                 || this.channel.state === REALTIME_CHANNEL_STATES.joining) {
                 return false;
@@ -78,12 +78,12 @@ export class SupabaseEventSource {
                 payload => fn(payload)
             )
         }
-        return await new Promise(resolve => {
+        return await new Promise<true>(resolve => {
             this.channel!.subscribe((status, err) => {
                 console.log('channel:', this._channelName, status, err)
                 this._channelStatus = status;
+                resolve(true);
             })
-            resolve(true);
         })
     }
 

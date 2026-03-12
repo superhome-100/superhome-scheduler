@@ -33,8 +33,6 @@ import {
 import { LRUCache } from 'lru-cache';
 import { stableStringify } from '$lib/utils';
 
-export const storedAppVisibility: Readable<DocumentVisibilityState> = writable();
-
 export type CoreStore = { supabase: SupabaseClient, user: UserEx | null };
 
 export const storedCore_params: Readable<CoreStore> = writable();

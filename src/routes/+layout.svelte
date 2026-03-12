@@ -1,6 +1,5 @@
 <script lang="ts">
 	import '../app.postcss';
-	import _ from 'lodash';
 	import { goto } from '$app/navigation';
 	import { Toaster } from 'svelte-french-toast';
 	import { onMount } from 'svelte';
@@ -16,7 +15,6 @@
 		storedReservationsSummary_param,
 		storedCore_params,
 		storedSettings,
-		storedAppVisibility,
 		type CoreStore,
 		storedUser
 	} from '$lib/client/stores';
@@ -60,38 +58,58 @@
 		window.location.reload();
 	};
 
+	const checkSupabaseConnectionGuard = {
+		isChecking: false
+	};
+	const checkSupabaseConnection = async () => {
+		if (checkSupabaseConnectionGuard.isChecking) return;
+		const check = async () => {
+			if (document.visibilityState === 'visible') {
+				const isReconnected = await supabase_es.init(supabase, user);
+				console.debug('supabase_es.init', isReconnected);
+				if (isReconnected) {
+					console.debug('supabase_es.notifyAll');
+					supabase_es.notifyAll();
+				}
+			}
+		};
+		try {
+			do {
+				try {
+					await check();
+					break;
+				} catch (e) {
+					console.warn('checkSupabaseConnection.check', e);
+					await new Promise((r) => setTimeout(r, 3000));
+				}
+			} while (
+				// eslint-disable-next-line no-constant-condition
+				true
+			);
+		} catch (e) {
+			console.error('checkSupabaseConnection', e, document.visibilityState);
+			//TODO:mate: check again later
+		} finally {
+			checkSupabaseConnectionGuard.isChecking = false;
+		}
+	};
+
+	const handleVisibilityChange = async () => {
+		console.debug('visibilitychange', document.visibilityState);
+		checkSupabaseConnection();
+	};
+	const handleOnline = async () => {
+		console.log('Connectivity restored.');
+		checkSupabaseConnection();
+	};
+
 	if ($page.route.id && !publicRoutes.includes($page.route.id)) {
 		onMount(async () => {
-			if (user) {
-				await supabase_es.init(supabase).catch((e) => console.error('supabase_es.init', e));
-			}
+			await supabase_es.init(supabase, user).catch((e) => console.error('supabase_es.init', e));
+			window.addEventListener('visibilitychange', handleVisibilityChange);
+			window.addEventListener('online', handleOnline);
 			// this line being inside onMount protects from SSR leak
 			(storedCore_params as Writable<CoreStore>).set({ supabase, user });
-
-			const storedAppVisibilityW = storedAppVisibility as Writable<DocumentVisibilityState>;
-			storedAppVisibilityW.set('visible');
-			document.addEventListener('visibilitychange', () => {
-				// by default (no tab change) this value is visible and no event is fired
-				console.debug('visibilitychange', document.visibilityState);
-				storedAppVisibilityW.set(document.visibilityState);
-				if (document.visibilityState === 'visible' && user) {
-					supabase_es
-						.init(supabase)
-						.then((isReconnected) => {
-							if (isReconnected) {
-								console.log('supabase_es.notifyAll');
-								supabase_es.notifyAll();
-							}
-						})
-						.catch((reason) => console.error('supabase_es.init', reason));
-				}
-			});
-			window.addEventListener('online', () => {
-				console.log('Connectivity restored.');
-			});
-			window.addEventListener('offline', () => {
-				console.log('Connectivity lost.');
-			});
 			if (user) {
 				await pushService.init(user.has_push ?? false);
 			} else {
