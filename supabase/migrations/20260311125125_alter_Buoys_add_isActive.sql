@@ -1,0 +1,2 @@
+ALTER TABLE "public"."Buoys"
+ADD COLUMN "isActive" BOOLEAN NOT NULL DEFAULT TRUE;

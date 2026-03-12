@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          node-version: 22
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
@@ -42,11 +44,13 @@ jobs:
     needs: supabase-deploy-migration
     steps:
       - uses: actions/checkout@v4
+        with:
+          node-version: 22
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: package-lock.json
       

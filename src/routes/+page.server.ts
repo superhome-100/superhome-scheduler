@@ -29,7 +29,7 @@ const adminUpdateGeneric = async ({
 		console.log('adminUpdateGeneric', data);
 		const category = data.get('category') as string;
 		await doTransaction(category, data.get('date') as string, async () => {
-			await adminUpdate(user, data, sm);
+			await adminUpdate(supabase, user, data, sm);
 		});
 	} catch (e) {
 		console_error('error adminUpdateGeneric', e);

@@ -6,6 +6,7 @@ import type {
 	ReservationCreationFormUnpacked,
 	ReservationModifyingFormUnpacked,
 	Submission,
+	SupabaseClient,
 	User
 } from '$types';
 import type { Tables, TablesInsert, TablesUpdate } from '$lib/supabase.types';
@@ -609,11 +610,11 @@ export async function modifyReservation(actor: User, formData: AppFormData, sett
 		throw Error(`Error during modifying reservation ${id} ${sub}: ${JSON.stringify(errors)}`);
 }
 
-export async function adminUpdate(actor: User, formData: AppFormData, settings: SettingsManager) {
+export async function adminUpdate(supabase: SupabaseClient, actor: User, formData: AppFormData, settings: SettingsManager) {
 	let rsv: Partial<Tables<'Reservations'>> = {};
 
 	let id = formData.get('id');
-	let { data: existing } = await supabaseServiceRole
+	let { data: existing } = await supabase
 		.from('Reservations')
 		.select('*')
 		.eq('id', id)
@@ -637,7 +638,7 @@ export async function adminUpdate(actor: User, formData: AppFormData, settings: 
 		rsv.room = formData.get('room');
 	}
 
-	const { data } = await supabaseServiceRole
+	const { data } = await supabase
 		.from('Reservations')
 		.update(rsv)
 		.eq("id", id)
@@ -723,9 +724,9 @@ export async function cancelReservation(actor: User, formData: AppFormData, sett
 		throw Error(`Error during cancelling reservations: ${JSON.stringify(errors)}`);
 }
 
-export async function approveAllPendingReservations(actor: User, category: ReservationCategoryT, date: string, settings: SettingsManager) {
+export async function approveAllPendingReservations(supabase: SupabaseClient, actor: User, category: ReservationCategoryT, date: string, settings: SettingsManager) {
 	console.info('Approving all pending reservations for', category, date);
-	const { data } = await supabaseServiceRole
+	const { data } = await supabase
 		.from('Reservations')
 		.update({ status: ReservationStatus.confirmed })
 		.select('*')

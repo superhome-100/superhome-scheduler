@@ -9,7 +9,8 @@
 		type Submission,
 		type OWReservation,
 		type ReservationEx,
-		ReservationCategory
+		ReservationCategory,
+		type SupabaseClient
 	} from '$types';
 	import DayOpenWaterSubmissionsCard from './DayOpenWaterSubmissionsCard.svelte';
 	import { buoyDesc, isOpenForBooking } from '$lib/utils';
@@ -24,6 +25,7 @@
 	import toast from 'svelte-french-toast';
 	import { assignBuoysToBoats } from '$lib/client/api';
 
+	export let supabase: SupabaseClient;
 	export let date: string;
 	export let reservations: ReservationEx[];
 	export let isAmFull: boolean;
@@ -144,7 +146,7 @@
 						style="margin-top: 0.5rem;"
 					>
 						<span class="desktop-text">Boats:</span>
-						{#each boats as boat}
+						{#each boats as boat (boat)}
 							<span class="font-bold ml-1">{boat}</span>
 							<span class="bg-teal-100 border border-black px-0.4"
 								>{buoyGroupings
@@ -166,7 +168,7 @@
 						style="margin-top: 0.5rem;"
 					>
 						<span class="desktop-text">Boats:</span>
-						{#each boats as boat}
+						{#each boats as boat (boat)}
 							<span class="font-bold ml-1">{boat}</span>
 							<span class="bg-teal-100 border border-black px-0.4"
 								>{buoyGroupings
@@ -212,7 +214,7 @@
 								}}
 							>
 								<option value="null">-</option>
-								{#each boats as boat}
+								{#each boats as boat (boat)}
 									<option value={boat}>{boat}</option>
 								{/each}
 							</select>
@@ -223,6 +225,7 @@
 					<div class="grow flex w-auto relative gap-0.5 sm:gap-2">
 						<div class="w-1/2">
 							<DayOpenWaterSubmissionsCard
+								{supabase}
 								submissions={grouping.amReservations || []}
 								onClick={() => {
 									showViewRsvs(grouping.amReservations || []);
@@ -233,6 +236,7 @@
 						</div>
 						<div class="w-1/2">
 							<DayOpenWaterSubmissionsCard
+								{supabase}
 								submissions={grouping.pmReservations || []}
 								onClick={() => {
 									showViewRsvs(grouping.pmReservations || []);

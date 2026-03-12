@@ -20,6 +20,7 @@ import {
 import {
     getBoatAssignmentsByDate,
     getBuoys,
+    getBuoysActive,
     getIncomingReservations,
     getOWAdminComments,
     getReservationsByDate,
@@ -323,6 +324,14 @@ export const { value: storedBuoys, isLoading: storedBuoysLoading } =
         [],
         async ({ supabase }) => {
             const r = await getBuoys(supabase);
+            return r;
+        }, "Buoys");
+
+export const { value: storedBuoysActive, isLoading: storedBuoysActiveLoading } =
+    readableWithSubscriptionToCore<Buoy[]>('storedBuoys',
+        [],
+        async ({ supabase }) => {
+            const r = await getBuoysActive(supabase);
             return r;
         }, "Buoys");
 

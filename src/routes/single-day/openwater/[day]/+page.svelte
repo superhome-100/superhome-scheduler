@@ -122,7 +122,7 @@
 			>
 			<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 			<ul tabindex="0" class="dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit">
-				{#each categories as cat}
+				{#each categories as cat (cat)}
 					{#if cat !== category}
 						<li>
 							<a class="text-xl active:bg-gray-300" href={getCategoryDatePath(cat, dayStr)}>
@@ -219,7 +219,7 @@
 		on:swipe={swipeHandler}
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			<DayOpenWater date={dayStr} {reservations} {isAmFull} />
+			<DayOpenWater {supabase} date={dayStr} {reservations} {isAmFull} />
 		</Modal>
 	</div>
 {/if}
