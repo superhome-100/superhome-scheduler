@@ -1,6 +1,20 @@
+<script lang="ts">
+	export let styleClass: 'pink' | 'red' = 'pink';
+
+	$: styleClass_ = ((s) => {
+		switch (s) {
+			default:
+			case 'pink':
+				return 'bg-pink-500';
+			case 'red':
+				return 'bg-red-500';
+		}
+	})(styleClass);
+</script>
+
 <div class="w-full">
 	<div class="h-1.5 w-full bg-pink-100 overflow-hidden">
-		<div class="progress w-full h-full bg-pink-500 left-right" />
+		<div class="progress w-full h-full left-right {styleClass_}" />
 	</div>
 </div>
 

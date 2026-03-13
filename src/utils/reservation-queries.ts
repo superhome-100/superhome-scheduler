@@ -109,7 +109,7 @@ export function getTimeOverlapSupabaseFilter(settings: SettingsManager, rsv: Res
 			owTimes.push(OWTime.PM);
 		}
 	} else if (rsv.category === ReservationCategory.openwater) {
-		if (rsv.owTime === null) throw Error(`openwater has no owTime ${rsv}`);
+		if (rsv.owTime === null) throw Error(`openwater has no owTime ${JSON.stringify(rsv)}`);
 		owTimes.push(rsv.owTime as OWTime);
 		if (rsv.owTime === OWTime.AM) {
 			start = owAmStart;
@@ -128,13 +128,14 @@ export function getTimeOverlapSupabaseFilter(settings: SettingsManager, rsv: Res
 
 	/* ---- Open water overlap ---- */
 	if (owTimes.length > 0) {
+		const times = owTimes.map(t => `"${t}"`).join(',');
 		orFilters.push(
-			`and(category.eq.${ReservationCategory.openwater},owTime.in.(${owTimes.join(',')}))`
+			`and(category.eq."${ReservationCategory.openwater}",owTime.in.(${times}))`
 		);
 	}
 
 	/* ---- Pool / classroom overlap ---- */
-	for (let cat of [ReservationCategory.pool, ReservationCategory.classroom]) {
+	for (const cat of [ReservationCategory.pool, ReservationCategory.classroom]) {
 		const slots = getTimeSlots({
 			settings,
 			date: rsv.date,
@@ -146,27 +147,29 @@ export function getTimeOverlapSupabaseFilter(settings: SettingsManager, rsv: Res
 		if (!slots) continue;
 
 		const timeClauses: string[] = [];
-
+		// res starting at the same time
 		if (slots.startVals.length > 0) {
-			timeClauses.push(`startTime.in.(${slots.startVals.join(',')})`);
+			const times = slots.startVals.map(t => `"${t}"`).join(',');
+			timeClauses.push(`startTime.in.(${times})`);
 		}
-
+		// res finishing at the same time
 		if (slots.endVals.length > 0) {
-			timeClauses.push(`endTime.in.(${slots.endVals.join(',')})`);
+			const times = slots.endVals.map(t => `"${t}"`).join(',')
+			timeClauses.push(`endTime.in.(${times})`);
 		}
-
+		// res starting before and finishing after
 		if (slots.beforeStart.length > 0 && slots.afterEnd.length > 0) {
+			const timesBefore = slots.beforeStart.map(t => `"${t}"`).join(',');
+			const timesAfter = slots.afterEnd.map(t => `"${t}"`).join(',');
 			timeClauses.push(
-				`and(startTime.in.(${slots.beforeStart.join(',')}),endTime.in.(${slots.afterEnd.join(
-					','
-				)}))`
+				`and(startTime.in.(${timesBefore}),endTime.in.(${timesAfter}))`
 			);
 		}
 
 		if (timeClauses.length > 0) {
-			orFilters.push(`and(category.eq.${cat},or(${timeClauses.join(',')}))`);
+			orFilters.push(`and(category.eq."${cat}",or(${timeClauses.join(',')}))`);
 		}
 	}
 
-	return `or(${orFilters.join(',')})`;
+	return orFilters.join(',');
 }

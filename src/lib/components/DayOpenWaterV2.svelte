@@ -3,7 +3,6 @@
 	import { getContext } from 'svelte';
 	import AdminComment from '$lib/components/AdminComment.svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
-	import LoadingBar from '$lib/components/LoadingBar.svelte';
 	import {
 		type Buoy,
 		type Submission,
@@ -16,7 +15,6 @@
 	import { buoyDesc, isOpenForBooking } from '$lib/utils';
 	import { setBuoyToReservations } from '$lib/autoAssign';
 	import {
-		isLoading,
 		storedBoatAssignments,
 		storedBuoys,
 		storedOWAdminComments,
@@ -119,9 +117,6 @@
 	$: isPMOpen = $storedSettings.getOpenwaterPmBookable(date);
 </script>
 
-{#if $isLoading}
-	<LoadingBar />
-{/if}
 {#if !isOpen}
 	<div class="font-semibold text-3xl text-center">🔒 Closed</div>
 {/if}

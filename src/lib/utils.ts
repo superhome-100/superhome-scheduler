@@ -7,6 +7,25 @@ import { ReservationCategory, ReservationType, type Buoy, type OWTimeT, type Res
 import type { SettingsManager } from './settings';
 import type { Dayjs } from 'dayjs';
 
+/**
+ * Wraps a promise with a maximum execution time.
+ * @param promise The asynchronous operation to monitor.
+ * @param timeoutMs Maximum time allowed in milliseconds.
+ * @returns A promise that resolves with the original value or rejects on timeout.
+ */
+export function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+	let timer: ReturnType<typeof setTimeout>;
+
+	const timeoutPromise = new Promise<never>((_, reject) => {
+		timer = setTimeout(() => {
+			reject(new Error(`Operation timed out after ${timeoutMs}ms`));
+		}, timeoutMs);
+	});
+
+	return Promise.race([promise, timeoutPromise]).finally(() => {
+		clearTimeout(timer);
+	});
+}
 
 export function cleanUpFormDataBuddyFields(formData: FormData): void {
 	const resType = formData.get('resType') as string;

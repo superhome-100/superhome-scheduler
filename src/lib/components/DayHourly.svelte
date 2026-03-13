@@ -1,17 +1,11 @@
 <script lang="ts">
 	import { startTimesHHMM, endTimesHHMM } from '$lib/reservationTimes';
 	import { viewMode } from '$lib/stores';
-	import {
-		isLoading,
-		storedDayReservations,
-		storedSettings,
-		storedUsers
-	} from '$lib/client/stores';
+	import { storedDayReservations, storedSettings, storedUsers } from '$lib/client/stores';
 	import { datetimeToLocalDateStr, timeStrToMin } from '$lib/datetimeUtils';
 	import { getContext } from 'svelte';
 	import RsvTabs from '$lib/components/RsvTabs.svelte';
 	import { badgeColor, getDaySchedule, isOpenForBooking } from '$lib/utils';
-	import LoadingBar from './LoadingBar.svelte';
 	import { type ReservationEx } from '$types';
 	import type { SettingsManager } from '$lib/settings';
 
@@ -106,9 +100,6 @@
 </script>
 
 <svelte:window bind:innerWidth />
-{#if $isLoading}
-	<LoadingBar />
-{/if}
 {#if !isOpen}
 	<div class="font-semibold text-3xl text-center">🔒 Closed</div>
 {/if}

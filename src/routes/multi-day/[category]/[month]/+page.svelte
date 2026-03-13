@@ -9,9 +9,7 @@
 	import type { ReservationCategory } from '$types';
 	import { pushState } from '$app/navigation';
 	import dayjs from 'dayjs';
-	import LoadingBar from '$lib/components/LoadingBar.svelte';
 	import {
-		isLoading,
 		storedReservationsSummary,
 		storedReservationsSummary_param,
 		storedUser
@@ -117,9 +115,6 @@
 
 <svelte:window on:keydown={handleKeypress} />
 
-{#if $isLoading}
-	<LoadingBar />
-{/if}
 {#if $storedUser}
 	<div class="[&>*]:mx-auto flex items-center justify-between">
 		<div class="dropdown h-8 mb-4">

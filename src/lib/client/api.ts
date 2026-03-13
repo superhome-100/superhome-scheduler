@@ -18,6 +18,7 @@ export const getBuoys = async (supabase: SupabaseClient) => {
 		const { data } = await supabase
 			.from('Buoys')
 			.select('*')
+			.order('maxDepth', { nullsFirst: false })
 			.throwOnError();
 		return data;
 	} catch (error) {
@@ -32,6 +33,7 @@ export const getBuoysActive = async (supabase: SupabaseClient) => {
 			.from('Buoys')
 			.select('*')
 			.eq('isActive', true)
+			.order('maxDepth', { nullsFirst: false })
 			.throwOnError();
 		return data;
 	} catch (error) {

@@ -150,6 +150,7 @@ enabled = true
 site_url = "http://localhost:5175"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 additional_redirect_urls = [
+    "http://localhost:5175",
     "http://localhost:5175/auth/callback"
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).

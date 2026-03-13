@@ -12,8 +12,8 @@
 	import {
 		storedDaySettings,
 		storedDayReservations,
-		storedBuoys,
-		storedUser
+		storedUser,
+		storedBuoysActive
 	} from '$lib/client/stores';
 
 	export let rsv: ReservationEx | null = null;
@@ -54,7 +54,6 @@
 		ReservationType.autonomousPlatform,
 		ReservationType.autonomousPlatformCBS
 	].includes(resType);
-	$: sortedBuoys = $storedBuoys.sort((a, b) => (a.maxDepth > b.maxDepth ? 1 : -1));
 
 	$: isAdminView = adminView($storedUser, viewOnly);
 
@@ -137,7 +136,7 @@
 			<InputLabel label="Buoy" forInput="formBuoy">
 				<select class="w-full" id="formBuoy" name="buoy" value={rsv?.buoy}>
 					<option value="auto">Auto</option>
-					{#each sortedBuoys as buoy (buoy.id)}
+					{#each $storedBuoysActive as buoy (buoy.id)}
 						<option value={buoy.name}
 							>{buoy.name + ' - ' + buoyDesc(buoy)} - [{buoyIsAssignedTo(
 								buoy?.name,
@@ -205,7 +204,7 @@
 		{#if resType === 'course'}
 			<InputLabel label="# Students" forInput="formNumStudents">
 				<select id="formNumStudents" disabled={viewOnly} name="numStudents" value={numStudents}>
-					{#each [...Array(restrictModify ? numStudents : 4).keys()] as n}
+					{#each [...Array(restrictModify ? numStudents : 4).keys()] as n (n)}
 						<option value={n + 1}>{n + 1}</option>
 					{/each}
 				</select>

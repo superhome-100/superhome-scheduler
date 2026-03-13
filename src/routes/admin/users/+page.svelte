@@ -218,9 +218,7 @@
 			class="search-input filter-bar-fill-remaining {searchTerm ? 'search-input-active' : ''}"
 		/>
 	</div>
-	{#if $storedUsersForAdminLoading}
-		<LoadingBar />
-	{:else}
+	{#if !$storedUsersForAdminLoading}
 		<table class="content-table">
 			<thead>
 				<tr>

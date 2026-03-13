@@ -133,14 +133,13 @@ export function checkPoolSpaceAvailable(
 	const nLanes = settings.getPoolLanes(sub.date).length;
 	const startEndTs = getStartEndTimesHHMM(settings, sub.date, sub.category as ReservationCategory);
 	for (let i = startEndTs.indexOf(sub.startTime); i < startEndTs.indexOf(sub.endTime); i++) {
-		let time = timeStrToMin(startEndTs[i]);
-		let thisSlotOverlap = overlapping.filter((rsv) => {
-			let start = timeStrToMin(rsv.startTime);
-			let end = timeStrToMin(rsv.endTime);
+		const time = timeStrToMin(startEndTs[i]);
+		const thisSlotOverlap = overlapping.filter((rsv) => {
+			const start = timeStrToMin(rsv.startTime);
+			const end = timeStrToMin(rsv.endTime);
 			return start <= time && end > time;
 		});
-		let numDivers = getNumberOfOccupants([...thisSlotOverlap, sub]) + (sub.buddies?.length ?? 0);
-
+		const numDivers = getNumberOfOccupants([...thisSlotOverlap, sub]) + (sub.buddies?.length ?? 0);
 		if (numDivers > nLanes) {
 			return {
 				status: 'error',
@@ -158,16 +157,26 @@ export const checkClassroomAvailable = (
 	sub: Submission,
 	overlapping: Reservation[]
 ) => {
-	if (overlapping.length >= settings.getClassrooms(sub.date).length) {
-		return {
-			status: 'error',
-			message:
-				'All classrooms are booked at this time.  ' +
-				'Please either check back later or try a different date/time'
-		};
-	} else {
-		return { status: 'success' };
+	const classroomNum = settings.getClassrooms(sub.date).length;
+	const startEndTs = getStartEndTimesHHMM(settings, sub.date, sub.category as ReservationCategory);
+	for (let i = startEndTs.indexOf(sub.startTime); i < startEndTs.indexOf(sub.endTime); i++) {
+		const time = timeStrToMin(startEndTs[i]);
+		const thisSlotOverlap = overlapping.filter((rsv) => {
+			const start = timeStrToMin(rsv.startTime);
+			const end = timeStrToMin(rsv.endTime);
+			return start <= time && end > time;
+		});
+		const numOfOccupants = thisSlotOverlap.length + 1/* sub */;
+		if (numOfOccupants > classroomNum) {
+			return {
+				status: 'error',
+				message:
+					'All classrooms are booked at this time.  ' +
+					'Please either check back later or try a different date/time'
+			};
+		}
 	}
+	return { status: 'success' };
 };
 
 function simulateBuddyGroup(sub: Submission) {
@@ -222,7 +231,7 @@ export async function throwIfNoSpaceAvailable(
 			.from('Buoys')
 			.select('*')
 			.throwOnError();
-		result = checkOWSpaceAvailable(buoys, sub, catOverlapping);
+		result = checkOWSpaceAvailable(buoys, sub, catOverlapping as OWReservation[]);
 	} else if (sub.category === ReservationCategory.pool) {
 		result = checkPoolSpaceAvailable(settings, sub, catOverlapping);
 	} else if (sub.category === ReservationCategory.classroom) {
