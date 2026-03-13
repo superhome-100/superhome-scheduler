@@ -201,7 +201,7 @@
 			{:else}
 				<span style="background-color: red;">SHS {PUBLIC_STAGE} v{__APP_VERSION__}</span>
 			{/if}
-			{#if !$supabaseIsOnline}
+			{#if $storedUser && !$supabaseIsOnline}
 				(connecting...)
 			{/if}
 		</span>

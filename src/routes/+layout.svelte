@@ -134,7 +134,7 @@
 	</style>
 	<div class="staging-banner" role="alert" />
 {/if}
-{#if !$supabaseIsOnline}
+{#if $storedUser && !$supabaseIsOnline}
 	<LoadingBar styleClass="red" />
 {/if}
 <Toaster toastOptions={{ error: { duration: 5000 } }} />
