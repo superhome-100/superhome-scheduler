@@ -29,7 +29,8 @@
 	import { getFeature } from '$lib/userFeature';
 	import { storedUser } from '$lib/client/stores';
 	import type { SupabaseClient } from '$types';
-	import { supabaseIsOnline } from '$lib/client/supabase_event_source';
+	import { supabase_es, supabaseIsOnline } from '$lib/client/supabase_event_source';
+	import SvgSign from './SvgSign.svelte';
 
 	export let supabase: SupabaseClient;
 
@@ -195,16 +196,18 @@
 <Navbar let:hidden let:toggle class="!z-50">
 	<NavHamburger onClick={toggleDrawer} class="ml-3 {user ? '!block' : 'hidden'}" />
 	<NavBrand href="/" class="lg:ml-64">
-		<span class="self-center whitespace-nowrap xs:text-xl font-semibold dark:text-white">
+		<div class="flex self-center whitespace-nowrap xs:text-xl font-semibold dark:text-white">
 			{#if PUBLIC_STAGE === 'production'}
 				SuperHOME Scheduler
 			{:else}
 				<span style="background-color: red;">SHS {PUBLIC_STAGE} v{__APP_VERSION__}</span>
 			{/if}
 			{#if $storedUser && !$supabaseIsOnline}
-				(connecting...)
+				<button class="w-7 h-7 p-0" on:click={supabase_es.checkAndStartInterval}>
+					<SvgSign type="offline" size={25} />
+				</button>
 			{/if}
-		</span>
+		</div>
 	</NavBrand>
 	{#if user}
 		<NavUl
@@ -314,13 +317,6 @@
 								on:click={() => {
 									updatePrices();
 									toggleSide();
-								}}
-							/>
-							<SidebarItem
-								label="Simulate error"
-								{spanClass}
-								on:click={() => {
-									updatePrices.missing.simulate_error();
 								}}
 							/>
 						</SidebarDropdownWrapper>

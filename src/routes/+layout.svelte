@@ -4,7 +4,7 @@
 	import { Toaster } from 'svelte-french-toast';
 	import { onDestroy, onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { supabase_es, supabaseIsOnline } from '$lib/client/supabase_event_source';
+	import { supabase_es } from '$lib/client/supabase_event_source';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import Nprogress from '$lib/components/Nprogress.svelte';
 	import Popup from '$lib/components/Popup.svelte';
@@ -133,9 +133,6 @@
 		}
 	</style>
 	<div class="staging-banner" role="alert" />
-{/if}
-{#if $storedUser && !$supabaseIsOnline}
-	<LoadingBar styleClass="red" />
 {/if}
 <Toaster toastOptions={{ error: { duration: 5000 } }} />
 <Refresher {onRefresh}>

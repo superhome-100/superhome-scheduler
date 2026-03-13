@@ -126,7 +126,7 @@ export class SupabaseEventSource {
                         this._channelStatus = status;
                         this._isOnline.set(status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED);
                         resolve(status);
-                    }, 2000);
+                    });
                 });
 
                 if (status !== REALTIME_SUBSCRIBE_STATES.SUBSCRIBED)

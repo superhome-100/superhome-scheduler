@@ -142,6 +142,8 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
                             console.debug('store.refresh', variableName, param);
                             isLoading.set(true);
                             const valueP = cb(cp, p);
+                            // why only for 'param': because this means that the current value is not relate to the param
+                            // other cases we can show the previous value until we have something new to show
                             if (setDefaultWhenLoading === true && trigger === 'param') {
                                 set(defaultValue);
                             }
