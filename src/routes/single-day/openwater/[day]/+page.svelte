@@ -191,9 +191,6 @@
 								success: 'Marked AM as ' + n,
 								error: 'Failed to makr AM as ' + n
 							})
-							.then(() => {
-								isAmFull = newIsAmFull;
-							})
 							.catch((e) => console.warn('mark-as-am', n));
 					}}
 				>
