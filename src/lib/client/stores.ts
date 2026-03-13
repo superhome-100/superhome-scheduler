@@ -130,7 +130,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
     let paramJsn: string | undefined = undefined;
     const isLoading = writable<boolean>(false);
     const value = readable<T>(defaultValue, (set) => {
-        const safeCb = async () => {
+        const safeCb = async (trigger: 'param' | 'core' | 'supa') => {
             if (coreParam?.user && param !== undefined) {
                 const cacheVal = cache.get(paramJsn!);
                 if (cacheVal !== undefined) {
@@ -141,8 +141,11 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
                         try {
                             console.debug('store.refresh', variableName, param);
                             isLoading.set(true);
-                            if (setDefaultWhenLoading) set(defaultValue)
-                            const value = await cb(cp, p);
+                            const valueP = cb(cp, p);
+                            if (setDefaultWhenLoading === true && trigger === 'param') {
+                                set(defaultValue);
+                            }
+                            const value = await valueP;
                             cache.set(pJ, value);
                             // console.debug('store.refreshed', variableName, param);
                             set(value);
@@ -160,7 +163,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
                 coreParam = cpN as CoreStoreWithUser;
                 cache.clear();
                 if (!isInit)
-                    safeCb();
+                    safeCb('core');
             }
         });
         const unsubP = paramStore.subscribe(async (pN: P) => {
@@ -169,14 +172,14 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
             if (paramJsn !== paramJsnN) {
                 paramJsn = paramJsnN;
                 if (!isInit)
-                    safeCb();
+                    safeCb('param');
             }
         });
         const unsubSupa = supabase_es.subscribe(() => {
             cache.clear();
-            safeCb()
+            safeCb('supa')
         }, event, ...events);
-        safeCb();
+        safeCb('core');
         isInit = false;
         return () => {
             // console.debug("store.unsub", variableName);
