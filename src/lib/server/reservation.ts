@@ -168,16 +168,17 @@ function categoryIsBookable(
 	return isBookable;
 }
 
-async function getOverlappingReservations(settings: SettingsManager, sub: Reservation) {
+async function getOverlappingReservations(settings: SettingsManager, sub: Reservation): Promise<Reservation[]> {
+	const orFilter = getTimeOverlapSupabaseFilter(settings, sub)
 	const { data } = await supabaseServiceRole
 		.from('Reservations')
 		.select('*')
 		.eq('date', sub.date)
-		.or(getTimeOverlapSupabaseFilter(settings, sub))
 		.in('status', [ReservationStatus.pending, ReservationStatus.confirmed])
+		.or(orFilter)
 		.throwOnError();
 	throwIfReservationsAreInvalid(data)
-	return data;
+	return data as Reservation[];
 }
 
 async function getUserOverlappingReservations(settings: SettingsManager, sub: Reservation, userIds: string[]) {
