@@ -139,7 +139,7 @@ export class SupabaseEventSource {
     }
 
     async checkAndStartInterval() {
-        this._startCheckInterval()
+        this._startCheckInterval();
         await this._connect();
     }
 
