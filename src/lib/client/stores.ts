@@ -198,7 +198,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
 /**
  * set in src/routes/+layout.svelte
  */
-export const { value: storedSettings, isLoading: storedSettingsOnlineLoading } =
+export const { value: storedSettings, isLoading: storedSettingsLoading } =
     readableWithSubscriptionToCore<SettingsManager>('storedSettings',
         fallbackSettingsManager,
         async ({ supabase }) => {
