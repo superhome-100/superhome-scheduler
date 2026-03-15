@@ -28,12 +28,9 @@
 	import { pushService } from '$lib/client/push';
 	import { getFeature } from '$lib/userFeature';
 	import { storedCurrentDay, storedSettings, storedUser } from '$lib/client/stores';
-	import type { SupabaseClient } from '$types';
 	import { supabase_es, supabaseIsOnline } from '$lib/client/supabase_event_source';
 	import SvgSign from './SvgSign.svelte';
 	import type { SettingsManager } from '$lib/settings';
-
-	export let supabase: SupabaseClient;
 
 	const supabaseTableUrl =
 		PUBLIC_SUPABASE_URL.indexOf('localhost') !== -1
@@ -163,11 +160,7 @@
 	};
 
 	$: pushNotificationToggleEnabled = ((user, sm: SettingsManager, day: string) => {
-		return getFeature(
-			user,
-			'pushNotificationEnabled',
-			sm.get('pushNotificationEnabled', day) && false //TODO: enable push for all later
-		);
+		return getFeature(user, 'pushNotificationEnabled', sm.get('pushNotificationEnabled', day));
 	})(user, $storedSettings, $storedCurrentDay);
 
 	let isOpenCalendarsMenu: boolean;
