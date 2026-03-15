@@ -160,11 +160,7 @@
 	};
 
 	$: pushNotificationToggleEnabled = ((user, sm: SettingsManager, day: string) => {
-		return getFeature(
-			user,
-			'pushNotificationEnabled',
-			sm.get('pushNotificationEnabled', day) && false
-		);
+		return getFeature(user, 'pushNotificationEnabled', sm.get('pushNotificationEnabled', day));
 	})(user, $storedSettings, $storedCurrentDay);
 
 	let isOpenCalendarsMenu: boolean;
