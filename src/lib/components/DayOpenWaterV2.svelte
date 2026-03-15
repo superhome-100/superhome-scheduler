@@ -110,7 +110,7 @@
 			.sort((a, b) => +(a.boat || 0) - +(b.boat || 0));
 	})();
 	$: buoysToShow = $storedBuoys.filter(
-		(b) => b.isActive || buoyGroupings.find((g) => g.id === b.id)
+		(b) => b.isActive || buoyGroupings.find((g) => g.buoy.id === b.id)
 	);
 	$: isAdmin = $viewMode === 'admin';
 	$: isOpen = isOpenForBooking($storedSettings, date, ReservationCategory.openwater, null);
