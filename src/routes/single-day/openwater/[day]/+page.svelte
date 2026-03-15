@@ -220,7 +220,7 @@
 		on:swipe={swipeHandler}
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			<DayOpenWater {supabase} date={dayStr} {reservations} {isAmFull} />
+			<DayOpenWater date={dayStr} {reservations} {isAmFull} />
 		</Modal>
 	</div>
 {/if}

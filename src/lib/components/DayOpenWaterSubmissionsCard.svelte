@@ -5,16 +5,16 @@
 
 	import { toast } from 'svelte-french-toast';
 	import type { TempSubmission } from '$lib/autoAssign';
-	import type { Buoy, SupabaseClient } from '$types';
+	import type { Buoy } from '$types';
+	import { page } from '$app/state';
 
-	export let supabase: SupabaseClient;
 	export let buoysToShow: Buoy[];
 	export let submissions: TempSubmission[];
 	export let adminView: boolean = false;
-
 	export let onClick: (e: MouseEvent) => void = () => {};
-
 	export let adminComment: string = '';
+
+	const supabase = page.data.supabase;
 
 	const curUserStyling = (rsv: TempSubmission) => {
 		if (rsv.user === $user?.id) {
