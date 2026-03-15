@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { displayTag, badgeColor, buoyDesc } from '$lib/utils';
-	import { storedBuoysActive, storedUser as user } from '$lib/client/stores';
+	import { storedUser as user } from '$lib/client/stores';
 	import _ from 'lodash';
 
 	import { toast } from 'svelte-french-toast';
 	import type { TempSubmission } from '$lib/autoAssign';
-	import type { SupabaseClient } from '$types';
+	import type { Buoy, SupabaseClient } from '$types';
 
 	export let supabase: SupabaseClient;
+	export let buoysToShow: Buoy[];
 	export let submissions: TempSubmission[];
 	export let adminView: boolean = false;
 
@@ -75,7 +76,7 @@
 									on:change={(e) => e.target.form.requestSubmit()}
 								>
 									<option value="auto" selected={rsv.buoy === 'auto'}>Auto</option>
-									{#each $storedBuoysActive as b (b.name)}
+									{#each buoysToShow as b (b.name)}
 										<option value={b.name} selected={rsv.buoy === b.name}
 											>{b.name} - {buoyDesc(b)}</option
 										>

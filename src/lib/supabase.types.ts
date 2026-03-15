@@ -85,6 +85,7 @@ export type Database = {
 					createdAt: string;
 					extraBottomWeight: boolean | null;
 					id: string;
+					isActive: boolean;
 					largeBuoy: boolean | null;
 					maxDepth: number | null;
 					name: string;
@@ -96,6 +97,7 @@ export type Database = {
 					createdAt?: string;
 					extraBottomWeight?: boolean | null;
 					id?: string;
+					isActive?: boolean;
 					largeBuoy?: boolean | null;
 					maxDepth?: number | null;
 					name: string;
@@ -107,6 +109,7 @@ export type Database = {
 					createdAt?: string;
 					extraBottomWeight?: boolean | null;
 					id?: string;
+					isActive?: boolean;
 					largeBuoy?: boolean | null;
 					maxDepth?: number | null;
 					name?: string;

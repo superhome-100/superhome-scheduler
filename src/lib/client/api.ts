@@ -27,21 +27,6 @@ export const getBuoys = async (supabase: SupabaseClient) => {
 	}
 };
 
-export const getBuoysActive = async (supabase: SupabaseClient) => {
-	try {
-		const { data } = await supabase
-			.from('Buoys')
-			.select('*')
-			.eq('isActive', true)
-			.order('maxDepth', { nullsFirst: false })
-			.throwOnError();
-		return data;
-	} catch (error) {
-		console.error(error);
-		return []
-	}
-};
-
 export const getBoatAssignmentsByDate = async (supabase: SupabaseClient, date: string): Promise<Record<string, string>> => {
 	try {
 		const { data } = await supabase

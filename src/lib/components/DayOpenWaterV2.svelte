@@ -9,7 +9,8 @@
 		type OWReservation,
 		type ReservationEx,
 		ReservationCategory,
-		type SupabaseClient
+		type SupabaseClient,
+		OWTime
 	} from '$types';
 	import DayOpenWaterSubmissionsCard from './DayOpenWaterSubmissionsCard.svelte';
 	import { buoyDesc, isOpenForBooking } from '$lib/utils';
@@ -81,11 +82,11 @@
 		if (!reservations || !$storedBuoys.length) return [];
 		const amReservations = setBuoyToReservations(
 			$storedBuoys,
-			reservations.filter((r) => r.owTime === 'AM') as OWReservation[]
+			reservations.filter((r) => r.owTime === OWTime.AM) as OWReservation[]
 		);
 		const pmReservations = setBuoyToReservations(
 			$storedBuoys,
-			reservations.filter((r) => r.owTime === 'PM') as OWReservation[]
+			reservations.filter((r) => r.owTime === OWTime.PM) as OWReservation[]
 		);
 		const comments = $storedOWAdminComments || [];
 		return $storedBuoys
@@ -99,7 +100,7 @@
 					buoy: v,
 					boat: boatAssignments?.[v.name!] || null,
 					amReservations: buoyAmReservation,
-					pmReservations: pmReservations.filter((r) => r._buoy === v.name),
+					pmReservations: buoyPmReservation,
 					amAdminComment: amComment?.comment ?? undefined,
 					pmAdminComment: pmComment?.comment ?? undefined,
 					// only AM headcount is necessary
@@ -107,10 +108,12 @@
 					pmHeadCount: getHeadCount(buoyPmReservation)
 				};
 			})
-			.sort((a, b) => +(a.boat || 0) - +(b.boat || 0))
-			.filter((v) => v.amReservations.length > 0 || v.pmReservations.length > 0);
+			.filter((v) => v.amReservations.length > 0 || v.pmReservations.length > 0)
+			.sort((a, b) => +(a.boat || 0) - +(b.boat || 0));
 	})();
-
+	$: buoysToShow = $storedBuoys.filter(
+		(b) => b.isActive || buoyGroupings.find((g) => g.id === b.id)
+	);
 	$: isAdmin = $viewMode === 'admin';
 	$: isOpen = isOpenForBooking($storedSettings, date, ReservationCategory.openwater, null);
 	$: isAMOpen = $storedSettings.getOpenwaterAmBookable(date);
@@ -145,7 +148,7 @@
 							<span class="font-bold ml-1">{boat}</span>
 							<span class="bg-teal-100 border border-black px-0.4"
 								>{buoyGroupings
-									.filter((b) => b.boat === boat)
+									.filter((g) => g.boat === boat)
 									.reduce((a, b) => a + b.amHeadCount, 0)}</span
 							>
 						{/each}
@@ -167,7 +170,7 @@
 							<span class="font-bold ml-1">{boat}</span>
 							<span class="bg-teal-100 border border-black px-0.4"
 								>{buoyGroupings
-									.filter((b) => b.boat === boat)
+									.filter((g) => g.boat === boat)
 									.reduce((a, b) => a + b.pmHeadCount, 0)}</span
 							>
 						{/each}
@@ -221,6 +224,7 @@
 						<div class="w-1/2">
 							<DayOpenWaterSubmissionsCard
 								{supabase}
+								{buoysToShow}
 								submissions={grouping.amReservations || []}
 								onClick={() => {
 									showViewRsvs(grouping.amReservations || []);
@@ -232,6 +236,7 @@
 						<div class="w-1/2">
 							<DayOpenWaterSubmissionsCard
 								{supabase}
+								{buoysToShow}
 								submissions={grouping.pmReservations || []}
 								onClick={() => {
 									showViewRsvs(grouping.pmReservations || []);
