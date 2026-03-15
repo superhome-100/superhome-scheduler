@@ -153,8 +153,10 @@ function assignBuoyGroupsToBuoys(buoys: Buoys[], grps: OWReservation[][]) {
 	let remainingBuoys = [...buoys];
 
 	// remainingBuoys, grps, and assignments are modified in-place
-	assignPreAssigned(remainingBuoys, grps, assignments, assignReasons);
-	assignAuto(remainingBuoys, grps, assignments, assignReasons);
+	assignPreAssigned(remainingBuoys, grps, assignments, assignReasons);// using inactive buoys as well
+	remainingBuoys = remainingBuoys.filter(b => b.isActive);
+	// remainingBuoys, grps, and assignments are modified in-place
+	assignAuto(remainingBuoys, grps, assignments, assignReasons); // only using active buoys
 
 	return {
 		assignments,

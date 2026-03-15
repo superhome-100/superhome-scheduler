@@ -20,7 +20,6 @@ import {
 import {
     getBoatAssignmentsByDate,
     getBuoys,
-    getBuoysActive,
     getIncomingReservations,
     getOWAdminComments,
     getReservationsByDate,
@@ -198,7 +197,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
 /**
  * set in src/routes/+layout.svelte
  */
-export const { value: storedSettings, isLoading: storedSettingsOnlineLoading } =
+export const { value: storedSettings, isLoading: storedSettingsLoading } =
     readableWithSubscriptionToCore<SettingsManager>('storedSettings',
         fallbackSettingsManager,
         async ({ supabase }) => {
@@ -327,14 +326,6 @@ export const { value: storedBuoys, isLoading: storedBuoysLoading } =
         [],
         async ({ supabase }) => {
             const r = await getBuoys(supabase);
-            return r;
-        }, "Buoys");
-
-export const { value: storedBuoysActive, isLoading: storedBuoysActiveLoading } =
-    readableWithSubscriptionToCore<Buoy[]>('storedBuoys',
-        [],
-        async ({ supabase }) => {
-            const r = await getBuoysActive(supabase);
             return r;
         }, "Buoys");
 

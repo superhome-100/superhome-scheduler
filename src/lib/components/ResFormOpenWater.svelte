@@ -13,7 +13,7 @@
 		storedDaySettings,
 		storedDayReservations,
 		storedUser,
-		storedBuoysActive
+		storedBuoys
 	} from '$lib/client/stores';
 
 	export let rsv: ReservationEx | null = null;
@@ -109,6 +109,8 @@
 		diveTime = diveTimeMatch ? diveTimeMatch[1] : null;
 	}
 
+	$: buoysToShow = $storedBuoys.filter((b) => b.isActive || rsv?.buoy === b.name);
+
 	// Extract values on component mount
 	onMount(() => {
 		if (rsv?.resType === ReservationType.competitionSetupCBS) {
@@ -136,7 +138,7 @@
 			<InputLabel label="Buoy" forInput="formBuoy">
 				<select class="w-full" id="formBuoy" name="buoy" value={rsv?.buoy}>
 					<option value="auto">Auto</option>
-					{#each $storedBuoysActive as buoy (buoy.id)}
+					{#each buoysToShow as buoy (buoy.id)}
 						<option value={buoy.name}
 							>{buoy.name + ' - ' + buoyDesc(buoy)} - [{buoyIsAssignedTo(
 								buoy?.name,
