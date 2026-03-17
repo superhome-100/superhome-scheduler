@@ -53,3 +53,15 @@ FOR EACH ROW EXECUTE FUNCTION audit.if_modified_func();
 CREATE OR REPLACE TRIGGER audit_Users
 AFTER INSERT OR UPDATE OR DELETE ON "public"."Users"
 FOR EACH ROW EXECUTE FUNCTION audit.if_modified_func();
+
+---
+
+CREATE OR REPLACE TRIGGER "audit_PriceTemplates"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."PriceTemplates"
+FOR EACH ROW EXECUTE FUNCTION audit.if_modified_func();
+
+---
+
+CREATE OR REPLACE TRIGGER "audit_UserPriceTemplates"
+AFTER INSERT OR UPDATE OR DELETE ON "public"."UserPriceTemplates"
+FOR EACH ROW EXECUTE FUNCTION audit.if_modified_func();
