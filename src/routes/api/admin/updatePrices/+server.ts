@@ -62,6 +62,7 @@ export async function GET({ request, locals: { safeGetSession } }: RequestEvent)
 
 		const now = PanglaoDayJs()
 		const nowDay = getYYYYMMDD(now);
+		const firstOfMonth = getYYYYMMDD(new Date(now.year(), now.month()))
 		// need to use supabaseServiceRole because this code run from scheduled worker without user so 
 		// `locals:{supabase}` is not working here
 		const settings = await getSettingsManager(supabaseServiceRole)
@@ -72,7 +73,7 @@ export async function GET({ request, locals: { safeGetSession } }: RequestEvent)
 		const { data: reservations } = await supabaseServiceRole
 			.from('ReservationsWithPrices')
 			.select('*')
-			.gte('date', getYYYYMMDD(now.add(-30, "days")))
+			.gte('date', firstOfMonth)
 			.lte('date', nowDay)
 			.eq('status', ReservationStatus.confirmed)
 			.order("date")
