@@ -1,20 +1,21 @@
+import type { SupabaseClient } from '$types';
 import { getYYYYMMDD } from './datetimeUtils';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from './supabase.types';
+import type { Json } from './supabase.types';
 
 export const ow_am_full = "ow_am_full";
+export const ow_pm_full = "ow_pm_full";
 
 export interface DaySettings {
 	[ow_am_full]: boolean;
+	[ow_pm_full]: boolean;
 }
 
 export const defaultDateSettings: DaySettings = {
-	[ow_am_full]: false
+	[ow_am_full]: false,
+	[ow_pm_full]: false,
 };
 
-export const ow_am_full_default = false;
-
-export async function getDaySettings(supabase: SupabaseClient<Database>, date: Date | string): Promise<DaySettings> {
+export async function getDaySettings(supabase: SupabaseClient, date: Date | string): Promise<DaySettings> {
 	const dt = getYYYYMMDD(date);
 	const { data } = await supabase
 		.from("DaySettings")
@@ -22,7 +23,7 @@ export async function getDaySettings(supabase: SupabaseClient<Database>, date: D
 		.eq("date", dt)
 		.throwOnError()
 	if (data.length === 0) {
-		return defaultDateSettings;
+		return { ...defaultDateSettings };
 	} else {
 		const settings = { ...defaultDateSettings };
 		for (const { key, value } of data) {
@@ -31,4 +32,14 @@ export async function getDaySettings(supabase: SupabaseClient<Database>, date: D
 		}
 		return settings;
 	}
+}
+
+export async function setDaySetting(supabase: SupabaseClient, date: Date | string, key: keyof DaySettings, value: Json) {
+	const dt = getYYYYMMDD(date);
+	await supabase
+		.from("DaySettings")
+		.upsert({ date: dt, key, value })
+		.select("key")
+		.single() // this way it throws if no row returned
+		.throwOnError();
 }

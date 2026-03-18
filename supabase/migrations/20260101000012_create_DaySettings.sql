@@ -1,7 +1,8 @@
 ---
 
 create type "public"."day_setting_key" as enum (
-  'ow_am_full'
+  'ow_am_full',
+  'ow_pm_full'
 );
 
 ---

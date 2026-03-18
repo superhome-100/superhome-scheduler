@@ -6,7 +6,7 @@
 	import { OWTime, ReservationCategory, ReservationType } from '$types';
 	import { getYYYYMMDD } from '$lib/datetimeUtils';
 	import InputLabel from './tiny_components/InputLabel.svelte';
-	import { ow_am_full } from '$lib/dateSettings';
+	import { ow_am_full, ow_pm_full } from '$lib/dateSettings';
 	import { displayTag } from '../../lib/utils';
 	import { onMount } from 'svelte';
 	import {
@@ -97,6 +97,7 @@
 	};
 
 	$: isAmFull = $storedDaySettings[ow_am_full];
+	$: isPmFull = $storedDaySettings[ow_pm_full];
 
 	function extractValuesFromComments() {
 		// Remove \r characters from comments
@@ -128,7 +129,7 @@
 	bind:category
 	bind:owTime
 	{rsv}
-	extendDisabled={isAmFull && owTime === 'AM' && !rsv}
+	extendDisabled={((isAmFull && owTime === 'AM') || (isPmFull && owTime === 'PM')) && !rsv}
 	{discipline}
 	{diveTime}
 	{resType}
@@ -181,6 +182,10 @@
 				{#if isAmFull && owTime === OWTime.AM}
 					<header class="bg-[#FF0000] text-white p-2 rounded-md">
 						Morning session is full please book in the afternoon/PM instead.
+					</header>
+				{:else if isPmFull && owTime === OWTime.PM}
+					<header class="bg-[#FF0000] text-white p-2 rounded-md">
+						Afternoon session is full, try to book for AM instead.
 					</header>
 				{/if}
 			</div>
