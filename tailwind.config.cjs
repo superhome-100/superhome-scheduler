@@ -27,7 +27,8 @@ const config = {
 				'status-pending': '#FFFF00',
 				'status-confirmed': '#00FF00',
 				'status-rejected': '#FF0000',
-				'status-canceled': '#4f4f50',
+				'status-canceled_with_fee': '#FCAD03',
+				'status-canceled': '#4f4f50'
 			}
 		}
 	},

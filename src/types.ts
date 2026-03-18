@@ -106,7 +106,8 @@ export enum ReservationStatus {
 	confirmed = 'confirmed',
 	pending = 'pending',
 	rejected = 'rejected',
-	canceled = 'canceled'
+	canceled = 'canceled',
+	canceled_with_fee = 'canceled_with_fee',
 }
 
 export type ReservationStatusT = Enums<'reservation_status'>

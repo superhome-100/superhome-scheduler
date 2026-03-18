@@ -51,7 +51,7 @@ export const getUserPastReservations = async (user: User, supabase: SupabaseClie
 			.select('*')
 			.eq('user', user.id)
 			.lte('date', maxDateStr)
-			.eq('status', ReservationStatus.confirmed)
+			.in('status', [ReservationStatus.confirmed, ReservationStatus.canceled_with_fee])
 			.overrideTypes<ReservationEx[]>()
 			.throwOnError();
 
@@ -82,7 +82,7 @@ export const getIncomingReservations = async (user: User, supabase: SupabaseClie
 			.eq('user', user.id)
 			.gte('date', now.format('YYYY-MM-DD'))
 			.lt('date', inXDays.format('YYYY-MM-DD'))
-			.in("status", [ReservationStatus.confirmed, ReservationStatus.pending])
+			.in("status", [ReservationStatus.confirmed, ReservationStatus.pending, ReservationStatus.canceled_with_fee])
 			.overrideTypes<ReservationEx[]>()
 			.throwOnError();
 

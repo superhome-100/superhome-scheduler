@@ -9,7 +9,6 @@
 	import { ReservationCategory, ReservationStatus } from '$types';
 	import dayjs from 'dayjs';
 	import { storedSettings } from '$lib/client/stores';
-	import type { SettingsManager } from '$lib/settings';
 	import { displayStatus } from '$lib/utils';
 
 	export let resPeriod: ReservationPeriod;
@@ -92,8 +91,7 @@
 
 	const groupRsvs = (
 		resPeriod: ReservationPeriod,
-		rsvs: ReservationEx[],
-		sm: SettingsManager
+		rsvs: ReservationEx[]
 	): ReservationsByMonth[] => {
 		const sorted = sortChronologically(rsvs, resPeriod);
 
@@ -117,16 +115,17 @@
 		}
 	};
 
-	$: rsvGroups = groupRsvs(resPeriod, reservations, $storedSettings);
+	$: rsvGroups = groupRsvs(resPeriod, reservations);
 
 	const statusTextColor: { [key: string]: string } = {
 		[ReservationStatus.confirmed]: 'text-status-confirmed',
 		[ReservationStatus.pending]: 'text-status-pending',
-		[ReservationStatus.rejected]: 'text-status-rejected'
+		[ReservationStatus.rejected]: 'text-status-rejected',
+		[ReservationStatus.canceled_with_fee]: 'text-status-canceled_with_fee'
 	};
 
 	const totalThisMonth = (rsvs: Reservation[]): number => {
-		return rsvs.reduce((t, rsv) => (rsv.price ? t + rsv.price : t), 0);
+		return rsvs.reduce((acc, rsv) => acc + (rsv.price ?? 0), 0);
 	};
 </script>
 
@@ -156,7 +155,7 @@
 							{displayStatus(rsv.status)}
 						</div>
 					</td>
-					{#if beforeCancelCutoff($storedSettings, rsv.date, rsv.startTime, rsv.category)}
+					{#if beforeCancelCutoff($storedSettings, rsv.date, rsv.startTime, rsv.category) && (rsv.status === ReservationStatus.confirmed || rsv.status === ReservationStatus.pending)}
 						<td
 							on:click|stopPropagation={() => {}}
 							on:keypress|stopPropagation={() => {}}

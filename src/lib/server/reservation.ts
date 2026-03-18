@@ -11,7 +11,7 @@ import type {
 } from '$types';
 import type { Tables, TablesInsert, TablesUpdate } from '$lib/supabase.types';
 import { ReservationCategory, ReservationStatus, ReservationType, OWTime } from '$types';
-import { timeStrToMin, isValidProSafetyCutoff } from '$lib/datetimeUtils';
+import { timeStrToMin, isValidProSafetyCutoff, PanglaoDayJs, fromPanglaoDateTimeStringToDayJs } from '$lib/datetimeUtils';
 import { getTimeOverlapSupabaseFilter } from '$utils/reservation-queries';
 import { type SettingsManager } from '../settings';
 import { getDaySettings, type DaySettings } from '$lib/dateSettings';
@@ -715,12 +715,24 @@ export async function cancelReservation(actor: User, formData: AppFormData, sett
 
 		cancel = cancel.concat(existing.filter((rsv) => !save.includes(rsv.user)).map((rsv) => rsv.id));
 	}
+	let status = ReservationStatus.canceled;
+	if (sub.owTime) {
+		const reservationLateCancelPenalty1OffsetMins = settings.get('reservationLateCancelPenalty1OffsetMins', sub.date);
+		const minutesUntilEvent = fromPanglaoDateTimeStringToDayJs(sub.date, sub.startTime).diff(PanglaoDayJs(), 'minutes');
+		if (minutesUntilEvent < reservationLateCancelPenalty1OffsetMins) {
+			const ds = await getDaySettings(supabaseServiceRole, sub.date)
+			if ((sub.owTime === OWTime.AM && ds.ow_am_full) || (sub.owTime === OWTime.PM && ds.ow_pm_full)) {
+				status = ReservationStatus.canceled_with_fee;
+			}
+		}
+	}
 	{
 		const { data, error } = await supabaseServiceRole
 			.from('Reservations')
-			.update({ status: ReservationStatus.canceled })
+			.update({ status })
 			.select('*')
-			.in('id', cancel);
+			.in('id', cancel)
+			.throwOnError();
 		if (error) errors.push({ id, error });
 		else if (data) await pushNotificationService.sendReservationStatus(settings, actor, data);
 	}

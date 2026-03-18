@@ -16,7 +16,7 @@
 		timeStrToMin
 	} from '$lib/datetimeUtils';
 	import { Constants, type TablesUpdate } from '$lib/supabase.types';
-	import { type ReservationEx } from '$types';
+	import { ReservationStatus, type ReservationEx } from '$types';
 	import { LRUCache } from 'lru-cache/raw';
 	import toast from 'svelte-french-toast';
 	import { swipe } from 'svelte-gestures';
@@ -422,6 +422,14 @@
 			y: e.clientY
 		};
 	}
+
+	const statusBgColor: { [key: string]: string } = {
+		[ReservationStatus.confirmed]: 'bg-status-confirmed',
+		[ReservationStatus.pending]: 'bg-status-pending',
+		[ReservationStatus.rejected]: 'bg-status-rejected',
+		[ReservationStatus.canceled]: 'bg-status-canceled',
+		[ReservationStatus.canceled_with_fee]: 'bg-status-canceled_with_fee'
+	};
 </script>
 
 <svelte:window on:keydown={(e) => handleKeydown(e, document.getElementById('searchTerm'))} />
@@ -602,7 +610,7 @@
 							{/if}
 						</td>
 						<td class="actions-col">
-							<button class="status-btn bg-status-{rsv.status}">
+							<button class="status-btn {statusBgColor[rsv.status]}">
 								{displayStatus(rsv.status)}
 							</button>
 						</td>
