@@ -58,6 +58,12 @@
 				<div class="flex items-center w-full px-2">
 					<div class="flex-1 text-xs lg:text-base {curUserStyling(rsv)} overflow-auto break-all">
 						{displayTag(rsv, adminView)}
+						{#if adminView && rsv.comments}
+							<span class="container-with-hover">
+								<span>💬</span>
+								<div class="container-hover-element">Comment: "{rsv.comments}"</div>
+							</span>
+						{/if}
 						<!-- {#if adminView && rsv._autoAssignReason}
 							<div
 								class="desktop-text text-[0.65rem] opacity-80 italic leading-tight text-left mt-0.5"
