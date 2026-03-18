@@ -48,7 +48,7 @@
 	$: disabled = viewOnly || restrictModify;
 
 	let status: ReservationStatus = (rsv?.status as ReservationStatus) || ReservationStatus.pending;
-	let comments = rsv?.comments || null;
+	let comments = rsv?.comments || '';
 
 	$: maxBuddies =
 		category === ReservationCategory.openwater ? 3 : category === ReservationCategory.pool ? 1 : 0; //category === ReservationCategory.classroom
@@ -85,12 +85,6 @@
 	}
 
 	let currentBF = { name: '', matches: [], userId: null } as BuddyData;
-
-	$: {
-		if (rsv && rsv.comments && !comments) {
-			comments = rsv.comments;
-		}
-	}
 
 	$: {
 		if (resType === ReservationType.competitionSetupCBS) {

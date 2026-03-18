@@ -314,7 +314,7 @@ function unpackSubmitForm(
 		category,
 		resType,
 		buddies: JSON.parse(formData.get('buddies')),
-		comments: formData.get('comments'),
+		comments: formData.get('comments') || null,
 		numStudents: JSON.parse(formData.get('numStudents')),
 		startTime,
 		endTime,
