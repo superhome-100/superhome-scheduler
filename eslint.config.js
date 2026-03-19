@@ -47,7 +47,8 @@ export default ts.config(
 		rules: {
 			// Override or add rule settings here, such as:
 			// 'svelte/rule-name': 'error'
-			'prefer-const': 'off'
+			'prefer-const': 'off',
+			'@typescript-eslint/no-explicit-any': 'off'
 		}
 	}
 );

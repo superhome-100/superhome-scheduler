@@ -6,7 +6,6 @@
 		storedUsersForAdmin,
 		storedUsersForAdminLoading
 	} from '$lib/client/stores';
-	import LoadingBar from '$lib/components/LoadingBar.svelte';
 	import { PanglaoDayJs } from '$lib/datetimeUtils';
 	import { Constants, type TablesUpdate } from '$lib/supabase.types';
 	import type { UserWithPriceTemplate } from '$types';
@@ -118,8 +117,8 @@
 	}
 
 	const limitList = 100;
-	$: searchTerm = $page.url.searchParams.get('q') ?? '';
-	$: statusFilter = '';
+	let searchTerm = $page.url.searchParams.get('q') ?? '';
+	let statusFilter = '';
 	$: searchTermLower = searchTerm.toLowerCase();
 	$: filteredUsers = $storedUsersForAdmin
 		.filter(
@@ -205,7 +204,7 @@
 			class="search-input {statusFilter ? 'search-input-active' : ''}"
 		>
 			<option value="" selected>Status</option>
-			{#each Constants['public']['Enums']['user_status'] as status}
+			{#each Constants['public']['Enums']['user_status'] as status (status)}
 				<option value={status}>{status}</option>
 			{/each}
 		</select>
@@ -263,7 +262,7 @@
 										<label>
 											Privileges
 											<select bind:value={draftUser.privileges}>
-												{#each Constants['public']['Enums']['user_privilege'] as priv}
+												{#each Constants['public']['Enums']['user_privilege'] as priv (priv)}
 													<option value={priv}>{priv}</option>
 												{/each}
 											</select>
@@ -272,7 +271,7 @@
 										<label>
 											Status
 											<select bind:value={draftUser.status} class={draftUser.status}>
-												{#each Constants['public']['Enums']['user_status'] as status}
+												{#each Constants['public']['Enums']['user_status'] as status (status)}
 													<option value={status}>{status}</option>
 												{/each}
 											</select>
@@ -281,7 +280,7 @@
 										<label>
 											Price Template
 											<select bind:value={draftUser.priceTemplate}>
-												{#each $storedPriceTemplates as priceTemplate}
+												{#each $storedPriceTemplates as priceTemplate (priceTemplate.id)}
 													<option value={priceTemplate.id}>{priceTemplate.id}</option>
 												{/each}
 											</select>

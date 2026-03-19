@@ -189,7 +189,7 @@
 							.promise(flagOWAmAsFull(supabase, dayStr, newIsAmFull), {
 								loading: 'Marking AM as ' + n,
 								success: 'Marked AM as ' + n,
-								error: 'Failed to makr AM as ' + n
+								error: 'Failed to mark AM as ' + n
 							})
 							.catch((e) => console.warn('mark-as-am', n));
 					}}

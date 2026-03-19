@@ -35,9 +35,9 @@
 	const supabaseTableUrl =
 		PUBLIC_SUPABASE_URL.indexOf('localhost') !== -1
 			? 'http://localhost:54323/project/default/editor'
-			: `https://supabase.com/dashboard/project/${
-					new URL(PUBLIC_SUPABASE_URL).host.split('.')[0]
-			  }/editor`;
+			: 'https://supabase.com/dashboard/project/' +
+			  new URL(PUBLIC_SUPABASE_URL).host.split('.')[0] +
+			  '/editor';
 	const schedulerDoc =
 		'https://docs.google.com/document/d/1FQ828hDuuPRnQ7QWYMykSv9bT3Lmxi0amLsFyTjnyuM/edit?usp=share_link';
 	const viewModeStorageKey = 'superhome-scheduler.viewMode';
@@ -197,7 +197,10 @@
 				<span style="background-color: red;">SHS {PUBLIC_STAGE} v{__APP_VERSION__}</span>
 			{/if}
 			{#if $storedUser && !$supabaseIsOnline}
-				<button class="w-7 h-7 p-0" on:click={() => supabase_es.checkAndStartInterval()}>
+				<button
+					class="w-7 h-7 p-0"
+					on:click|stopPropagation={() => supabase_es.checkAndStartInterval()}
+				>
 					<SvgSign type="offline" size={25} />
 				</button>
 			{/if}

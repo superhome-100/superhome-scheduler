@@ -8,7 +8,6 @@
 		storedSettings
 	} from '$lib/client/stores';
 	import MyFloatingElement from '$lib/components/MyFloatingElement.svelte';
-	import LoadingBar from '$lib/components/LoadingBar.svelte';
 	import {
 		completeHHMM,
 		getYYYYMMDD,
@@ -22,13 +21,14 @@
 	import toast from 'svelte-french-toast';
 	import { swipe } from 'svelte-gestures';
 	import { browser } from '$app/environment';
+	import { displayStatus } from '$lib/utils';
 
 	export let data;
 	const { supabase } = data;
 
 	$: sm = $storedSettings;
 	const dayParamKey = 'day';
-	$: dayParam = $page.url.searchParams.get(dayParamKey) ?? undefined;
+	let dayParam = $page.url.searchParams.get(dayParamKey) ?? undefined;
 	$: day = ((d) => {
 		try {
 			return PanglaoDayJs(d);
@@ -128,11 +128,11 @@
 	}
 
 	const searchTermParamKey = 'search';
-	$: searchTerm = $page.url.searchParams.get(searchTermParamKey) ?? '';
+	let searchTerm = $page.url.searchParams.get(searchTermParamKey) ?? '';
 	const categoryParamKey = 'category';
-	$: categoryFilter = $page.url.searchParams.get(categoryParamKey) ?? '';
+	let categoryFilter = $page.url.searchParams.get(categoryParamKey) ?? '';
 	const owTimeFilterParamKey = 'owTime';
-	$: owTimeFilter = $page.url.searchParams.get(owTimeFilterParamKey) ?? '';
+	let owTimeFilter = $page.url.searchParams.get(owTimeFilterParamKey) ?? '';
 	const statusParamKey = 'status';
 	const statusValues = Constants['public']['Enums']['reservation_status'];
 	let statusFilter = $page.url.searchParams.get(statusParamKey)?.split(',') ?? statusValues;
@@ -183,6 +183,7 @@
 				break;
 			case owTimeFilterParamKey:
 				owTimeFilter = value;
+				break;
 			default:
 				console.error('undhandled case', paramType);
 		}
@@ -240,14 +241,16 @@
 	}
 
 	const cacheDaySelection = new LRUCache<string, Set<string>>({ max: 100 });
-	$: selectedRsvs = ((day) => {
+	const getSelectedRsvs = (day: string) => {
 		let c = cacheDaySelection.get(day);
 		if (!c) {
 			c = new Set<string>();
 			cacheDaySelection.set(day, c);
 		}
 		return c;
-	})($storedDayReservations_param.day);
+	};
+	let selectedRsvs: Set<string>;
+	$: selectedRsvs = getSelectedRsvs($storedDayReservations_param.day);
 
 	$: visibleSelectedRsvs = createIntersection(filteredReservations, selectedRsvs);
 
@@ -343,11 +346,11 @@
 		return await toast
 			.promise(fn(), {
 				loading: `Sending push notification(s)...`,
-				success: (s) => `Sent push notification(s)`,
+				success: `Sent push notification(s)`,
 				error: `Failed to send push notification(s)`
 			})
 			.catch((e) => {
-				console.info('rejected sendPushReminder', e, rsvIds);
+				console.info('errored sendPushReminder', e, rsvIds);
 			});
 	}
 
@@ -443,7 +446,7 @@
 			class="search-input {categoryFilter ? 'search-input-active' : ''}"
 		>
 			<option value="" selected>Category</option>
-			{#each Constants['public']['Enums']['reservation_category'] as v}
+			{#each Constants['public']['Enums']['reservation_category'] as v (v)}
 				<option value={v}>{v}</option>
 			{/each}
 		</select>
@@ -453,7 +456,7 @@
 			class="search-input {owTimeFilter ? 'search-input-active' : ''}"
 		>
 			<option value="" selected>OW Time</option>
-			{#each Constants['public']['Enums']['reservation_ow_time'] as v}
+			{#each Constants['public']['Enums']['reservation_ow_time'] as v (v)}
 				<option value={v}>{v}</option>
 			{/each}
 		</select>
@@ -465,10 +468,10 @@
 					: ''}">Status:{statusFilter.length}</button
 			>
 			<div class="menu">
-				{#each statusValues as status}
+				{#each statusValues as status (status)}
 					<label class="dropdown-label">
 						<input type="checkbox" value={status} bind:group={statusFilter} />
-						{status}
+						{displayStatus(status)}
 					</label>
 				{/each}
 			</div>
@@ -480,7 +483,7 @@
 					: ''}">Special:{specialFilter.length}</button
 			>
 			<div class="menu">
-				{#each specialFilterValues as special}
+				{#each specialFilterValues as special (special)}
 					<label class="dropdown-label">
 						<input type="checkbox" value={special} bind:group={specialFilter} />
 						{special}
@@ -599,8 +602,8 @@
 							{/if}
 						</td>
 						<td class="actions-col">
-							<button class="{rsv.status} ">
-								{rsv.status}
+							<button class="status-btn bg-status-{rsv.status}">
+								{displayStatus(rsv.status)}
 							</button>
 						</td>
 					</tr>
@@ -639,8 +642,8 @@
 										<label>
 											Status
 											<select bind:value={draftRsv.status}>
-												{#each Constants['public']['Enums']['reservation_status'] as status}
-													<option value={status}>{status}</option>
+												{#each Constants['public']['Enums']['reservation_status'] as status (status)}
+													<option value={status}>{displayStatus(status)}</option>
 												{/each}
 											</select>
 										</label>
@@ -673,7 +676,7 @@
 												}}
 												disabled={draftRsv.category !== 'openwater'}
 											>
-												{#each Constants['public']['Enums']['reservation_ow_time'] as v}
+												{#each Constants['public']['Enums']['reservation_ow_time'] as v (v)}
 													<option value={v}>{v}</option>
 												{/each}
 											</select>
@@ -796,27 +799,8 @@
 		margin: 2px;
 	}
 
-	.pending {
+	.status-btn {
 		padding: 1px;
-		background-color: #ffff00 !important;
-		width: 80px;
-		font-size: small;
-	}
-	.confirmed {
-		padding: 1px;
-		background-color: #00ff00 !important;
-		width: 80px;
-		font-size: small;
-	}
-	.rejected {
-		padding: 1px;
-		background-color: #ff0000 !important;
-		width: 80px;
-		font-size: small;
-	}
-	.canceled {
-		padding: 1px;
-		background-color: #4f4f50 !important;
 		width: 80px;
 		font-size: small;
 	}

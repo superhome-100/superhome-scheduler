@@ -11,7 +11,7 @@
 		storedDayReservations_param
 	} from '$lib/client/stores';
 	import { minValidDateStr, maxValidDateStr } from '$lib/reservationTimes';
-	import { adminView, isMyReservation, isOpenForBooking } from '$lib/utils';
+	import { adminView, displayStatus, isMyReservation, isOpenForBooking } from '$lib/utils';
 	import BuddyMatch from '$lib/components/BuddyMatch.svelte';
 	import PlusIcon from '$lib/components/PlusIcon.svelte';
 	import DeleteIcon from '$lib/components/DeleteIcon.svelte';
@@ -34,7 +34,7 @@
 	export let resType: ReservationType | null = null;
 
 	const dayStrInitValue = dayStr;
-	$: dayStrInput = dayStrInitValue;
+	let dayStrInput = dayStrInitValue;
 	$: {
 		const d = PanglaoDayJs(dayStrInput);
 		if (d.isValid()) {
@@ -69,7 +69,7 @@
 		return buddyFields;
 	};
 
-	$: buddyFields = initBF();
+	let buddyFields = initBF();
 
 	$: {
 		for (let i = 0; i < buddyFields.length; ++i) {
@@ -84,7 +84,7 @@
 		buddyFields = [...buddyFields];
 	}
 
-	$: currentBF = { name: '', matches: [], userId: null } as BuddyData;
+	let currentBF = { name: '', matches: [], userId: null } as BuddyData;
 
 	$: {
 		if (rsv && rsv.comments && !comments) {
@@ -171,7 +171,7 @@
 		currentBF.matches = [];
 		buddyFields = [...buddyFields];
 		hiLiteIndex = 0;
-		// @ts-ignore - sveltekit doesn't like this
+		// @ts-expect-error - sveltekit doesn't like this
 		document.querySelector('#buddy' + currentBF.id + '-input').focus();
 	};
 
@@ -180,9 +180,11 @@
 	const navigateList = (e: any) => {
 		if (currentBF?.matches && currentBF?.matches.length > 0) {
 			if (e.key === 'ArrowDown' && hiLiteIndex <= currentBF.matches.length - 1) {
-				hiLiteIndex === null ? (hiLiteIndex = 0) : (hiLiteIndex += 1);
+				if (hiLiteIndex === null) hiLiteIndex = 0;
+				else hiLiteIndex += 1;
 			} else if (e.key === 'ArrowUp' && hiLiteIndex !== null) {
-				hiLiteIndex === 0 ? (hiLiteIndex = currentBF.matches.length - 1) : (hiLiteIndex -= 1);
+				if (hiLiteIndex === 0) hiLiteIndex = currentBF.matches.length - 1;
+				else hiLiteIndex -= 1;
 			} else if (e.key === 'Enter') {
 				e.preventDefault();
 				setInputVal(currentBF.matches[hiLiteIndex]);
@@ -194,13 +196,6 @@
 
 	const autocompUlStyle =
 		'relative ml-2 top-0 border border-solid border-bg-gray-300 ' + 'rounded text-sm';
-
-	const bdColor: { [key in ReservationStatus]: string } = {
-		[ReservationStatus.confirmed]: 'dark:text-white bg-green-600',
-		[ReservationStatus.pending]: 'dark:text-white',
-		[ReservationStatus.rejected]: 'dark:text-white bg-red-600',
-		[ReservationStatus.canceled]: 'dummy-not-shown'
-	};
 
 	const onRemoveBuddy = (bf: BuddyData) => {
 		if (!rsv) {
@@ -224,12 +219,8 @@
 		{#if viewOnly}
 			<InputLabel forInput="formStatus" label="Status">
 				<input type="hidden" name="status" value={status} />
-				<div
-					class={`p-1 bg-gray-600 w-full rounded-md ${
-						bdColor[rsv?.status || ReservationStatus.pending]
-					}`}
-				>
-					{rsv?.status.toUpperCase()}
+				<div class="p-1 bg-gray-600 w-full rounded-md bg-status-{rsv?.status}">
+					{displayStatus(rsv?.status).toUpperCase()}
 				</div>
 			</InputLabel>
 		{/if}
@@ -290,14 +281,14 @@
 											on:click={() => onRemoveBuddy(bf)}
 											{disabled}
 										>
-											<DeleteIcon svgStyle={'h-6 w-6'} />
+											<DeleteIcon svgStyle="h-6 w-6" />
 										</button>
 									{/if}
 								</div>
 							</div>
 							{#if bf?.matches && bf?.matches?.length > 0}
 								<ul class={autocompUlStyle}>
-									{#each bf.matches as m, i}
+									{#each bf.matches as m, i (i)}
 										<BuddyMatch
 											itemLabel={m.nickname}
 											highlighted={i === hiLiteIndex}

@@ -93,6 +93,7 @@ export enum ReservationType {
 	autonomousPlatformCBS = 'autonomousPlatformCBS',
 	competitionSetupCBS = 'competitionSetupCBS'
 }
+export type ReservationTypeT = Enums<'reservation_type'>
 
 export enum ReservationCategory {
 	openwater = 'openwater',
@@ -116,7 +117,7 @@ export interface BuddyData {
 	name: string;
 	userId: string | null;
 	id?: number;
-	matches?: unknown[];
+	matches?: UserMinimal[];
 }
 
 export type AppFormData = {
@@ -140,4 +141,4 @@ export type DateReservationReport = { date: string, summary: DateReservationSumm
 export type Notification = Tables<'Notifications'>;
 export type BuoyGrouping = Tables<'BuoyGroupings'>;
 
-export type ReservationWithPrices = Tables<'Reservations'> & { priceTemplate: Tables<'PriceTemplates'> };
+export type ReservationWithPrices = Tables<'Reservations'> & { priceTemplate: PriceTemplate };

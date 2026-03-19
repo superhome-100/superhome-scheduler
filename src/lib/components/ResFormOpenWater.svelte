@@ -3,7 +3,7 @@
 	import { adminView, buoyDesc, isMyReservation, resTypeModDisabled } from '$lib/utils';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 	import type { ReservationEx } from '$types';
-	import { ReservationCategory, ReservationType } from '$types';
+	import { OWTime, ReservationCategory, ReservationType } from '$types';
 	import { getYYYYMMDD } from '$lib/datetimeUtils';
 	import InputLabel from './tiny_components/InputLabel.svelte';
 	import { ow_am_full } from '$lib/dateSettings';
@@ -16,7 +16,7 @@
 		storedBuoys
 	} from '$lib/client/stores';
 
-	export let rsv: ReservationEx | null = null;
+	export let rsv: (ReservationEx & { maxDepth: number }) | null = null;
 	export let dayStr: string = rsv?.date || getYYYYMMDD();
 	export let category: ReservationCategory = ReservationCategory.openwater;
 	export let viewOnly = false;
@@ -29,7 +29,7 @@
 	let resType: ReservationType =
 		rsv == null ? ReservationType.autonomous : (rsv?.resType as ReservationType);
 	let maxDepth = rsv?.maxDepth ?? (Number(localStorage.getItem(previousMaxDepthKey)) || undefined);
-	let owTime = rsv?.owTime ?? 'AM';
+	let owTime = (rsv?.owTime as OWTime) ?? OWTime.AM;
 	let numStudents = rsv?.resType !== ReservationType.course ? 1 : rsv.numStudents;
 	let preferAM = rsv?.attributes?.preferAM ?? false;
 	let pulley = rsv?.pulley;
@@ -174,11 +174,11 @@
 		<InputLabel label="Time" forInput="formOwTime">
 			<div>
 				<select id="formOwTime" class="w-full" {disabled} name="owTimeManual" bind:value={owTime}>
-					<option value="AM">AM</option>
-					<option value="PM">PM</option>
+					<option value={OWTime.AM}>AM</option>
+					<option value={OWTime.PM}>PM</option>
 				</select>
 				<input type="hidden" name="owTime" value={owTime} />
-				{#if isAmFull && owTime === 'AM'}
+				{#if isAmFull && owTime === OWTime.AM}
 					<header class="bg-[#FF0000] text-white p-2 rounded-md">
 						Morning session is full please book in the afternoon/PM instead.
 					</header>

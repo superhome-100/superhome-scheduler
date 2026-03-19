@@ -10,6 +10,7 @@
 	import dayjs from 'dayjs';
 	import { storedSettings } from '$lib/client/stores';
 	import type { SettingsManager } from '$lib/settings';
+	import { displayStatus } from '$lib/utils';
 
 	export let resPeriod: ReservationPeriod;
 	export let reservations: ReservationEx[];
@@ -136,7 +137,7 @@
 {/if}
 <table class="m-auto border-separate border-spacing-y-1">
 	<tbody>
-		{#each rsvGroups as { month, rsvs }}
+		{#each rsvGroups as { month, rsvs } (month)}
 			{#each rsvs as rsv (rsv.id)}
 				<tr
 					on:click={() => showViewRsv(rsv)}
@@ -152,7 +153,7 @@
 					<td class="text-white text-sm font-semibold">{timeDesc(rsv)}</td>
 					<td class="text-white text-sm font-semibold">
 						<div class="align-middle m-auto w-fit rounded-lg {statusTextColor[rsv.status]}">
-							{rsv.status}
+							{displayStatus(rsv.status)}
 						</div>
 					</td>
 					{#if beforeCancelCutoff($storedSettings, rsv.date, rsv.startTime, rsv.category)}

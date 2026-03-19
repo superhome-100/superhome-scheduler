@@ -144,7 +144,7 @@ export class SupabaseEventSource {
     }
 
     async destroy() {
-        console.debug('supabase_es.destroy', this._channelStatus);
+        //console.debug('supabase_es.destroy', this._channelStatus);
         this.stopCheckInterval();
         if (this._client)
             await this._client.removeAllChannels();
