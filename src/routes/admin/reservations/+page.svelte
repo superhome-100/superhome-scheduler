@@ -479,7 +479,14 @@
 				{#each statusValues as status (status)}
 					<label class="dropdown-label">
 						<input type="checkbox" value={status} bind:group={statusFilter} />
-						{displayStatus(status)}
+						<button
+							class="p-1 {statusBgColor[status]}"
+							on:click={() => {
+								statusFilter = [status];
+							}}
+						>
+							{displayStatus(status)}
+						</button>
 					</label>
 				{/each}
 			</div>
