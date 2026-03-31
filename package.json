@@ -1,6 +1,6 @@
 {
     "name": "superhome-scheduler",
-    "version": "0.4.125",
+    "version": "0.4.126",
     "private": true,
     "scripts": {
         "dev": "PUBLIC_STAGE=local vite dev",
@@ -14,16 +14,16 @@
         "db_reset": "supabase db reset && supabase gen types typescript --local > src/lib/supabase.types.ts && prettier --plugin-search-dir . --write src/lib/supabase.types.ts"
     },
     "devDependencies": {
-        "@cloudflare/workers-types": "^4.20260313.1",
+        "@cloudflare/workers-types": "^4.20260329.1",
         "@faker-js/faker": "^7.6.0",
         "@popperjs/core": "^2.11.8",
         "@sveltejs/adapter-auto": "^7.0.1",
-        "@sveltejs/adapter-cloudflare": "^7.2.7",
-        "@sveltejs/adapter-node": "^5.5.3",
+        "@sveltejs/adapter-cloudflare": "^7.2.8",
+        "@sveltejs/adapter-node": "^5.5.4",
         "@sveltejs/adapter-vercel": "^6.3.3",
         "@sveltejs/kit": "^2.55.0",
         "@sveltejs/vite-plugin-svelte": "^3.1.2",
-        "@types/lodash": "^4.17.23",
+        "@types/lodash": "^4.17.24",
         "@types/papaparse": "^5.5.2",
         "@types/web-push": "^3.6.4",
         "@typescript-eslint/eslint-plugin": "^6.21.0",
@@ -34,7 +34,7 @@
         "esbuild": "^0.27.4",
         "eslint": "8.57.1",
         "eslint-config-prettier": "^10.1.8",
-        "eslint-plugin-svelte": "^3.15.2",
+        "eslint-plugin-svelte": "^3.16.0",
         "flowbite": "^1.8.1",
         "flowbite-svelte": "^0.48.6",
         "postcss": "^8.5.6",
@@ -52,10 +52,9 @@
         "vitest": "^1.6.1"
     },
     "dependencies": {
-        "@sentry/sveltekit": "^10.43.0",
-        "@supabase/ssr": "^0.9.0",
-        "@supabase/supabase-js": "^2.99.1",
-        "axios": "^1.13.6",
+        "@sentry/sveltekit": "^10.46.0",
+        "@supabase/ssr": "^0.10.0",
+        "@supabase/supabase-js": "^2.101.0",
         "daisyui": "^2.52.0",
         "dayjs": "^1.11.20",
         "debounce-fn": "^6.0.0",

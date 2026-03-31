@@ -43,6 +43,8 @@ export type Notifications = Tables<'Notifications'>;
 
 export type PriceTemplate = Tables<'PriceTemplates'>;
 
+export type ReservationRaw = Tables<'Reservations'>;
+
 export type Reservation_Attributes = {
 	preferAM?: boolean
 };
