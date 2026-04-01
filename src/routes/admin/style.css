@@ -104,7 +104,8 @@ td {
 }
 
 .main-row:hover {
-    background: var(--bg-hover);
+    /* background: var(--bg-hover); */
+    cursor: pointer;
 }
 
 .main-row.expanded {
