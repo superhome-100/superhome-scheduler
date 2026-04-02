@@ -185,7 +185,7 @@
 					</header>
 				{:else if isPmFull && owTime === OWTime.PM}
 					<header class="bg-[#FF0000] text-white p-2 rounded-md">
-						Afternoon session is full, try to book for AM instead.
+						Afternoon session is full, try to book for AM or another day instead.
 					</header>
 				{/if}
 			</div>
