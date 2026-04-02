@@ -14,12 +14,20 @@
 	export let onClick: (e: MouseEvent) => void = () => {};
 	export let adminComment: string = '';
 
-	$: userComments = submissions
-		.filter((rsv) => rsv.comments?.trim())
-		.map((rsv) => ({
-			name: rsv.user_json.nickname,
-			text: rsv.comments
-		}));
+	$: userComments = Object.values(
+		Object.groupBy(
+			submissions
+				.filter((rsv) => rsv.comments?.trim())
+				.map((rsv) => ({
+					name: rsv.user_json.nickname,
+					text: rsv.comments!.trim()
+				})),
+			(c) => c.text
+		)
+	).map((g) => ({
+		name: g!.map((c) => c.name).join(' & '),
+		text: g![0].text
+	}));
 
 	const supabase = page.data.supabase;
 
@@ -95,15 +103,16 @@
 				<hr class="border-t border-white/10 my-2 mx-2" />
 				<div class="px-2 text-left space-y-1">
 					{#if adminComment}
-						<div class="text-[0.75rem] font-bold text-amber-200">
-							Admin: <span class="not-italic font-semibold text-gray-100">"{adminComment}"</span>
+						<div class="text-[0.75rem] italic text-gray-300 leading-tight">
+							<span class="not-italic font-semibold text-amber-200">Admin:</span>
+							{adminComment}
 						</div>
 					{/if}
 					{#if adminView}
 						{#each userComments as comment (comment)}
 							<div class="text-[0.7rem] italic text-gray-300 leading-tight">
 								<span class="not-italic font-semibold text-gray-100">{comment.name}:</span>
-								"{comment.text}"
+								{comment.text}
 							</div>
 						{/each}
 					{/if}
