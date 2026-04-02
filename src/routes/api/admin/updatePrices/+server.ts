@@ -9,27 +9,9 @@ import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/
 import { ReservationStatus, type ReservationWithPrices } from '$types';
 import { console_error } from '$lib/server/sentry';
 import { getSettingsManager } from '$lib/settings';
+import { getPriceForReservation } from '$utils/reservations';
 
-const unpackTemplate = (r: ReservationWithPrices) => {
-	return {
-		pool: {
-			course: r.priceTemplate.coachPool,
-			autonomous: r.priceTemplate.autoPool
-		},
-		classroom: {
-			course: r.priceTemplate.coachClassroom
-		},
-		openwater: {
-			course: r.priceTemplate.coachOW,
-			autonomous: r.priceTemplate.autoOW,
-			cbs: r.priceTemplate.cbsOW,
-			proSafety: r.priceTemplate.proSafetyOW,
-			autonomousPlatform: r.priceTemplate.platformOW,
-			autonomousPlatformCBS: r.priceTemplate.platformCBSOW,
-			competitionSetupCBS: r.priceTemplate['comp-setupOW']
-		}
-	};
-};
+
 
 /**
  * Between 8 am to 8 pm, evey 1 hour, check reservations that are in completed status, if the price is not Null, set the price, 
@@ -88,29 +70,19 @@ export async function GET({ request, locals: { safeGetSession } }: RequestEvent)
 
 		const errors = [];
 		for (const uRsvs of Object.values(pastReservationsByUser)) {
-			const oldRsvs = uRsvs!.filter((rsv) => rsv.price != null);
-			const newRsvs = uRsvs!.filter((rsv) => rsv.price == null);
-			let numberOfAutoOW = oldRsvs.filter((rsv) =>
-				rsv.resType === 'autonomous' && rsv.category === 'openwater').length;
-			for (const rsv of newRsvs) {
-				let price: number | undefined = undefined;
-				const tmp = unpackTemplate(rsv);
+			let numberOfAutoOW = 0;
+			for (const rsv of uRsvs!) {
 				if (rsv.category === 'openwater' && rsv.resType === 'autonomous') {
 					numberOfAutoOW++;
-					if (numberOfAutoOW > maxChargeableOWPerMonth) {
-						price = 0;
-					} else {
-						price = tmp[rsv.category][rsv.resType];
-					}
-				} else {
-					const categoryPrice = tmp[rsv.category];
-					if (!(rsv.resType in categoryPrice))
-						throw Error(`assert ${rsv.id}: ${rsv.resType} !in ${categoryPrice}`);
-					price = categoryPrice[rsv.resType] as number;
-					if (rsv.resType === 'course') {
-						if (!rsv.numStudents) throw Error(`numStudents error: ${rsv.id}`);
-						price *= rsv.numStudents;
-					}
+				}
+				if (rsv.price !== null) {
+					continue;
+				}
+				let price = getPriceForReservation(rsv, rsv.priceTemplate);
+				if (rsv.category === 'openwater'
+					&& rsv.resType === 'autonomous'
+					&& numberOfAutoOW > maxChargeableOWPerMonth) {
+					price = 0;
 				}
 				try {
 					await supabaseServiceRole.from('Reservations')

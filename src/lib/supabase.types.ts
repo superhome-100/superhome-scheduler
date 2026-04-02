@@ -687,11 +687,11 @@ export type Database = {
 			user_id: { Args: never; Returns: string };
 		};
 		Enums: {
-			day_setting_key: 'ow_am_full';
+			day_setting_key: 'ow_am_full' | 'ow_pm_full';
 			notification_status: 'active' | 'inactive';
 			reservation_category: 'classroom' | 'openwater' | 'pool';
 			reservation_ow_time: 'AM' | 'PM';
-			reservation_status: 'canceled' | 'confirmed' | 'pending' | 'rejected';
+			reservation_status: 'canceled' | 'canceled_with_fee' | 'confirmed' | 'pending' | 'rejected';
 			reservation_type:
 				| 'autonomous'
 				| 'autonomousPlatform'
@@ -724,6 +724,7 @@ export type Database = {
 				| 'poolLanes'
 				| 'pushNotificationEnabled'
 				| 'reservationCutOffTime'
+				| 'reservationLateCancelPenalty1OffsetMins'
 				| 'reservationIncrement'
 				| 'reservationLeadTimeDays';
 			user_privilege: 'normal' | 'admin';
@@ -856,11 +857,11 @@ export const Constants = {
 	},
 	public: {
 		Enums: {
-			day_setting_key: ['ow_am_full'],
+			day_setting_key: ['ow_am_full', 'ow_pm_full'],
 			notification_status: ['active', 'inactive'],
 			reservation_category: ['classroom', 'openwater', 'pool'],
 			reservation_ow_time: ['AM', 'PM'],
-			reservation_status: ['canceled', 'confirmed', 'pending', 'rejected'],
+			reservation_status: ['canceled', 'canceled_with_fee', 'confirmed', 'pending', 'rejected'],
 			reservation_type: [
 				'autonomous',
 				'autonomousPlatform',
@@ -894,6 +895,7 @@ export const Constants = {
 				'poolLanes',
 				'pushNotificationEnabled',
 				'reservationCutOffTime',
+				'reservationLateCancelPenalty1OffsetMins',
 				'reservationIncrement',
 				'reservationLeadTimeDays'
 			],

@@ -3,7 +3,7 @@ import { viewMode } from './stores';
 import { storedUsers } from '$lib/client/stores';
 import { get } from 'svelte/store';
 import { assignHourlySpaces } from './autoAssign';
-import { ReservationCategory, ReservationType, type Buoy, type OWTimeT, type Reservation, type ReservationCategoryT, type ReservationEx, type User } from '$types';
+import { ReservationCategory, ReservationType, type Buoy, type OWTimeT, type Reservation, type ReservationCategoryT, type ReservationEx, type ReservationStatusT, type User } from '$types';
 import type { SettingsManager } from './settings';
 import type { Dayjs } from 'dayjs';
 
@@ -51,8 +51,9 @@ export const displayTag = (rsv: ReservationEx, admin: boolean): string => {
 	if (rsv.resType === 'course') {
 		tag += ' +' + (rsv.numStudents ?? 0);
 	}
-	if (rsv.category === 'openwater' && admin) {
-		tag += ' - ' + rsv.maxDepth + 'm';
+	if (admin) {
+		if (rsv.category === 'openwater')
+			tag += ' - ' + rsv.maxDepth + 'm';
 	}
 	return tag;
 };
@@ -156,3 +157,11 @@ export const isOpenForBooking = ((sm: SettingsManager, date: string | Dayjs | Da
 			throw Error(`assert: unknown ${category}`);
 	}
 });
+
+export const displayStatus = (status: ReservationStatusT | undefined) => {
+	switch (status) {
+		case undefined: return '';
+		case 'canceled_with_fee': return 'chargeable canceled';
+		default: return status;
+	}
+}

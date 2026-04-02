@@ -11,10 +11,10 @@ import type {
 } from '$types';
 import type { Tables, TablesInsert, TablesUpdate } from '$lib/supabase.types';
 import { ReservationCategory, ReservationStatus, ReservationType, OWTime } from '$types';
-import { timeStrToMin, isValidProSafetyCutoff } from '$lib/datetimeUtils';
+import { timeStrToMin, isValidProSafetyCutoff, PanglaoDayJs, fromPanglaoDateTimeStringToDayJs } from '$lib/datetimeUtils';
 import { getTimeOverlapSupabaseFilter } from '$utils/reservation-queries';
 import { type SettingsManager } from '../settings';
-import { getDaySettings } from '$lib/dateSettings';
+import { getDaySettings, type DaySettings } from '$lib/dateSettings';
 import {
 	getStartTime,
 	throwIfNoSpaceAvailable,
@@ -314,7 +314,7 @@ function unpackSubmitForm(
 		category,
 		resType,
 		buddies: JSON.parse(formData.get('buddies')),
-		comments: formData.get('comments'),
+		comments: formData.get('comments') || null,
 		numStudents: JSON.parse(formData.get('numStudents')),
 		startTime,
 		endTime,
@@ -359,7 +359,7 @@ async function throwIfUpdateIsInvalid(
 	sub: ReservationModifyingFormUnpacked,
 	orig: Tables<'Reservations'>,
 	ignore: string[],
-	isAMFull: boolean
+	daySettings: DaySettings
 ) {
 	if (!settings.getOpenForBusiness(sub.date)) {
 		throw new ValidationError('We are closed on this date; please choose a different date');
@@ -382,9 +382,11 @@ async function throwIfUpdateIsInvalid(
 
 	// check if course and type ow, retrieve if day is ow am is full
 	if (sub.resType === ReservationType.course && sub.category === ReservationCategory.openwater) {
-		if (isAMFull && (sub.numStudents ?? 0) > (orig.numStudents ?? 0) && sub.owTime === OWTime.AM) {
+		if (((daySettings.ow_am_full && sub.owTime === OWTime.AM) || (daySettings.ow_pm_full && sub.owTime === OWTime.PM))
+			&& (sub.numStudents ?? 0) > (orig.numStudents ?? 0)
+		) {
 			throw new ValidationError(
-				'The morning open water session is full for this date cannot increase the number of students.'
+				`The ${sub.owTime} open water session is full for this date cannot increase the number of students.`
 			);
 		}
 	}
@@ -551,20 +553,21 @@ export async function modifyReservation(actor: User, formData: AppFormData, sett
 	// check also if AM open water schedule is full
 	// do allow creating of buddy if am schedule is full
 	let { create, modify, cancel } = await createBuddyEntriesForUpdate(settings, sub, orig);
-	if (sub.owTime === OWTime.AM && daySettings.ow_am_full) {
+	if ((sub.owTime === OWTime.AM && daySettings.ow_am_full) || (sub.owTime === OWTime.PM && daySettings.ow_pm_full)) {
 		if (create.length > 0) {
 			throw new ValidationError(
-				'The morning open water session is full for this date cannot add a buddy.'
+				`The ${sub.owTime} open water session is full for this date cannot add a buddy.`
 			);
-		} else if (modify.length > 0 && (sub.date !== orig.date || orig.owTime !== sub.owTime)) {
+		}
+		if (modify.length > 0 && (sub.date !== orig.date || orig.owTime !== sub.owTime)) {
 			throw new ValidationError(
-				'The morning open water session is full for this date cannot change to that date or time.'
+				`The ${sub.owTime} open water session is full for this date cannot change to that date or time.`
 			);
 		}
 	}
 
 	let existing = [...modify.map((rsv) => rsv.id!), ...cancel];
-	await throwIfUpdateIsInvalid(settings, sub, orig, existing, daySettings.ow_am_full);
+	await throwIfUpdateIsInvalid(settings, sub, orig, existing, daySettings);
 
 	if (orig.buoy !== 'auto') {
 		modify[0].buoy = orig.buoy;
@@ -712,12 +715,24 @@ export async function cancelReservation(actor: User, formData: AppFormData, sett
 
 		cancel = cancel.concat(existing.filter((rsv) => !save.includes(rsv.user)).map((rsv) => rsv.id));
 	}
+	let status = ReservationStatus.canceled;
+	if (sub.owTime) {
+		const reservationLateCancelPenalty1OffsetMins = settings.get('reservationLateCancelPenalty1OffsetMins', sub.date);
+		const minutesUntilEvent = fromPanglaoDateTimeStringToDayJs(sub.date, sub.startTime).diff(PanglaoDayJs(), 'minutes');
+		if (minutesUntilEvent < reservationLateCancelPenalty1OffsetMins) {
+			const ds = await getDaySettings(supabaseServiceRole, sub.date)
+			if ((sub.owTime === OWTime.AM && ds.ow_am_full) || (sub.owTime === OWTime.PM && ds.ow_pm_full)) {
+				status = ReservationStatus.canceled_with_fee;
+			}
+		}
+	}
 	{
 		const { data, error } = await supabaseServiceRole
 			.from('Reservations')
-			.update({ status: ReservationStatus.canceled })
+			.update({ status })
 			.select('*')
-			.in('id', cancel);
+			.in('id', cancel)
+			.throwOnError();
 		if (error) errors.push({ id, error });
 		else if (data) await pushNotificationService.sendReservationStatus(settings, actor, data);
 	}

@@ -10,11 +10,7 @@
 	import { toast } from 'svelte-french-toast';
 	import { ReservationCategory } from '$types';
 	import { getCategoryDatePath } from '$lib/url';
-	import {
-		approveAllPendingReservations,
-		flagOWAmAsFull,
-		lockBuoyAssignments
-	} from '$lib/client/api';
+	import { approveAllPendingReservations, lockBuoyAssignments } from '$lib/client/api';
 	import { getYYYYMM, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
 	import {
 		storedDaySettings,
@@ -22,7 +18,7 @@
 		storedDayReservations_param,
 		storedUser
 	} from '$lib/client/stores';
-	import { ow_am_full } from '$lib/dateSettings';
+	import { ow_am_full, ow_pm_full, setDaySetting } from '$lib/dateSettings';
 	import type { Enums } from '$lib/supabase.types';
 
 	// svelte-ignore unused-export-let
@@ -110,6 +106,7 @@
 	const unlockBuoys = async () => toggleBuoyLock(false);
 
 	$: isAmFull = $storedDaySettings[ow_am_full];
+	$: isPmFull = $storedDaySettings[ow_pm_full];
 </script>
 
 <svelte:window on:keydown={handleKeypress} />
@@ -186,15 +183,31 @@
 						const newIsAmFull = !isAmFull;
 						const n = isAmFull ? 'not full' : 'full';
 						await toast
-							.promise(flagOWAmAsFull(supabase, dayStr, newIsAmFull), {
+							.promise(setDaySetting(supabase, dayStr, ow_am_full, newIsAmFull), {
 								loading: 'Marking AM as ' + n,
 								success: 'Marked AM as ' + n,
-								error: 'Failed to makr AM as ' + n
+								error: 'Failed to mark AM as ' + n
 							})
 							.catch((e) => console.warn('mark-as-am', n));
 					}}
 				>
 					<span>AM full</span>
+				</button>
+				<button
+					class="{highlightButton(isPmFull)} px-1 py-0 font-semibold border-black dark:border-white"
+					on:click={async () => {
+						const newIsPmFull = !isPmFull;
+						const n = isPmFull ? 'not full' : 'full';
+						await toast
+							.promise(setDaySetting(supabase, dayStr, ow_pm_full, newIsPmFull), {
+								loading: 'Marking PM as ' + n,
+								success: 'Marked PM as ' + n,
+								error: 'Failed to mark PM as ' + n
+							})
+							.catch((e) => console.warn('mark-as-pm', n));
+					}}
+				>
+					<span>PM full</span>
 				</button>
 				<button
 					class="bg-root-bg-light dark:bg-root-bg-dark px-1 py-0 font-semibold border-black dark:border-white"
@@ -220,7 +233,7 @@
 		on:swipe={swipeHandler}
 	>
 		<Modal on:open={() => (modalOpened = true)} on:close={() => (modalOpened = false)}>
-			<DayOpenWater date={dayStr} {reservations} {isAmFull} />
+			<DayOpenWater date={dayStr} {reservations} {isAmFull} {isPmFull} />
 		</Modal>
 	</div>
 {/if}

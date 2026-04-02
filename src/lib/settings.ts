@@ -30,6 +30,7 @@ interface ValueMap {
 
 	'maxChargeableOWPerMonth': number;
 	'reservationLeadTimeDays': number;
+	'reservationLateCancelPenalty1OffsetMins': number;
 	// ) THEN jsonb_typeof("value") = 'number'
 
 	'cbsAvailable': boolean;
@@ -75,6 +76,7 @@ const fallbackValues: ValueMap = {
 
 	"maxChargeableOWPerMonth": 12,
 	"reservationLeadTimeDays": 30,
+	"reservationLateCancelPenalty1OffsetMins": 0,
 
 	"cbsAvailable": false,
 	"classroomBookable": false,

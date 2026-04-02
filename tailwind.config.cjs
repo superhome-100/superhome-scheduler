@@ -26,7 +26,9 @@ const config = {
 				'root-bg-dark': '#242420',
 				'status-pending': '#FFFF00',
 				'status-confirmed': '#00FF00',
-				'status-rejected': '#FF0000'
+				'status-rejected': '#FF0000',
+				'status-canceled_with_fee': '#FCAD03',
+				'status-canceled': '#4f4f50'
 			}
 		}
 	},

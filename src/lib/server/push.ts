@@ -3,7 +3,7 @@ import { PUBLIC_VAPID_KEY } from '$env/static/public';
 import { PRIVATE_VAPID_KEY } from '$env/static/private';
 import { supabaseServiceRole } from './supabase';
 import webpush, { type PushSubscription } from 'web-push';
-import type { Reservation, User } from '$types';
+import type { ReservationRaw, User } from '$types';
 import { dayjs, fromPanglaoDateTimeStringToDayJs, getYYYYMMDD } from '$lib/datetimeUtils';
 import { LRUCache } from 'lru-cache'
 import type { Json } from '$lib/supabase.types';
@@ -91,7 +91,7 @@ export const pushNotificationService = {
         }
     },
 
-    async _sendReservationFn(sm: SettingsManager, actor: User | null, rsvs: Reservation[], fn: (r: Reservation) => string) {
+    async _sendReservationFn(sm: SettingsManager, actor: User | null, rsvs: ReservationRaw[], fn: (r: ReservationRaw) => string) {
         await Promise.allSettled(rsvs
             .filter(r => r.user !== actor?.id)
             .map(async (rsv) => this.sendSafe(sm, rsv.user,
@@ -101,24 +101,24 @@ export const pushNotificationService = {
             )))
     },
 
-    async sendReservationStatus(sm: SettingsManager, actor: User, rsvs: Reservation[]) {
+    async sendReservationStatus(sm: SettingsManager, actor: User, rsvs: ReservationRaw[]) {
         await this._sendReservationFn(sm, actor, rsvs, r => r.status);
     },
 
-    async sendReservationCreated(sm: SettingsManager, actor: User, rsvs: Reservation[]) {
+    async sendReservationCreated(sm: SettingsManager, actor: User, rsvs: ReservationRaw[]) {
         await this._sendReservationFn(sm, actor, rsvs, () => 'created');
     },
 
-    async sendReservationModified(sm: SettingsManager, actor: User | null, rsvs: Reservation[]) {
+    async sendReservationModified(sm: SettingsManager, actor: User | null, rsvs: ReservationRaw[]) {
         await this._sendReservationFn(sm, actor, rsvs, () => 'modified');
     }
 };
 
-const reservationTitle = (rsv: Reservation, fn: (r: Reservation) => string) => {
+const reservationTitle = (rsv: ReservationRaw, fn: (r: ReservationRaw) => string) => {
     return `${upperFirst(rsv.category)} ${shortDateTime(rsv)}: ${fn(rsv)}`
 }
 
-const reservationDetails = (rsv: Reservation) => {
+const reservationDetails = (rsv: ReservationRaw) => {
     const d: string[] = [
         `${rsv.resType}: ${rsv.status}` + reservationStatusIcon(rsv)
     ];
@@ -133,7 +133,7 @@ const reservationDetails = (rsv: Reservation) => {
 
 const upperFirst = (s: string) => s.length > 0 ? s[0].toUpperCase() + s.substring(1) : '';
 
-const shortDateTime = (rsv: Reservation) => {
+const shortDateTime = (rsv: ReservationRaw) => {
     const rsvStart = fromPanglaoDateTimeStringToDayJs(rsv.date, rsv.startTime);
     const now = dayjs()
     if (rsvStart.isSame(now, 'day')) {
@@ -145,7 +145,7 @@ const shortDateTime = (rsv: Reservation) => {
     return rsvStart.format('DD/MMM HH:mm')
 };
 
-const reservationStatusIcon = (rsv: Reservation) => {
+const reservationStatusIcon = (rsv: ReservationRaw) => {
     switch (rsv.status) {
         case 'canceled':
             return getRandomElementUsingSeed(rsv.id, '🙈', '🙀', '🐣', '😶', '🤧', '🤒');
@@ -160,7 +160,7 @@ const reservationStatusIcon = (rsv: Reservation) => {
     }
 }
 
-const reservationCategoryIcon = (rsv: Reservation) => {
+const reservationCategoryIcon = (rsv: ReservationRaw) => {
     switch (rsv.category) {
         case 'classroom':
             return getRandomElementUsingSeed(rsv.id, '🧑‍🏫', '📚', '👩‍🏫', '👨‍🏫');

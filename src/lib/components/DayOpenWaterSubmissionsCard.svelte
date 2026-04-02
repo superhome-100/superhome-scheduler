@@ -14,6 +14,21 @@
 	export let onClick: (e: MouseEvent) => void = () => {};
 	export let adminComment: string = '';
 
+	$: userComments = Object.values(
+		Object.groupBy(
+			submissions
+				.filter((rsv) => rsv.comments?.trim())
+				.map((rsv) => ({
+					name: rsv.user_json.nickname,
+					text: rsv.comments!.trim()
+				})),
+			(c) => c.text
+		)
+	).map((g) => ({
+		name: g!.map((c) => c.name).join(' & '),
+		text: g![0].text
+	}));
+
 	const supabase = page.data.supabase;
 
 	const curUserStyling = (rsv: TempSubmission) => {
@@ -49,7 +64,6 @@
 </script>
 
 {#if submissions.length}
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<div class="text-center w-full" on:click={onClick}>
 		<div
 			class="bg-gradient-to-br from-openwater-bg-from to-openwater-bg-to text-openwater-fg py-0.5 sm:py-2 pr-1 flex flex-col rounded-md cursor-pointer text-sm"
@@ -58,14 +72,8 @@
 				<div class="flex items-center w-full px-2">
 					<div class="flex-1 text-xs lg:text-base {curUserStyling(rsv)} overflow-auto break-all">
 						{displayTag(rsv, adminView)}
-						<!-- {#if adminView && rsv._autoAssignReason}
-							<div
-								class="desktop-text text-[0.65rem] opacity-80 italic leading-tight text-left mt-0.5"
-							>
-								{rsv._autoAssignReason}
-							</div>
-						{/if} -->
 					</div>
+
 					{#if adminView}
 						<div class="desktop-text px-1" on:click|stopPropagation on:keydown|stopPropagation>
 							<form on:submit|preventDefault={(e) => adminBuoyUpdate(e, rsv)}>
@@ -73,13 +81,13 @@
 								<select
 									name="buoy"
 									class="text-xs bg-white text-black py-0 px-1 rounded border-0 h-6 w-20"
-									on:change={(e) => e.target.form.requestSubmit()}
+									on:change={(e) => e.currentTarget.form.requestSubmit()}
 								>
 									<option value="auto" selected={rsv.buoy === 'auto'}>Auto</option>
 									{#each buoysToShow as b (b.name)}
-										<option value={b.name} selected={rsv.buoy === b.name}
-											>{b.name} - {buoyDesc(b)}</option
-										>
+										<option value={b.name} selected={rsv.buoy === b.name}>
+											{b.name} - {buoyDesc(b)}
+										</option>
 									{/each}
 								</select>
 							</form>
@@ -91,10 +99,24 @@
 				</div>
 			{/each}
 
-			{#if adminComment}
-				<p class="flex flex-col text-sm p-0 text-gray-200">
-					ADMIN: {adminComment}
-				</p>
+			{#if adminComment || (userComments.length && adminView)}
+				<hr class="border-t border-white/10 my-2 mx-2" />
+				<div class="px-2 text-left space-y-1">
+					{#if adminComment}
+						<div class="text-[0.75rem] italic text-gray-300 leading-tight">
+							<span class="not-italic font-semibold text-amber-200">Admin:</span>
+							{adminComment}
+						</div>
+					{/if}
+					{#if adminView}
+						{#each userComments as comment (comment)}
+							<div class="text-[0.7rem] italic text-gray-300 leading-tight">
+								<span class="not-italic font-semibold text-gray-100">{comment.name}:</span>
+								{comment.text}
+							</div>
+						{/each}
+					{/if}
+				</div>
 			{/if}
 		</div>
 	</div>

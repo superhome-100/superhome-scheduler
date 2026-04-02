@@ -43,6 +43,8 @@ export type Notifications = Tables<'Notifications'>;
 
 export type PriceTemplate = Tables<'PriceTemplates'>;
 
+export type ReservationRaw = Tables<'Reservations'>;
+
 export type Reservation_Attributes = {
 	preferAM?: boolean
 };
@@ -93,6 +95,7 @@ export enum ReservationType {
 	autonomousPlatformCBS = 'autonomousPlatformCBS',
 	competitionSetupCBS = 'competitionSetupCBS'
 }
+export type ReservationTypeT = Enums<'reservation_type'>
 
 export enum ReservationCategory {
 	openwater = 'openwater',
@@ -105,7 +108,8 @@ export enum ReservationStatus {
 	confirmed = 'confirmed',
 	pending = 'pending',
 	rejected = 'rejected',
-	canceled = 'canceled'
+	canceled = 'canceled',
+	canceled_with_fee = 'canceled_with_fee',
 }
 
 export type ReservationStatusT = Enums<'reservation_status'>
@@ -116,7 +120,7 @@ export interface BuddyData {
 	name: string;
 	userId: string | null;
 	id?: number;
-	matches?: unknown[];
+	matches?: UserMinimal[];
 }
 
 export type AppFormData = {
@@ -140,4 +144,4 @@ export type DateReservationReport = { date: string, summary: DateReservationSumm
 export type Notification = Tables<'Notifications'>;
 export type BuoyGrouping = Tables<'BuoyGroupings'>;
 
-export type ReservationWithPrices = Tables<'Reservations'> & { priceTemplate: Tables<'PriceTemplates'> };
+export type ReservationWithPrices = Tables<'Reservations'> & { priceTemplate: PriceTemplate };

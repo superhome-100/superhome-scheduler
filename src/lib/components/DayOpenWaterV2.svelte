@@ -26,6 +26,7 @@
 	export let date: string;
 	export let reservations: ReservationEx[];
 	export let isAmFull: boolean;
+	export let isPmFull: boolean;
 
 	$: boatAssignments = $storedBoatAssignments;
 
@@ -157,6 +158,8 @@
 				<span>PM</span><span class="desktop-text">&nbsp;Session</span>
 				{#if !isPMOpen}
 					<span class="bg-[#565843] text-white p-2 rounded-md">is closed 🔒</span>
+				{:else if isPmFull}
+					<span class="bg-[#FF0000] text-white p-2 rounded-md">is full</span>
 				{/if}
 				{#if $viewMode === 'admin'}
 					<div
