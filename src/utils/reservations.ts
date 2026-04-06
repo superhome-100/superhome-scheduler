@@ -24,7 +24,8 @@ export const getPriceForReservation = (rsv: Tables<'Reservations'> | Tables<'Res
 				case 'autonomous':
 					return priceTemplate.autoPool;
 				case 'course':
-					return priceTemplate.coachPool;
+					if (!rsv.numStudents) throw Error(`numStudents error: ${rsv.id}`);
+					return priceTemplate.coachPool * rsv.numStudents;
 			}
 		case 'classroom':
 			switch (rsv.resType) {
