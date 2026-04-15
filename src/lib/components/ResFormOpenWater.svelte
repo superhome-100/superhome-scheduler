@@ -32,7 +32,7 @@
 	let owTime = (rsv?.owTime as OWTime) ?? OWTime.AM;
 	let numStudents = rsv?.resType !== ReservationType.course ? 1 : rsv.numStudents;
 	let preferAM = rsv?.attributes?.preferAM ?? false;
-	let pulley = rsv?.pulley;
+	let pulley = rsv?.pulley ?? true;
 	let extraBottomWeight = rsv?.extraBottomWeight || false;
 	let bottomPlate = rsv?.bottomPlate || false;
 	let largeBuoy = rsv?.largeBuoy || false;

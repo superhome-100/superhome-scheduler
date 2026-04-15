@@ -157,7 +157,7 @@
 			href="/multi-day/openwater/{getYYYYMM(day)}"
 		>
 			<span><Chevron direction="left" /></span>
-			<span class="xs:text-xl pb-1 whitespace-nowrap">month view</span>
+			<span class="xs:text-xl pb-1 whitespace-nowrap">month</span>
 		</a>
 		{#if $viewMode === 'admin'}
 			<div class="flex gap-2">
