@@ -4,7 +4,7 @@ import {
     SupabaseClient,
     REALTIME_SUBSCRIBE_STATES
 } from '@supabase/supabase-js'
-import { readable, writable, type Readable } from "svelte/store";
+import { get, readable, writable, type Readable } from "svelte/store";
 
 const EVENTS = [
     'Boats',
@@ -58,6 +58,10 @@ export class SupabaseEventSource {
 
     get isOnline(): Readable<boolean> {
         return this._isOnline;
+    }
+
+    get isOnlineVal(): boolean {
+        return get(this._isOnline);
     }
 
     constructor() {

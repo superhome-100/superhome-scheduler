@@ -14,12 +14,15 @@
 	import { getYYYYMM, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
 	import {
 		storedDaySettings,
+		storedDaySettingsMarkAs,
 		storedDayReservations,
 		storedDayReservations_param,
-		storedUser
+		storedUser,
+		storedDayReservationsAllMarkAs
 	} from '$lib/client/stores';
 	import { ow_am_full, ow_pm_full, setDaySetting } from '$lib/dateSettings';
 	import type { Enums } from '$lib/supabase.types';
+	import { onMount } from 'svelte';
 
 	// svelte-ignore unused-export-let
 	export let params;
@@ -49,13 +52,20 @@
 		}
 	};
 
+	const refresh = () => {
+		storedDaySettingsMarkAs('refresh if offline');
+		storedDayReservationsAllMarkAs('refresh if offline');
+	};
+
 	function prevDay() {
 		const prev = day.subtract(1, 'day');
 		goto(getCategoryDatePath('openwater', getYYYYMMDD(prev)));
+		refresh();
 	}
 	function nextDay() {
 		const next = day.add(1, 'day');
 		goto(getCategoryDatePath('openwater', getYYYYMMDD(next)));
+		refresh();
 	}
 
 	let modalOpened = false;
@@ -106,6 +116,8 @@
 	};
 	const lockBuoys = async () => toggleBuoyLock(true);
 	const unlockBuoys = async () => toggleBuoyLock(false);
+
+	onMount(refresh);
 
 	$: isAmFull = $storedDaySettings[ow_am_full];
 	$: isPmFull = $storedDaySettings[ow_pm_full];

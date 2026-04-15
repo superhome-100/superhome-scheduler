@@ -2,10 +2,15 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import ReservationDialog from '$lib/components/ReservationDialog.svelte';
 	import { Tabs, TabList, TabPanel, Tab } from '$lib/tabs';
-	import { storedUser as user } from '$lib/client/stores';
+	import {
+		storedIncomingReservationsMarkAs,
+		storedPastReservationsMarkAs,
+		storedUser as user
+	} from '$lib/client/stores';
 	import type { UserEx } from '$types';
 	import MyReservationsUpcoming from '$lib/components/MyReservationsUpcoming.svelte';
 	import MyReservationsPassed from '$lib/components/MyReservationsPassed.svelte';
+	import { onMount } from 'svelte';
 
 	// svelte-ignore unused-export-let
 	export let params;
@@ -29,6 +34,13 @@
 		const link = getActivationLink(user);
 		navigator.clipboard.writeText(link);
 	};
+
+	const refresh = () => {
+		storedIncomingReservationsMarkAs('refresh if offline');
+		storedPastReservationsMarkAs('refresh if offline');
+	};
+
+	onMount(refresh);
 </script>
 
 {#if $user != null}

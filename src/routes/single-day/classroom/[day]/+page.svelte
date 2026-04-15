@@ -12,8 +12,14 @@
 	import { getCategoryDatePath } from '$lib/url';
 	import { approveAllPendingReservations } from '$lib/client/api';
 	import { getYYYYMM, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
-	import { storedDayReservations_param, storedSettings, storedUser } from '$lib/client/stores';
+	import {
+		storedDayReservations_param,
+		storedDaySettingsMarkAs,
+		storedSettings,
+		storedUser
+	} from '$lib/client/stores';
 	import type { SettingsManager } from '$lib/settings';
+	import { onMount } from 'svelte';
 
 	// svelte-ignore unused-export-let
 	export let params;
@@ -27,13 +33,19 @@
 
 	let categories = [...CATEGORIES];
 
+	const refresh = () => {
+		storedDaySettingsMarkAs('refresh if offline');
+	};
+
 	function prevDay() {
 		const prev = day.subtract(1, 'day');
 		goto(getCategoryDatePath(category, prev.format('YYYY-MM-DD')));
+		refresh();
 	}
 	function nextDay() {
 		const next = day.add(1, 'day');
 		goto(getCategoryDatePath(category, next.format('YYYY-MM-DD')));
+		refresh();
 	}
 
 	let modalOpened = false;
@@ -53,6 +65,8 @@
 		const name = sm.getClassroomLabel(dayStr);
 		return { resources, name };
 	};
+
+	onMount(refresh);
 </script>
 
 {#if $storedUser}
