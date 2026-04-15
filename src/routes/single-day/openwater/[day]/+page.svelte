@@ -94,6 +94,8 @@
 	}
 
 	const toggleBuoyLock = async (lock: boolean) => {
+		if (lock && !window.confirm('Are you sure you want to lock?')) return;
+		if (!lock && !window.confirm('Are you sure you want to unlock?')) return;
 		toast
 			.promise(lockBuoyAssignments(dayStr, lock), {
 				loading: (lock ? 'L' : 'Unl') + 'ocking buoy assignments',
