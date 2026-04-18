@@ -23,6 +23,7 @@
 	import { ow_am_full, ow_pm_full, setDaySetting } from '$lib/dateSettings';
 	import type { Enums } from '$lib/supabase.types';
 	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 
 	// svelte-ignore unused-export-let
 	export let params;
@@ -119,8 +120,12 @@
 
 	onMount(refresh);
 
-	$: isAmFull = $storedDaySettings[ow_am_full];
-	$: isPmFull = $storedDaySettings[ow_pm_full];
+	let isAmFull = false;
+	let isPmFull = false;
+	$: if (browser && $storedDaySettings) {
+		isAmFull = $storedDaySettings[ow_am_full];
+		isPmFull = $storedDaySettings[ow_pm_full];
+	}
 </script>
 
 <svelte:window on:keydown={handleKeypress} />

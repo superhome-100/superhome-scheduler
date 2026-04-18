@@ -184,8 +184,10 @@
 			case owTimeFilterParamKey:
 				owTimeFilter = value;
 				break;
+			case specialFilterParamKey:
+				break; // handled separately
 			default:
-				console.error('undhandled case', paramType);
+				console.error('unhandled case', paramType);
 		}
 	}
 

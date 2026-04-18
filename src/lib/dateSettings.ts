@@ -23,16 +23,12 @@ export async function getDaySettings(supabase: SupabaseClient, date: Date | stri
 		.select("key, value")
 		.eq("date", dt)
 		.throwOnError()
-	if (data.length === 0) {
-		return { ...defaultDateSettings };
-	} else {
-		const settings = { ...defaultDateSettings };
-		for (const { key, value } of data) {
-			// @ts-expect-error Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ ow_am_full: boolean; }'.
-			settings[key] = value;
-		}
-		return settings;
+	const settings = { ...defaultDateSettings };
+	for (const { key, value } of data) {
+		// @ts-expect-error Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ ow_am_full: boolean; }'.
+		settings[key] = value;
 	}
+	return settings;
 }
 
 export async function setDaySetting(supabase: SupabaseClient, date: Date | string, key: keyof DaySettings, value: Json) {

@@ -98,7 +98,7 @@ export const actions: Actions = {
 			const settings = await getSettingsManager(supabase);
 			checkAuthorisation(user);
 			const data = await request.formData();
-			console.log('cancelReservation', data);
+			console.log('cancelReservation', data.get("id"));
 			const category = data.get('category') as string;
 			await doTransaction(category, data.get('date') as string, async () => {
 				await cancelReservation(user, data, settings);

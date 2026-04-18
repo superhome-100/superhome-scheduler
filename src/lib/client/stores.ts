@@ -88,8 +88,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object | null, P>(
                 if (cacheVal === nullVal) set(null as T);
                 else set(cacheVal)
             } else {
-                const updateAtVal = new Date();
-                await progressTracker.track(async (cp, p, pJ) => {
+                await progressTracker.track(async (cp, p, pJ, updateAtVal) => {
                     try {
                         console.debug('store.refresh', variableName, param);
                         isLoading.set(true);
@@ -108,7 +107,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object | null, P>(
                     } catch (e) {
                         console.error('subscribeToCoreAndParam', variableName, e, param);
                     }
-                }, coreParam, param, paramJsn!);
+                }, coreParam, param, paramJsn!, new Date());
             }
 
         };
@@ -121,8 +120,8 @@ function readableWithSubscriptionToCoreAndParam<T extends object | null, P>(
             if (coreParam !== cpN) {
                 coreParam = cpN as CoreStoreWithUser;
                 cache.clear();
-                if (!isInit)
-                    markAsDirty('core');
+                if (isInit) return;
+                markAsDirty('core');
             }
         });
         const unsubP = paramStore.subscribe(async (pN: P) => {
@@ -130,16 +129,16 @@ function readableWithSubscriptionToCoreAndParam<T extends object | null, P>(
             const paramJsnN = stableStringify(pN);
             if (paramJsn !== paramJsnN) {
                 paramJsn = paramJsnN;
-                if (!isInit)
-                    loadQueue = loadQueue.then(() => safeCb('param'));
+                if (isInit) return;
+                loadQueue = loadQueue.then(() => safeCb('param'));
             }
         });
         const unsubSupa = supabase_es.subscribe(() => {
             cache.clear();
             markAsDirty('supa');
         }, event, ...events);
-        markAsDirty('core');
         isInit = false;
+        markAsDirty('core');
         return () => {
             // console.debug("store.unsub", variableName);
             unsubCs();
@@ -324,3 +323,11 @@ export const { value: storedNotifications, isLoading: storedNotificationsLoading
             const r = await getUserNotifications(supabase);
             return r;
         }, "Notifications");
+
+
+export const reservationsMarkAs = (as: 'modified' | 'refresh if offline') => {
+    storedReservationsSummaryMarkAs(as);
+    storedDayReservationsAllMarkAs(as);
+    storedIncomingReservationsMarkAs(as);
+    storedPastReservationsMarkAs(as);
+};
