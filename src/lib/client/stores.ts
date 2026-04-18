@@ -52,119 +52,76 @@ const progressTracker = {
 };
 
 type CoreStoreWithUser = RequireKeys<CoreStore, 'user'>;
+const nullVal = Symbol('nullVal');
 
-function readableWithSubscriptionToCore<T>(
-    variableName: string,
-    defaultValue: T,
-    cb: (cs: CoreStoreWithUser) => Promise<T>,
-    event: EventType, ...events: EventType[]
-): { value: Readable<T>, isLoading: Readable<boolean> } {
-    let cacheVal: T | undefined = undefined;
-    supabase_es.subscribe(() => {
-        cacheVal = undefined;
-    }, event, ...events);
-    let coreParam: CoreStoreWithUser | undefined = undefined;
-    const isLoading = writable<boolean>(false);
-    // we lie about the interface because we really don't want users to set it
-    const value = writable<T>(defaultValue, (set) => {
-        const safeCb = async () => {
-            if (coreParam?.user) {
-                if (cacheVal !== undefined) {
-                    console.debug('store.refresh.from-cache', variableName);
-                    set(cacheVal);
-                } else {
-                    await progressTracker.track(async (cp) => {
-                        try {
-                            console.debug('store.refresh', variableName);
-                            isLoading.set(true);
-                            cacheVal = await cb(cp);
-                            set(cacheVal);
-                            // console.debug('store.refreshed', variableName);
-                            isLoading.set(false);
-                        } catch (e) {
-                            console.error('store.error', variableName, e);
-                        }
-                    }, coreParam);
-                }
-            }
-        };
-        let isInit = true;
-        const unsubCs = storedCore_params.subscribe(async (cpN: CoreStore) => {
-            if (coreParam !== cpN) {
-                coreParam = cpN as CoreStoreWithUser;
-                cacheVal = undefined;
-                if (!isInit)
-                    safeCb();
-            }
-        });
-        const unsubSupa = supabase_es.subscribe(() => {
-            cacheVal = undefined;
-            safeCb();
-        }, event, ...events);
-        safeCb();
-        isInit = false;
-        return () => {
-            // console.debug("store.unsub", variableName)
-            unsubCs();
-            unsubSupa();
-        }
-    });
-    return { isLoading, value };
-}
-
-function readableWithSubscriptionToCoreAndParam<T extends object, P>(
+function readableWithSubscriptionToCoreAndParam<T extends object | null, P>(
     variableName: string,
     defaultValue: T,
     setDefaultWhenLoading: boolean,
     paramStore: Readable<P>,
     cb: (cs: CoreStoreWithUser, param: P) => Promise<T>,
     event: EventType, ...events: EventType[]
-): { value: Readable<T>, isLoading: Readable<boolean> } {
-    const cache = new LRUCache<string, T>({ max: 50 });
+): { value: Readable<T>, isLoading: Readable<boolean>, markAs: (as: 'modified' | 'refresh if offline') => void } {
+    const cache = new LRUCache<string, NonNullable<T> | typeof nullVal>({ max: 50 });
     supabase_es.subscribe(() => {
         cache.clear();
     }, event, ...events);
     let coreParam: CoreStoreWithUser | undefined = undefined;
     let param: P | undefined = undefined;
     let paramJsn: string | undefined = undefined;
+    //
+    let markedAsDirtyAt = new Date(0);
+    let updatedAt = new Date(0);
+    let loadQueue = Promise.resolve();
+    let dirtyTimer = Promise.resolve();
+    let safeCb: (trigger: 'param' | 'core' | 'supa' | 'assumed') => Promise<void>;
+    //
     const isLoading = writable<boolean>(false);
-    const value = readable<T>(defaultValue, (set) => {
-        const safeCb = async (trigger: 'param' | 'core' | 'supa') => {
-            if (coreParam?.user && param !== undefined) {
-                const cacheVal = cache.get(paramJsn!);
-                if (cacheVal !== undefined) {
-                    console.debug('store.refresh.from-cache', variableName, param);
-                    set(cacheVal);
-                } else {
-                    await progressTracker.track(async (cp, p, pJ) => {
-                        try {
-                            console.debug('store.refresh', variableName, param);
-                            isLoading.set(true);
-                            const valueP = cb(cp, p);
-                            // why only for 'param': because this means that the current value is not relate to the param
-                            // other cases we can show the previous value until we have something new to show
-                            if (setDefaultWhenLoading === true && trigger === 'param') {
-                                set(defaultValue);
-                            }
-                            const value = await valueP;
-                            cache.set(pJ, value);
-                            // console.debug('store.refreshed', variableName, param);
-                            set(value);
-                            isLoading.set(false);
-                        } catch (e) {
-                            console.error('subscribeToCoreAndParam', variableName, e, param);
+    const value = writable<T>(defaultValue, (set) => {
+        safeCb = async (trigger: 'param' | 'core' | 'supa' | 'assumed') => {
+            if (!coreParam?.user || param === undefined) return;
+            if (trigger !== 'param' && markedAsDirtyAt < updatedAt) return;
+
+            const cacheVal = cache.get(paramJsn!);
+            if (cacheVal !== undefined) {
+                console.debug('store.refresh.from-cache', variableName, param);
+                if (cacheVal === nullVal) set(null as T);
+                else set(cacheVal)
+            } else {
+                await progressTracker.track(async (cp, p, pJ, updateAtVal) => {
+                    try {
+                        console.debug('store.refresh', variableName, param);
+                        isLoading.set(true);
+                        const valueP = cb(cp, p);
+                        // why only for 'param': because this means that the current value is not relate to the param
+                        // other cases we can show the previous value until we have something new to show
+                        if (setDefaultWhenLoading === true && trigger === 'param') {
+                            set(defaultValue);
                         }
-                    }, coreParam, param, paramJsn!);
-                }
+                        const value = await valueP;
+                        cache.set(pJ, value ?? nullVal);
+                        // console.debug('store.refreshed', variableName, param);
+                        set(value);
+                        updatedAt = updateAtVal;
+                        isLoading.set(false);
+                    } catch (e) {
+                        console.error('subscribeToCoreAndParam', variableName, e, param);
+                    }
+                }, coreParam, param, paramJsn!, new Date());
             }
+
         };
         let isInit = true;
+        const markAsDirty = (trigger: 'param' | 'core' | 'supa') => {
+            markedAsDirtyAt = new Date();
+            loadQueue = loadQueue.then(() => safeCb(trigger));
+        }
         const unsubCs = storedCore_params.subscribe(async (cpN: CoreStore) => {
             if (coreParam !== cpN) {
                 coreParam = cpN as CoreStoreWithUser;
                 cache.clear();
-                if (!isInit)
-                    safeCb('core');
+                if (isInit) return;
+                markAsDirty('core');
             }
         });
         const unsubP = paramStore.subscribe(async (pN: P) => {
@@ -172,16 +129,16 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
             const paramJsnN = stableStringify(pN);
             if (paramJsn !== paramJsnN) {
                 paramJsn = paramJsnN;
-                if (!isInit)
-                    safeCb('param');
+                if (isInit) return;
+                loadQueue = loadQueue.then(() => safeCb('param'));
             }
         });
         const unsubSupa = supabase_es.subscribe(() => {
             cache.clear();
-            safeCb('supa')
+            markAsDirty('supa');
         }, event, ...events);
-        safeCb('core');
         isInit = false;
+        markAsDirty('core');
         return () => {
             // console.debug("store.unsub", variableName);
             unsubCs();
@@ -189,7 +146,28 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
             unsubSupa();
         }
     });
-    return { isLoading, value };
+    const markAs = (as: 'modified' | 'refresh if offline') => {
+        const isOnline = supabase_es.isOnlineVal;
+        if (as === 'modified' || (as === 'refresh if offline' && !isOnline)) {
+            markedAsDirtyAt = new Date();
+            cache.clear();
+            dirtyTimer = dirtyTimer
+                .then(() => new Promise(r => setTimeout(r, isOnline ? 5000 : 500)))
+                .then(() => loadQueue = loadQueue.then(() => safeCb("assumed")));
+        }
+    };
+    return { isLoading, value, markAs };
+}
+
+const neverChangingParam = readable({});
+
+function readableWithSubscriptionToCore<T extends object | null>(
+    variableName: string,
+    defaultValue: T,
+    cb: (cs: CoreStoreWithUser) => Promise<T>,
+    event: EventType, ...events: EventType[]
+) {
+    return readableWithSubscriptionToCoreAndParam<T, object>(variableName, defaultValue, false, neverChangingParam, cb, event, ...events);
 }
 
 //
@@ -256,14 +234,14 @@ export const { value: storedPriceTemplates } =
             return data;
         }, "PriceTemplates");
 
-export const { value: storedIncomingReservations, isLoading: storedIncomingReservationsLoading } =
+export const { value: storedIncomingReservations, isLoading: storedIncomingReservationsLoading, markAs: storedIncomingReservationsMarkAs } =
     readableWithSubscriptionToCore<ReservationEx[]>('storedIncomingReservations',
         [], async ({ supabase, user }) => {
             const r = await getIncomingReservations(user, supabase);
             return r;
         }, "Reservations", "Users");
 
-export const { value: storedPastReservations, isLoading: storedPastReservationsLoading } =
+export const { value: storedPastReservations, isLoading: storedPastReservationsLoading, markAs: storedPastReservationsMarkAs } =
     readableWithSubscriptionToCoreAndParam<ReservationEx[], string>('storedPastReservations',
         [], true,
         storedCurrentDay,
@@ -274,7 +252,7 @@ export const { value: storedPastReservations, isLoading: storedPastReservationsL
 
 export const storedDayReservations_param = writable<{ day: string }>();
 
-export const { value: storedDayReservationsAll, isLoading: storedDayReservationsAllLoading } =
+export const { value: storedDayReservationsAll, isLoading: storedDayReservationsAllLoading, markAs: storedDayReservationsAllMarkAs } =
     readableWithSubscriptionToCoreAndParam<ReservationEx[], { day: string }>('storedDayReservations',
         [], true,
         storedDayReservations_param,
@@ -292,7 +270,7 @@ export const storedDayReservations =
         });
     });
 
-export const { value: storedDaySettings, isLoading: storedDaySettingsLoading } =
+export const { value: storedDaySettings, isLoading: storedDaySettingsLoading, markAs: storedDaySettingsMarkAs } =
     readableWithSubscriptionToCoreAndParam<DaySettings, { day: string }>('storedDaySettings',
         defaultDateSettings, true,
         storedDayReservations_param,
@@ -303,7 +281,7 @@ export const { value: storedDaySettings, isLoading: storedDaySettingsLoading } =
 
 export const storedReservationsSummary_param = writable<{ startDay: Date, endDay: Date }>();
 
-export const { value: storedReservationsSummary, isLoading: storedReservationsSummaryLoading } =
+export const { value: storedReservationsSummary, isLoading: storedReservationsSummaryLoading, markAs: storedReservationsSummaryMarkAs } =
     readableWithSubscriptionToCoreAndParam<Record<string, DateReservationSummary>, { startDay: Date, endDay: Date }>('storedReservationsSummary',
         {}, true,
         storedReservationsSummary_param,
@@ -312,7 +290,7 @@ export const { value: storedReservationsSummary, isLoading: storedReservationsSu
             return r;
         }, "Reservations", "DaySettings");
 
-export const { value: storedOWAdminComments, isLoading: storedOWAdminCommentsLoading } =
+export const { value: storedOWAdminComments, isLoading: storedOWAdminCommentsLoading, markAs: storedOWAdminCommentsMarkAs } =
     readableWithSubscriptionToCoreAndParam<BuoyGroupings[], { day: string }>('storedOWAdminComments',
         [], true,
         storedDayReservations_param,
@@ -321,7 +299,7 @@ export const { value: storedOWAdminComments, isLoading: storedOWAdminCommentsLoa
             return r;
         }, "BuoyGroupings");
 
-export const { value: storedBuoys, isLoading: storedBuoysLoading } =
+export const { value: storedBuoys, isLoading: storedBuoysLoading, markAs: storedBuoysMarkAs } =
     readableWithSubscriptionToCore<Buoy[]>('storedBuoys',
         [],
         async ({ supabase }) => {
@@ -329,7 +307,7 @@ export const { value: storedBuoys, isLoading: storedBuoysLoading } =
             return r;
         }, "Buoys");
 
-export const { value: storedBoatAssignments, isLoading: storedBoatAssignmentsLoading } =
+export const { value: storedBoatAssignments, isLoading: storedBoatAssignmentsLoading, markAs: storedBoatAssignmentsMarkAs } =
     readableWithSubscriptionToCoreAndParam<Record<string, string>, { day: string }>('storedBoatAssignments',
         {}, true,
         storedDayReservations_param,
@@ -338,10 +316,18 @@ export const { value: storedBoatAssignments, isLoading: storedBoatAssignmentsLoa
             return r;
         }, "Boats");
 
-export const { value: storedNotifications, isLoading: storedNotificationsLoading } =
+export const { value: storedNotifications, isLoading: storedNotificationsLoading, markAs: storedNotificationsMarkAs } =
     readableWithSubscriptionToCore<Notifications[]>('storedNotifications',
         [],
         async ({ supabase }) => {
             const r = await getUserNotifications(supabase);
             return r;
         }, "Notifications");
+
+
+export const reservationsMarkAs = (as: 'modified' | 'refresh if offline') => {
+    storedReservationsSummaryMarkAs(as);
+    storedDayReservationsAllMarkAs(as);
+    storedIncomingReservationsMarkAs(as);
+    storedPastReservationsMarkAs(as);
+};

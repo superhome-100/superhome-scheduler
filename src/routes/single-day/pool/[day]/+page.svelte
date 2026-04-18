@@ -13,8 +13,14 @@
 	import { getCategoryDatePath } from '$lib/url';
 	import { approveAllPendingReservations } from '$lib/client/api';
 	import { getYYYYMM, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
-	import { storedDayReservations_param, storedSettings, storedUser } from '$lib/client/stores';
+	import {
+		storedDayReservations_param,
+		storedDayReservationsAllMarkAs,
+		storedSettings,
+		storedUser
+	} from '$lib/client/stores';
 	import type { SettingsManager } from '$lib/settings';
+	import { onMount } from 'svelte';
 
 	// svelte-ignore unused-export-let
 	export let params;
@@ -28,13 +34,19 @@
 
 	let categories = [...CATEGORIES];
 
+	const refresh = () => {
+		storedDayReservationsAllMarkAs('refresh if offline');
+	};
+
 	function prevDay() {
 		const prev = day.subtract(1, 'day');
 		goto(getCategoryDatePath('pool', prev.toDate()));
+		refresh();
 	}
 	function nextDay() {
 		const next = day.add(1, 'day');
 		goto(getCategoryDatePath('pool', next.toDate()));
+		refresh();
 	}
 
 	let modalOpened = false;
@@ -54,6 +66,8 @@
 		const name = sm.getPoolLabel(dayStr);
 		return { resources, name };
 	};
+
+	onMount(refresh);
 </script>
 
 {#if $storedUser}

@@ -90,13 +90,15 @@
 			await withTimeout(
 				supabase_es.init(supabase, user).catch((e) => console.error('supabase_es.init', e)),
 				5000
-			);
+			).catch((e) => console.error('supabase_es.init', e));
+
+			// this line being inside onMount protects from SSR leak
+			(storedCore_params as Writable<CoreStore>).set({ supabase, user });
+
 			supabase_es.isOnline.subscribe((isOnline: boolean) => {
 				console.debug('supabase_es.isOnline', isOnline);
 				if (isOnline) supabase_es.notifyAll();
 			});
-			// this line being inside onMount protects from SSR leak
-			(storedCore_params as Writable<CoreStore>).set({ supabase, user });
 
 			if (user) {
 				await pushService.init(user.has_push ?? false);
