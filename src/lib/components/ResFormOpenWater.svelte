@@ -4,12 +4,13 @@
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 	import type { ReservationEx } from '$types';
 	import { OWTime, ReservationCategory, ReservationType } from '$types';
-	import { getYYYYMMDD } from '$lib/datetimeUtils';
+	import { getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
 	import InputLabel from './tiny_components/InputLabel.svelte';
 	import { ow_am_full, ow_pm_full } from '$lib/dateSettings';
 	import { displayTag } from '../../lib/utils';
 	import { onMount } from 'svelte';
 	import {
+		storedSettings,
 		storedDaySettings,
 		storedDayReservations,
 		storedUser,
@@ -54,6 +55,11 @@
 		ReservationType.autonomousPlatform,
 		ReservationType.autonomousPlatformCBS
 	].includes(resType);
+
+	$: isCsbAvailable = $storedSettings
+		.get('cbsAvailable', dayStr)
+		.map((x) => x % 7)
+		.includes(PanglaoDayJs(dayStr).day());
 
 	$: isAdminView = adminView($storedUser, viewOnly);
 
@@ -163,9 +169,9 @@
 				<option value="autonomous">Autonomous on Buoy (0-89m)</option>
 				<option value="autonomousPlatform">Autonomous on Platform (0-99m)</option>
 				<option value="autonomousPlatformCBS">Autonomous on Platform+CBS (90-130m)</option>
-				<!-- TEMPORARY {#if dayStr && Settings.getCbsAvailable(dayStr)}
+				{#if isCsbAvailable}
 					<option value="competitionSetupCBS">Competition-Setup Training (0-130m)</option>
-				{/if} -->
+				{/if}
 			</select>
 			{#if viewOnly || resTypeModDisabled(rsv)}
 				<input type="hidden" name="resType" value={resType} />
