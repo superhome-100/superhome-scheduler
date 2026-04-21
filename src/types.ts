@@ -46,7 +46,9 @@ export type PriceTemplate = Tables<'PriceTemplates'>;
 export type ReservationRaw = Tables<'Reservations'>;
 
 export type Reservation_Attributes = {
-	preferAM?: boolean
+	preferAM?: boolean,
+	cbs_discipline?: string,
+	cbs_diveTime?: string
 };
 
 export type Reservation = Tables<'Reservations'> & { attributes: Reservation_Attributes };
