@@ -49,7 +49,7 @@ let currentChannelId = 0;
 export class SupabaseEventSource {
     private readonly _channelName = 'table_changes';
     private readonly subscribers = new Map<EventType, Set<Subscriber>>();
-    private readonly _isOnline = writable<boolean>(false);
+    private readonly _isOnline = writable<boolean>(true);
 
     private _channelStatus: REALTIME_SUBSCRIBE_STATES | undefined = undefined;
     private _client: SupabaseClient<Database> | undefined = undefined;
