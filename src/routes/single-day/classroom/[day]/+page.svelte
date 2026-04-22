@@ -14,7 +14,7 @@
 	import { getYYYYMM, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
 	import {
 		storedDayReservations_param,
-		storedDaySettingsMarkAs,
+		storedDaySettingsMarkAsDirty,
 		storedSettings,
 		storedUser
 	} from '$lib/client/stores';
@@ -34,7 +34,7 @@
 	let categories = [...CATEGORIES];
 
 	const refresh = () => {
-		storedDaySettingsMarkAs('refresh if offline');
+		storedDaySettingsMarkAsDirty();
 	};
 
 	function prevDay() {

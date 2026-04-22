@@ -11,6 +11,7 @@ import {
 } from '$types';
 import type { Dayjs } from 'dayjs';
 import { fromPanglaoDateTimeStringToDayJs, getYYYYMMDD, PanglaoDayJs } from '../datetimeUtils';
+import { markTableAsDirty } from './supabase_event_source';
 
 
 export const getBuoys = async (supabase: SupabaseClient) => {
@@ -199,7 +200,7 @@ export const getReservationSummary = async (supabase: SupabaseClient, startDate:
 					openwater: {
 						AM: 0,
 						PM: 0,
-						ow_am_full: false
+						ow_am_full: false,
 					},
 					classroom: 0,
 				};
@@ -221,6 +222,7 @@ export const approveAllPendingReservations = async (
 		method: 'POST',
 		body: JSON.stringify({ category, date })
 	});
+	markTableAsDirty('Reservations');
 };
 
 export async function lockBuoyAssignments(day: string, lock: boolean) {
@@ -237,6 +239,8 @@ export async function lockBuoyAssignments(day: string, lock: boolean) {
 		console.error(data.error);
 		throw Error(data.error);
 	}
+	markTableAsDirty('Buoys');
+	markTableAsDirty('Reservations');
 }
 
 export async function assignBuoysToBoats(date: string, assignments: Record<string, string>) {
@@ -249,4 +253,5 @@ export async function assignBuoysToBoats(date: string, assignments: Record<strin
 	if (data.status !== 'success') {
 		console.error('saveAssignments', data);
 	}
+	markTableAsDirty('Boats');
 }

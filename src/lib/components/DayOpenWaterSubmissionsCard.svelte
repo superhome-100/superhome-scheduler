@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { displayTag, badgeColor, buoyDesc } from '$lib/utils';
-	import { storedUser as user } from '$lib/client/stores';
+	import { markReservationsAsDirty, storedUser as user } from '$lib/client/stores';
 	import _ from 'lodash';
 
 	import { toast } from 'svelte-french-toast';
@@ -52,6 +52,7 @@
 				.select('id')
 				.single()
 				.throwOnError();
+			markReservationsAsDirty();
 		};
 		await toast
 			.promise(fn(), {

@@ -10,9 +10,9 @@
 	import { pushState } from '$app/navigation';
 	import dayjs from 'dayjs';
 	import {
+		markReservationsAsDirty,
 		storedReservationsSummary,
 		storedReservationsSummary_param,
-		storedReservationsSummaryMarkAs,
 		storedUser
 	} from '$lib/client/stores';
 	import { onMount } from 'svelte';
@@ -58,7 +58,7 @@
 	}
 
 	const refresh = () => {
-		storedReservationsSummaryMarkAs('refresh if offline');
+		markReservationsAsDirty();
 	};
 
 	function prevMonth() {

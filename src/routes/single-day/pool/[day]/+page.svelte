@@ -14,8 +14,8 @@
 	import { approveAllPendingReservations } from '$lib/client/api';
 	import { getYYYYMM, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
 	import {
+		markReservationsAsDirty,
 		storedDayReservations_param,
-		storedDayReservationsAllMarkAs,
 		storedSettings,
 		storedUser
 	} from '$lib/client/stores';
@@ -35,7 +35,7 @@
 	let categories = [...CATEGORIES];
 
 	const refresh = () => {
-		storedDayReservationsAllMarkAs('refresh if offline');
+		markReservationsAsDirty();
 	};
 
 	function prevDay() {

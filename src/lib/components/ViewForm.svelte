@@ -6,7 +6,7 @@
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { adminView } from '$lib/utils';
 	import { toast } from 'svelte-french-toast';
-	import { storedUser } from '$lib/client/stores';
+	import { markReservationsAsDirty, storedUser } from '$lib/client/stores';
 	import { ReservationStatus, type ReservationEx } from '$types';
 
 	export let hasForm = false;
@@ -37,6 +37,7 @@
 					if (status) rsv.status = status;
 					rsv.buoy = formData.get('buoy');
 					rsv = rsv;
+					markReservationsAsDirty();
 					break;
 				default:
 					console.error(result);

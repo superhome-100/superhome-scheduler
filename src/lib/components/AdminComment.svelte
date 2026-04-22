@@ -4,6 +4,7 @@
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-french-toast';
 	import { storedOWAdminComments } from '$lib/client/stores';
+	import { markTableAsDirty } from '$lib/client/supabase_event_source';
 
 	export let date: string;
 	export let buoy: string;
@@ -33,6 +34,7 @@
 			switch (result.type) {
 				case 'success':
 					toast.success('Updated admin comment');
+					markTableAsDirty('BuoyGroupings');
 					break;
 				default:
 					console.error('admin comment', result);

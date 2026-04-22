@@ -14,23 +14,24 @@
 	import { getYYYYMM, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
 	import {
 		storedDaySettings,
-		storedDaySettingsMarkAs,
+		storedDaySettingsMarkAsDirty,
 		storedDayReservations,
 		storedDayReservations_param,
 		storedUser,
-		storedDayReservationsAllMarkAs
+		markReservationsAsDirty
 	} from '$lib/client/stores';
 	import { ow_am_full, ow_pm_full, setDaySetting } from '$lib/dateSettings';
 	import type { Enums } from '$lib/supabase.types';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
+	import { markTableAsDirty } from '$lib/client/supabase_event_source.js';
 
 	// svelte-ignore unused-export-let
 	export let params;
 	export let data;
 	const { supabase } = data;
 
-	$: day = PanglaoDayJs(data.day);
+	let day = PanglaoDayJs(data.day);
 	$: dayStr = getYYYYMMDD(day);
 	$: storedDayReservations_param.set({ day: dayStr });
 
@@ -54,18 +55,21 @@
 	};
 
 	const refresh = () => {
-		storedDaySettingsMarkAs('refresh if offline');
-		storedDayReservationsAllMarkAs('refresh if offline');
+		storedDaySettingsMarkAsDirty();
+		markReservationsAsDirty();
+		markTableAsDirty('Boats');
+		markTableAsDirty('Buoys');
+		markTableAsDirty('BuoyGroupings');
 	};
 
 	function prevDay() {
-		const prev = day.subtract(1, 'day');
-		goto(getCategoryDatePath('openwater', getYYYYMMDD(prev)));
+		day = day.subtract(1, 'day');
+		goto(getCategoryDatePath('openwater', getYYYYMMDD(day)));
 		refresh();
 	}
 	function nextDay() {
-		const next = day.add(1, 'day');
-		goto(getCategoryDatePath('openwater', getYYYYMMDD(next)));
+		day = day.add(1, 'day');
+		goto(getCategoryDatePath('openwater', getYYYYMMDD(day)));
 		refresh();
 	}
 

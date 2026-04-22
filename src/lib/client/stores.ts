@@ -1,5 +1,5 @@
 import { writable, readable, type Readable } from 'svelte/store';
-import { supabase_es, type EventType } from './supabase_event_source';
+import { supabase_es, type EventType, markTableAsDirty as supabase_markTableAsDirty, markTableAsDirty } from './supabase_event_source';
 import { getYYYYMMDD, PanglaoDate } from '$lib/datetimeUtils';
 import { defaultDateSettings, getDaySettings, type DaySettings } from '$lib/dateSettings';
 import { fallbackSettingsManager, getSettingsManager, type SettingsManager } from '$lib/settings';
@@ -51,6 +51,10 @@ const progressTracker = {
     }
 };
 
+export const markReservationsAsDirty = () => {
+    supabase_markTableAsDirty('Reservations');
+};
+
 type CoreStoreWithUser = RequireKeys<CoreStore, 'user'>;
 const nullVal = Symbol('nullVal');
 
@@ -60,27 +64,21 @@ function readableWithSubscriptionToCoreAndParam<T extends object | null, P>(
     setDefaultWhenLoading: boolean,
     paramStore: Readable<P>,
     cb: (cs: CoreStoreWithUser, param: P) => Promise<T>,
-    event: EventType, ...events: EventType[]
-): { value: Readable<T>, isLoading: Readable<boolean>, markAs: (as: 'modified' | 'refresh if offline') => void } {
+    ...events: EventType[]
+): { value: Readable<T>, isLoading: Readable<boolean> } {
     const cache = new LRUCache<string, NonNullable<T> | typeof nullVal>({ max: 50 });
     supabase_es.subscribe(() => {
         cache.clear();
-    }, event, ...events);
+    }, ...events);
     let coreParam: CoreStoreWithUser | undefined = undefined;
     let param: P | undefined = undefined;
     let paramJsn: string | undefined = undefined;
     //
-    let markedAsDirtyAt = new Date(0);
-    let updatedAt = new Date(0);
-    let loadQueue = Promise.resolve();
-    let dirtyTimer = Promise.resolve();
-    let safeCb: (trigger: 'param' | 'core' | 'supa' | 'assumed') => Promise<void>;
-    //
     const isLoading = writable<boolean>(false);
     const value = writable<T>(defaultValue, (set) => {
-        safeCb = async (trigger: 'param' | 'core' | 'supa' | 'assumed') => {
+        let loadQueue = Promise.resolve();
+        const safeCb = async (trigger: 'param' | 'core' | 'supa') => {
             if (!coreParam?.user || param === undefined) return;
-            if (trigger !== 'param' && markedAsDirtyAt < updatedAt) return;
 
             const cacheVal = cache.get(paramJsn!);
             if (cacheVal !== undefined) {
@@ -88,7 +86,7 @@ function readableWithSubscriptionToCoreAndParam<T extends object | null, P>(
                 if (cacheVal === nullVal) set(null as T);
                 else set(cacheVal)
             } else {
-                await progressTracker.track(async (cp, p, pJ, updateAtVal) => {
+                await progressTracker.track(async (cp, p, pJ) => {
                     try {
                         console.debug('store.refresh', variableName, param);
                         isLoading.set(true);
@@ -102,26 +100,21 @@ function readableWithSubscriptionToCoreAndParam<T extends object | null, P>(
                         cache.set(pJ, value ?? nullVal);
                         // console.debug('store.refreshed', variableName, param);
                         set(value);
-                        updatedAt = updateAtVal;
                         isLoading.set(false);
                     } catch (e) {
                         console.error('subscribeToCoreAndParam', variableName, e, param);
                     }
-                }, coreParam, param, paramJsn!, new Date());
+                }, coreParam, param, paramJsn!);
             }
 
         };
         let isInit = true;
-        const markAsDirty = (trigger: 'param' | 'core' | 'supa') => {
-            markedAsDirtyAt = new Date();
-            loadQueue = loadQueue.then(() => safeCb(trigger));
-        }
         const unsubCs = storedCore_params.subscribe(async (cpN: CoreStore) => {
             if (coreParam !== cpN) {
                 coreParam = cpN as CoreStoreWithUser;
                 cache.clear();
                 if (isInit) return;
-                markAsDirty('core');
+                loadQueue = loadQueue.then(() => safeCb('core'));
             }
         });
         const unsubP = paramStore.subscribe(async (pN: P) => {
@@ -135,10 +128,10 @@ function readableWithSubscriptionToCoreAndParam<T extends object | null, P>(
         });
         const unsubSupa = supabase_es.subscribe(() => {
             cache.clear();
-            markAsDirty('supa');
-        }, event, ...events);
+            loadQueue = loadQueue.then(() => safeCb('supa'));
+        }, ...events);
         isInit = false;
-        markAsDirty('core');
+        loadQueue = loadQueue.then(() => safeCb('core'));
         return () => {
             // console.debug("store.unsub", variableName);
             unsubCs();
@@ -146,18 +139,9 @@ function readableWithSubscriptionToCoreAndParam<T extends object | null, P>(
             unsubSupa();
         }
     });
-    const markAs = (as: 'modified' | 'refresh if offline') => {
-        const isOnline = supabase_es.isOnlineVal;
-        if (as === 'modified' || (as === 'refresh if offline' && !isOnline)) {
-            markedAsDirtyAt = new Date();
-            cache.clear();
-            dirtyTimer = dirtyTimer
-                .then(() => new Promise(r => setTimeout(r, isOnline ? 5000 : 500)))
-                .then(() => loadQueue = loadQueue.then(() => safeCb("assumed")));
-        }
-    };
-    return { isLoading, value, markAs };
+    return { isLoading, value };
 }
+
 
 const neverChangingParam = readable({});
 
@@ -234,14 +218,14 @@ export const { value: storedPriceTemplates } =
             return data;
         }, "PriceTemplates");
 
-export const { value: storedIncomingReservations, isLoading: storedIncomingReservationsLoading, markAs: storedIncomingReservationsMarkAs } =
+export const { value: storedIncomingReservations, isLoading: storedIncomingReservationsLoading } =
     readableWithSubscriptionToCore<ReservationEx[]>('storedIncomingReservations',
         [], async ({ supabase, user }) => {
             const r = await getIncomingReservations(user, supabase);
             return r;
         }, "Reservations", "Users");
 
-export const { value: storedPastReservations, isLoading: storedPastReservationsLoading, markAs: storedPastReservationsMarkAs } =
+export const { value: storedPastReservations, isLoading: storedPastReservationsLoading } =
     readableWithSubscriptionToCoreAndParam<ReservationEx[], string>('storedPastReservations',
         [], true,
         storedCurrentDay,
@@ -252,7 +236,7 @@ export const { value: storedPastReservations, isLoading: storedPastReservationsL
 
 export const storedDayReservations_param = writable<{ day: string }>();
 
-export const { value: storedDayReservationsAll, isLoading: storedDayReservationsAllLoading, markAs: storedDayReservationsAllMarkAs } =
+export const { value: storedDayReservationsAll, isLoading: storedDayReservationsAllLoading } =
     readableWithSubscriptionToCoreAndParam<ReservationEx[], { day: string }>('storedDayReservations',
         [], true,
         storedDayReservations_param,
@@ -270,7 +254,7 @@ export const storedDayReservations =
         });
     });
 
-export const { value: storedDaySettings, isLoading: storedDaySettingsLoading, markAs: storedDaySettingsMarkAs } =
+export const { value: storedDaySettings, isLoading: storedDaySettingsLoading } =
     readableWithSubscriptionToCoreAndParam<DaySettings, { day: string }>('storedDaySettings',
         defaultDateSettings, true,
         storedDayReservations_param,
@@ -279,9 +263,11 @@ export const { value: storedDaySettings, isLoading: storedDaySettingsLoading, ma
             return dateSettings;
         }, "DaySettings");
 
+export const storedDaySettingsMarkAsDirty = () => markTableAsDirty('DaySettings');
+
 export const storedReservationsSummary_param = writable<{ startDay: Date, endDay: Date }>();
 
-export const { value: storedReservationsSummary, isLoading: storedReservationsSummaryLoading, markAs: storedReservationsSummaryMarkAs } =
+export const { value: storedReservationsSummary, isLoading: storedReservationsSummaryLoading } =
     readableWithSubscriptionToCoreAndParam<Record<string, DateReservationSummary>, { startDay: Date, endDay: Date }>('storedReservationsSummary',
         {}, true,
         storedReservationsSummary_param,
@@ -290,7 +276,7 @@ export const { value: storedReservationsSummary, isLoading: storedReservationsSu
             return r;
         }, "Reservations", "DaySettings");
 
-export const { value: storedOWAdminComments, isLoading: storedOWAdminCommentsLoading, markAs: storedOWAdminCommentsMarkAs } =
+export const { value: storedOWAdminComments, isLoading: storedOWAdminCommentsLoading } =
     readableWithSubscriptionToCoreAndParam<BuoyGroupings[], { day: string }>('storedOWAdminComments',
         [], true,
         storedDayReservations_param,
@@ -299,7 +285,7 @@ export const { value: storedOWAdminComments, isLoading: storedOWAdminCommentsLoa
             return r;
         }, "BuoyGroupings");
 
-export const { value: storedBuoys, isLoading: storedBuoysLoading, markAs: storedBuoysMarkAs } =
+export const { value: storedBuoys, isLoading: storedBuoysLoading } =
     readableWithSubscriptionToCore<Buoy[]>('storedBuoys',
         [],
         async ({ supabase }) => {
@@ -307,7 +293,7 @@ export const { value: storedBuoys, isLoading: storedBuoysLoading, markAs: stored
             return r;
         }, "Buoys");
 
-export const { value: storedBoatAssignments, isLoading: storedBoatAssignmentsLoading, markAs: storedBoatAssignmentsMarkAs } =
+export const { value: storedBoatAssignments, isLoading: storedBoatAssignmentsLoading } =
     readableWithSubscriptionToCoreAndParam<Record<string, string>, { day: string }>('storedBoatAssignments',
         {}, true,
         storedDayReservations_param,
@@ -316,18 +302,10 @@ export const { value: storedBoatAssignments, isLoading: storedBoatAssignmentsLoa
             return r;
         }, "Boats");
 
-export const { value: storedNotifications, isLoading: storedNotificationsLoading, markAs: storedNotificationsMarkAs } =
+export const { value: storedNotifications, isLoading: storedNotificationsLoading } =
     readableWithSubscriptionToCore<Notifications[]>('storedNotifications',
         [],
         async ({ supabase }) => {
             const r = await getUserNotifications(supabase);
             return r;
         }, "Notifications");
-
-
-export const reservationsMarkAs = (as: 'modified' | 'refresh if offline') => {
-    storedReservationsSummaryMarkAs(as);
-    storedDayReservationsAllMarkAs(as);
-    storedIncomingReservationsMarkAs(as);
-    storedPastReservationsMarkAs(as);
-};

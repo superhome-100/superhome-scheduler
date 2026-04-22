@@ -1,4 +1,4 @@
-import debounce, { type Options } from "debounce-fn";
+import debounce, { type DebouncedFunction, type Options } from "debounce-fn";
 import type { Database } from '$lib/supabase.types'
 import {
     SupabaseClient,
@@ -48,7 +48,7 @@ let currentChannelId = 0;
 
 export class SupabaseEventSource {
     private readonly _channelName = 'table_changes';
-    private readonly subscribers = new Map<EventType, Set<Subscriber>>();
+    private readonly subscribers = new Map<EventType, { fn: DebouncedFunction<unknown[], void>, subs: Set<Subscriber> }>();
     private readonly _isOnline = writable<boolean>(false);
 
     private _channelStatus: REALTIME_SUBSCRIBE_STATES | undefined = undefined;
@@ -66,7 +66,13 @@ export class SupabaseEventSource {
 
     constructor() {
         for (const event of EVENTS) {
-            this.subscribers.set(event, new Set());
+            const subs = new Set<Subscriber>();
+            const fn = debounce((payload: Payload) => {
+                for (const sfn of subs) {
+                    Promise.resolve().then(sfn).catch(e => console.error("SupabaseEventSource subscriber error", event, e, payload));
+                }
+            }, EventConfig[event]);
+            this.subscribers.set(event, { fn, subs });
         }
     }
 
@@ -157,13 +163,13 @@ export class SupabaseEventSource {
     }
 
     subscribe(fn: Subscriber, ...event: EventType[]): Unsubscribe {
-        const sets: Set<Subscriber>[] = event.map(e => {
-            const set = this.subscribers.get(e)!;
-            set.add(fn);
-            return set;
+        const subs = event.map(e => {
+            const { subs } = this.subscribers.get(e)!;
+            subs.add(fn);
+            return subs;
         });
         return () => {
-            sets.forEach(s => s.delete(fn));
+            subs.forEach(s => s.delete(fn));
         };
     }
 
@@ -181,9 +187,8 @@ export class SupabaseEventSource {
     }
 
     private _dispatch(event: EventType, payload: Payload | undefined) {
-        for (const fn of this.subscribers.get(event)!) {
-            Promise.resolve().then(fn).catch(e => console.error("SupabaseEventSource subscriber error", event, e, payload));
-        }
+        const { fn } = this.subscribers.get(event)!
+        fn(payload);
     }
 }
 
@@ -191,3 +196,11 @@ export const supabase_es = new SupabaseEventSource()
 export const supabaseIsOnline = readable<boolean>(false, (set) => {
     supabase_es.isOnline.subscribe(set);
 });
+
+/**
+ * Can signal database table change
+ */
+export const markTableAsDirty = (et: EventType) => {
+    if (!supabase_es.isOnlineVal)
+        supabase_es.notify(et);
+}
