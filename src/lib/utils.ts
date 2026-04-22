@@ -166,9 +166,9 @@ export const displayStatus = (status: ReservationStatusT | undefined) => {
 	}
 }
 
-export const isCbsAvailable = (sm: SettingsManager, dayStr: string) => {
+export const isCbsAvailableOnThisDate = (sm: SettingsManager, dayStr: string) => {
 	const day = PanglaoDayJs(dayStr);
-	return sm.get('cbsAvailable', dayStr)
+	return sm.get('cbsAvailableOnTheseDaysOfTheWeek', dayStr)
 		.map((d) => d % 7)
 		.includes(day.day());
 };

@@ -3,7 +3,7 @@
 	import {
 		adminView,
 		buoyDesc,
-		isCbsAvailable,
+		isCbsAvailableOnThisDate,
 		isMyReservation,
 		resTypeModDisabled
 	} from '$lib/utils';
@@ -61,7 +61,7 @@
 		ReservationType.autonomousPlatformCBS
 	].includes(resType);
 
-	$: isCsbAvailable = isCbsAvailable($storedSettings, dayStr);
+	$: isCsbAvailable = isCbsAvailableOnThisDate($storedSettings, dayStr);
 
 	$: isAdminView = adminView($storedUser, viewOnly);
 

@@ -30,7 +30,7 @@ import dayjs from 'dayjs';
 import Papa from 'papaparse';
 import { supabaseServiceRole } from './supabase';
 import { pushNotificationService } from './push';
-import { isCbsAvailable } from '$lib/utils';
+import { isCbsAvailableOnThisDate } from '$lib/utils';
 
 
 export async function getReservationsCsv() {
@@ -243,7 +243,7 @@ async function throwIfSubmissionIsInvalid(settings: SettingsManager, sub: Submis
 		}
 	}
 
-	if (sub.resType === ReservationType.competitionSetupCBS && !isCbsAvailable(settings, sub.date)) {
+	if (sub.resType === ReservationType.competitionSetupCBS && !isCbsAvailableOnThisDate(settings, sub.date)) {
 		throw new ValidationError(
 			'Competition setup training is not available on this day'
 		);
