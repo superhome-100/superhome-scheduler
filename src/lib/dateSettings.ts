@@ -1,5 +1,4 @@
 import type { SupabaseClient } from '$types';
-import { markTableAsDirty } from './client/supabase_event_source';
 import { getYYYYMMDD } from './datetimeUtils';
 import type { Json } from './supabase.types';
 
@@ -39,5 +38,4 @@ export async function setDaySetting(supabase: SupabaseClient, date: Date | strin
 		.select("key")
 		.single() // this way it throws if no row returned
 		.throwOnError();
-	markTableAsDirty('DaySettings');
 }

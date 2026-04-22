@@ -13,7 +13,7 @@
 	import ResFormClassroom from './ResFormClassroom.svelte';
 	import ResFormOpenWater from './ResFormOpenWater.svelte';
 	import { cleanUpFormDataBuddyFields } from '$lib/utils';
-	import { markReservationsAsDirty, storedSettings } from '$lib/client/stores';
+	import { storedSettings } from '$lib/client/stores';
 
 	export let hasForm = false;
 	export let rsv: ReservationEx;
@@ -102,7 +102,6 @@
 				case 'success':
 					toast.success('Reservation updated!');
 					close();
-					markReservationsAsDirty();
 					break;
 				case 'failure':
 					error = result.data.error;

@@ -4,7 +4,6 @@
 	import { toast } from 'svelte-french-toast';
 	import { popup } from '$lib/components/Popup.svelte';
 	import type { ReservationEx } from '$types';
-	import { markReservationsAsDirty } from '$lib/client/stores';
 
 	export let rsv: ReservationEx;
 	export let hasForm = false;
@@ -37,7 +36,6 @@
 			switch (result.type) {
 				case 'success':
 					toast.success('Reservation canceled');
-					markReservationsAsDirty();
 					break;
 				case 'failure':
 					popup(result.data?.error || 'Unknown error');

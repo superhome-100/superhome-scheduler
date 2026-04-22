@@ -1,5 +1,5 @@
 import { writable, readable, type Readable } from 'svelte/store';
-import { supabase_es, type EventType, markTableAsDirty as supabase_markTableAsDirty, markTableAsDirty } from './supabase_event_source';
+import { supabase_es, type EventType } from './supabase_event_source';
 import { getYYYYMMDD, PanglaoDate } from '$lib/datetimeUtils';
 import { defaultDateSettings, getDaySettings, type DaySettings } from '$lib/dateSettings';
 import { fallbackSettingsManager, getSettingsManager, type SettingsManager } from '$lib/settings';
@@ -51,70 +51,120 @@ const progressTracker = {
     }
 };
 
-export const markReservationsAsDirty = () => {
-    supabase_markTableAsDirty('Reservations');
-};
-
 type CoreStoreWithUser = RequireKeys<CoreStore, 'user'>;
-const nullVal = Symbol('nullVal');
 
-function readableWithSubscriptionToCoreAndParam<T extends object | null, P>(
+function readableWithSubscriptionToCore<T>(
+    variableName: string,
+    defaultValue: T,
+    cb: (cs: CoreStoreWithUser) => Promise<T>,
+    event: EventType, ...events: EventType[]
+): { value: Readable<T>, isLoading: Readable<boolean> } {
+    let cacheVal: T | undefined = undefined;
+    supabase_es.subscribe(() => {
+        cacheVal = undefined;
+    }, event, ...events);
+    let coreParam: CoreStoreWithUser | undefined = undefined;
+    const isLoading = writable<boolean>(false);
+    // we lie about the interface because we really don't want users to set it
+    const value = writable<T>(defaultValue, (set) => {
+        const safeCb = async () => {
+            if (coreParam?.user) {
+                if (cacheVal !== undefined) {
+                    console.debug('store.refresh.from-cache', variableName);
+                    set(cacheVal);
+                } else {
+                    await progressTracker.track(async (cp) => {
+                        try {
+                            console.debug('store.refresh', variableName);
+                            isLoading.set(true);
+                            cacheVal = await cb(cp);
+                            set(cacheVal);
+                            // console.debug('store.refreshed', variableName);
+                            isLoading.set(false);
+                        } catch (e) {
+                            console.error('store.error', variableName, e);
+                        }
+                    }, coreParam);
+                }
+            }
+        };
+        let isInit = true;
+        const unsubCs = storedCore_params.subscribe(async (cpN: CoreStore) => {
+            if (coreParam !== cpN) {
+                coreParam = cpN as CoreStoreWithUser;
+                cacheVal = undefined;
+                if (!isInit)
+                    safeCb();
+            }
+        });
+        const unsubSupa = supabase_es.subscribe(() => {
+            cacheVal = undefined;
+            safeCb();
+        }, event, ...events);
+        safeCb();
+        isInit = false;
+        return () => {
+            // console.debug("store.unsub", variableName)
+            unsubCs();
+            unsubSupa();
+        }
+    });
+    return { isLoading, value };
+}
+
+function readableWithSubscriptionToCoreAndParam<T extends object, P>(
     variableName: string,
     defaultValue: T,
     setDefaultWhenLoading: boolean,
     paramStore: Readable<P>,
     cb: (cs: CoreStoreWithUser, param: P) => Promise<T>,
-    ...events: EventType[]
+    event: EventType, ...events: EventType[]
 ): { value: Readable<T>, isLoading: Readable<boolean> } {
-    const cache = new LRUCache<string, NonNullable<T> | typeof nullVal>({ max: 50 });
+    const cache = new LRUCache<string, T>({ max: 50 });
     supabase_es.subscribe(() => {
         cache.clear();
-    }, ...events);
+    }, event, ...events);
     let coreParam: CoreStoreWithUser | undefined = undefined;
     let param: P | undefined = undefined;
     let paramJsn: string | undefined = undefined;
-    //
     const isLoading = writable<boolean>(false);
-    const value = writable<T>(defaultValue, (set) => {
-        let loadQueue = Promise.resolve();
+    const value = readable<T>(defaultValue, (set) => {
         const safeCb = async (trigger: 'param' | 'core' | 'supa') => {
-            if (!coreParam?.user || param === undefined) return;
-
-            const cacheVal = cache.get(paramJsn!);
-            if (cacheVal !== undefined) {
-                console.debug('store.refresh.from-cache', variableName, param);
-                if (cacheVal === nullVal) set(null as T);
-                else set(cacheVal)
-            } else {
-                await progressTracker.track(async (cp, p, pJ) => {
-                    try {
-                        console.debug('store.refresh', variableName, param);
-                        isLoading.set(true);
-                        const valueP = cb(cp, p);
-                        // why only for 'param': because this means that the current value is not relate to the param
-                        // other cases we can show the previous value until we have something new to show
-                        if (setDefaultWhenLoading === true && trigger === 'param') {
-                            set(defaultValue);
+            if (coreParam?.user && param !== undefined) {
+                const cacheVal = cache.get(paramJsn!);
+                if (cacheVal !== undefined) {
+                    console.debug('store.refresh.from-cache', variableName, param);
+                    set(cacheVal);
+                } else {
+                    await progressTracker.track(async (cp, p, pJ) => {
+                        try {
+                            console.debug('store.refresh', variableName, param);
+                            isLoading.set(true);
+                            const valueP = cb(cp, p);
+                            // why only for 'param': because this means that the current value is not relate to the param
+                            // other cases we can show the previous value until we have something new to show
+                            if (setDefaultWhenLoading === true && trigger === 'param') {
+                                set(defaultValue);
+                            }
+                            const value = await valueP;
+                            cache.set(pJ, value);
+                            // console.debug('store.refreshed', variableName, param);
+                            set(value);
+                            isLoading.set(false);
+                        } catch (e) {
+                            console.error('subscribeToCoreAndParam', variableName, e, param);
                         }
-                        const value = await valueP;
-                        cache.set(pJ, value ?? nullVal);
-                        // console.debug('store.refreshed', variableName, param);
-                        set(value);
-                        isLoading.set(false);
-                    } catch (e) {
-                        console.error('subscribeToCoreAndParam', variableName, e, param);
-                    }
-                }, coreParam, param, paramJsn!);
+                    }, coreParam, param, paramJsn!);
+                }
             }
-
         };
         let isInit = true;
         const unsubCs = storedCore_params.subscribe(async (cpN: CoreStore) => {
             if (coreParam !== cpN) {
                 coreParam = cpN as CoreStoreWithUser;
                 cache.clear();
-                if (isInit) return;
-                loadQueue = loadQueue.then(() => safeCb('core'));
+                if (!isInit)
+                    safeCb('core');
             }
         });
         const unsubP = paramStore.subscribe(async (pN: P) => {
@@ -122,16 +172,16 @@ function readableWithSubscriptionToCoreAndParam<T extends object | null, P>(
             const paramJsnN = stableStringify(pN);
             if (paramJsn !== paramJsnN) {
                 paramJsn = paramJsnN;
-                if (isInit) return;
-                loadQueue = loadQueue.then(() => safeCb('param'));
+                if (!isInit)
+                    safeCb('param');
             }
         });
         const unsubSupa = supabase_es.subscribe(() => {
             cache.clear();
-            loadQueue = loadQueue.then(() => safeCb('supa'));
-        }, ...events);
+            safeCb('supa')
+        }, event, ...events);
+        safeCb('core');
         isInit = false;
-        loadQueue = loadQueue.then(() => safeCb('core'));
         return () => {
             // console.debug("store.unsub", variableName);
             unsubCs();
@@ -140,18 +190,6 @@ function readableWithSubscriptionToCoreAndParam<T extends object | null, P>(
         }
     });
     return { isLoading, value };
-}
-
-
-const neverChangingParam = readable({});
-
-function readableWithSubscriptionToCore<T extends object | null>(
-    variableName: string,
-    defaultValue: T,
-    cb: (cs: CoreStoreWithUser) => Promise<T>,
-    event: EventType, ...events: EventType[]
-) {
-    return readableWithSubscriptionToCoreAndParam<T, object>(variableName, defaultValue, false, neverChangingParam, cb, event, ...events);
 }
 
 //
@@ -262,8 +300,6 @@ export const { value: storedDaySettings, isLoading: storedDaySettingsLoading } =
             const dateSettings = await getDaySettings(supabase, day);
             return dateSettings;
         }, "DaySettings");
-
-export const storedDaySettingsMarkAsDirty = () => markTableAsDirty('DaySettings');
 
 export const storedReservationsSummary_param = writable<{ startDay: Date, endDay: Date }>();
 

@@ -8,7 +8,7 @@
 	import { cleanUpFormDataBuddyFields } from '$lib/utils';
 	import { ReservationCategory } from '$types';
 	import { minValidDateStr } from '$lib/reservationTimes';
-	import { markReservationsAsDirty, storedSettings } from '$lib/client/stores';
+	import { storedSettings } from '$lib/client/stores';
 
 	export let category = ReservationCategory.openwater;
 	export let dayStrIn: string;
@@ -35,7 +35,6 @@
 				case 'success':
 					toast.success('Reservation submitted!');
 					close();
-					markReservationsAsDirty();
 					break;
 				case 'failure':
 					error = result.data.error;

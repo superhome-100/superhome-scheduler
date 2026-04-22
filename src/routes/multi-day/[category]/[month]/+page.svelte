@@ -10,12 +10,10 @@
 	import { pushState } from '$app/navigation';
 	import dayjs from 'dayjs';
 	import {
-		markReservationsAsDirty,
 		storedReservationsSummary,
 		storedReservationsSummary_param,
 		storedUser
 	} from '$lib/client/stores';
-	import { onMount } from 'svelte';
 
 	// svelte-ignore unused-export-let
 	export let params;
@@ -57,20 +55,14 @@
 		}
 	}
 
-	const refresh = () => {
-		markReservationsAsDirty();
-	};
-
 	function prevMonth() {
 		day = day.subtract(1, 'month');
 		pushState(`/multi-day/${category}/${getYYYYMM(day)}`, { showModal: false });
-		refresh();
 	}
 
 	function nextMonth() {
 		day = day.add(1, 'month');
 		pushState(`/multi-day/${category}/${getYYYYMM(day)}`, { showModal: false });
-		refresh();
 	}
 
 	let modalOpened = false;
@@ -119,8 +111,6 @@
 			}
 		}
 	}
-
-	onMount(refresh);
 </script>
 
 <svelte:window on:keydown={handleKeypress} />
