@@ -20,7 +20,7 @@
 	export let params;
 	export let data;
 
-	$: day = PanglaoDayJs(data.day);
+	let day = PanglaoDayJs(data.day);
 	$: dayStr = getYYYYMMDD(data.day);
 	$: storedDayReservations_param.set({ day: dayStr });
 
@@ -29,12 +29,12 @@
 	let categories = [...CATEGORIES];
 
 	function prevDay() {
-		const prev = day.subtract(1, 'day');
-		goto(getCategoryDatePath('pool', prev.toDate()));
+		day = day.subtract(1, 'day');
+		goto(getCategoryDatePath('pool', day.toDate()));
 	}
 	function nextDay() {
-		const next = day.add(1, 'day');
-		goto(getCategoryDatePath('pool', next.toDate()));
+		day = day.add(1, 'day');
+		goto(getCategoryDatePath('pool', day.toDate()));
 	}
 
 	let modalOpened = false;

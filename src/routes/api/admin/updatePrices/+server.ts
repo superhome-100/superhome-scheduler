@@ -35,10 +35,17 @@ export async function GET({ request, locals: { safeGetSession } }: RequestEvent)
 			const { user } = await safeGetSession();
 			checkAuthorisation(user, 'admin');
 		} catch {
-			const authHeader = request.headers.get('X-Cron-Secret');
-			if (authHeader !== env.PRIVATE_CRON_SECRET) {
-				console_error('api/admin/updatePrices', new Error('secret error'));
-				return new Response('Unauthorized', { status: 401 });
+			const authHeader = request.headers.get('authorization');
+			if (authHeader === `Bearer ${env.CRON_SECRET}`) {
+				// ok
+			} else {
+				const authHeader = request.headers.get('X-Cron-Secret');
+				if (authHeader === env.PRIVATE_CRON_SECRET) {
+					// ok
+				} else {
+					console_error('api/admin/updatePrices', new Error('secret error'));
+					return new Response('Unauthorized', { status: 401 });
+				}
 			}
 		}
 

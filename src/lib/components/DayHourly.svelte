@@ -94,7 +94,7 @@
 		}
 	};
 
-	$: innerWidth = 0;
+	let innerWidth = 0;
 	$: slotWidthPx = parseInt((innerWidth * 88) / resInfo.resources.length / 100);
 	$: isOpen = isOpenForBooking($storedSettings, date, category, null);
 </script>

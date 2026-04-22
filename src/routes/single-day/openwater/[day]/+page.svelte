@@ -20,13 +20,14 @@
 	} from '$lib/client/stores';
 	import { ow_am_full, ow_pm_full, setDaySetting } from '$lib/dateSettings';
 	import type { Enums } from '$lib/supabase.types';
-
+	import { browser } from '$app/environment';
+	
 	// svelte-ignore unused-export-let
 	export let params;
 	export let data;
 	const { supabase } = data;
 
-	$: day = PanglaoDayJs(data.day);
+	let day = PanglaoDayJs(data.day);
 	$: dayStr = getYYYYMMDD(day);
 	$: storedDayReservations_param.set({ day: dayStr });
 
@@ -50,12 +51,12 @@
 	};
 
 	function prevDay() {
-		const prev = day.subtract(1, 'day');
-		goto(getCategoryDatePath('openwater', getYYYYMMDD(prev)));
+		day = day.subtract(1, 'day');
+		goto(getCategoryDatePath('openwater', getYYYYMMDD(day)));
 	}
 	function nextDay() {
-		const next = day.add(1, 'day');
-		goto(getCategoryDatePath('openwater', getYYYYMMDD(next)));
+		day = day.add(1, 'day');
+		goto(getCategoryDatePath('openwater', getYYYYMMDD(day)));
 	}
 
 	let modalOpened = false;
@@ -107,8 +108,12 @@
 	const lockBuoys = async () => toggleBuoyLock(true);
 	const unlockBuoys = async () => toggleBuoyLock(false);
 
-	$: isAmFull = $storedDaySettings[ow_am_full];
-	$: isPmFull = $storedDaySettings[ow_pm_full];
+	let isAmFull = false;
+	let isPmFull = false;
+	$: if (browser && $storedDaySettings) {
+		isAmFull = $storedDaySettings[ow_am_full];
+		isPmFull = $storedDaySettings[ow_pm_full];
+	}
 </script>
 
 <svelte:window on:keydown={handleKeypress} />
