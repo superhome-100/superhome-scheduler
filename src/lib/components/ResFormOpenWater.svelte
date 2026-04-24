@@ -229,6 +229,8 @@
 					on:input={checkSubmit}
 					name="cbs_diveTime"
 					type="text"
+					pattern="[1-9]?[0-9]:[0-9][0-9]"
+					placeholder="m:ss"
 					required
 				/>
 				<div class="flex-1 text-sm dark:text-white text-left pl-2">minutes:seconds ie ( 4:30 )</div>
