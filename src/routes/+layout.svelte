@@ -87,21 +87,23 @@
 			window.addEventListener('online', handleOnline);
 			window.addEventListener('offline', handleOffline);
 
+			supabase_es.isOnline.subscribe((isOnline: boolean) => {
+				console.debug('supabase_es.isOnline', isOnline);
+				if (isOnline) supabase_es.notifyAll(); // this triggers an extran unnecessary refresh
+			});
+			// barrier: notifyAll in isOnline will be non-effective since no core was set yet
 			await withTimeout(
 				supabase_es.init(supabase, user).catch((e) => console.error('supabase_es.init', e)),
 				5000
 			);
-			supabase_es.isOnline.subscribe((isOnline: boolean) => {
-				console.debug('supabase_es.isOnline', isOnline);
-				if (isOnline) supabase_es.notifyAll();
-			});
+			// barrier: init will make sure that we are connected to realtime so we will haev the latest change after setting core
 			// this line being inside onMount protects from SSR leak
 			(storedCore_params as Writable<CoreStore>).set({ supabase, user });
 
 			if (user) {
 				await pushService.init(user.has_push ?? false);
 			} else {
-				goto('/login');
+				await goto('/login');
 			}
 		});
 

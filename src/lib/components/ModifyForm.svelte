@@ -39,6 +39,11 @@
 			const currentValue = value == 'on' || value === true;
 			return (formData.get(field) == 'on') != currentValue;
 		};
+		const checkAttrValue = (field: keyof Reservation_Attributes) => {
+			const value = original.attributes[field];
+			console.log('field.attr', field, formData.get(field), value);
+			return formData.get(field) !== value;
+		};
 
 		let buddies = JSON.parse(formData.get('buddies'));
 		let union = new Set([...buddies, ...original.buddies]);
@@ -66,6 +71,8 @@
 			checkString('endTime') ||
 			checkNumber('maxDepth') ||
 			checkAttrBool('preferAM') ||
+			checkAttrValue('cbs_discipline') ||
+			checkAttrValue('cbs_diveTime') ||
 			checkBool('extraBottomWeight') ||
 			checkBool('bottomPlate') ||
 			checkBool('largeBuoy') ||

@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { canSubmit } from '$lib/stores';
-	import { adminView, buoyDesc, isMyReservation, resTypeModDisabled } from '$lib/utils';
+	import {
+		adminView,
+		buoyDesc,
+		isCbsAvailableOnThisDate,
+		isMyReservation,
+		resTypeModDisabled
+	} from '$lib/utils';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 	import type { ReservationEx } from '$types';
 	import { OWTime, ReservationCategory, ReservationType } from '$types';
@@ -8,8 +14,8 @@
 	import InputLabel from './tiny_components/InputLabel.svelte';
 	import { ow_am_full, ow_pm_full } from '$lib/dateSettings';
 	import { displayTag } from '../../lib/utils';
-	import { onMount } from 'svelte';
 	import {
+		storedSettings,
 		storedDaySettings,
 		storedDayReservations,
 		storedUser,
@@ -36,8 +42,8 @@
 	let extraBottomWeight = rsv?.extraBottomWeight || false;
 	let bottomPlate = rsv?.bottomPlate || false;
 	let largeBuoy = rsv?.largeBuoy || false;
-	let discipline: string | null = null;
-	let diveTime: string | null = null;
+	let cbs_discipline = rsv?.attributes?.cbs_discipline ?? undefined;
+	let cbs_diveTime = rsv?.attributes?.cbs_diveTime ?? undefined;
 	let allowAutoAdjust = rsv?.allowAutoAdjust ?? true;
 
 	function checkSubmit() {
@@ -54,6 +60,8 @@
 		ReservationType.autonomousPlatform,
 		ReservationType.autonomousPlatformCBS
 	].includes(resType);
+
+	$: isCsbAvailable = isCbsAvailableOnThisDate($storedSettings, dayStr);
 
 	$: isAdminView = adminView($storedUser, viewOnly);
 
@@ -99,25 +107,7 @@
 	$: isAmFull = $storedDaySettings[ow_am_full];
 	$: isPmFull = $storedDaySettings[ow_pm_full];
 
-	function extractValuesFromComments() {
-		// Remove \r characters from comments
-		const sanitizedComments = rsv?.comments?.replace(/\r/g, '') ?? '';
-
-		const disciplineMatch = sanitizedComments.match(/Discipline: ([^\n]*)/);
-		const diveTimeMatch = sanitizedComments.match(/Dive Time: ([^\n]*)/);
-
-		discipline = disciplineMatch ? disciplineMatch[1] : null;
-		diveTime = diveTimeMatch ? diveTimeMatch[1] : null;
-	}
-
 	$: buoysToShow = $storedBuoys.filter((b) => b.isActive || rsv?.buoy === b.name);
-
-	// Extract values on component mount
-	onMount(() => {
-		if (rsv?.resType === ReservationType.competitionSetupCBS) {
-			extractValuesFromComments();
-		}
-	});
 </script>
 
 <ResFormGeneric
@@ -130,9 +120,6 @@
 	bind:owTime
 	{rsv}
 	extendDisabled={((isAmFull && owTime === 'AM') || (isPmFull && owTime === 'PM')) && !rsv}
-	{discipline}
-	{diveTime}
-	{resType}
 >
 	<svelte:fragment slot="inputExtension">
 		{#if adminView($storedUser, viewOnly)}
@@ -163,9 +150,9 @@
 				<option value="autonomous">Autonomous on Buoy (0-89m)</option>
 				<option value="autonomousPlatform">Autonomous on Platform (0-99m)</option>
 				<option value="autonomousPlatformCBS">Autonomous on Platform+CBS (90-130m)</option>
-				<!-- TEMPORARY {#if dayStr && Settings.getCbsAvailable(dayStr)}
+				{#if isCsbAvailable}
 					<option value="competitionSetupCBS">Competition-Setup Training (0-130m)</option>
-				{/if} -->
+				{/if}
 			</select>
 			{#if viewOnly || resTypeModDisabled(rsv)}
 				<input type="hidden" name="resType" value={resType} />
@@ -223,8 +210,8 @@
 				<select
 					id="formDiscipline"
 					disabled={viewOnly}
-					name="discipline"
-					bind:value={discipline}
+					name="cbs_discipline"
+					bind:value={cbs_discipline}
 					required
 				>
 					<option value="FIM">FIM</option>
@@ -238,9 +225,9 @@
 					disabled={viewOnly || (restrictModify && resTypeModDisabled(rsv))}
 					id="formDiveTime"
 					class="w-[100px] text-white"
-					bind:value={diveTime}
+					bind:value={cbs_diveTime}
 					on:input={checkSubmit}
-					name="diveTime"
+					name="cbs_diveTime"
 					type="text"
 					required
 				/>

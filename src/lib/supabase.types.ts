@@ -703,7 +703,7 @@ export type Database = {
 			setting_name:
 				| 'boats'
 				| 'cancelationCutOffTime'
-				| 'cbsAvailable'
+				| 'cbsAvailableOnTheseDaysOfTheWeek'
 				| 'classroomBookable'
 				| 'classroomLabel'
 				| 'classrooms'
@@ -874,7 +874,7 @@ export const Constants = {
 			setting_name: [
 				'boats',
 				'cancelationCutOffTime',
-				'cbsAvailable',
+				'cbsAvailableOnTheseDaysOfTheWeek',
 				'classroomBookable',
 				'classroomLabel',
 				'classrooms',

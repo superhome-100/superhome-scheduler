@@ -30,6 +30,7 @@ import dayjs from 'dayjs';
 import Papa from 'papaparse';
 import { supabaseServiceRole } from './supabase';
 import { pushNotificationService } from './push';
+import { isCbsAvailableOnThisDate } from '$lib/utils';
 
 
 export async function getReservationsCsv() {
@@ -228,10 +229,6 @@ async function throwIfSubmissionIsInvalid(settings: SettingsManager, sub: Submis
 		);
 	}
 
-	const day = dayjs(sub.date).day();
-	const tuesday = 2;
-	const friday = 5;
-	const competitionSetupDays = [tuesday, friday];
 	if (
 		[ReservationType.autonomousPlatformCBS, ReservationType.autonomousPlatform].includes(
 			sub.resType as ReservationType
@@ -246,9 +243,9 @@ async function throwIfSubmissionIsInvalid(settings: SettingsManager, sub: Submis
 		}
 	}
 
-	if (ReservationType.competitionSetupCBS === sub.resType && !competitionSetupDays.includes(day)) {
+	if (sub.resType === ReservationType.competitionSetupCBS && !isCbsAvailableOnThisDate(settings, sub.date)) {
 		throw new ValidationError(
-			'Competition setup training is available only during Tuesdays and Fridays'
+			'Competition setup training is not available on this day'
 		);
 	}
 
@@ -306,7 +303,9 @@ function unpackSubmitForm(
 	}
 
 	const attributes: Reservation_Attributes = {};
-	attributes.preferAM = formData.get('preferAM') == 'on';
+	attributes.preferAM = formData.has('preferAM') ? formData.get('preferAM') === 'on' : undefined;
+	attributes.cbs_discipline = formData.has('cbs_discipline') ? formData.get('cbs_discipline') : undefined;
+	attributes.cbs_diveTime = formData.has('cbs_diveTime') ? formData.get('cbs_diveTime') : undefined;
 
 	return {
 		user: user_id,
@@ -486,7 +485,10 @@ async function unpackModifyForm(
 	const buoy = getBuoy(resType as ReservationType);
 
 	const attributes: Reservation_Attributes = { ...(orig.attributes as object) };
-	attributes.preferAM = formData.get('preferAM') == 'on';
+	attributes.preferAM = formData.has('preferAM') ? formData.get('preferAM') === 'on' : undefined;
+	attributes.cbs_discipline = formData.has('cbs_discipline') ? formData.get('cbs_discipline') : undefined;
+	attributes.cbs_diveTime = formData.has('cbs_diveTime') ? formData.get('cbs_diveTime') : undefined;
+
 
 	return {
 		id: formData.get('id'),

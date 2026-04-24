@@ -1,4 +1,4 @@
-import { datetimeToLocalDateStr, dayjs, getYYYYMMDD } from './datetimeUtils';
+import { datetimeToLocalDateStr, dayjs, getYYYYMMDD, PanglaoDayJs } from './datetimeUtils';
 import { viewMode } from './stores';
 import { storedUsers } from '$lib/client/stores';
 import { get } from 'svelte/store';
@@ -165,3 +165,10 @@ export const displayStatus = (status: ReservationStatusT | undefined) => {
 		default: return status;
 	}
 }
+
+export const isCbsAvailableOnThisDate = (sm: SettingsManager, dayStr: string) => {
+	const day = PanglaoDayJs(dayStr);
+	return sm.get('cbsAvailableOnTheseDaysOfTheWeek', dayStr)
+		.map((d) => d % 7)
+		.includes(day.day());
+};

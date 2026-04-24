@@ -13,7 +13,7 @@ type SettingName = Enums<'setting_name'>;
 interface ValueMap {
 	'classroomLabel': string;
 	'poolLabel': string;
-	// ) THEN jsonb_typeof("value") = 'string'
+	// THEN jsonb_typeof("value") = 'string'
 
 	'cancelationCutOffTime': string; // "HH:mm"
 	'maxClassroomEndTime': string; // "HH:mm"
@@ -26,26 +26,28 @@ interface ValueMap {
 	'openwaterPmStartTime': string; // "HH:mm"
 	'reservationCutOffTime': string; // "HH:mm"
 	'reservationIncrement': string; // "HH:mm"
-	// ) THEN jsonb_typeof("value") = 'string' AND ("value" #>> '{}') ~ '^\d?\d:\d\d$' -- '"HH:mm"'
+	// THEN jsonb_typeof("value") = 'string' AND ("value" #>> '{}') ~ '^\d?\d:\d\d$' -- '"HH:mm"'
 
 	'maxChargeableOWPerMonth': number;
 	'reservationLeadTimeDays': number;
 	'reservationLateCancelPenalty1OffsetMins': number;
-	// ) THEN jsonb_typeof("value") = 'number'
+	// THEN jsonb_typeof("value") = 'number'
 
-	'cbsAvailable': boolean;
 	'classroomBookable': boolean;
 	'openForBusiness': boolean;
 	'openwaterAmBookable': boolean;
 	'openwaterPmBookable': boolean;
 	'poolBookable': boolean;
 	'pushNotificationEnabled': boolean;
-	//   ) THEN jsonb_typeof("value") = 'boolean'
+	// THEN jsonb_typeof("value") = 'boolean'
 
 	'boats': string[];
 	'classrooms': string[];
 	'poolLanes': string[];
-	// ) THEN jsonb_typeof("value") = 'array'
+	// THEN jsonb_typeof("value") = 'array' AND jsonb_path_exists("value", '$[*] ? (@.type() != "string")') = FALSE
+
+	'cbsAvailableOnTheseDaysOfTheWeek': number[];
+	// THEN jsonb_typeof("value") = 'array' AND jsonb_path_exists("value", '$[*] ? (@.type() != "number")') = FALSE
 }
 /**
  * Static Assertion:
@@ -78,7 +80,6 @@ const fallbackValues: ValueMap = {
 	"reservationLeadTimeDays": 30,
 	"reservationLateCancelPenalty1OffsetMins": 0,
 
-	"cbsAvailable": false,
 	"classroomBookable": false,
 	"openForBusiness": false,
 	"openwaterAmBookable": false,
@@ -89,6 +90,8 @@ const fallbackValues: ValueMap = {
 	"boats": ["1", "2", "3", "4"],
 	"classrooms": ["3", "2"],
 	"poolLanes": ["1", "2", "3", "4", "5", "6", "7", "8"],
+
+	"cbsAvailableOnTheseDaysOfTheWeek": [],
 }
 
 export type Setting<T> = {
@@ -195,9 +198,6 @@ export class SettingsManager {
 	}
 	getCancelationCutOffTime(date: string) {
 		return this.get('cancelationCutOffTime', date);
-	}
-	getCbsAvailable(date: string) {
-		return this.get('cbsAvailable', date);
 	}
 	getClassroomBookable(date: string) {
 		return this.get('classroomBookable', date);

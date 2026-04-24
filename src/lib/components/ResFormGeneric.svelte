@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { BuddyData, OWTimeT, ReservationCategoryT, ReservationEx } from '$types';
-	import { ReservationType } from '$types';
 	import { ReservationStatus, ReservationCategory } from '$types';
 	import { canSubmit } from '$lib/stores';
 	import {
@@ -28,10 +27,6 @@
 	export let restrictModify = false;
 	export let error = '';
 	export let extendDisabled = false;
-
-	export let discipline: string | null = null;
-	export let diveTime: string | null = null;
-	export let resType: ReservationType | null = null;
 
 	const dayStrInitValue = dayStr;
 	let dayStrInput = dayStrInitValue;
@@ -86,26 +81,6 @@
 
 	let currentBF = { name: '', matches: [], userId: null } as BuddyData;
 
-	$: {
-		if (resType === ReservationType.competitionSetupCBS) {
-			const disciplineRegex = /Discipline: [^\n]*/;
-			const diveTimeRegex = /Dive Time: [^\n]*/;
-
-			// Remove existing discipline and diveTime comments
-			comments = (comments ?? '').replace(disciplineRegex, '').replace(diveTimeRegex, '').trim();
-
-			// Append new discipline and diveTime comments if they are not empty
-			if (discipline) {
-				comments += `\nDiscipline: ${discipline}`;
-			}
-			if (diveTime) {
-				comments += `\nDive Time: ${diveTime}`;
-			}
-
-			// Trim any leading or trailing whitespace
-			comments = comments.trim();
-		}
-	}
 	const addBuddyField = () => {
 		buddyFields = [...buddyFields, { userId: null, name: '', matches: [], id: buddyFields.length }];
 	};

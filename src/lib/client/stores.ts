@@ -129,16 +129,16 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
     let paramJsn: string | undefined = undefined;
     const isLoading = writable<boolean>(false);
     const value = readable<T>(defaultValue, (set) => {
-        const safeCb = async (trigger: 'param' | 'core' | 'supa') => {
+        const safeCb = async (trigger: 'init' | 'param' | 'core' | 'supa') => {
             if (coreParam?.user && param !== undefined) {
                 const cacheVal = cache.get(paramJsn!);
                 if (cacheVal !== undefined) {
-                    console.debug('store.refresh.from-cache', variableName, param);
+                    console.debug('store.refresh.from-cache', trigger, variableName, param);
                     set(cacheVal);
                 } else {
-                    await progressTracker.track(async (cp, p, pJ) => {
+                    await progressTracker.track(async (cp, p, pJ, trigger) => {
                         try {
-                            console.debug('store.refresh', variableName, param);
+                            console.debug('store.refresh', trigger, variableName, param);
                             isLoading.set(true);
                             const valueP = cb(cp, p);
                             // why only for 'param': because this means that the current value is not relate to the param
@@ -148,13 +148,13 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
                             }
                             const value = await valueP;
                             cache.set(pJ, value);
-                            // console.debug('store.refreshed', variableName, param);
+                            // console.debug('store.refreshed', trigger, variableName, param);
                             set(value);
                             isLoading.set(false);
                         } catch (e) {
-                            console.error('subscribeToCoreAndParam', variableName, e, param);
+                            console.error('subscribeToCoreAndParam', trigger, variableName, e, param);
                         }
-                    }, coreParam, param, paramJsn!);
+                    }, coreParam, param, paramJsn!, trigger);
                 }
             }
         };
@@ -178,9 +178,10 @@ function readableWithSubscriptionToCoreAndParam<T extends object, P>(
         });
         const unsubSupa = supabase_es.subscribe(() => {
             cache.clear();
-            safeCb('supa')
+            if (!isInit)
+                safeCb('supa')
         }, event, ...events);
-        safeCb('core');
+        safeCb('init');
         isInit = false;
         return () => {
             // console.debug("store.unsub", variableName);
