@@ -61,7 +61,7 @@
 		ReservationType.autonomousPlatformCBS
 	].includes(resType);
 
-	$: isCsbAvailable = isCbsAvailableOnThisDate($storedSettings, dayStr);
+	$: isCbsAvailable = isCbsAvailableOnThisDate($storedSettings, dayStr);
 
 	$: isAdminView = adminView($storedUser, viewOnly);
 
@@ -149,7 +149,7 @@
 				<option value="course">Course/Coaching</option>
 				<option value="autonomous">Autonomous on Buoy (0-89m)</option>
 				<option value="autonomousPlatform">Autonomous on Platform (0-99m)</option>
-				{#if isCsbAvailable}
+				{#if isCbsAvailable}
 					<option value="competitionSetupCBS">Competition-Setup Training (0-130m)</option>
 				{:else}
 					<option value="autonomousPlatformCBS">Autonomous on Platform+CBS (90-130m)</option>

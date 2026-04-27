@@ -200,6 +200,7 @@ export const getReservationSummary = async (supabase: SupabaseClient, startDate:
 						AM: 0,
 						PM: 0,
 						ow_am_full: false,
+						ow_pm_full: false,
 					},
 					classroom: 0,
 				};
