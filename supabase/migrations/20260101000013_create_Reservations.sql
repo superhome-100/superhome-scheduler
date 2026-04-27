@@ -144,7 +144,7 @@ as
 ---
 
 -- for: api/reports/reservations
-create view "public"."ReservationsReport" 
+create or replace view "public"."ReservationsReport" 
 with (security_invoker = true) -- Important for RLS
 as
   with r as (
@@ -165,11 +165,14 @@ as
       'openwater', jsonb_build_object(
         'AM', coalesce(sum(count) filter (where "category" = 'openwater' and "owTime" = 'AM'), 0),
         'PM', coalesce(sum(count) filter (where "category" = 'openwater' and "owTime" = 'PM'), 0),
-        'ow_am_full', coalesce(ds.value, 'false'::jsonb)
+        'ow_am_full', coalesce(ds_am.value, 'false'::jsonb),
+        'ow_pm_full', coalesce(ds_pm.value, 'false'::jsonb)
       )
     ) as summary
   from r
-  left join "public"."DaySettings" as ds
-      on r."date" = ds."date" and ds."key" = 'ow_am_full'
-  group by r."date", ds."value"
+  left join "public"."DaySettings" as ds_am
+      on r."date" = ds_am."date" and ds_am."key" = 'ow_am_full'
+  left join "public"."DaySettings" as ds_pm
+      on r."date" = ds_pm."date" and ds_pm."key" = 'ow_pm_full'
+  group by r."date", ds_am."value", ds_pm."value"
 ;
