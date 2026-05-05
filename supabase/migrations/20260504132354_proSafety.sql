@@ -1,9 +1,12 @@
 BEGIN;
 
-DELETE FROM "public"."Settings"
-WHERE "name" = 'cbsAvailable';
+ALTER TYPE "public"."setting_name" ADD VALUE 'proSafetyAvailableOnTheseDaysOfTheWeek' AFTER 'poolLanes';
 
-ALTER TYPE "public"."setting_name" RENAME VALUE 'cbsAvailable' TO 'cbsAvailableOnTheseDaysOfTheWeek';
+COMMIT;
+
+---
+
+BEGIN;
 
 ALTER TABLE "public"."Settings"
 DROP CONSTRAINT "Settings: type of value is not correct";
@@ -55,7 +58,8 @@ CHECK (
        AND jsonb_path_exists("value", '$[*] ? (@.type() != "string")') = FALSE
 
     WHEN "name" IN (
-      'cbsAvailableOnTheseDaysOfTheWeek'
+      'cbsAvailableOnTheseDaysOfTheWeek',
+      'proSafetyAvailableOnTheseDaysOfTheWeek'
     ) THEN jsonb_typeof("value") = 'array' 
        AND jsonb_path_exists("value", '$[*] ? (@.type() != "number")') = FALSE
       

@@ -5,6 +5,7 @@
 		buoyDesc,
 		isCbsAvailableOnThisDate,
 		isMyReservation,
+		isProSafetyAvailableOnThisDate,
 		resTypeModDisabled
 	} from '$lib/utils';
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
@@ -42,8 +43,8 @@
 	let extraBottomWeight = rsv?.extraBottomWeight || false;
 	let bottomPlate = rsv?.bottomPlate || false;
 	let largeBuoy = rsv?.largeBuoy || false;
-	let cbs_discipline = rsv?.attributes?.cbs_discipline ?? undefined;
-	let cbs_diveTime = rsv?.attributes?.cbs_diveTime ?? undefined;
+	let discipline = rsv?.attributes?.discipline ?? rsv?.attributes?.cbs_discipline ?? undefined;
+	let diveTime = rsv?.attributes?.diveTime ?? rsv?.attributes?.cbs_diveTime ?? undefined;
 	let allowAutoAdjust = rsv?.allowAutoAdjust ?? true;
 
 	function checkSubmit() {
@@ -62,6 +63,7 @@
 	].includes(resType);
 
 	$: isCbsAvailable = isCbsAvailableOnThisDate($storedSettings, dayStr);
+	$: isProSafetyAvailable = isProSafetyAvailableOnThisDate($storedSettings, dayStr);
 
 	$: isAdminView = adminView($storedUser, viewOnly);
 
@@ -96,7 +98,7 @@
 		},
 		[ReservationType.proSafety]: {
 			min: 0,
-			max: 89
+			max: 130
 		},
 		[ReservationType.competitionSetupCBS]: {
 			min: 15,
@@ -154,6 +156,9 @@
 				{:else}
 					<option value="autonomousPlatformCBS">Autonomous on Platform+CBS (90-130m)</option>
 				{/if}
+				{#if isProSafetyAvailable}
+					<option value="proSafety">Pay for Pro-Safety</option>
+				{/if}
 			</select>
 			{#if viewOnly || resTypeModDisabled(rsv)}
 				<input type="hidden" name="resType" value={resType} />
@@ -206,13 +211,13 @@
 			</InputLabel>
 		{/if}
 
-		{#if resType === 'competitionSetupCBS'}
+		{#if resType === 'competitionSetupCBS' || resType === 'proSafety'}
 			<InputLabel label="Discipline" forInput="formDiscipline">
 				<select
 					id="formDiscipline"
 					disabled={viewOnly}
-					name="cbs_discipline"
-					bind:value={cbs_discipline}
+					name="discipline"
+					bind:value={discipline}
 					required
 				>
 					<option value="FIM">FIM</option>
@@ -226,9 +231,9 @@
 					disabled={viewOnly || (restrictModify && resTypeModDisabled(rsv))}
 					id="formDiveTime"
 					class="w-[100px] text-white"
-					bind:value={cbs_diveTime}
+					bind:value={diveTime}
 					on:input={checkSubmit}
-					name="cbs_diveTime"
+					name="diveTime"
 					type="text"
 					pattern="[1-9]?[0-9]:[0-9][0-9]"
 					placeholder="m:ss"
@@ -263,14 +268,7 @@
 				{#if disabled}
 					<input type="hidden" name="preferAM" value={preferAM ? 'on' : 'off'} />
 				{/if}
-				<input
-					type="checkbox"
-					id="formPreferAm"
-					name="preferAM"
-					checked={preferAM}
-					{disabled}
-					tabindex="5"
-				/>
+				<input type="checkbox" id="formPreferAm" name="preferAM" checked={preferAM} {disabled} />
 				<label for="formPreferAm">AM session is preferred</label>
 			</div>
 		{/if}
@@ -279,14 +277,7 @@
 				{#if disabled}
 					<input type="hidden" name="pulley" value={pulley ? 'on' : 'off'} />
 				{/if}
-				<input
-					type="checkbox"
-					id="formPulley"
-					name="pulley"
-					checked={pulley}
-					{disabled}
-					tabindex="5"
-				/>
+				<input type="checkbox" id="formPulley" name="pulley" checked={pulley} {disabled} />
 				<label for="formPulley">pulley</label>
 			{:else if resType === ReservationType.course}
 				{#if disabled}
@@ -320,7 +311,6 @@
 					name="extraBottomWeight"
 					checked={extraBottomWeight}
 					{disabled}
-					tabindex="5"
 				/>
 				<label for="formBottomWeight">deep fim training</label>
 			</div>
@@ -334,7 +324,6 @@
 					name="bottomPlate"
 					checked={bottomPlate}
 					{disabled}
-					tabindex="5"
 				/>
 				<label for="formBottomPlate">bottom plate</label>
 			</div>
@@ -342,14 +331,7 @@
 				{#if disabled}
 					<input type="hidden" name="largeBuoy" value={largeBuoy ? 'on' : 'off'} />
 				{/if}
-				<input
-					type="checkbox"
-					id="formLargeBuoy"
-					name="largeBuoy"
-					checked={largeBuoy}
-					{disabled}
-					tabindex="5"
-				/>
+				<input type="checkbox" id="formLargeBuoy" name="largeBuoy" checked={largeBuoy} {disabled} />
 				<label for="formLargeBuoy">large buoy</label>
 			</div>
 		{/if}

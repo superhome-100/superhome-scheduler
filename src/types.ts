@@ -47,8 +47,16 @@ export type ReservationRaw = Tables<'Reservations'>;
 
 export type Reservation_Attributes = {
 	preferAM?: boolean,
+	discipline?: string,
+	/**
+	 * @deprecated here for legacy
+	 */
 	cbs_discipline?: string,
-	cbs_diveTime?: string
+	diveTime?: string,
+	/**
+	 * @deprecated here for legacy
+	 */
+	cbs_diveTime?: string,
 };
 
 export type Reservation = Tables<'Reservations'> & { attributes: Reservation_Attributes };
