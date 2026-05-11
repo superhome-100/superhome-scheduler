@@ -10,8 +10,9 @@ export { dayjs };
 export const fromPanglaoDateTimeStringToDayJs = (date: string, time?: string) =>
 	dayjs(date + (time ? `T${time}` : '')).tz('Asia/Manila', true);
 
-export const PanglaoDayJs = (date?: string | number | dayjs.Dayjs | Date | null | undefined): Dayjs =>
-	dayjs(date).tz('Asia/Manila');
+export const PanglaoDayJs = (
+	date?: string | number | dayjs.Dayjs | Date | null | undefined
+): Dayjs => dayjs(date).tz('Asia/Manila');
 
 export const PanglaoDate = () => PanglaoDayJs().toDate();
 
@@ -58,13 +59,15 @@ export function timeLT(timeA: string, timeB: string) {
 	return !timeGE(timeA, timeB);
 }
 
-export const getYYYYMMDD = (date?: Date | string | Dayjs) => dayjs(date ?? PanglaoDayJs()).format('YYYY-MM-DD');
-export const getYYYYMM = (date?: Date | string | Dayjs) => dayjs(date ?? PanglaoDayJs()).format('YYYY-MM');
+export const getYYYYMMDD = (date?: Date | string | Dayjs) =>
+	dayjs(date ?? PanglaoDayJs()).format('YYYY-MM-DD');
+export const getYYYYMM = (date?: Date | string | Dayjs) =>
+	dayjs(date ?? PanglaoDayJs()).format('YYYY-MM');
 
 export const firstLastDayOfMonth = (date?: Date) => {
 	const now = date ?? new Date();
 	return {
 		startDay: new Date(now.getFullYear(), now.getMonth(), 1),
 		endDay: new Date(now.getFullYear(), now.getMonth() + 1, 0)
-	}
-}
+	};
+};
