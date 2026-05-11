@@ -11,7 +11,7 @@ import type {
 } from '$types';
 import type { Tables, TablesInsert, TablesUpdate } from '$lib/supabase.types';
 import { ReservationCategory, ReservationStatus, ReservationType, OWTime } from '$types';
-import { timeStrToMin, isValidProSafetyCutoff, PanglaoDayJs, fromPanglaoDateTimeStringToDayJs } from '$lib/datetimeUtils';
+import { timeStrToMin, PanglaoDayJs, fromPanglaoDateTimeStringToDayJs } from '$lib/datetimeUtils';
 import { getTimeOverlapSupabaseFilter } from '$utils/reservation-queries';
 import { type SettingsManager } from '../settings';
 import { getDaySettings, type DaySettings } from '$lib/dateSettings';
@@ -202,11 +202,6 @@ async function throwIfSubmissionIsInvalid(settings: SettingsManager, sub: Submis
 
 	await throwIfUserIsDisabled(userIds);
 
-	if (sub.resType === 'proSafety') {
-		const isValid = isValidProSafetyCutoff(sub.date);
-		if (!isValid) throw new ValidationError('PRO_SAFETY reservation should be done before 4PM.');
-	}
-
 	if (
 		!beforeResCutoff(
 			settings,
@@ -304,8 +299,8 @@ function unpackSubmitForm(
 
 	const attributes: Reservation_Attributes = {};
 	attributes.preferAM = formData.has('preferAM') ? formData.get('preferAM') === 'on' : undefined;
-	attributes.cbs_discipline = formData.has('cbs_discipline') ? formData.get('cbs_discipline') : undefined;
-	attributes.cbs_diveTime = formData.has('cbs_diveTime') ? formData.get('cbs_diveTime') : undefined;
+	attributes.discipline = formData.has('discipline') ? formData.get('discipline') : undefined;
+	attributes.diveTime = formData.has('diveTime') ? formData.get('diveTime') : undefined;
 
 	return {
 		user: user_id,

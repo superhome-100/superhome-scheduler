@@ -722,6 +722,7 @@ export type Database = {
 				| 'poolBookable'
 				| 'poolLabel'
 				| 'poolLanes'
+				| 'proSafetyAvailableOnTheseDaysOfTheWeek'
 				| 'pushNotificationEnabled'
 				| 'reservationCutOffTime'
 				| 'reservationLateCancelPenalty1OffsetMins'
@@ -893,6 +894,7 @@ export const Constants = {
 				'poolBookable',
 				'poolLabel',
 				'poolLanes',
+				'proSafetyAvailableOnTheseDaysOfTheWeek',
 				'pushNotificationEnabled',
 				'reservationCutOffTime',
 				'reservationLateCancelPenalty1OffsetMins',

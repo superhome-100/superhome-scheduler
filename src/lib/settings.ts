@@ -47,6 +47,7 @@ interface ValueMap {
 	// THEN jsonb_typeof("value") = 'array' AND jsonb_path_exists("value", '$[*] ? (@.type() != "string")') = FALSE
 
 	'cbsAvailableOnTheseDaysOfTheWeek': number[];
+	'proSafetyAvailableOnTheseDaysOfTheWeek': number[];
 	// THEN jsonb_typeof("value") = 'array' AND jsonb_path_exists("value", '$[*] ? (@.type() != "number")') = FALSE
 }
 /**
@@ -92,6 +93,7 @@ const fallbackValues: ValueMap = {
 	"poolLanes": ["1", "2", "3", "4", "5", "6", "7", "8"],
 
 	"cbsAvailableOnTheseDaysOfTheWeek": [],
+	"proSafetyAvailableOnTheseDaysOfTheWeek": [],
 }
 
 export type Setting<T> = {

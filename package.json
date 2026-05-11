@@ -1,6 +1,6 @@
 {
     "name": "superhome-scheduler",
-    "version": "0.4.148",
+    "version": "0.4.149",
     "private": true,
     "scripts": {
         "dev": "PUBLIC_STAGE=local vite dev",
@@ -50,16 +50,16 @@
         "vitest": "^1.6.1"
     },
     "dependencies": {
-        "@sentry/sveltekit": "^10.46.0",
-        "@supabase/ssr": "^0.10.0",
-        "@supabase/supabase-js": "^2.101.0",
+        "@sentry/sveltekit": "^10.51.0",
+        "@supabase/ssr": "^0.10.2",
+        "@supabase/supabase-js": "^2.105.3",
         "daisyui": "^2.52.0",
         "dayjs": "^1.11.20",
         "debounce-fn": "^6.0.0",
         "fetch-retry": "^6.0.0",
         "jszip": "^3.10.1",
-        "lodash": "^4.17.23",
-        "lru-cache": "^11.2.7",
+        "lodash": "^4.18.1",
+        "lru-cache": "^11.3.6",
         "papaparse": "^5.5.3",
         "svelte-french-toast": "^1.2.0",
         "svelte-gestures": "^1.5.2",

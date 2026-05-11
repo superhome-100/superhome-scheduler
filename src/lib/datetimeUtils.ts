@@ -58,17 +58,6 @@ export function timeLT(timeA: string, timeB: string) {
 	return !timeGE(timeA, timeB);
 }
 
-export function isValidProSafetyCutoff(reservationDate: string) {
-	const now = dayjs().tz('Asia/Manila');
-	// TODO: get this config somewhere
-	const cutoff = dayjs(reservationDate)
-		.tz('Asia/Manila')
-		.subtract(1, 'day')
-		.set('hour', 16)
-		.set('minute', 0);
-	return now.isBefore(cutoff);
-}
-
 export const getYYYYMMDD = (date?: Date | string | Dayjs) => dayjs(date ?? PanglaoDayJs()).format('YYYY-MM-DD');
 export const getYYYYMM = (date?: Date | string | Dayjs) => dayjs(date ?? PanglaoDayJs()).format('YYYY-MM');
 

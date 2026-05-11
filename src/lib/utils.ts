@@ -166,9 +166,17 @@ export const displayStatus = (status: ReservationStatusT | undefined) => {
 	}
 }
 
-export const isCbsAvailableOnThisDate = (sm: SettingsManager, dayStr: string) => {
-	const day = PanglaoDayJs(dayStr);
-	return sm.get('cbsAvailableOnTheseDaysOfTheWeek', dayStr)
+export const isCbsAvailableOnThisDate = (sm: SettingsManager, dateStr: string) => {
+	const day = PanglaoDayJs(dateStr);
+	return sm.get('cbsAvailableOnTheseDaysOfTheWeek', dateStr)
 		.map((d) => d % 7)
 		.includes(day.day());
 };
+
+export const isProSafetyAvailableOnThisDate = (sm: SettingsManager, dateStr: string) => {
+	const day = PanglaoDayJs(dateStr);
+	return sm.get('proSafetyAvailableOnTheseDaysOfTheWeek', dateStr)
+		.map((d) => d % 7)
+		.includes(day.day());
+};
+
