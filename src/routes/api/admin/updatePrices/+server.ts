@@ -1,20 +1,14 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
-import {
-	fromPanglaoDateTimeStringToDayJs,
-	PanglaoDayJs,
-	getYYYYMMDD
-} from '$lib/datetimeUtils';
+import { fromPanglaoDateTimeStringToDayJs, PanglaoDayJs, getYYYYMMDD } from '$lib/datetimeUtils';
 import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import { ReservationStatus, type ReservationWithPrices } from '$types';
 import { console_error } from '$lib/server/sentry';
 import { getSettingsManager } from '$lib/settings';
 import { getPriceForReservation } from '$utils/reservations';
 
-
-
 /**
- * Between 8 am to 8 pm, evey 1 hour, check reservations that are in completed status, if the price is not Null, set the price, 
+ * Between 8 am to 8 pm, evey 1 hour, check reservations that are in completed status, if the price is not Null, set the price,
  * If it's already manually set, leave the existing numbers.
  * price just need to match the price template that assigned to that use, and follow below rules:
  * coaching session such as for OW, price = coachOW x Number of students (free for instructor)
@@ -23,7 +17,8 @@ import { getPriceForReservation } from '$utils/reservations';
  * - coachOW: OW coaching
  * - coachPool: Pool coaching
  * - coachClassroom: Classroom coaching
- * - autoOW: OW autonomous on Buoy
+ * - autoOW: OW autonomous on Buoy for AM
+ * - autoOW-PM: OW autonomous on Buoy for PM
  * - autoPool: Pool autonomous
  * - platformOW: OW autonomous on Platform
  * - platformCBSOW: OW autonomous on Platform + CBS
@@ -49,12 +44,12 @@ export async function GET({ request, locals: { safeGetSession } }: RequestEvent)
 			}
 		}
 
-		const now = PanglaoDayJs()
+		const now = PanglaoDayJs();
 		const nowDay = getYYYYMMDD(now);
-		const firstOfMonth = getYYYYMMDD(new Date(now.year(), now.month()))
-		// need to use supabaseServiceRole because this code run from scheduled worker without user so 
+		const firstOfMonth = getYYYYMMDD(new Date(now.year(), now.month()));
+		// need to use supabaseServiceRole because this code run from scheduled worker without user so
 		// `locals:{supabase}` is not working here
-		const settings = await getSettingsManager(supabaseServiceRole)
+		const settings = await getSettingsManager(supabaseServiceRole);
 		const maxChargeableOWPerMonth = settings.getMaxChargeableOWPerMonth(nowDay);
 
 		console.info('api/admin/updatePrices', { now, nowDay, maxChargeableOWPerMonth });
@@ -65,15 +60,15 @@ export async function GET({ request, locals: { safeGetSession } }: RequestEvent)
 			.gte('date', firstOfMonth)
 			.lte('date', nowDay)
 			.eq('status', ReservationStatus.confirmed)
-			.order("date")
-			.order("startTime")
+			.order('date')
+			.order('startTime')
 			.overrideTypes<ReservationWithPrices[]>()
 			.throwOnError();
 
-		const pastReservations = reservations
-			.filter(r => fromPanglaoDateTimeStringToDayJs(r.date, r.startTime) < now)
-		const pastReservationsByUser = Object
-			.groupBy(pastReservations, ({ user }) => user);
+		const pastReservations = reservations.filter(
+			(r) => fromPanglaoDateTimeStringToDayJs(r.date, r.startTime) < now
+		);
+		const pastReservationsByUser = Object.groupBy(pastReservations, ({ user }) => user);
 
 		const errors = [];
 		for (const uRsvs of Object.values(pastReservationsByUser)) {
@@ -86,15 +81,15 @@ export async function GET({ request, locals: { safeGetSession } }: RequestEvent)
 					continue;
 				}
 				let price = getPriceForReservation(rsv, rsv.priceTemplate);
-				if (rsv.category === 'openwater'
-					&& rsv.resType === 'autonomous'
-					&& numberOfAutoOW > maxChargeableOWPerMonth) {
+				if (
+					rsv.category === 'openwater' &&
+					rsv.resType === 'autonomous' &&
+					numberOfAutoOW > maxChargeableOWPerMonth
+				) {
 					price = 0;
 				}
 				try {
-					await supabaseServiceRole.from('Reservations')
-						.update({ price })
-						.eq("id", rsv.id);
+					await supabaseServiceRole.from('Reservations').update({ price }).eq('id', rsv.id);
 				} catch (e) {
 					errors.push(e);
 					console_error(`error updating price`, e, rsv.id, price);

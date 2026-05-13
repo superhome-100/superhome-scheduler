@@ -39,7 +39,11 @@ export function beforeResCutoff(
 	let tomStr = dtu.datetimeToLocalDateStr(tomorrow);
 
 	// For pool and classroom, allow booking if target time is in the future
-	if ([ReservationCategory.pool, ReservationCategory.classroom].includes(category as ReservationCategory)) {
+	if (
+		[ReservationCategory.pool, ReservationCategory.classroom].includes(
+			category as ReservationCategory
+		)
+	) {
 		if (dateStr > today) {
 			return true;
 		} else if (dateStr === today) {
@@ -65,7 +69,11 @@ export function beforeCancelCutoff(
 	const now = dtu.PanglaoDayJs();
 	const startDt = dtu.fromPanglaoDateTimeStringToDayJs(dateStr, startTime);
 	const diffInMin = startDt.diff(now, 'minutes');
-	if ([ReservationCategory.pool, ReservationCategory.classroom].includes(category as ReservationCategory)) {
+	if (
+		[ReservationCategory.pool, ReservationCategory.classroom].includes(
+			category as ReservationCategory
+		)
+	) {
 		return diffInMin > 60; // Keep 1 hour cutoff for modifications
 	} else {
 		return diffInMin > dtu.timeStrToMin(stns.getCancelationCutOffTime(dateStr));
@@ -99,9 +107,7 @@ export const getStartEndTimesHHMM = (
 	stns: SettingsManager,
 	dateStr: string,
 	cat: ReservationCategoryT
-) =>
-	getStartEndTimesHHMMSS(stns, dateStr, cat).map(t => t.substring(0, 5));
-
+) => getStartEndTimesHHMMSS(stns, dateStr, cat).map((t) => t.substring(0, 5));
 
 /**
  * @returns array of 'HH:MM'
@@ -119,7 +125,11 @@ export function minValidDate(stns: SettingsManager, category: ReservationCategor
 	let today = dtu.PanglaoDate();
 	let todayStr = dtu.datetimeToLocalDateStr(today);
 	let d = dtu.PanglaoDate();
-	if ([ReservationCategory.pool, ReservationCategory.classroom].includes(category as ReservationCategory)) {
+	if (
+		[ReservationCategory.pool, ReservationCategory.classroom].includes(
+			category as ReservationCategory
+		)
+	) {
 		let sTs = startTimesHHMM(stns, todayStr, category);
 		let lastSlot = dtu.timeStrToMin(sTs[sTs.length - 1]);
 		if (minuteOfDay(today) < lastSlot) {

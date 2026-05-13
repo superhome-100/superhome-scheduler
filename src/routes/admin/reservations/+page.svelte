@@ -51,7 +51,7 @@
 			draftRsv = {
 				...rsv,
 				_duration: timeStrToMin(rsv.endTime) - timeStrToMin(rsv.startTime),
-				_notify: true,
+				_notify: false,
 				_orig: rsv
 			};
 		}

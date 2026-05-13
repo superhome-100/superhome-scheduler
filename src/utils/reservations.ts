@@ -39,7 +39,15 @@ export const getPriceForReservation = (rsv: Tables<'Reservations'> | Tables<'Res
 			switch (rsv.resType) {
 				default:
 					throw Error(`assert: ${rsv.resType}`);
-				case 'autonomous': return priceTemplate.autoOW;
+				case 'autonomous':
+					switch (rsv.owTime) {
+						case 'AM':
+							return priceTemplate.autoOW;
+						case 'PM':
+							return priceTemplate['autoOW-PM'] ?? priceTemplate.autoOW;
+						default:
+							throw Error(`assert: ${rsv.owTime}`);
+					}
 				case 'autonomousPlatform': return priceTemplate.platformOW;
 				case 'autonomousPlatformCBS': return priceTemplate.platformCBSOW;
 				case 'cbs': return priceTemplate.cbsOW;
@@ -49,7 +57,14 @@ export const getPriceForReservation = (rsv: Tables<'Reservations'> | Tables<'Res
 					return priceTemplate.proSafetyOW;
 				case 'course':
 					if (!rsv.numStudents) throw Error(`numStudents error: ${rsv.id}`);
-					return priceTemplate.coachOW * rsv.numStudents;
+					switch (rsv.owTime) {
+						case 'AM':
+							return priceTemplate.coachOW * rsv.numStudents;
+						case 'PM':
+							return (priceTemplate['coachOW-PM'] ?? priceTemplate.coachOW) * rsv.numStudents;
+						default:
+							throw Error(`assert: ${rsv.owTime}`);
+					}
 			}
 	}
 }

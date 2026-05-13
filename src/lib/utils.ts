@@ -3,7 +3,17 @@ import { viewMode } from './stores';
 import { storedUsers } from '$lib/client/stores';
 import { get } from 'svelte/store';
 import { assignHourlySpaces } from './autoAssign';
-import { ReservationCategory, ReservationType, type Buoy, type OWTimeT, type Reservation, type ReservationCategoryT, type ReservationEx, type ReservationStatusT, type User } from '$types';
+import {
+	ReservationCategory,
+	ReservationType,
+	type Buoy,
+	type OWTimeT,
+	type Reservation,
+	type ReservationCategoryT,
+	type ReservationEx,
+	type ReservationStatusT,
+	type User
+} from '$types';
 import type { SettingsManager } from './settings';
 import type { Dayjs } from 'dayjs';
 
@@ -52,8 +62,7 @@ export const displayTag = (rsv: ReservationEx, admin: boolean): string => {
 		tag += ' +' + (rsv.numStudents ?? 0);
 	}
 	if (admin) {
-		if (rsv.category === 'openwater')
-			tag += ' - ' + rsv.maxDepth + 'm';
+		if (rsv.category === 'openwater') tag += ' - ' + rsv.maxDepth + 'm';
 	}
 	return tag;
 };
@@ -63,7 +72,12 @@ export const badgeColor = (rsvs: Reservation[]): string => {
 	return approved ? 'bg-[#00FF00]' : 'bg-[#FFFF00]';
 };
 
-export function getDaySchedule(sm: SettingsManager, rsvs: Reservation[], datetime: Date | string, category: string) {
+export function getDaySchedule(
+	sm: SettingsManager,
+	rsvs: Reservation[],
+	datetime: Date | string,
+	category: string
+) {
 	const today = datetimeToLocalDateStr(datetime);
 	rsvs = rsvs.filter(
 		(v) =>
@@ -101,7 +115,6 @@ export const buoyDesc = (buoy: Buoy): string => {
 export const resTypeModDisabled = (rsv: Reservation | null): boolean =>
 	rsv != null && rsv.resType != ReservationType.course;
 
-
 export function getRandomElementUsingGenerator<T>(rngGen: () => number, ...items: T[]): T {
 	const randomIndex = Math.floor(rngGen() * items.length);
 	return items[randomIndex];
@@ -120,7 +133,7 @@ export function createRandomGeneratorFromString(str: string): () => number {
 	return function () {
 		const x = Math.sin(seed++) * 10000;
 		return x - Math.floor(x);
-	}
+	};
 }
 
 export function getRandomElementUsingSeed<T>(seed: string, ...items: T[]): T {
@@ -130,16 +143,23 @@ export function getRandomElementUsingSeed<T>(seed: string, ...items: T[]): T {
 export const stableStringify = (obj: unknown) => {
 	return JSON.stringify(obj, (key, value) => {
 		if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-			return Object.keys(value).sort().reduce((sorted, k) => {
-				sorted[k] = value[k];
-				return sorted;
-			}, {} as Record<string, any>);
+			return Object.keys(value)
+				.sort()
+				.reduce((sorted, k) => {
+					sorted[k] = value[k];
+					return sorted;
+				}, {} as Record<string, any>);
 		}
 		return value;
 	});
-}
+};
 
-export const isOpenForBooking = ((sm: SettingsManager, date: string | Dayjs | Date, category: ReservationCategory | ReservationCategoryT, owTime: OWTimeT | null) => {
+export const isOpenForBooking = (
+	sm: SettingsManager,
+	date: string | Dayjs | Date,
+	category: ReservationCategory | ReservationCategoryT,
+	owTime: OWTimeT | null
+) => {
 	const dateStr = getYYYYMMDD(dayjs(date));
 	if (!sm.get('openForBusiness', dateStr)) return false;
 	switch (category) {
@@ -149,34 +169,38 @@ export const isOpenForBooking = ((sm: SettingsManager, date: string | Dayjs | Da
 			return sm.get('classroomBookable', dateStr);
 		case ReservationCategory.openwater:
 			if (owTime) {
-				if (owTime === 'AM') return sm.get('openwaterAmBookable', dateStr)
-				else if (owTime === 'PM') sm.get('openwaterPmBookable', dateStr)
+				if (owTime === 'AM') return sm.get('openwaterAmBookable', dateStr);
+				else if (owTime === 'PM') sm.get('openwaterPmBookable', dateStr);
 			}
 			return sm.get('openwaterAmBookable', dateStr) || sm.get('openwaterPmBookable', dateStr);
 		default:
 			throw Error(`assert: unknown ${category}`);
 	}
-});
+};
 
 export const displayStatus = (status: ReservationStatusT | undefined) => {
 	switch (status) {
-		case undefined: return '';
-		case 'canceled_with_fee': return 'chargeable canceled';
-		default: return status;
+		case undefined:
+			return '';
+		case 'canceled_with_fee':
+			return 'chargeable canceled';
+		default:
+			return status;
 	}
-}
+};
 
 export const isCbsAvailableOnThisDate = (sm: SettingsManager, dateStr: string) => {
 	const day = PanglaoDayJs(dateStr);
-	return sm.get('cbsAvailableOnTheseDaysOfTheWeek', dateStr)
+	return sm
+		.get('cbsAvailableOnTheseDaysOfTheWeek', dateStr)
 		.map((d) => d % 7)
 		.includes(day.day());
 };
 
 export const isProSafetyAvailableOnThisDate = (sm: SettingsManager, dateStr: string) => {
 	const day = PanglaoDayJs(dateStr);
-	return sm.get('proSafetyAvailableOnTheseDaysOfTheWeek', dateStr)
+	return sm
+		.get('proSafetyAvailableOnTheseDaysOfTheWeek', dateStr)
 		.map((d) => d % 7)
 		.includes(day.day());
 };
-

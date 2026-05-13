@@ -11,43 +11,43 @@ type SettingName = Enums<'setting_name'>;
  * Should be in sync with [definition and constraint](../../supabase/migrations/20260101000011_create_Settings.sql).
  */
 interface ValueMap {
-	'classroomLabel': string;
-	'poolLabel': string;
+	classroomLabel: string;
+	poolLabel: string;
 	// THEN jsonb_typeof("value") = 'string'
 
-	'cancelationCutOffTime': string; // "HH:mm"
-	'maxClassroomEndTime': string; // "HH:mm"
-	'maxPoolEndTime': string; // "HH:mm"
-	'minClassroomStartTime': string; // "HH:mm"
-	'minPoolStartTime': string; // "HH:mm"
-	'openwaterAmEndTime': string; // "HH:mm"
-	'openwaterAmStartTime': string; // "HH:mm"
-	'openwaterPmEndTime': string; // "HH:mm"
-	'openwaterPmStartTime': string; // "HH:mm"
-	'reservationCutOffTime': string; // "HH:mm"
-	'reservationIncrement': string; // "HH:mm"
+	cancelationCutOffTime: string; // "HH:mm"
+	maxClassroomEndTime: string; // "HH:mm"
+	maxPoolEndTime: string; // "HH:mm"
+	minClassroomStartTime: string; // "HH:mm"
+	minPoolStartTime: string; // "HH:mm"
+	openwaterAmEndTime: string; // "HH:mm"
+	openwaterAmStartTime: string; // "HH:mm"
+	openwaterPmEndTime: string; // "HH:mm"
+	openwaterPmStartTime: string; // "HH:mm"
+	reservationCutOffTime: string; // "HH:mm"
+	reservationIncrement: string; // "HH:mm"
 	// THEN jsonb_typeof("value") = 'string' AND ("value" #>> '{}') ~ '^\d?\d:\d\d$' -- '"HH:mm"'
 
-	'maxChargeableOWPerMonth': number;
-	'reservationLeadTimeDays': number;
-	'reservationLateCancelPenalty1OffsetMins': number;
+	maxChargeableOWPerMonth: number;
+	reservationLeadTimeDays: number;
+	reservationLateCancelPenalty1OffsetMins: number;
 	// THEN jsonb_typeof("value") = 'number'
 
-	'classroomBookable': boolean;
-	'openForBusiness': boolean;
-	'openwaterAmBookable': boolean;
-	'openwaterPmBookable': boolean;
-	'poolBookable': boolean;
-	'pushNotificationEnabled': boolean;
+	classroomBookable: boolean;
+	openForBusiness: boolean;
+	openwaterAmBookable: boolean;
+	openwaterPmBookable: boolean;
+	poolBookable: boolean;
+	pushNotificationEnabled: boolean;
 	// THEN jsonb_typeof("value") = 'boolean'
 
-	'boats': string[];
-	'classrooms': string[];
-	'poolLanes': string[];
+	boats: string[];
+	classrooms: string[];
+	poolLanes: string[];
 	// THEN jsonb_typeof("value") = 'array' AND jsonb_path_exists("value", '$[*] ? (@.type() != "string")') = FALSE
 
-	'cbsAvailableOnTheseDaysOfTheWeek': number[];
-	'proSafetyAvailableOnTheseDaysOfTheWeek': number[];
+	cbsAvailableOnTheseDaysOfTheWeek: number[];
+	proSafetyAvailableOnTheseDaysOfTheWeek: number[];
 	// THEN jsonb_typeof("value") = 'array' AND jsonb_path_exists("value", '$[*] ? (@.type() != "number")') = FALSE
 }
 /**
@@ -62,39 +62,39 @@ type _ValidateSyncRL = AssertEqual<SettingName, keyof ValueMap>;
 
 // we just need this in case the server has some problem.
 const fallbackValues: ValueMap = {
-	"classroomLabel": "classroom",
-	"poolLabel": "Slot",
+	classroomLabel: 'classroom',
+	poolLabel: 'Slot',
 
-	"cancelationCutOffTime": "1:00",
-	"maxClassroomEndTime": "20:00",
-	"maxPoolEndTime": "20:00",
-	"minClassroomStartTime": "8:00",
-	"minPoolStartTime": "8:00",
-	"openwaterAmEndTime": "11:00",
-	"openwaterAmStartTime": "9:00",
-	"openwaterPmEndTime": "16:00",
-	"openwaterPmStartTime": "14:00",
-	"reservationCutOffTime": "18:00",
-	"reservationIncrement": "0:30",
+	cancelationCutOffTime: '1:00',
+	maxClassroomEndTime: '20:00',
+	maxPoolEndTime: '20:00',
+	minClassroomStartTime: '8:00',
+	minPoolStartTime: '8:00',
+	openwaterAmEndTime: '11:00',
+	openwaterAmStartTime: '9:00',
+	openwaterPmEndTime: '16:00',
+	openwaterPmStartTime: '14:00',
+	reservationCutOffTime: '18:00',
+	reservationIncrement: '0:30',
 
-	"maxChargeableOWPerMonth": 12,
-	"reservationLeadTimeDays": 30,
-	"reservationLateCancelPenalty1OffsetMins": 0,
+	maxChargeableOWPerMonth: 12,
+	reservationLeadTimeDays: 30,
+	reservationLateCancelPenalty1OffsetMins: 0,
 
-	"classroomBookable": false,
-	"openForBusiness": false,
-	"openwaterAmBookable": false,
-	"openwaterPmBookable": false,
-	"poolBookable": false,
-	"pushNotificationEnabled": false,
+	classroomBookable: false,
+	openForBusiness: false,
+	openwaterAmBookable: false,
+	openwaterPmBookable: false,
+	poolBookable: false,
+	pushNotificationEnabled: false,
 
-	"boats": ["1", "2", "3", "4"],
-	"classrooms": ["3", "2"],
-	"poolLanes": ["1", "2", "3", "4", "5", "6", "7", "8"],
+	boats: ['1', '2', '3', '4'],
+	classrooms: ['3', '2'],
+	poolLanes: ['1', '2', '3', '4', '5', '6', '7', '8'],
 
-	"cbsAvailableOnTheseDaysOfTheWeek": [],
-	"proSafetyAvailableOnTheseDaysOfTheWeek": [],
-}
+	cbsAvailableOnTheseDaysOfTheWeek: [],
+	proSafetyAvailableOnTheseDaysOfTheWeek: []
+};
 
 export type Setting<T> = {
 	default: T;
@@ -110,7 +110,7 @@ export type Settings = {
 	[K in SettingName]: Setting<ValueMap[K]>;
 };
 
-// we chache settings for 10 seconds because it is the most used 
+// we chache settings for 10 seconds because it is the most used
 let cachedSettings: Settings | null = null;
 let lastFetchSettings = 0;
 
@@ -124,11 +124,7 @@ export async function getCachedSettings(supabase: SupabaseClient): Promise<Setti
 }
 
 export const getSettings = async (supabase: SupabaseClient): Promise<Settings> => {
-	const { data: settingsTbl } =
-		await supabase
-			.from('Settings')
-			.select('*')
-			.throwOnError();
+	const { data: settingsTbl } = await supabase.from('Settings').select('*').throwOnError();
 	return parseSettingsTbl(settingsTbl);
 };
 
@@ -150,9 +146,8 @@ function parseSettingsTbl(settingsTbl: Tables<'Settings'>[]): Settings {
 		if (s.startDate === null && s.endDate === null)
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			v.default = s.value as any;
-		else
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			v.entries.push(s as any);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		else v.entries.push(s as any);
 	}
 	for (const [k, v] of Object.entries(values)) {
 		if (v.default === undefined) {
@@ -171,19 +166,22 @@ function parseSettingsTbl(settingsTbl: Tables<'Settings'>[]): Settings {
 export function getSetting<K extends SettingName>(
 	settings: Settings,
 	name: K,
-	date: string,
+	date: string
 ): ValueMap[K] {
 	const setting = settings[name] as Setting<ValueMap[K]>;
 	if (setting === undefined) {
-		console.error('missing setting', { name, settings })
+		console.error('missing setting', { name, settings });
 		if (fallbackValues[name] !== undefined) return fallbackValues[name];
 		throw Error(`missing setting ${name} and defaultValue`);
 	}
 	if (!date) throw Error(`missing date for ${name}`);
-	else if (date.match(/\d{4}-\d{2}-\d{2}/) === null) throw Error(`incorrect date for ${name}, ${date}`);
+	else if (date.match(/\d{4}-\d{2}-\d{2}/) === null)
+		throw Error(`incorrect date for ${name}, ${date}`);
 	for (const e of setting.entries) {
-		if ((e.startDate === null || e.startDate <= date)
-			&& (e.endDate === null || date <= e.endDate)) {
+		if (
+			(e.startDate === null || e.startDate <= date) &&
+			(e.endDate === null || date <= e.endDate)
+		) {
 			return e.value;
 		}
 	}
@@ -191,7 +189,7 @@ export function getSetting<K extends SettingName>(
 }
 
 export class SettingsManager {
-	constructor(private readonly settings: Settings) { }
+	constructor(private readonly settings: Settings) {}
 	get<K extends SettingName>(name: K, date: string) {
 		return getSetting(this.settings, name, date);
 	}
@@ -275,7 +273,7 @@ export const fallbackSettingsManager = new SettingsManager(
 	Object.entries(fallbackValues).reduce((acc, [name, _fallback]) => {
 		acc[name] = {
 			entries: [],
-			default: _fallback,
+			default: _fallback
 		};
 		return acc;
 	}, {} as Settings)

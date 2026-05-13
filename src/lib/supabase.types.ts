@@ -212,10 +212,12 @@ export type Database = {
 			PriceTemplates: {
 				Row: {
 					autoOW: number;
+					'autoOW-PM': number | null;
 					autoPool: number;
 					cbsOW: number;
 					coachClassroom: number;
 					coachOW: number;
+					'coachOW-PM': number | null;
 					coachPool: number;
 					'comp-setupOW': number;
 					createdAt: string;
@@ -227,10 +229,12 @@ export type Database = {
 				};
 				Insert: {
 					autoOW: number;
+					'autoOW-PM'?: number | null;
 					autoPool: number;
 					cbsOW: number;
 					coachClassroom: number;
 					coachOW: number;
+					'coachOW-PM'?: number | null;
 					coachPool: number;
 					'comp-setupOW': number;
 					createdAt?: string;
@@ -242,10 +246,12 @@ export type Database = {
 				};
 				Update: {
 					autoOW?: number;
+					'autoOW-PM'?: number | null;
 					autoPool?: number;
 					cbsOW?: number;
 					coachClassroom?: number;
 					coachOW?: number;
+					'coachOW-PM'?: number | null;
 					coachPool?: number;
 					'comp-setupOW'?: number;
 					createdAt?: string;

@@ -24,13 +24,13 @@ export const signInWithGoogle = async (
 	supabase: SupabaseClient<Database>
 ): Promise<{ error: AuthError | null }> => signIn(supabase, 'google');
 
-
 export const signInWithFacebook = async (
 	supabase: SupabaseClient<Database>
 ): Promise<{ error: AuthError | null }> => signIn(supabase, 'facebook');
 
-
-export const signOut = async (supabase: SupabaseClient<Database>): Promise<{ error: AuthError | null }> => {
+export const signOut = async (
+	supabase: SupabaseClient<Database>
+): Promise<{ error: AuthError | null }> => {
 	try {
 		const { error } = await supabase.auth.signOut();
 		if (error) throw error;
@@ -46,4 +46,4 @@ export const signOut = async (supabase: SupabaseClient<Database>): Promise<{ err
 		console.error('logout failed', message, e);
 		return { error: e as AuthError };
 	}
-}
+};
