@@ -463,11 +463,11 @@ async function unpackModifyForm(
 	formData: AppFormData,
 	orig: Reservation
 ): Promise<ReservationModifyingFormUnpacked> {
+	const date = formData.get('date');
 	const status =
 		orig.category == ReservationCategory.openwater
 			? ReservationStatus.pending
 			: ReservationStatus.confirmed;
-
 	const brc = beforeResCutoff(
 		settings,
 		orig.date,
@@ -478,22 +478,36 @@ async function unpackModifyForm(
 		? ReservationType[formData.get('resType') as keyof typeof ReservationType]
 		: orig.resType;
 	const buoy = getBuoy(resType as ReservationType);
+	const owTime = formData.has('owTime')
+		? OWTime[formData.get('owTime') as keyof typeof OWTime]
+		: orig.owTime
+	let startTime = formData.has('startTime') ? formData.get('startTime') : orig.startTime;
+	let endTime = formData.has('endTime') ? formData.get('endTime') : orig.endTime;
+	if (orig.category === ReservationCategory.openwater) {
+		if (owTime === OWTime.AM) {
+			startTime = settings.getOpenwaterAmStartTime(date);
+			endTime = settings.getOpenwaterAmEndTime(date);
+		} else if (owTime === OWTime.PM) {
+			startTime = settings.getOpenwaterPmStartTime(date);
+			endTime = settings.getOpenwaterPmEndTime(date);
+		} else {
+			throw Error(`Unexpected OW time ${owTime}`);
+		}
+	}
 
 	const attributes: Reservation_Attributes = { ...(orig.attributes as object) };
 	attributes.preferAM = formData.has('preferAM') ? formData.get('preferAM') === 'on' : undefined;
-	attributes.cbs_discipline = formData.has('cbs_discipline') ? formData.get('cbs_discipline') : undefined;
-	attributes.cbs_diveTime = formData.has('cbs_diveTime') ? formData.get('cbs_diveTime') : undefined;
+	attributes.discipline = formData.has('discipline') ? formData.get('discipline') : undefined;
+	attributes.diveTime = formData.has('diveTime') ? formData.get('diveTime') : undefined;
 
 
 	return {
 		id: formData.get('id'),
-		date: formData.get('date'),
+		date,
 		category: orig.category, //can't be changed
-		startTime: formData.has('startTime') ? formData.get('startTime') : orig.startTime,
-		endTime: formData.has('endTime') ? formData.get('endTime') : orig.endTime,
-		owTime: formData.has('owTime')
-			? OWTime[formData.get('owTime') as keyof typeof OWTime]
-			: orig.owTime,
+		startTime,
+		endTime,
+		owTime,
 		resType,
 		numStudents:
 			resType === 'course'

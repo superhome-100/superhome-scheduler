@@ -71,8 +71,8 @@
 			checkString('endTime') ||
 			checkNumber('maxDepth') ||
 			checkAttrBool('preferAM') ||
-			checkAttrValue('cbs_discipline') ||
-			checkAttrValue('cbs_diveTime') ||
+			checkAttrValue('discipline') ||
+			checkAttrValue('diveTime') ||
 			checkBool('extraBottomWeight') ||
 			checkBool('bottomPlate') ||
 			checkBool('largeBuoy') ||
