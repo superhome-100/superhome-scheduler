@@ -212,6 +212,8 @@ export type Database = {
 			PriceTemplates: {
 				Row: {
 					autoOW: number;
+					'autoOW-maxChargeablePerMonth': number;
+					'autoOW-overMaxChargeableOWPerMonth': number;
 					'autoOW-PM': number | null;
 					autoPool: number;
 					cbsOW: number;
@@ -229,6 +231,8 @@ export type Database = {
 				};
 				Insert: {
 					autoOW: number;
+					'autoOW-maxChargeablePerMonth': number;
+					'autoOW-overMaxChargeableOWPerMonth': number;
 					'autoOW-PM'?: number | null;
 					autoPool: number;
 					cbsOW: number;
@@ -246,6 +250,8 @@ export type Database = {
 				};
 				Update: {
 					autoOW?: number;
+					'autoOW-maxChargeablePerMonth'?: number;
+					'autoOW-overMaxChargeableOWPerMonth'?: number;
 					'autoOW-PM'?: number | null;
 					autoPool?: number;
 					cbsOW?: number;
@@ -713,7 +719,7 @@ export type Database = {
 				| 'classroomBookable'
 				| 'classroomLabel'
 				| 'classrooms'
-				| 'maxChargeableOWPerMonth'
+				| '_deleted_maxChargeableOWPerMonth'
 				| 'maxClassroomEndTime'
 				| 'maxPoolEndTime'
 				| 'minClassroomStartTime'
@@ -885,7 +891,7 @@ export const Constants = {
 				'classroomBookable',
 				'classroomLabel',
 				'classrooms',
-				'maxChargeableOWPerMonth',
+				'_deleted_maxChargeableOWPerMonth',
 				'maxClassroomEndTime',
 				'maxPoolEndTime',
 				'minClassroomStartTime',

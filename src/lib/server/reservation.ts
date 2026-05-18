@@ -169,7 +169,7 @@ function categoryIsBookable(
 	return isBookable;
 }
 
-async function getOverlappingReservations(settings: SettingsManager, sub: Reservation): Promise<Reservation[]> {
+async function getOverlappingReservations(settings: SettingsManager, sub: Submission): Promise<Reservation[]> {
 	const orFilter = getTimeOverlapSupabaseFilter(settings, sub)
 	const { data } = await supabaseServiceRole
 		.from('Reservations')
@@ -259,14 +259,18 @@ function createBuddyEntriesForSubmit(sub: Submission) {
 	return entries;
 }
 
-const buoyCBS = 'CBS';
-const onCBSBuoy = [
-	ReservationType.cbs,
-	ReservationType.competitionSetupCBS,
-	ReservationType.autonomousPlatformCBS
-];
-
-const getBuoy = (resType: ReservationType) => (onCBSBuoy.includes(resType) ? buoyCBS : 'auto');
+const getBuoy = (resType: ReservationType) => {
+	switch (resType) {
+		case ReservationType.cbs:
+		case ReservationType.competitionSetupCBS:
+		case ReservationType.autonomousPlatformCBS:
+			return 'CBS';
+		case ReservationType.proSafety:
+			return 'PRO_SAFETY';
+		default:
+			return 'auto';
+	}
+};
 
 function unpackSubmitForm(
 	user_id: string,
@@ -553,6 +557,7 @@ export async function modifyReservation(actor: User, formData: AppFormData, sett
 		.select('*')
 		.eq('id', id)
 		.single()
+		.overrideTypes<Reservation>()
 		.throwOnError();
 	if (!(orig.user === actor.id || actor.privileges === 'admin'))
 		throw Error(`unathorised reservation modification ${id} by ${actor.id}`);
