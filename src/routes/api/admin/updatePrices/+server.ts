@@ -4,7 +4,6 @@ import { fromPanglaoDateTimeStringToDayJs, PanglaoDayJs, getYYYYMMDD } from '$li
 import { AuthError, checkAuthorisation, supabaseServiceRole } from '$lib/server/supabase';
 import { ReservationStatus, type ReservationWithPrices } from '$types';
 import { console_error } from '$lib/server/sentry';
-import { getSettingsManager } from '$lib/settings';
 import { getPriceForReservation } from '$utils/reservations';
 
 /**
@@ -49,10 +48,8 @@ export async function GET({ request, locals: { safeGetSession } }: RequestEvent)
 		const firstOfMonth = getYYYYMMDD(new Date(now.year(), now.month()));
 		// need to use supabaseServiceRole because this code run from scheduled worker without user so
 		// `locals:{supabase}` is not working here
-		const settings = await getSettingsManager(supabaseServiceRole);
-		const maxChargeableOWPerMonth = settings.getMaxChargeableOWPerMonth(nowDay);
 
-		console.info('api/admin/updatePrices', { now, nowDay, maxChargeableOWPerMonth });
+		console.info('api/admin/updatePrices', { now, nowDay });
 
 		const { data: reservations } = await supabaseServiceRole
 			.from('ReservationsWithPrices')
@@ -84,9 +81,9 @@ export async function GET({ request, locals: { safeGetSession } }: RequestEvent)
 				if (
 					rsv.category === 'openwater' &&
 					rsv.resType === 'autonomous' &&
-					numberOfAutoOW > maxChargeableOWPerMonth
+					numberOfAutoOW > rsv.priceTemplate['autoOW-maxChargeablePerMonth']
 				) {
-					price = 0;
+					price = rsv.priceTemplate['autoOW-overMaxChargeableOWPerMonth'];
 				}
 				try {
 					await supabaseServiceRole.from('Reservations').update({ price }).eq('id', rsv.id);

@@ -72,10 +72,7 @@ export type ReservationPeriod = 'upcoming' | 'past';
 /**
  * based on {@link unpackSubmitForm}
  */
-export type ReservationCreationFormUnpacked = RequireKeys<
-	TablesInsert<'Reservations'>,
-	'user' | 'date' | 'category' | 'resType' | 'buddies' | 'startTime' | 'endTime'
-> & { startTime: string; endTime: string };
+export type ReservationCreationFormUnpacked = RequireKeys<TablesInsert<'Reservations'>, 'buddies'>;
 
 export type Submission = ReservationCreationFormUnpacked;
 

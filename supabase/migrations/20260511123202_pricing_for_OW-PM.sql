@@ -1,5 +1,5 @@
 ALTER TABLE "public"."PriceTemplates"
-ADD COLUMN "autoOW-PM" bigint null default null;
+ADD COLUMN "autoOW-PM" BIGINT NULL DEFAULT NULL;
 
 ALTER TABLE "public"."PriceTemplates"
-ADD COLUMN "coachOW-PM" bigint null default null;
+ADD COLUMN "coachOW-PM" BIGINT NULL DEFAULT NULL;

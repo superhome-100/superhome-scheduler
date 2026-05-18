@@ -1,11 +1,17 @@
 import type { AssertEqual, SupabaseClient } from '$types';
 import type { Enums, Tables } from '$lib/supabase.types';
 
+const nameValuesToExclude = ['_deleted_maxChargeableOWPerMonth'] as const;
+type NameValuesToExclude = typeof nameValuesToExclude[number];
+
 /**
  * If this is error: Indicates that the ValueMap should be updated as well.
  * Should be in sync with [definition and constraint](../../supabase/migrations/20260101000011_create_Settings.sql).
  */
-type SettingName = Enums<'setting_name'>;
+type SettingName = Exclude<Enums<'setting_name'>, NameValuesToExclude>;
+
+type SettingsTable = Tables<'Settings'> & { name: SettingName };
+
 /**
  * If this is error: Indicates that the ValueMap should be updated as well.
  * Should be in sync with [definition and constraint](../../supabase/migrations/20260101000011_create_Settings.sql).
@@ -28,7 +34,6 @@ interface ValueMap {
 	reservationIncrement: string; // "HH:mm"
 	// THEN jsonb_typeof("value") = 'string' AND ("value" #>> '{}') ~ '^\d?\d:\d\d$' -- '"HH:mm"'
 
-	maxChargeableOWPerMonth: number;
 	reservationLeadTimeDays: number;
 	reservationLateCancelPenalty1OffsetMins: number;
 	// THEN jsonb_typeof("value") = 'number'
@@ -77,7 +82,6 @@ const fallbackValues: ValueMap = {
 	reservationCutOffTime: '18:00',
 	reservationIncrement: '0:30',
 
-	maxChargeableOWPerMonth: 12,
 	reservationLeadTimeDays: 30,
 	reservationLateCancelPenalty1OffsetMins: 0,
 
@@ -124,17 +128,17 @@ export async function getCachedSettings(supabase: SupabaseClient): Promise<Setti
 }
 
 export const getSettings = async (supabase: SupabaseClient): Promise<Settings> => {
-	const { data: settingsTbl } = await supabase.from('Settings').select('*').throwOnError();
-	return parseSettingsTbl(settingsTbl);
+	const { data } = await supabase.from('Settings').select('*').overrideTypes<SettingsTable[]>().throwOnError();
+	return parseSettingsTbl(data.filter(v => !(nameValuesToExclude as readonly string[]).includes(v.name)));
 };
 
-function parseSettingsTbl(settingsTbl: Tables<'Settings'>[]): Settings {
+function parseSettingsTbl(settingsTbl: SettingsTable[]): Settings {
 	const values = Object.entries(fallbackValues).reduce((acc, [name, _fallback]) => {
-		acc[name] = {
+		acc[name as SettingName] = {
 			entries: [],
 			default: undefined,
 			_fallback
-		};
+		} as any;
 		return acc;
 	}, {} as Settings);
 	for (const s of settingsTbl) {
@@ -189,7 +193,7 @@ export function getSetting<K extends SettingName>(
 }
 
 export class SettingsManager {
-	constructor(private readonly settings: Settings) {}
+	constructor(private readonly settings: Settings) { }
 	get<K extends SettingName>(name: K, date: string) {
 		return getSetting(this.settings, name, date);
 	}
@@ -207,9 +211,6 @@ export class SettingsManager {
 	}
 	getClassrooms(date: string) {
 		return this.get('classrooms', date);
-	}
-	getMaxChargeableOWPerMonth(date: string) {
-		return this.get('maxChargeableOWPerMonth', date);
 	}
 	getMaxClassroomEndTime(date: string) {
 		return this.get('maxClassroomEndTime', date);
@@ -271,10 +272,10 @@ export const getSettingsManager = async (supabase: SupabaseClient): Promise<Sett
 
 export const fallbackSettingsManager = new SettingsManager(
 	Object.entries(fallbackValues).reduce((acc, [name, _fallback]) => {
-		acc[name] = {
+		acc[name as SettingName] = {
 			entries: [],
 			default: _fallback
-		};
+		} as any;
 		return acc;
 	}, {} as Settings)
 );
