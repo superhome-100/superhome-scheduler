@@ -74,6 +74,9 @@ create table "public"."Reservations" (
 
 CREATE INDEX ON "public"."Reservations" USING btree ("date");
 
+grant select, insert, update on "public"."Reservations" to authenticated;
+grant select, insert, update on "public"."Reservations" to service_role;
+
 alter table "public"."Reservations" enable row level security;
 
 ---
@@ -141,6 +144,10 @@ as
   ) AS bd
 ;
 
+grant select on "public"."ReservationsEx" to authenticated;
+grant select on "public"."ReservationsEx" to service_role;
+
+
 ---
 
 -- for: api/reports/reservations
@@ -176,3 +183,6 @@ as
       on r."date" = ds_pm."date" and ds_pm."key" = 'ow_pm_full'
   group by r."date", ds_am."value", ds_pm."value"
 ;
+
+grant select on "public"."ReservationsReport" to authenticated;
+grant select on "public"."ReservationsReport" to service_role;

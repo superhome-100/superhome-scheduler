@@ -19,6 +19,9 @@ create table "public"."PriceTemplates" (
     constraint PriceTemplates_pkey primary key ("id")
 ) TABLESPACE pg_default;
 
+grant select, insert, update on "public"."PriceTemplates" to authenticated;
+grant select, insert, update on "public"."PriceTemplates" to service_role;
+
 alter table "public"."PriceTemplates" enable row level security;
 
 ---
@@ -60,6 +63,9 @@ create table "public"."UserPriceTemplates" (
     constraint UserPriceTemplates_priceTemplate_key foreign KEY ("priceTemplate") references "public"."PriceTemplates" ("id") on update cascade on delete restrict
 ) TABLESPACE pg_default;
 
+grant select, insert, update on "public"."UserPriceTemplates" to authenticated;
+grant select, insert, update on "public"."UserPriceTemplates" to service_role;
+
 alter table "public"."UserPriceTemplates" enable row level security;
 
 ---
@@ -100,3 +106,6 @@ as
     -- coalesce(.., regular) is crutial, it makes the api/admin/updatePrices logic work for users without price plan
     on coalesce(up."priceTemplate", 'regular') = pt."id"
 ;
+
+grant select on table public."ReservationsWithPrices" to authenticated;
+grant select on table public."ReservationsWithPrices" to service_role;

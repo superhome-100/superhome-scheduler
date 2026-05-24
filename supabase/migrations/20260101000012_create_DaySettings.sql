@@ -17,6 +17,9 @@ create table "public"."DaySettings" (
   constraint DaySettings_pkey primary key ("date", "key")
 ) TABLESPACE pg_default;
 
+grant select, insert, update on "public"."DaySettings" to authenticated;
+grant select, insert, update on "public"."DaySettings" to service_role;
+
 alter table "public"."DaySettings" enable row level security;
 
 ---

@@ -1,3 +1,14 @@
+--- BEGIN: https://github.com/orgs/supabase/discussions/45329
+
+-- Stop Postgres from granting default privileges on future objects in public
+alter default privileges for role postgres in schema public
+  revoke select, insert, update, delete on tables from anon, authenticated, service_role;
+
+alter default privileges for role postgres in schema public
+  revoke usage, select on sequences from anon, authenticated, service_role;
+
+--- END
+---
 ---
 
 create extension btree_gist with schema extensions;

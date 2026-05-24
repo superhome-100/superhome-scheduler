@@ -17,6 +17,9 @@ create table "public"."Notifications" (
     constraint Notifications_pkey primary key ("id")
 ) TABLESPACE pg_default;
 
+grant select, insert, update on "public"."Notifications" to authenticated;
+grant select, insert, update on "public"."Notifications" to service_role;
+
 alter table "public"."Notifications" enable row level security;
 
 ---
@@ -45,6 +48,9 @@ create table "public"."NotificationReceipts" (
     constraint NotificationReceipts_user_key foreign KEY ("user") references "public"."Users" ("id") on update cascade on delete cascade,
     constraint NotificationReceipts_notification_key foreign KEY ("notification") references "public"."Notifications" ("id") on update cascade on delete cascade
 ) TABLESPACE pg_default;
+
+grant select, insert, update on "public"."NotificationReceipts" to authenticated;
+grant select, insert, update on "public"."NotificationReceipts" to service_role;
 
 alter table "public"."NotificationReceipts" enable row level security;
 
