@@ -107,6 +107,9 @@ CHECK (
   END
 );
 
+grant select, insert, update on "public"."Settings" to authenticated;
+grant select, insert, update on "public"."Settings" to service_role;
+
 alter table "public"."Settings" enable row level security;
 
 ---

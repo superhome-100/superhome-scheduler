@@ -26,6 +26,9 @@ create table "public"."Users" (
   constraint users_auth_uid_fkey foreign KEY ("authId") references "auth"."users" ("id") on update cascade on delete set default
 ) TABLESPACE pg_default;
 
+grant select, insert, update on "public"."Users" to authenticated;
+grant select, insert, update on "public"."Users" to service_role;
+
 alter table "public"."Users" enable row level security;
 
 ---
@@ -207,6 +210,7 @@ as
 ;
 
 grant select on table public."UsersMinimal" to authenticated;
+grant select on table public."UsersMinimal" to service_role;
 
 ---
 
@@ -234,6 +238,9 @@ create table "public"."UserSessions" (
 
   constraint user_sessions_user_id_fkey foreign KEY ("userId") references "public"."Users" ("id") on delete cascade
 ) TABLESPACE pg_default;
+
+grant select, insert, update on "public"."UserSessions" to authenticated;
+grant select, insert, update on "public"."UserSessions" to service_role;
 
 alter table "public"."UserSessions" enable row level security;
 

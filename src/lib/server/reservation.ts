@@ -51,7 +51,11 @@ export async function getReservationsCsv() {
 	//  set owTime for pool/classroom based on whether startTime is in AM or PM
 	const recordsEx = records.map((rsv) => {
 		let numStudents = rsv.numStudents;
-		if (rsv.resType == ReservationType.autonomous) {
+		if (rsv.resType === ReservationType.autonomous
+			|| rsv.resType === ReservationType.autonomousPlatform
+			|| rsv.resType === ReservationType.autonomousPlatformCBS
+			|| rsv.resType === ReservationType.proSafety
+		) {
 			numStudents = 1;
 		}
 		let owTime = rsv.owTime;

@@ -15,6 +15,9 @@ create table "public"."Buoys" (
     constraint Buoys_pkey primary key ("id")
 ) TABLESPACE pg_default;
 
+grant select, insert, update on "public"."Buoys" to authenticated;
+grant select, insert, update on "public"."Buoys" to service_role;
+
 alter table "public"."Buoys" enable row level security;
 
 ---
@@ -53,6 +56,9 @@ create table "public"."Boats" (
 
     constraint Boats_pkey primary key ("id")
 ) TABLESPACE pg_default;
+
+grant select, insert, update on "public"."Boats" to authenticated;
+grant select, insert, update on "public"."Boats" to service_role;
 
 alter table "public"."Boats" enable row level security;
 
@@ -95,6 +101,9 @@ create table "public"."BuoyGroupings" (
 
     constraint BuoyGroupings_pkey primary key ("id")
 ) TABLESPACE pg_default;
+
+grant select, insert, update on "public"."BuoyGroupings" to authenticated;
+grant select, insert, update on "public"."BuoyGroupings" to service_role;
 
 alter table "public"."BuoyGroupings" enable row level security;
 
