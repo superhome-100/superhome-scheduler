@@ -54,6 +54,7 @@ export async function getReservationsCsv() {
 		if (rsv.resType === ReservationType.autonomous
 			|| rsv.resType === ReservationType.autonomousPlatform
 			|| rsv.resType === ReservationType.autonomousPlatformCBS
+			|| rsv.resType === ReservationType.competitionSetupCBS
 			|| rsv.resType === ReservationType.proSafety
 		) {
 			numStudents = 1;
