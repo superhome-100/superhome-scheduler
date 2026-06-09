@@ -23,9 +23,11 @@ export const pushService = {
                 if (server_has_push) {
                     // Permission is good, but check getSubscription() to see if 
                     // the Push Service token is still valid.
-                    const reg = await navigator.serviceWorker.ready;
-                    const sub = await reg.pushManager.getSubscription();
-                    subscriptionW.set(sub);
+                    const reg = await navigator?.serviceWorker?.ready;
+                    if (reg) {
+                        const sub = await reg.pushManager.getSubscription();
+                        subscriptionW.set(sub);
+                    }
                 }
             }
         }

@@ -135,12 +135,14 @@
 
 	const updateSubscription = async (e: any) => {
 		if (e.detail.checked) {
-			const swr = await navigator.serviceWorker.ready;
-			toast.promise(pushService.subscribe(swr), {
-				loading: 'Subscribing to push notifications',
-				success: 'Subscribed to push notifications',
-				error: 'Failed to Subscribe to push notifications'
-			});
+			const swr = await navigator?.serviceWorker?.ready;
+			if (swr) {
+				toast.promise(pushService.subscribe(swr), {
+					loading: 'Subscribing to push notifications',
+					success: 'Subscribed to push notifications',
+					error: 'Failed to Subscribe to push notifications'
+				});
+			}
 		} else {
 			toast.promise(pushService.unsubscribe(), {
 				loading: 'Unsubscribing from push notifications',
