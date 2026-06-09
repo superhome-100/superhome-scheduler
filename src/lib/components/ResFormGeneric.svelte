@@ -28,8 +28,10 @@
 	export let error = '';
 	export let extendDisabled = false;
 
+	const minValidDateStrVal = minValidDateStr($storedSettings, category);
+
 	const dayStrInitValue = dayStr;
-	let dayStrInput = dayStrInitValue;
+	let dayStrInput = dayStrInitValue < minValidDateStrVal ? minValidDateStrVal : dayStrInitValue;
 	$: {
 		const d = PanglaoDayJs(dayStrInput);
 		if (d.isValid()) {
@@ -200,7 +202,7 @@
 				name="date"
 				id="formDate"
 				class="w-full"
-				min={minValidDateStr($storedSettings, category)}
+				min={minValidDateStrVal}
 				max={maxValidDateStr($storedSettings)}
 				bind:value={dayStrInput}
 				{disabled}

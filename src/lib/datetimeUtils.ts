@@ -8,11 +8,11 @@ dayjs.extend(timezone);
 export { dayjs };
 
 export const fromPanglaoDateTimeStringToDayJs = (date: string, time?: string) =>
-	dayjs(date + (time ? `T${time}` : '')).tz('Asia/Manila', true);
+	dayjs.tz(date + (time ? `T${time}` : ''), 'Asia/Manila');
 
 export const PanglaoDayJs = (
 	date?: string | number | dayjs.Dayjs | Date | null | undefined
-): Dayjs => dayjs(date).tz('Asia/Manila');
+): Dayjs => dayjs.tz(date, 'Asia/Manila');
 
 export const PanglaoDate = () => PanglaoDayJs().toDate();
 

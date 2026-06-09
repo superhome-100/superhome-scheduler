@@ -114,34 +114,29 @@ export const startTimesHHMM = (stns: SettingsManager, dateStr: string, cat: Rese
 export const endTimesHHMM = (stns: SettingsManager, dateStr: string, cat: ReservationCategoryT) =>
 	getStartEndTimesHHMM(stns, dateStr, cat).slice(1);
 
-export function minValidDate(stns: SettingsManager, category: ReservationCategoryT) {
+export function minValidDateStr(stns: SettingsManager, category: ReservationCategoryT) {
 	const now = dtu.PanglaoDayJs();
-	let today = now.toDate()
-	let todayStr = dtu.datetimeToLocalDateStr(today);
-	let d = dtu.PanglaoDate();
+	const todayStr = dtu.getYYYYMMDD(now)
 	if (
 		[ReservationCategory.pool, ReservationCategory.classroom].includes(
 			category as ReservationCategory
 		)
 	) {
-		let sTs = startTimesHHMM(stns, todayStr, category);
-		let lastSlot = dtu.timeStrToMin(sTs[sTs.length - 1]);
-		if (minuteOfDay(today) < lastSlot) {
-			d.setDate(today.getDate());
+		const sTs = startTimesHHMM(stns, todayStr, category);
+		const lastSlotHHMM = sTs[sTs.length - 1];
+		const lastSlotDj = dtu.fromPanglaoDateTimeStringToDayJs(todayStr, lastSlotHHMM)
+		if (now < lastSlotDj) {
+			return dtu.getYYYYMMDD(now);
 		} else {
-			d.setDate(today.getDate() + 1);
+			return dtu.getYYYYMMDD(now.add(1, "day"));
 		}
-	} else if (now < openwaterResCutoffDayjs(stns, todayStr)) {
-		d.setDate(today.getDate() + 1);
 	} else {
-		d.setDate(today.getDate() + 2);
+		if (now < openwaterResCutoffDayjs(stns, todayStr)) {
+			return dtu.getYYYYMMDD(now);
+		} else {
+			return dtu.getYYYYMMDD(now.add(1, "day"));
+		}
 	}
-	return d;
-}
-
-export function minValidDateStr(stns: SettingsManager, category: ReservationCategoryT) {
-	let d = minValidDate(stns, category);
-	return dtu.datetimeToLocalDateStr(d);
 }
 
 export function maxValidDate(stns: SettingsManager) {
