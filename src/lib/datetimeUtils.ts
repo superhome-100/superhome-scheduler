@@ -30,7 +30,7 @@ export const minToHHMM = (min: number) =>
 
 const timeStrRE = /([0-9]*[0-9]):([0-9][0-9])(:[0-9][0-9])?/;
 
-const parseHM = (timeStr: string): { hour: number; min: number } => {
+export const parseHM = (timeStr: string): { hour: number; min: number } => {
 	let m = timeStrRE.exec(timeStr);
 	if (!m) throw new Error('Invalid time string');
 	const hour = parseInt(m[1]);
