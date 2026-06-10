@@ -17,11 +17,11 @@
 	$: userComments = Object.values(
 		Object.groupBy(
 			submissions
-				.filter((rsv) => rsv.comments?.trim())
+				?.filter((rsv) => rsv.comments?.trim())
 				.map((rsv) => ({
 					name: rsv.user_json.nickname,
 					text: rsv.comments!.trim()
-				})),
+				})) ?? [],
 			(c) => c.text
 		)
 	).map((g) => ({
