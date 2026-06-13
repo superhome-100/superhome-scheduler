@@ -1,12 +1,7 @@
 <script lang="ts">
 	import ResFormGeneric from '$lib/components/ResFormGeneric.svelte';
 	import { startTimesHHMM, endTimesHHMM, minuteOfDay } from '$lib/reservationTimes';
-	import {
-		timeStrToMin,
-		datetimeToLocalDateStr,
-		PanglaoDate,
-		getYYYYMMDD
-	} from '$lib/datetimeUtils';
+	import { timeStrToMin, getYYYYMMDD, PanglaoDayJs } from '$lib/datetimeUtils';
 	import { canSubmit } from '$lib/stores';
 	import { adminView, resTypeModDisabled } from '$lib/utils';
 	import { ReservationType } from '$types';
@@ -32,8 +27,8 @@
 
 	const getStartTimes = (sm: SettingsManager, date: string, category: ReservationCategoryT) => {
 		let startTs = startTimesHHMM(sm, date, category);
-		let today = PanglaoDate();
-		if (!disabled && date === datetimeToLocalDateStr(today)) {
+		let today = PanglaoDayJs();
+		if (!disabled && date === getYYYYMMDD(today)) {
 			let now = minuteOfDay(today);
 			startTs = startTs.filter((time) => timeStrToMin(time) > now);
 			if (startTs.length == 0) {
