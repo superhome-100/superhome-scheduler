@@ -20,21 +20,23 @@
 	export let params;
 	export let data;
 
-	let day = PanglaoDayJs(data.day);
-	$: dayStr = getYYYYMMDD(data.day);
-	$: storedDayReservations_param.set({ day: dayStr });
+	$: storedDayReservations_param.set({ day: getYYYYMMDD(PanglaoDayJs(data.day)) });
+	$: dayStr = $storedDayReservations_param.day;
+	$: dayJs = PanglaoDayJs(dayStr);
 
 	const category = 'pool';
 
 	let categories = [...CATEGORIES];
 
 	function prevDay() {
-		day = day.subtract(1, 'day');
-		goto(getCategoryDatePath('pool', day.toDate()));
+		const day = getYYYYMMDD(dayJs.subtract(1, 'day'));
+		storedDayReservations_param.set({ day });
+		goto(getCategoryDatePath('pool', day));
 	}
 	function nextDay() {
-		day = day.add(1, 'day');
-		goto(getCategoryDatePath('pool', day.toDate()));
+		const day = getYYYYMMDD(dayJs.add(1, 'day'));
+		storedDayReservations_param.set({ day });
+		goto(getCategoryDatePath('pool', day));
 	}
 
 	let modalOpened = false;
@@ -64,7 +66,7 @@
 			>
 			<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 			<ul tabindex="0" class="dropdown-content menu p-0 shadow bg-base-100 rounded-box w-fit">
-				{#each categories as cat}
+				{#each categories as cat (cat)}
 					{#if cat !== category}
 						<li>
 							<a class="text-xl active:bg-gray-300" href={getCategoryDatePath(cat, dayStr)}>
@@ -83,7 +85,9 @@
 				<Chevron direction="right" svgClass="h-8 w-8" />
 			</span>
 			<span class="text-2xl ml-2">
-				{day.format(day.year() === PanglaoDayJs().year() ? 'MMM DD, dddd' : 'MMM DD, YYYY dddd')}
+				{dayJs.format(
+					dayJs.year() === PanglaoDayJs().year() ? 'MMM DD, dddd' : 'MMM DD, YYYY dddd'
+				)}
 			</span>
 		</div>
 		<span class="mr-2">
@@ -99,7 +103,7 @@
 	<div class="flex justify-between">
 		<a
 			class="inline-flex items-center border border-solid border-transparent hover:border-black rounded-lg pl-1.5 pr-4 py-0 hover:text-white hover:bg-gray-700"
-			href="/multi-day/pool/{getYYYYMM(day)}"
+			href="/multi-day/pool/{getYYYYMM(dayJs)}"
 		>
 			<span><Chevron direction="left" /></span>
 			<span class="xs:text-xl pb-1 whitespace-nowrap">month</span>

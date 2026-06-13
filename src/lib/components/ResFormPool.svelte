@@ -37,11 +37,11 @@
 		}
 		return startTs;
 	};
-	let chosenStart =
+	$: chosenStart =
 		rsv == null
 			? getStartTimes($storedSettings, dayStr, category)[0]
 			: rsv.startTime.substring(0, 5);
-	let chosenEnd =
+	$: chosenEnd =
 		rsv == null ? getStartTimes($storedSettings, dayStr, category)[1] : rsv.endTime.substring(0, 5);
 	let autoOrCourse =
 		rsv == null ? (resType == null ? ReservationType.autonomous : resType) : rsv.resType;
