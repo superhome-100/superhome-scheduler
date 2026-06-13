@@ -52,8 +52,8 @@
     },
     "dependencies": {
         "@sentry/sveltekit": "^10.51.0",
-        "@supabase/ssr": "^0.10.3",
-        "@supabase/supabase-js": "^2.105.4",
+        "@supabase/ssr": "^0.12.0",
+        "@supabase/supabase-js": "^2.108.1",
         "daisyui": "^2.52.0",
         "dayjs": "^1.11.20",
         "debounce-fn": "^6.0.0",
