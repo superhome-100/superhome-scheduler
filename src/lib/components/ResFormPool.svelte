@@ -37,15 +37,20 @@
 		}
 		return startTs;
 	};
-	$: chosenStart =
+
+	let chosenStart =
 		rsv == null
 			? getStartTimes($storedSettings, dayStr, category)[0]
 			: rsv.startTime.substring(0, 5);
-	$: chosenEnd =
+
+	let chosenEnd =
 		rsv == null ? getStartTimes($storedSettings, dayStr, category)[1] : rsv.endTime.substring(0, 5);
+
 	let autoOrCourse =
 		rsv == null ? (resType == null ? ReservationType.autonomous : resType) : rsv.resType;
+
 	let numStudents = rsv == null || rsv.resType !== ReservationType.course ? 1 : rsv.numStudents;
+
 	$canSubmit = true;
 	$: showBuddyFields = autoOrCourse === 'autonomous';
 
@@ -72,7 +77,7 @@
 			a fixed assignment could make it impossible to auto-assign the remaining reservations -->
 				<select id="formLane" name="lane" class="w-full" value={rsv?.lanes[0]}>
 					<option value="auto">Auto</option>
-					{#each lanes as lane}
+					{#each lanes as lane (lane)}
 						<option value={lane}>{lane}</option>
 					{/each}
 				</select>
@@ -82,7 +87,7 @@
 			<InputLabel forInput="formRoom" label="Room">
 				<select id="formRoom" name="room" class="w-full" value={rsv.room}>
 					<option value="auto">Auto</option>
-					{#each rooms as room}
+					{#each rooms as room (room)}
 						<option value={room}>{room}</option>
 					{/each}
 				</select>
@@ -91,7 +96,7 @@
 
 		<InputLabel forInput="formStart" label="Start Time">
 			<select id="formStart" class="w-full" {disabled} bind:value={chosenStart} name="startTime">
-				{#each getStartTimes($storedSettings, dayStr, category) as t}
+				{#each getStartTimes($storedSettings, dayStr, category) as t (t)}
 					<option value={t}>{t}</option>
 				{/each}
 			</select>
@@ -99,7 +104,7 @@
 
 		<InputLabel forInput="formEnd" label="End Time">
 			<select id="formEnd" class="w-full" {disabled} name="endTime" value={chosenEnd}>
-				{#each endTimesHHMM($storedSettings, dayStr, category) as t}
+				{#each endTimesHHMM($storedSettings, dayStr, category) as t (t)}
 					{#if validEndTime(chosenStart, t)}
 						<option value={t}>{t}</option>
 					{/if}
@@ -129,7 +134,7 @@
 		{#if autoOrCourse === 'course'}
 			<InputLabel forInput="formNumStudents" label="# Students">
 				<select disabled={viewOnly} value={numStudents} name="numStudents">
-					{#each [...Array(restrictModify ? numStudents : maxNumStudents).keys()] as n}
+					{#each [...Array(restrictModify ? numStudents : maxNumStudents).keys()] as n (n)}
 						<option value={n + 1}>{n + 1}</option>
 					{/each}
 				</select>
