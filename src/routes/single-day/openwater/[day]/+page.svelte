@@ -21,15 +21,15 @@
 	import { ow_am_full, ow_pm_full, setDaySetting } from '$lib/dateSettings';
 	import type { Enums } from '$lib/supabase.types';
 	import { browser } from '$app/environment';
-	
+
 	// svelte-ignore unused-export-let
 	export let params;
 	export let data;
 	const { supabase } = data;
 
-	let day = PanglaoDayJs(data.day);
-	$: dayStr = getYYYYMMDD(day);
-	$: storedDayReservations_param.set({ day: dayStr });
+	$: storedDayReservations_param.set({ day: getYYYYMMDD(PanglaoDayJs(data.day)) });
+	$: dayStr = $storedDayReservations_param.day;
+	$: dayJs = PanglaoDayJs(dayStr);
 
 	let category: Enums<'reservation_category'> = 'openwater';
 
@@ -51,12 +51,14 @@
 	};
 
 	function prevDay() {
-		day = day.subtract(1, 'day');
-		goto(getCategoryDatePath('openwater', getYYYYMMDD(day)));
+		const day = getYYYYMMDD(dayJs.subtract(1, 'day'));
+		storedDayReservations_param.set({ day });
+		goto(getCategoryDatePath('openwater', day));
 	}
 	function nextDay() {
-		day = day.add(1, 'day');
-		goto(getCategoryDatePath('openwater', getYYYYMMDD(day)));
+		const day = getYYYYMMDD(dayJs.add(1, 'day'));
+		storedDayReservations_param.set({ day });
+		goto(getCategoryDatePath('openwater', day));
 	}
 
 	let modalOpened = false;
@@ -89,7 +91,8 @@
 				nextDay();
 			} else if (e.keyCode == 84) {
 				// letter 't'
-				day = PanglaoDayJs();
+				const day = getYYYYMMDD(PanglaoDayJs());
+				storedDayReservations_param.set({ day });
 			}
 		}
 	}
@@ -145,7 +148,9 @@
 				<Chevron direction="right" svgClass="h-8 w-8" />
 			</span>
 			<span class="text-2xl ml-2">
-				{day.format(day.year() === PanglaoDayJs().year() ? 'MMM DD, dddd' : 'MMM DD, YYYY dddd')}
+				{dayJs.format(
+					dayJs.year() === PanglaoDayJs().year() ? 'MMM DD, dddd' : 'MMM DD, YYYY dddd'
+				)}
 			</span>
 		</div>
 		<span class="mr-2">
@@ -161,7 +166,7 @@
 	<div class="flex justify-between">
 		<a
 			class="inline-flex items-center border border-solid border-transparent hover:border-black rounded-lg pl-1.5 pr-4 py-0 hover:text-white hover:bg-gray-700"
-			href="/multi-day/openwater/{getYYYYMM(day)}"
+			href="/multi-day/openwater/{getYYYYMM(dayJs)}"
 		>
 			<span><Chevron direction="left" /></span>
 			<span class="xs:text-xl pb-1 whitespace-nowrap">month</span>

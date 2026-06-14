@@ -107,7 +107,7 @@ CHECK (
   END
 );
 
-grant select, insert, update on "public"."Settings" to anon;
+grant select on "public"."Settings" to anon;
 grant select, insert, update on "public"."Settings" to authenticated;
 grant select, insert, update on "public"."Settings" to service_role;
 

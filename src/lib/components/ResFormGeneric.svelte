@@ -30,8 +30,8 @@
 
 	const minValidDateStrVal = minValidDateStr($storedSettings, category);
 
-	const dayStrInitValue = dayStr;
-	let dayStrInput = dayStrInitValue < minValidDateStrVal ? minValidDateStrVal : dayStrInitValue;
+	// if we have reservation then the form should keep the day otherwise snap to the eariliest allowed one
+	let dayStrInput = rsv ? rsv.date : dayStr < minValidDateStrVal ? minValidDateStrVal : dayStr;
 	$: {
 		const d = PanglaoDayJs(dayStrInput);
 		if (d.isValid()) {

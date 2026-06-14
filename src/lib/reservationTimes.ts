@@ -21,7 +21,7 @@ export const openwaterResCutoffDayjs = (stns: SettingsManager, date: string): Da
 export const inc = (stns: SettingsManager, date: string): number =>
 	dtu.timeStrToMin(stns.getReservationIncrement(date));
 
-export const minuteOfDay = (date: Date): number => date.getHours() * 60 + date.getMinutes();
+export const minuteOfDay = (date: Dayjs): number => date.hour() * 60 + date.minute();
 
 export function validReservationDate(
 	stns: SettingsManager,
