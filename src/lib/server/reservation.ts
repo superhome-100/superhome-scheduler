@@ -552,6 +552,10 @@ const checkEventFull = async (date: Date | string, owTime: string) => {
 		throw new ValidationError(
 			'The morning open water session is full for this date.'
 		);
+	} else if (owTime === OWTime.PM && daySettings.ow_pm_full) {
+		throw new ValidationError(
+			'The afternoon open water session is full for this date.'
+		);
 	}
 }
 
